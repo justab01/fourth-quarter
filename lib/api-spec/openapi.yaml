@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Fourth Quarter Sports App API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: sports
+    description: Sports data operations
+  - name: user
+    description: User preference operations
+  - name: ai
+    description: AI summarization operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,200 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /sports/games:
+    get:
+      operationId: getGames
+      tags: [sports]
+      summary: Get today's games
+      parameters:
+        - name: sport
+          in: query
+          schema:
+            type: string
+        - name: league
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  games:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Game"
+                required:
+                  - games
+
+  /sports/standings:
+    get:
+      operationId: getStandings
+      tags: [sports]
+      summary: Get standings
+      parameters:
+        - name: league
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Standings data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  standings:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StandingEntry"
+                required:
+                  - standings
+
+  /sports/game/{gameId}:
+    get:
+      operationId: getGameDetail
+      tags: [sports]
+      summary: Get game detail with stats
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Game detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameDetail"
+
+  /news:
+    get:
+      operationId: getNews
+      tags: [sports]
+      summary: Get sports news articles
+      parameters:
+        - name: teams
+          in: query
+          schema:
+            type: string
+            description: Comma-separated team names
+        - name: leagues
+          in: query
+          schema:
+            type: string
+            description: Comma-separated leagues
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: News articles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/NewsArticle"
+                required:
+                  - articles
+
+  /ai/summarize:
+    post:
+      operationId: summarizeContent
+      tags: [ai]
+      summary: AI summarize article or game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SummarizeRequest"
+      responses:
+        "200":
+          description: Summary result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummarizeResponse"
+
+  /ai/recap:
+    post:
+      operationId: generateRecap
+      tags: [ai]
+      summary: Generate AI postgame recap
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecapRequest"
+      responses:
+        "200":
+          description: Postgame recap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecapResponse"
+
+  /user/preferences:
+    get:
+      operationId: getUserPreferences
+      tags: [user]
+      summary: Get user preferences
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+    post:
+      operationId: saveUserPreferences
+      tags: [user]
+      summary: Save user preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPreferences"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +232,275 @@ components:
       required:
         - status
 
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+        sport:
+          type: string
+        league:
+          type: string
+        homeTeam:
+          type: string
+        awayTeam:
+          type: string
+        homeScore:
+          type: integer
+          nullable: true
+        awayScore:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [upcoming, live, finished]
+        startTime:
+          type: string
+        quarter:
+          type: string
+          nullable: true
+        timeRemaining:
+          type: string
+          nullable: true
+        venue:
+          type: string
+          nullable: true
+        homeTeamLogo:
+          type: string
+          nullable: true
+        awayTeamLogo:
+          type: string
+          nullable: true
+      required:
+        - id
+        - sport
+        - league
+        - homeTeam
+        - awayTeam
+        - status
+        - startTime
+
+    GameDetail:
+      type: object
+      properties:
+        game:
+          $ref: "#/components/schemas/Game"
+        keyPlays:
+          type: array
+          items:
+            $ref: "#/components/schemas/KeyPlay"
+        homeStats:
+          type: object
+          additionalProperties: true
+        awayStats:
+          type: object
+          additionalProperties: true
+        homeLineup:
+          type: array
+          items:
+            type: string
+        awayLineup:
+          type: array
+          items:
+            type: string
+        aiSummary:
+          type: string
+          nullable: true
+      required:
+        - game
+        - keyPlays
+
+    KeyPlay:
+      type: object
+      properties:
+        time:
+          type: string
+        description:
+          type: string
+        team:
+          type: string
+      required:
+        - time
+        - description
+        - team
+
+    StandingEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        teamName:
+          type: string
+        wins:
+          type: integer
+        losses:
+          type: integer
+        winPct:
+          type: number
+        gamesBack:
+          type: number
+          nullable: true
+        streak:
+          type: string
+          nullable: true
+        conference:
+          type: string
+          nullable: true
+        division:
+          type: string
+          nullable: true
+        rankChange:
+          type: integer
+          nullable: true
+      required:
+        - rank
+        - teamName
+        - wins
+        - losses
+        - winPct
+
+    NewsArticle:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        content:
+          type: string
+          nullable: true
+        source:
+          type: string
+        sourceUrl:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        publishedAt:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        teams:
+          type: array
+          items:
+            type: string
+        leagues:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - title
+        - summary
+        - source
+        - sourceUrl
+        - publishedAt
+        - tags
+        - teams
+        - leagues
+
+    SummarizeRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [article, game]
+        content:
+          type: string
+        title:
+          type: string
+          nullable: true
+      required:
+        - type
+        - content
+
+    SummarizeResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+      required:
+        - summary
+
+    RecapRequest:
+      type: object
+      properties:
+        homeTeam:
+          type: string
+        awayTeam:
+          type: string
+        homeScore:
+          type: integer
+        awayScore:
+          type: integer
+        keyPlays:
+          type: array
+          items:
+            type: string
+        stats:
+          type: object
+          additionalProperties: true
+        league:
+          type: string
+      required:
+        - homeTeam
+        - awayTeam
+        - homeScore
+        - awayScore
+        - keyPlays
+        - league
+
+    RecapResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+        keyPlayer:
+          type: string
+        whatItMeans:
+          type: string
+      required:
+        - summary
+        - keyPlayer
+        - whatItMeans
+
+    UserPreferences:
+      type: object
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        favoriteTeams:
+          type: array
+          items:
+            type: string
+        favoriteLeagues:
+          type: array
+          items:
+            type: string
+        favoritePlayers:
+          type: array
+          items:
+            type: string
+        rivals:
+          type: array
+          items:
+            type: string
+        darkMode:
+          type: boolean
+        notifications:
+          type: boolean
+      required:
+        - userId
+        - name
+        - favoriteTeams
+        - favoriteLeagues
+        - favoritePlayers
+        - rivals
+        - darkMode
+        - notifications

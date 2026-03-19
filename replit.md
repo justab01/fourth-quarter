@@ -94,3 +94,28 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+### `artifacts/mobile` (`@workspace/mobile`)
+
+Expo React Native mobile app — "Fourth Quarter" sports app.
+
+- **Theme**: Dark (#0A0A0F bg, #FF3B30 red accent, #FFD60A gold, #30D158 green)
+- **Auth/state**: AsyncStorage preferences, onboarding flow (4 steps)
+- **Screens**: Onboarding, Hub (home), Live, News, Standings, Profile + Game Detail, Article Detail
+- **Components**: GameCard, NewsCard, RecapCard, GameCardSkeleton, NewsCardSkeleton, ErrorBoundary/Fallback
+- **Navigation**: Tabs via `expo-router` + NativeTabs (liquid glass on iOS 26+) fallback to BlurView tabs
+- **API**: `utils/api.ts` with `apiFetch` helper, typed interfaces for all models
+- **Context**: `PreferencesContext` — persists to AsyncStorage + syncs to backend
+- **AI**: RecapCard fetches `/api/ai/recap` (gpt-5-mini) for postgame recaps
+- Constants: `constants/colors.ts`, `constants/sports.ts` (SPORTS, TEAMS_BY_LEAGUE, LEAGUE_COLORS)
+
+### `artifacts/api-server` routes
+
+- `GET /api/sports/games?league=` — mock games (NFL/NBA/MLB/MLS)
+- `GET /api/sports/game/:id` — mock game detail with key plays, stats, lineups
+- `GET /api/sports/standings?league=` — mock standings with win/loss/pct/streak
+- `GET /api/news?teams=&leagues=` — 8 mock articles, filterable
+- `POST /api/ai/summarize` — OpenAI gpt-5-mini article/game summary
+- `POST /api/ai/recap` — OpenAI gpt-5-mini postgame recap (JSON format)
+- `GET /api/user/preferences?userId=` — fetch from Postgres
+- `POST /api/user/preferences` — upsert to Postgres (userPreferences table)
