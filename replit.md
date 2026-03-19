@@ -108,10 +108,12 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 - **Context**: `PreferencesContext` — persists to AsyncStorage + syncs to backend
 - **AI**: RecapCard fetches `/api/ai/recap` (gpt-4o-mini) for postgame recaps
 - **Player/Team Data**: `constants/allPlayers.ts` — 1,250 ESPN API-verified players across 122 teams (30 NBA + 32 NFL + 30 MLB + 30 MLS), updated March 2026
+- **ESPN Athlete IDs**: `constants/espnAthleteIds.ts` — 4,925 ESPN athlete IDs for NBA/NFL/MLB/MLS, used for live game log fetching. Exports `getEspnGamelogUrl(name, league, season)` helper
+- **Live Game Log**: Player page "Game Log" tab fetches real per-game stats directly from ESPN's public API (`site.web.api.espn.com/apis/common/v3/sports/...`). Supports season switching (2023/2024/2025). Shows date, opponent, W/L, score, and league-appropriate stat columns
 - **Team Colors**: All 122 team brand colors in `constants/teamData.ts` → `TEAM_COLORS` + `teamColor(slug)` helper
 - **Team Fallback**: `buildFallbackTeam()` in `app/team/[id].tsx` handles any team not in TEAM_REGISTRY using ALL_TEAMS + ALL_PLAYERS
 - **Search**: Global `SearchModal` with real-time filtering across all players and teams
-- Constants: `constants/colors.ts`, `constants/teamData.ts`, `constants/allPlayers.ts`
+- Constants: `constants/colors.ts`, `constants/teamData.ts`, `constants/allPlayers.ts`, `constants/espnAthleteIds.ts`
 - Key roster facts (March 2026): Luka+LeBron→Lakers; Harden→Cavs; Trae Young→Wizards; Cooper Flagg (rookie)→Mavs; Jalen Green→Suns; Rob Dillingham (rookie)→Bulls
 
 ### `artifacts/api-server` routes
