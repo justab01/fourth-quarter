@@ -7,6 +7,7 @@ import { BlurView } from "expo-blur";
 import Colors from "@/constants/colors";
 import { LEAGUE_COLORS } from "@/constants/sports";
 import type { Game } from "@/utils/api";
+import { goToTeam } from "@/utils/navHelpers";
 
 const C = Colors.dark;
 
@@ -23,10 +24,10 @@ function formatTime(iso: string) {
 
 function getDisplayColor(league: string): string {
   const map: Record<string, string> = {
-    NBA: C.nba,   // Energy Orange
-    NFL: C.nfl,   // Vivid Teal
-    MLB: C.mlb,   // Steel Blue
-    MLS: C.mls,   // Vivid Teal
+    NBA: C.nba,
+    NFL: C.nfl,
+    MLB: C.mlb,
+    MLS: C.mls,
     NHL: C.accentBlue,
     NCAA: C.accentGold,
   };
@@ -105,7 +106,11 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
             </View>
 
             <View style={styles.heroTeams}>
-              <View style={styles.heroTeam}>
+              <Pressable
+                style={styles.heroTeam}
+                onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
+                hitSlop={8}
+              >
                 <View style={[styles.heroLogo, { borderColor: `${displayColor}44` }]}>
                   <Text style={styles.heroLogoText}>{game.awayTeam.charAt(0)}</Text>
                 </View>
@@ -115,7 +120,7 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                     {game.awayScore}
                   </Text>
                 )}
-              </View>
+              </Pressable>
 
               <View style={styles.heroVs}>
                 {isLive ? (
@@ -130,7 +135,11 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                 )}
               </View>
 
-              <View style={[styles.heroTeam, { alignItems: "flex-end" }]}>
+              <Pressable
+                style={[styles.heroTeam, { alignItems: "flex-end" }]}
+                onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
+                hitSlop={8}
+              >
                 <View style={[styles.heroLogo, { borderColor: `${displayColor}44` }]}>
                   <Text style={styles.heroLogoText}>{game.homeTeam.charAt(0)}</Text>
                 </View>
@@ -142,7 +151,7 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                     {game.homeScore}
                   </Text>
                 )}
-              </View>
+              </Pressable>
             </View>
 
             <View style={[styles.heroCta, { borderTopColor: `${displayColor}22` }]}>
@@ -180,7 +189,11 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                   <Text style={styles.compactLiveText}>LIVE</Text>
                 </View>
               )}
-              <View style={styles.compactTeamRow}>
+              <Pressable
+                style={styles.compactTeamRow}
+                onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
+                hitSlop={4}
+              >
                 <View style={styles.compactLogoSmall}>
                   <Text style={styles.compactLogoText}>{game.awayTeam.charAt(0)}</Text>
                 </View>
@@ -190,8 +203,12 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                     {game.awayScore}
                   </Text>
                 )}
-              </View>
-              <View style={styles.compactTeamRow}>
+              </Pressable>
+              <Pressable
+                style={styles.compactTeamRow}
+                onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
+                hitSlop={4}
+              >
                 <View style={styles.compactLogoSmall}>
                   <Text style={styles.compactLogoText}>{game.homeTeam.charAt(0)}</Text>
                 </View>
@@ -201,7 +218,7 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                     {game.homeScore}
                   </Text>
                 )}
-              </View>
+              </Pressable>
               {!isLive && !isFinished && (
                 <Text style={styles.compactTime}>{formatTime(game.startTime)}</Text>
               )}
@@ -244,7 +261,11 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
           </View>
 
           <View style={styles.matchup}>
-            <View style={styles.teamRow}>
+            <Pressable
+              style={styles.teamRow}
+              onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
+              hitSlop={4}
+            >
               <View style={[styles.logo, { borderColor: isLive ? `${displayColor}55` : "transparent" }]}>
                 <Text style={styles.logoText}>{game.awayTeam.charAt(0)}</Text>
               </View>
@@ -261,7 +282,7 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                   {game.awayScore}
                 </Text>
               )}
-            </View>
+            </Pressable>
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
@@ -269,7 +290,11 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
               <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.teamRow}>
+            <Pressable
+              style={styles.teamRow}
+              onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
+              hitSlop={4}
+            >
               <View style={[styles.logo, { borderColor: isLive ? `${displayColor}55` : "transparent" }]}>
                 <Text style={styles.logoText}>{game.homeTeam.charAt(0)}</Text>
               </View>
@@ -286,7 +311,7 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
                   {game.homeScore}
                 </Text>
               )}
-            </View>
+            </Pressable>
           </View>
         </View>
       </Pressable>
@@ -502,8 +527,8 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   leaguePill: {
     paddingHorizontal: 10,
@@ -513,7 +538,7 @@ const styles = StyleSheet.create({
   leaguePillText: {
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
   },
   livePill: {
     flexDirection: "row",
@@ -522,13 +547,13 @@ const styles = StyleSheet.create({
   },
   livePillText: {
     color: C.live,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.8,
   },
   liveQuarter: {
     color: C.textSecondary,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "500",
   },
   finalBadge: {
@@ -542,11 +567,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  matchup: { gap: 8 },
+
+  matchup: { gap: 0 },
   teamRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    paddingVertical: 6,
   },
   logo: {
     width: 36,
@@ -567,25 +594,26 @@ const styles = StyleSheet.create({
   teamName: {
     flex: 1,
     color: C.text,
-    fontSize: 16,
-    fontWeight: "700",
-    fontFamily: "Inter_700Bold",
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "Inter_600SemiBold",
   },
   teamNameDim: { color: C.textTertiary },
   score: {
     color: C.text,
-    fontSize: 24,
-    fontWeight: "900",
+    fontSize: 22,
+    fontWeight: "800",
     fontFamily: "Inter_700Bold",
-    minWidth: 40,
+    minWidth: 32,
     textAlign: "right",
   },
   scoreDim: { color: C.textTertiary },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingLeft: 48,
+    gap: 8,
+    marginVertical: 2,
+    marginLeft: 48,
   },
   dividerLine: {
     flex: 1,
@@ -595,7 +623,6 @@ const styles = StyleSheet.create({
   vsText: {
     color: C.textTertiary,
     fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+    fontWeight: "500",
   },
 });

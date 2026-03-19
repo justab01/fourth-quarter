@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { api } from "@/utils/api";
 import { LEAGUE_COLORS } from "@/constants/sports";
+import { goToTeam, goToPlayer } from "@/utils/navHelpers";
 
 const C = Colors.dark;
 
@@ -64,13 +65,13 @@ export default function GameDetailScreen() {
             </View>
 
             <View style={styles.scoreRow}>
-              <View style={styles.teamBlock}>
+              <Pressable style={styles.teamBlock} onPress={() => goToTeam(game.awayTeam, game.league)} hitSlop={8}>
                 <View style={styles.teamBig}>
                   <Text style={styles.teamBigLetter}>{game.awayTeam.charAt(0)}</Text>
                 </View>
-                <Text style={styles.teamBigName} numberOfLines={1}>{game.awayTeam}</Text>
+                <Text style={[styles.teamBigName, styles.teamTappable]} numberOfLines={1}>{game.awayTeam}</Text>
                 <Text style={styles.teamBigLabel}>AWAY</Text>
-              </View>
+              </Pressable>
               <View style={styles.scoreBig}>
                 {game.status !== "upcoming" ? (
                   <>
@@ -82,13 +83,13 @@ export default function GameDetailScreen() {
                   <Text style={styles.vsText}>VS</Text>
                 )}
               </View>
-              <View style={styles.teamBlock}>
+              <Pressable style={styles.teamBlock} onPress={() => goToTeam(game.homeTeam, game.league)} hitSlop={8}>
                 <View style={styles.teamBig}>
                   <Text style={styles.teamBigLetter}>{game.homeTeam.charAt(0)}</Text>
                 </View>
-                <Text style={styles.teamBigName} numberOfLines={1}>{game.homeTeam}</Text>
+                <Text style={[styles.teamBigName, styles.teamTappable]} numberOfLines={1}>{game.homeTeam}</Text>
                 <Text style={styles.teamBigLabel}>HOME</Text>
-              </View>
+              </Pressable>
             </View>
           </LinearGradient>
 
@@ -137,28 +138,35 @@ export default function GameDetailScreen() {
                 homeStats={data.homeStats}
                 awayStats={data.awayStats}
                 displayColor={displayColor}
+                league={game.league}
               />
             </View>
           )}
 
           {activeTab === "lineups" && (
             <View style={styles.tabContent}>
-              <Text style={styles.subTitle}>{game.awayTeam}</Text>
+              <Pressable onPress={() => goToTeam(game.awayTeam, game.league)}>
+                <Text style={[styles.subTitle, styles.teamTappable]}>{game.awayTeam}</Text>
+              </Pressable>
               <View style={styles.lineupList}>
                 {data.awayLineup.map((player, i) => (
-                  <View key={player} style={styles.lineupItem}>
+                  <Pressable key={player} style={styles.lineupItem} onPress={() => goToPlayer(player)}>
                     <Text style={styles.lineupNum}>{i + 1}</Text>
-                    <Text style={styles.lineupName}>{player}</Text>
-                  </View>
+                    <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
+                  </Pressable>
                 ))}
               </View>
-              <Text style={styles.subTitle}>{game.homeTeam}</Text>
+              <Pressable onPress={() => goToTeam(game.homeTeam, game.league)}>
+                <Text style={[styles.subTitle, styles.teamTappable]}>{game.homeTeam}</Text>
+              </Pressable>
               <View style={styles.lineupList}>
                 {data.homeLineup.map((player, i) => (
-                  <View key={player} style={styles.lineupItem}>
+                  <Pressable key={player} style={styles.lineupItem} onPress={() => goToPlayer(player)}>
                     <Text style={styles.lineupNum}>{i + 1}</Text>
-                    <Text style={styles.lineupName}>{player}</Text>
-                  </View>
+                    <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -169,19 +177,24 @@ export default function GameDetailScreen() {
   );
 }
 
-function StatsSection({ homeTeam, awayTeam, homeStats, awayStats, displayColor }: {
+function StatsSection({ homeTeam, awayTeam, homeStats, awayStats, displayColor, league }: {
   homeTeam: string; awayTeam: string;
   homeStats: Record<string, string | number>;
   awayStats: Record<string, string | number>;
   displayColor: string;
+  league: string;
 }) {
   const statKeys = Object.keys(homeStats);
   return (
     <View style={styles.statsTable}>
       <View style={styles.statsHeader}>
-        <Text style={styles.statsTeam} numberOfLines={1}>{awayTeam}</Text>
+        <Pressable style={{ flex: 1 }} onPress={() => goToTeam(awayTeam, league)}>
+          <Text style={[styles.statsTeam, styles.teamTappable]} numberOfLines={1}>{awayTeam}</Text>
+        </Pressable>
         <Text style={styles.statsCat}>STAT</Text>
-        <Text style={styles.statsTeam} numberOfLines={1}>{homeTeam}</Text>
+        <Pressable style={{ flex: 1 }} onPress={() => goToTeam(homeTeam, league)}>
+          <Text style={[styles.statsTeam, styles.teamTappable]} numberOfLines={1}>{homeTeam}</Text>
+        </Pressable>
       </View>
       {statKeys.map(key => (
         <View key={key} style={styles.statRow}>
@@ -217,6 +230,7 @@ const styles = StyleSheet.create({
   teamBigLetter: { color: C.text, fontSize: 20, fontWeight: "800", fontFamily: "Inter_700Bold" },
   teamBigName: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold", textAlign: "center" },
   teamBigLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "600", letterSpacing: 0.8 },
+  teamTappable: { color: C.accent, textDecorationLine: "underline", textDecorationColor: C.accent + "55" },
   scoreBig: { flexDirection: "row", alignItems: "center", gap: 4 },
   scoreBigNum: { fontSize: 42, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold" },
   scoreDash: { fontSize: 28, color: C.textTertiary, fontFamily: "Inter_400Regular" },
@@ -259,5 +273,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: C.cardBorder,
   },
   lineupNum: { width: 24, color: C.textTertiary, fontSize: 13, fontWeight: "600", textAlign: "center", fontFamily: "Inter_600SemiBold" },
-  lineupName: { color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
+  lineupName: { flex: 1, color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
+  lineupNameTappable: { color: C.accent },
 });

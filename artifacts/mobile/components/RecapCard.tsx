@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import type { Game, RecapResponse } from "@/utils/api";
 import { api } from "@/utils/api";
+import { goToTeam, goToPlayer } from "@/utils/navHelpers";
 
 const C = Colors.dark;
 
@@ -71,13 +72,18 @@ export function RecapCard({ game }: RecapCardProps) {
         </View>
       </View>
 
-      <Text style={styles.scoreText}>
-        <Text style={styles.winTeam}>{winner}</Text>
+      <View style={styles.scoreRow}>
+        <Pressable onPress={() => goToTeam(winner, game.league)}>
+          <Text style={styles.winTeam}>{winner}</Text>
+        </Pressable>
         <Text style={styles.scoreNum}> {winScore}</Text>
         <Text style={styles.scoreSep}> – </Text>
         <Text style={styles.scoreNum}>{loseScore}</Text>
-        <Text style={styles.loseTeam}> {loser}</Text>
-      </Text>
+        <Text style={styles.scoreSep}> </Text>
+        <Pressable onPress={() => goToTeam(loser, game.league)}>
+          <Text style={styles.loseTeam}>{loser}</Text>
+        </Pressable>
+      </View>
 
       {loading ? (
         <View style={styles.loadingRow}>
@@ -87,13 +93,21 @@ export function RecapCard({ game }: RecapCardProps) {
       ) : recap ? (
         <View style={styles.recapBody}>
           <Text style={styles.summary}>{recap.summary}</Text>
-          <View style={styles.keyPlayerCard}>
+          <Pressable
+            style={styles.keyPlayerCard}
+            onPress={() => recap.keyPlayer && recap.keyPlayer !== "Team effort" ? goToPlayer(recap.keyPlayer) : undefined}
+          >
             <View style={styles.keyPlayerLeft}>
               <Ionicons name="star" size={14} color={C.accentGold} />
               <Text style={styles.keyPlayerLabel}>Key Player</Text>
             </View>
-            <Text style={styles.keyPlayerName}>{recap.keyPlayer}</Text>
-          </View>
+            <Text style={[
+              styles.keyPlayerName,
+              recap.keyPlayer && recap.keyPlayer !== "Team effort" && styles.keyPlayerTappable,
+            ]}>
+              {recap.keyPlayer}
+            </Text>
+          </Pressable>
           <View style={styles.meansCard}>
             <Ionicons name="trending-up" size={13} color={C.accentGreen} />
             <Text style={styles.meansText}>{recap.whatItMeans}</Text>
@@ -145,29 +159,41 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.5,
   },
-  scoreText: {
-    fontSize: 15,
-    lineHeight: 22,
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   winTeam: {
     color: C.text,
     fontWeight: "700",
     fontFamily: "Inter_700Bold",
+    fontSize: 15,
+    lineHeight: 22,
+    textDecorationLine: "underline",
+    textDecorationColor: C.text + "44",
   },
   scoreNum: {
     color: C.accentGold,
     fontWeight: "900",
     fontSize: 17,
     fontFamily: "Inter_700Bold",
+    lineHeight: 22,
   },
   scoreSep: {
     color: C.textTertiary,
     fontWeight: "300",
+    fontSize: 15,
+    lineHeight: 22,
   },
   loseTeam: {
     color: C.textTertiary,
     fontWeight: "500",
     fontFamily: "Inter_500Medium",
+    fontSize: 15,
+    lineHeight: 22,
+    textDecorationLine: "underline",
+    textDecorationColor: C.textTertiary + "44",
   },
   loadingRow: {
     flexDirection: "row",
@@ -210,6 +236,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     fontFamily: "Inter_700Bold",
+  },
+  keyPlayerTappable: {
+    textDecorationLine: "underline",
+    textDecorationColor: C.accentGold + "66",
   },
   meansCard: {
     flexDirection: "row",

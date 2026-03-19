@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { api, StandingEntry } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
+import { goToTeam } from "@/utils/navHelpers";
 
 const C = Colors.dark;
 
@@ -130,8 +131,9 @@ export default function StandingsScreen() {
               const isEven = idx % 2 === 1;
 
               return (
-                <View
+                <Pressable
                   key={entry.teamName}
+                  onPress={() => goToTeam(entry.teamName, activeLeague)}
                   style={[
                     styles.tableRow,
                     isEven && styles.tableRowStripe,
@@ -176,7 +178,7 @@ export default function StandingsScreen() {
                   <View style={styles.tdStreak}>
                     <StreakIcon streak={entry.streak} />
                   </View>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -186,7 +188,7 @@ export default function StandingsScreen() {
         {preferences.favoriteTeams.length > 0 && (
           <View style={styles.legendRow}>
             <View style={[styles.legendDot, { backgroundColor: leagueMeta.color }]} />
-            <Text style={styles.legendText}>Your teams are highlighted</Text>
+            <Text style={styles.legendText}>Your teams are highlighted · Tap any row to see team page</Text>
           </View>
         )}
       </ScrollView>
