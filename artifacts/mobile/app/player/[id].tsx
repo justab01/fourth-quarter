@@ -311,12 +311,12 @@ export default function PlayerScreen() {
             ["Weight", player.weight],
             player.birthdate && ["Birthday", player.birthdate],
             player.college && ["College", player.college],
-          ].filter(Boolean).map(([label, value]) => (
+          ].filter(Boolean).map((row) => { const [label, value] = row as [string, string]; return (
             <View key={label as string} style={bioTab.row}>
               <Text style={bioTab.label}>{label as string}</Text>
               <Text style={bioTab.value}>{value as string}</Text>
             </View>
-          ))}
+          ); })}
           {player.bio && <Text style={bioTab.bioText}>{player.bio}</Text>}
         </ScrollView>
       );

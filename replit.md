@@ -99,15 +99,20 @@ Utility scripts package. Each script is a `.ts` file in `src/` with a correspond
 
 Expo React Native mobile app — "Fourth Quarter" sports app.
 
-- **Theme**: Dark (#0A0A0F bg, #FF3B30 red accent, #FFD60A gold, #30D158 green)
-- **Auth/state**: AsyncStorage preferences, onboarding flow (4 steps)
-- **Screens**: Onboarding, Hub (home), Live, News, Standings, Profile + Game Detail, Article Detail
-- **Components**: GameCard, NewsCard, RecapCard, GameCardSkeleton, NewsCardSkeleton, ErrorBoundary/Fallback
+- **Theme**: Warm dark aesthetic — Energy Orange (#EF7828), Vivid Teal (#206E6B), Graphite (#504D47), Steel Blue (#687C88), bg #0D0D0F
+- **Auth/state**: AsyncStorage preferences, onboarding flow (4 steps), Houston personalization (Rockets/Astros/Texans/Dynamo)
+- **Screens**: Onboarding, Hub (home), Live, News, Standings, Profile + Game Detail, Article Detail, Team Page, Player Page
+- **Components**: GameCard, NewsCard, RecapCard, SearchModal, GameCardSkeleton, NewsCardSkeleton, ErrorBoundary/Fallback
 - **Navigation**: Tabs via `expo-router` + NativeTabs (liquid glass on iOS 26+) fallback to BlurView tabs
 - **API**: `utils/api.ts` with `apiFetch` helper, typed interfaces for all models
 - **Context**: `PreferencesContext` — persists to AsyncStorage + syncs to backend
-- **AI**: RecapCard fetches `/api/ai/recap` (gpt-5-mini) for postgame recaps
-- Constants: `constants/colors.ts`, `constants/sports.ts` (SPORTS, TEAMS_BY_LEAGUE, LEAGUE_COLORS)
+- **AI**: RecapCard fetches `/api/ai/recap` (gpt-4o-mini) for postgame recaps
+- **Player/Team Data**: `constants/allPlayers.ts` — 1,250 ESPN API-verified players across 122 teams (30 NBA + 32 NFL + 30 MLB + 30 MLS), updated March 2026
+- **Team Colors**: All 122 team brand colors in `constants/teamData.ts` → `TEAM_COLORS` + `teamColor(slug)` helper
+- **Team Fallback**: `buildFallbackTeam()` in `app/team/[id].tsx` handles any team not in TEAM_REGISTRY using ALL_TEAMS + ALL_PLAYERS
+- **Search**: Global `SearchModal` with real-time filtering across all players and teams
+- Constants: `constants/colors.ts`, `constants/teamData.ts`, `constants/allPlayers.ts`
+- Key roster facts (March 2026): Luka+LeBron→Lakers; Harden→Cavs; Trae Young→Wizards; Cooper Flagg (rookie)→Mavs; Jalen Green→Suns; Rob Dillingham (rookie)→Bulls
 
 ### `artifacts/api-server` routes
 

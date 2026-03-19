@@ -53,6 +53,7 @@ const TEAM_COLORS: Record<string, [string, string]> = {
   "houston-rockets":           ["#CE1141", "#C4CED4"],
   "indiana-pacers":            ["#002D62", "#FDBB30"],
   "los-angeles-clippers":      ["#C8102E", "#1D428A"],
+  "la-clippers":               ["#C8102E", "#1D428A"],
   "los-angeles-lakers":        ["#552583", "#FDB927"],
   "memphis-grizzlies":         ["#5D76A9", "#12173F"],
   "miami-heat":                ["#98002E", "#F9A01B"],
