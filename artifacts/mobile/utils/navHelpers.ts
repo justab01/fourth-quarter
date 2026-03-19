@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import * as Haptics from "expo-haptics";
 
 function slugify(str: string): string {
@@ -21,10 +21,12 @@ export function playerPageId(playerName: string): string {
 
 export function goToTeam(teamName: string, league: string): void {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  router.push({ pathname: "/team/[id]", params: { id: teamPageId(teamName, league) } } as any);
+  const id = teamPageId(teamName, league);
+  router.push(`/team/${id}` as Href);
 }
 
 export function goToPlayer(playerName: string): void {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  router.push({ pathname: "/player/[id]", params: { id: playerPageId(playerName) } } as any);
+  const id = playerPageId(playerName);
+  router.push(`/player/${id}` as Href);
 }
