@@ -1,24 +1,73 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform, ActivityIndicator } from "react-native";
+import {
+  View, Text, StyleSheet, ScrollView, Pressable,
+  Platform, ActivityIndicator
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { api, StandingEntry } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
-import { LEAGUE_COLORS } from "@/constants/sports";
 
 const C = Colors.dark;
+
+const LEAGUE_META: Record<string, { color: string; label: string }> = {
+  NBA: { color: "#E8334A", label: "NBA" },
+  NFL: { color: "#4A90D9", label: "NFL" },
+  MLB: { color: "#4A90D9", label: "MLB" },
+  MLS: { color: "#3CB371", label: "MLS" },
+};
+
+function StreakIcon({ streak }: { streak: string | null }) {
+  if (!streak) return null;
+  const isWin = streak.startsWith("W");
+  const num = parseInt(streak.slice(1));
+  return (
+    <View style={[streakStyles.pill, { backgroundColor: isWin ? "rgba(52,199,89,0.15)" : "rgba(255,59,48,0.12)" }]}>
+      <Text style={[streakStyles.text, { color: isWin ? C.accentGreen : C.accent }]}>
+        {isWin ? "W" : "L"}{num}
+      </Text>
+    </View>
+  );
+}
+
+const streakStyles = StyleSheet.create({
+  pill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  text: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+  },
+});
+
+function RankChange({ delta }: { delta: number | null }) {
+  if (!delta || delta === 0) return <View style={{ width: 16 }} />;
+  return (
+    <Ionicons
+      name={delta > 0 ? "caret-up" : "caret-down"}
+      size={10}
+      color={delta > 0 ? C.accentGreen : C.accent}
+    />
+  );
+}
 
 export default function StandingsScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
-  const myLeagues = preferences.favoriteLeagues.filter(l => ["NFL", "NBA", "MLB", "MLS"].includes(l));
+
+  const supportedLeagues = ["NBA", "NFL", "MLB", "MLS"];
+  const myLeagues = preferences.favoriteLeagues.filter(l => supportedLeagues.includes(l));
   const defaultLeague = myLeagues[0] ?? "NBA";
   const [activeLeague, setActiveLeague] = useState(defaultLeague);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 70;
+  const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
   const { data, isLoading } = useQuery({
     queryKey: ["standings", activeLeague],
@@ -27,10 +76,8 @@ export default function StandingsScreen() {
   });
 
   const standings = data?.standings ?? [];
-  const leagueColor = LEAGUE_COLORS[activeLeague] ?? C.accent;
-  const displayColor = leagueColor === "#013087" || leagueColor === "#002D72" ? "#4A90D9" : leagueColor === "#1A1A2E" ? "#4CAF50" : leagueColor;
-
-  const leagues = myLeagues.length > 0 ? myLeagues : ["NFL", "NBA", "MLB"];
+  const leagueMeta = LEAGUE_META[activeLeague] ?? { color: C.accent, label: activeLeague };
+  const displayLeagues = supportedLeagues;
 
   return (
     <View style={styles.container}>
@@ -42,44 +89,104 @@ export default function StandingsScreen() {
           <Text style={styles.title}>Standings</Text>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
-          {leagues.map(league => {
-            const active = activeLeague === league;
-            const lc = LEAGUE_COLORS[league] ?? C.accent;
-            const dc = lc === "#013087" || lc === "#002D72" ? "#4A90D9" : lc === "#1A1A2E" ? "#4CAF50" : lc;
+        {/* League Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.leagueRow}
+          style={styles.leagueScroll}
+        >
+          {displayLeagues.map(l => {
+            const active = activeLeague === l;
+            const meta = LEAGUE_META[l] ?? { color: C.accent };
             return (
-              <Pressable key={league} onPress={() => setActiveLeague(league)}>
-                <View style={[styles.filterChip, active && { backgroundColor: dc + "22", borderColor: dc }]}>
-                  <Text style={[styles.filterText, active && { color: dc }]}>{league}</Text>
+              <Pressable key={l} onPress={() => setActiveLeague(l)}>
+                <View style={[styles.leagueChip, active && { borderColor: meta.color, backgroundColor: `${meta.color}18` }]}>
+                  <Text style={[styles.leagueChipText, active && { color: meta.color }]}>{l}</Text>
                 </View>
               </Pressable>
             );
           })}
-          {!leagues.includes("NFL") && <Pressable onPress={() => setActiveLeague("NFL")}><View style={styles.filterChip}><Text style={styles.filterText}>NFL</Text></View></Pressable>}
-          {!leagues.includes("NBA") && <Pressable onPress={() => setActiveLeague("NBA")}><View style={styles.filterChip}><Text style={styles.filterText}>NBA</Text></View></Pressable>}
-          {!leagues.includes("MLB") && <Pressable onPress={() => setActiveLeague("MLB")}><View style={styles.filterChip}><Text style={styles.filterText}>MLB</Text></View></Pressable>}
         </ScrollView>
 
         {isLoading ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={displayColor} size="large" />
+            <ActivityIndicator color={leagueMeta.color} size="large" />
           </View>
         ) : (
           <View style={styles.table}>
-            <View style={[styles.tableHeader, { borderBottomColor: displayColor + "44" }]}>
-              <Text style={[styles.thRank]}>#</Text>
+            {/* Table Header */}
+            <View style={[styles.tableHead, { borderBottomColor: `${leagueMeta.color}33` }]}>
+              <Text style={styles.thRank}>#</Text>
               <Text style={styles.thTeam}>TEAM</Text>
               <Text style={styles.thStat}>W</Text>
               <Text style={styles.thStat}>L</Text>
               <Text style={styles.thStat}>PCT</Text>
               <Text style={styles.thStat}>STK</Text>
             </View>
+
             {standings.map((entry, idx) => {
               const isMyTeam = preferences.favoriteTeams.includes(entry.teamName);
+              const isEven = idx % 2 === 1;
+
               return (
-                <StandingRow key={entry.teamName} entry={entry} isMyTeam={isMyTeam} leagueColor={displayColor} />
+                <View
+                  key={entry.teamName}
+                  style={[
+                    styles.tableRow,
+                    isEven && styles.tableRowStripe,
+                    isMyTeam && styles.tableRowHighlight,
+                  ]}
+                >
+                  {isMyTeam && (
+                    <LinearGradient
+                      colors={[`${leagueMeta.color}18`, "transparent"]}
+                      style={StyleSheet.absoluteFill}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    />
+                  )}
+                  {isMyTeam && (
+                    <View style={[styles.myTeamBar, { backgroundColor: leagueMeta.color }]} />
+                  )}
+                  <View style={styles.tdRank}>
+                    <Text style={[styles.rankNum, isMyTeam && { color: leagueMeta.color, fontFamily: "Inter_700Bold" }]}>
+                      {entry.rank}
+                    </Text>
+                    <RankChange delta={entry.rankChange} />
+                  </View>
+
+                  <View style={styles.tdTeam}>
+                    <View style={[styles.teamDot, { backgroundColor: isMyTeam ? leagueMeta.color : "rgba(255,255,255,0.12)" }]}>
+                      <Text style={styles.teamDotText}>{entry.teamName.charAt(0)}</Text>
+                    </View>
+                    <Text
+                      style={[styles.teamText, isMyTeam && { color: C.text, fontFamily: "Inter_700Bold" }]}
+                      numberOfLines={1}
+                    >
+                      {entry.teamName}
+                    </Text>
+                  </View>
+
+                  <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.wins}</Text>
+                  <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.losses}</Text>
+                  <Text style={[styles.tdStat, isMyTeam && { color: leagueMeta.color, fontFamily: "Inter_700Bold" }]}>
+                    {entry.winPct.toFixed(3)}
+                  </Text>
+                  <View style={styles.tdStreak}>
+                    <StreakIcon streak={entry.streak} />
+                  </View>
+                </View>
               );
             })}
+          </View>
+        )}
+
+        {/* My Teams legend note */}
+        {preferences.favoriteTeams.length > 0 && (
+          <View style={styles.legendRow}>
+            <View style={[styles.legendDot, { backgroundColor: leagueMeta.color }]} />
+            <Text style={styles.legendText}>Your teams are highlighted</Text>
           </View>
         )}
       </ScrollView>
@@ -87,91 +194,158 @@ export default function StandingsScreen() {
   );
 }
 
-function StandingRow({ entry, isMyTeam, leagueColor }: { entry: StandingEntry; isMyTeam: boolean; leagueColor: string }) {
-  const rankChange = entry.rankChange ?? 0;
-  return (
-    <View style={[styles.tableRow, isMyTeam && styles.tableRowHighlight]}>
-      {isMyTeam && <View style={[styles.myTeamIndicator, { backgroundColor: leagueColor }]} />}
-      <View style={styles.tdRank}>
-        <Text style={[styles.rankNum, isMyTeam && { color: leagueColor }]}>{entry.rank}</Text>
-        {rankChange !== 0 && (
-          <Ionicons
-            name={rankChange > 0 ? "caret-up" : "caret-down"}
-            size={10}
-            color={rankChange > 0 ? C.accentGreen : C.accent}
-          />
-        )}
-      </View>
-      <View style={styles.tdTeam}>
-        <View style={[styles.teamDot, { backgroundColor: isMyTeam ? leagueColor : "rgba(255,255,255,0.2)" }]} />
-        <Text style={[styles.teamText, isMyTeam && { color: C.text, fontFamily: "Inter_700Bold" }]} numberOfLines={1}>
-          {entry.teamName}
-        </Text>
-      </View>
-      <Text style={styles.statText}>{entry.wins}</Text>
-      <Text style={styles.statText}>{entry.losses}</Text>
-      <Text style={[styles.statText, isMyTeam && { color: leagueColor }]}>{entry.winPct.toFixed(3)}</Text>
-      <Text style={[styles.statText, { color: entry.streak?.startsWith("W") ? C.accentGreen : C.accent }]}>
-        {entry.streak ?? "—"}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   scroll: { paddingHorizontal: 20, gap: 4 },
-  header: { paddingVertical: 20 },
-  title: { fontSize: 32, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold" },
-  filterScroll: { marginBottom: 12 },
-  filterRow: { gap: 8, paddingRight: 20 },
-  filterChip: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder,
+  header: { paddingTop: 16, paddingBottom: 12 },
+  title: {
+    fontSize: 34,
+    fontWeight: "900",
+    color: C.text,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: -0.5,
   },
-  filterText: { color: C.textSecondary, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
-  loading: { flex: 1, alignItems: "center", paddingVertical: 80 },
+  leagueScroll: { marginBottom: 16 },
+  leagueRow: { gap: 8, paddingRight: 20 },
+  leagueChip: {
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 22,
+    backgroundColor: C.card,
+    borderWidth: 1.5,
+    borderColor: C.cardBorder,
+  },
+  leagueChipText: {
+    color: C.textSecondary,
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  loading: { paddingVertical: 80, alignItems: "center" },
   table: {
     backgroundColor: C.card,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: C.cardBorder,
   },
-  tableHeader: {
+  tableHead: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1.5,
+    backgroundColor: "rgba(255,255,255,0.02)",
   },
-  thRank: { width: 36, color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
-  thTeam: { flex: 1, color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
-  thStat: { width: 40, textAlign: "center", color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
+  thRank: {
+    width: 44,
+    color: C.textTertiary,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  thTeam: {
+    flex: 1,
+    color: C.textTertiary,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  thStat: {
+    width: 42,
+    textAlign: "center",
+    color: C.textTertiary,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
     borderBottomWidth: 1,
     borderBottomColor: C.separator,
     position: "relative",
+    overflow: "hidden",
+  },
+  tableRowStripe: {
+    backgroundColor: "rgba(255,255,255,0.015)",
   },
   tableRowHighlight: {
-    backgroundColor: "rgba(255,255,255,0.04)",
+    borderBottomColor: "rgba(255,255,255,0.04)",
   },
-  myTeamIndicator: {
+  myTeamBar: {
     position: "absolute",
     left: 0,
     top: 8,
     bottom: 8,
     width: 3,
-    borderRadius: 1.5,
+    borderRadius: 2,
   },
-  tdRank: { width: 36, flexDirection: "row", alignItems: "center", gap: 2 },
-  rankNum: { color: C.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
-  tdTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
-  teamDot: { width: 10, height: 10, borderRadius: 5 },
-  teamText: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_500Medium", flex: 1 },
-  statText: { width: 40, textAlign: "center", color: C.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  tdRank: {
+    width: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingLeft: 6,
+  },
+  rankNum: {
+    color: C.textSecondary,
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "Inter_600SemiBold",
+    minWidth: 18,
+  },
+  tdTeam: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  teamDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  teamDotText: {
+    color: C.text,
+    fontSize: 12,
+    fontWeight: "700",
+    fontFamily: "Inter_700Bold",
+  },
+  teamText: {
+    color: C.textSecondary,
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    flex: 1,
+  },
+  tdStat: {
+    width: 42,
+    textAlign: "center",
+    color: C.textTertiary,
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+  },
+  tdStreak: {
+    width: 42,
+    alignItems: "center",
+  },
+  legendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+  },
+  legendDot: {
+    width: 8, height: 8, borderRadius: 4,
+  },
+  legendText: {
+    color: C.textTertiary,
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
 });

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import type { Game, RecapResponse } from "@/utils/api";
 import { api } from "@/utils/api";
@@ -16,75 +16,86 @@ export function RecapCard({ game }: RecapCardProps) {
   const [recap, setRecap] = useState<RecapResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const winner = (game.homeScore ?? 0) > (game.awayScore ?? 0) ? game.homeTeam : game.awayTeam;
-  const loser = (game.homeScore ?? 0) > (game.awayScore ?? 0) ? game.awayTeam : game.homeTeam;
+  const winner = (game.homeScore ?? 0) >= (game.awayScore ?? 0) ? game.homeTeam : game.awayTeam;
+  const loser = (game.homeScore ?? 0) >= (game.awayScore ?? 0) ? game.awayTeam : game.homeTeam;
   const winScore = Math.max(game.homeScore ?? 0, game.awayScore ?? 0);
   const loseScore = Math.min(game.homeScore ?? 0, game.awayScore ?? 0);
 
-  const loadRecap = async () => {
-    if (loading || recap) return;
-    setLoading(true);
-    try {
-      const result = await api.generateRecap({
-        homeTeam: game.homeTeam,
-        awayTeam: game.awayTeam,
-        homeScore: game.homeScore ?? 0,
-        awayScore: game.awayScore ?? 0,
-        keyPlays: [],
-        stats: {},
-        league: game.league,
-      });
-      setRecap(result);
-    } catch (e) {
-      setRecap({
-        summary: `${winner} defeated ${loser} ${winScore}-${loseScore}.`,
-        keyPlayer: "Team effort",
-        whatItMeans: "Important win for playoff positioning.",
-      });
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    let mounted = true;
+    async function loadRecap() {
+      if (loading || recap) return;
+      setLoading(true);
+      try {
+        const result = await api.generateRecap({
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          homeScore: game.homeScore ?? 0,
+          awayScore: game.awayScore ?? 0,
+          keyPlays: [],
+          stats: {},
+          league: game.league,
+        });
+        if (mounted) setRecap(result);
+      } catch (e) {
+        if (mounted) {
+          setRecap({
+            summary: `${winner} defeated ${loser} ${winScore}-${loseScore} in tonight's ${game.league} matchup.`,
+            keyPlayer: "Team effort",
+            whatItMeans: "Important win for playoff positioning.",
+          });
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
-  };
-
-  React.useEffect(() => {
     loadRecap();
+    return () => { mounted = false; };
   }, []);
 
   return (
     <View style={styles.card}>
       <LinearGradient
-        colors={["rgba(255,214,10,0.08)", "rgba(255,214,10,0.02)"]}
+        colors={["rgba(255,214,10,0.08)", "transparent"]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
-      <View style={styles.header}>
-        <View style={styles.recapBadge}>
-          <Ionicons name="trophy" size={12} color={C.accentGold} />
-          <Text style={styles.recapBadgeText}>POSTGAME RECAP</Text>
+      <View style={styles.topRow}>
+        <View style={styles.aiBadge}>
+          <Ionicons name="sparkles" size={11} color={C.accentGold} />
+          <Text style={styles.aiBadgeText}>AI RECAP</Text>
         </View>
-        <Text style={styles.leagueTag}>{game.league}</Text>
+        <View style={[styles.leaguePill, { backgroundColor: "rgba(255,255,255,0.06)" }]}>
+          <Text style={styles.leaguePillText}>{game.league}</Text>
+        </View>
       </View>
 
-      <Text style={styles.scoreTitle}>
-        {winner} <Text style={styles.scoreNumbers}>{winScore}</Text>–<Text style={styles.scoreNumbers}>{loseScore}</Text> {loser}
+      <Text style={styles.scoreText}>
+        <Text style={styles.winTeam}>{winner}</Text>
+        <Text style={styles.scoreNum}> {winScore}</Text>
+        <Text style={styles.scoreSep}> – </Text>
+        <Text style={styles.scoreNum}>{loseScore}</Text>
+        <Text style={styles.loseTeam}> {loser}</Text>
       </Text>
 
       {loading ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator size="small" color={C.accentGold} />
-          <Text style={styles.loadingText}>Generating AI recap...</Text>
+          <Text style={styles.loadingText}>Generating recap...</Text>
         </View>
       ) : recap ? (
-        <View style={styles.recapContent}>
-          <Text style={styles.recapSummary}>{recap.summary}</Text>
-          <View style={styles.keyPlayerRow}>
-            <Ionicons name="star" size={14} color={C.accentGold} />
-            <Text style={styles.keyPlayerLabel}>Key Player: </Text>
+        <View style={styles.recapBody}>
+          <Text style={styles.summary}>{recap.summary}</Text>
+          <View style={styles.keyPlayerCard}>
+            <View style={styles.keyPlayerLeft}>
+              <Ionicons name="star" size={14} color={C.accentGold} />
+              <Text style={styles.keyPlayerLabel}>Key Player</Text>
+            </View>
             <Text style={styles.keyPlayerName}>{recap.keyPlayer}</Text>
           </View>
-          <View style={styles.meansRow}>
-            <Ionicons name="trending-up" size={14} color={C.accentGreen} />
+          <View style={styles.meansCard}>
+            <Ionicons name="trending-up" size={13} color={C.accentGreen} />
             <Text style={styles.meansText}>{recap.whatItMeans}</Text>
           </View>
         </View>
@@ -96,96 +107,118 @@ export function RecapCard({ game }: RecapCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: C.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,214,10,0.2)",
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,214,10,0.18)",
     overflow: "hidden",
-    gap: 12,
+    gap: 14,
   },
-  header: {
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  recapBadge: {
+  aiBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    backgroundColor: "rgba(255,214,10,0.15)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    backgroundColor: "rgba(255,214,10,0.12)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  recapBadgeText: {
+  aiBadgeText: {
     color: C.accentGold,
     fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.8,
+    fontWeight: "900",
+    letterSpacing: 1,
   },
-  leagueTag: {
+  leaguePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  leaguePillText: {
     color: C.textTertiary,
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: 0.5,
   },
-  scoreTitle: {
-    color: C.text,
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "Inter_600SemiBold",
+  scoreText: {
+    fontSize: 15,
     lineHeight: 22,
   },
-  scoreNumbers: {
+  winTeam: {
+    color: C.text,
+    fontWeight: "700",
     fontFamily: "Inter_700Bold",
-    fontSize: 18,
+  },
+  scoreNum: {
     color: C.accentGold,
+    fontWeight: "900",
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
+  },
+  scoreSep: {
+    color: C.textTertiary,
+    fontWeight: "300",
+  },
+  loseTeam: {
+    color: C.textTertiary,
+    fontWeight: "500",
+    fontFamily: "Inter_500Medium",
   },
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
   },
   loadingText: {
     color: C.textTertiary,
     fontSize: 13,
     fontFamily: "Inter_400Regular",
   },
-  recapContent: {
-    gap: 10,
-  },
-  recapSummary: {
+  recapBody: { gap: 10 },
+  summary: {
     color: C.textSecondary,
     fontSize: 14,
     lineHeight: 21,
     fontFamily: "Inter_400Regular",
   },
-  keyPlayerRow: {
+  keyPlayerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255,214,10,0.07)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  keyPlayerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(255,214,10,0.08)",
-    padding: 10,
-    borderRadius: 10,
   },
   keyPlayerLabel: {
-    color: C.textSecondary,
-    fontSize: 13,
-    fontWeight: "500",
+    color: C.textTertiary,
+    fontSize: 12,
+    fontWeight: "600",
   },
   keyPlayerName: {
     color: C.accentGold,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "800",
     fontFamily: "Inter_700Bold",
   },
-  meansRow: {
+  meansCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 6,
-    backgroundColor: "rgba(48,209,88,0.08)",
-    padding: 10,
-    borderRadius: 10,
+    gap: 8,
+    backgroundColor: "rgba(52,199,89,0.07)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   meansText: {
     flex: 1,
@@ -193,5 +226,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "500",
+    fontFamily: "Inter_500Medium",
   },
 });

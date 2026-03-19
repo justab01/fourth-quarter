@@ -1,16 +1,19 @@
 import React, { useRef } from "react";
 import { View, Text, StyleSheet, Pressable, Animated } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import type { NewsArticle } from "@/utils/api";
-import { LEAGUE_COLORS } from "@/constants/sports";
 
 const C = Colors.dark;
 
-interface NewsCardProps {
-  article: NewsArticle;
-  onPress: () => void;
-}
+const LEAGUE_DISPLAY_COLORS: Record<string, string> = {
+  NBA: "#E8334A",
+  NFL: "#4A90D9",
+  MLB: "#4A90D9",
+  MLS: "#3CB371",
+  NHL: "#4A90D9",
+};
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -21,41 +24,100 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export function NewsCard({ article, onPress }: NewsCardProps) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const onPressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
-  const onPressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
+function getColor(leagues: string[]): string {
+  for (const l of leagues) {
+    if (LEAGUE_DISPLAY_COLORS[l]) return LEAGUE_DISPLAY_COLORS[l];
+  }
+  return C.accent;
+}
 
-  const primaryLeague = article.leagues[0];
-  const leagueColor = primaryLeague ? (LEAGUE_COLORS[primaryLeague] ?? C.accent) : C.accent;
-  const displayColor = leagueColor === "#013087" || leagueColor === "#002D72" ? "#4A90D9" : leagueColor === "#1A1A2E" ? "#4CAF50" : leagueColor;
+interface NewsCardProps {
+  article: NewsArticle;
+  onPress: () => void;
+  hero?: boolean;
+}
+
+export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const onPressIn = () =>
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 300, friction: 20 }).start();
+  const onPressOut = () =>
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 300, friction: 20 }).start();
+
+  const accentColor = getColor(article.leagues);
+
+  if (hero) {
+    return (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
+          <View style={styles.heroCard}>
+            <View style={styles.heroImagePlaceholder}>
+              <LinearGradient
+                colors={[`${accentColor}44`, `${accentColor}22`, "transparent"]}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+              <Text style={styles.heroImageIcon}>
+                {article.leagues[0] === "NBA" ? "🏀" :
+                 article.leagues[0] === "NFL" ? "🏈" :
+                 article.leagues[0] === "MLB" ? "⚾" : "⚽"}
+              </Text>
+            </View>
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.85)", "#000"]}
+              style={styles.heroOverlay}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            />
+            <View style={styles.heroContent}>
+              <View style={styles.heroMeta}>
+                <View style={[styles.sourceBadge, { backgroundColor: `${accentColor}22`, borderColor: `${accentColor}44` }]}>
+                  <Text style={[styles.sourceBadgeText, { color: accentColor }]}>{article.source}</Text>
+                </View>
+                <Text style={styles.heroTime}>{timeAgo(article.publishedAt)}</Text>
+              </View>
+              <Text style={styles.heroTitle} numberOfLines={3}>{article.title}</Text>
+              <Text style={styles.heroSummary} numberOfLines={2}>{article.summary}</Text>
+              <View style={styles.heroTagsRow}>
+                {article.tags.slice(0, 3).map(t => (
+                  <View key={t} style={styles.heroTag}>
+                    <Text style={styles.heroTagText}>{t}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  }
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
         <View style={styles.card}>
-          <View style={styles.topRow}>
-            <View style={styles.tagsRow}>
-              {article.tags.slice(0, 2).map(tag => (
-                <View key={tag} style={[styles.tag, { backgroundColor: displayColor + "22" }]}>
-                  <Text style={[styles.tagText, { color: displayColor }]}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.time}>{timeAgo(article.publishedAt)}</Text>
-          </View>
-
-          <Text style={styles.title} numberOfLines={2}>{article.title}</Text>
-          <Text style={styles.summary} numberOfLines={3}>{article.summary}</Text>
-
-          <View style={styles.footer}>
-            <View style={styles.sourceRow}>
-              <View style={styles.sourceIcon}>
-                <Text style={styles.sourceIconText}>{article.source.charAt(0)}</Text>
+          <View style={[styles.cardAccentBar, { backgroundColor: accentColor }]} />
+          <View style={styles.cardBody}>
+            <View style={styles.cardMeta}>
+              <View style={[styles.tagPill, { backgroundColor: `${accentColor}22` }]}>
+                <Text style={[styles.tagPillText, { color: accentColor }]}>
+                  {article.tags[0] ?? article.leagues[0] ?? "Sport"}
+                </Text>
               </View>
-              <Text style={styles.sourceText}>{article.source}</Text>
+              <Text style={styles.cardTime}>{timeAgo(article.publishedAt)}</Text>
             </View>
-            <Ionicons name="arrow-forward" size={16} color={C.textTertiary} />
+            <Text style={styles.cardTitle} numberOfLines={2}>{article.title}</Text>
+            <Text style={styles.cardSummary} numberOfLines={2}>{article.summary}</Text>
+            <View style={styles.cardFooter}>
+              <View style={styles.sourceRow}>
+                <View style={styles.sourceAvatar}>
+                  <Text style={styles.sourceAvatarText}>{article.source.charAt(0)}</Text>
+                </View>
+                <Text style={styles.sourceText}>{article.source}</Text>
+              </View>
+              <Ionicons name="arrow-forward-circle" size={20} color={accentColor} />
+            </View>
           </View>
         </View>
       </Pressable>
@@ -64,52 +126,144 @@ export function NewsCard({ article, onPress }: NewsCardProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
+  heroCard: {
+    borderRadius: 24,
+    overflow: "hidden",
     backgroundColor: C.card,
-    borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
     borderColor: C.cardBorder,
-    gap: 10,
+    minHeight: 280,
   },
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  heroImagePlaceholder: {
+    height: 180,
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.cardElevated,
   },
-  tagsRow: {
+  heroImageIcon: {
+    fontSize: 64,
+  },
+  heroOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+  },
+  heroContent: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    gap: 8,
+  },
+  heroMeta: {
     flexDirection: "row",
-    gap: 6,
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  tag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  sourceBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  tagText: {
+  sourceBadgeText: {
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
-  time: {
-    fontSize: 12,
+  heroTime: {
     color: C.textTertiary,
-    fontWeight: "400",
+    fontSize: 12,
+    fontWeight: "500",
   },
-  title: {
+  heroTitle: {
+    color: C.text,
+    fontSize: 20,
+    fontWeight: "800",
+    fontFamily: "Inter_700Bold",
+    lineHeight: 26,
+  },
+  heroSummary: {
+    color: C.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Inter_400Regular",
+  },
+  heroTagsRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 4,
+  },
+  heroTag: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  heroTagText: {
+    color: C.textSecondary,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+
+  card: {
+    backgroundColor: C.card,
+    borderRadius: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    flexDirection: "row",
+  },
+  cardAccentBar: {
+    width: 4,
+    borderRadius: 2,
+    flexShrink: 0,
+    alignSelf: "stretch",
+    margin: 14,
+    marginRight: 0,
+  },
+  cardBody: {
+    flex: 1,
+    padding: 16,
+    gap: 8,
+  },
+  cardMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  tagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  tagPillText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
+  cardTime: {
+    color: C.textTertiary,
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  cardTitle: {
     color: C.text,
     fontSize: 16,
     fontWeight: "700",
     fontFamily: "Inter_700Bold",
     lineHeight: 22,
   },
-  summary: {
+  cardSummary: {
     color: C.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 19,
     fontFamily: "Inter_400Regular",
   },
-  footer: {
+  cardFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -120,17 +274,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 7,
   },
-  sourceIcon: {
+  sourceAvatar: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
-  sourceIconText: {
+  sourceAvatarText: {
     color: C.text,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
   },
   sourceText: {

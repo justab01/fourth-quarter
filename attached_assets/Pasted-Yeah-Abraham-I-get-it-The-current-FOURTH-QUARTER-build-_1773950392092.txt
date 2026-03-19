@@ -1,0 +1,46 @@
+Yeah, Abraham — I get it. The current FOURTH QUARTER build has that raw dev feel (cluttered cards, inconsistent spacing, basic dark mode without polish), while the inspiration shots you shared nail that fresh 2026/2030 premium vibe: immersive dark themes, glowing accents, fluid layouts, hero visuals for big stories/matches, clean typography, subtle gradients/neon pulses for live elements, radar charts for player stats, swipeable carousels, and a sense of “this is built for obsessives who want it fast and beautiful.”
+We’re aiming for a Sofascore + Particle News + modern betting/fantasy apps hybrid — but cooler, more Houston-tuned (Rockets/Astros/Texans priority), personalized, and future-proof.
+Core Design Direction for 2026–2030 Look
+	•	Color Palette: True black (#000 or #0A0A0A) background, subtle dark gray cards (#121212–#1E1E1E), neon/live accents (vibrant red/orange for Rockets alerts, electric blue/green for live timers, gold for wins/PRs). Minimal white text with high contrast.
+	•	Typography: Bold sans-serif headers (e.g., SF Pro or Inter Bold), smaller clean body text. Larger fonts on mobile for thumb-friendly reading.
+	•	Cards & Layout: Rounded corners (16–24px), subtle glassmorphism/blur effects, generous padding (24–32px between sections), vertical scrolling with sticky headers/tabs.
+	•	Live Magic: Pulsing borders on live games, countdown timers with glow, momentum bars or heatmaps mini-previews.
+	•	Personalization: Greeting with your name + favorite team flair (Rockets red halo), prioritized Houston/local news, AI-summarized “Your Take” sections.
+	•	Navigation: Bottom tab bar (Home/My Hub, Live, News, Standings, Profile) with icons + subtle active glow.
+Redesigned Screen Concepts (Inspired by Your Shots)
+1. My Hub / Home Screen
+	•	Top: Sleek greeting (“Good afternoon, Abraham” with small Rockets/Warriors badges + trophy if streak active).
+	•	Hero banner: “1 Game Live Now” as a large swipeable card with live score overlay, team logos big, pulsing red dot, key matchup graphic.
+	•	Sections: “Today’s Games” as horizontal scroll cards (bigger logos, scores in massive font, “LIVE” badge glowing). Below: Quick news teasers tailored to your teams.
+	•	Bottom: Bottom nav with home icon highlighted.
+2. Live Tab
+	•	Horizontal sport chips (All/NBA/NFL/MLB/MLS) with active one glowing (e.g., NBA red for Rockets).
+	•	Live cards: Full-bleed team images or animated highlights snippet, score in center, mini clock/timer with neon progress ring, “View Game” pill button.
+	•	Momentum indicator (like rising bar or heat map preview).
+	•	Feels dynamic, not static list.
+3. News Tab
+	•	Hero top story card (big image of Jalen Green dunk or Rockets celebration, overlaid headline + source badge).
+	•	“Top Stories” carousel or grid with 3–4 big cards (images mandatory for impact).
+	•	“Postgame Recaps” as expandable accordions with key moments bullets, star player highlight.
+	•	“My Teams” filter toggle to prioritize Rockets/Warriors news.
+4. Standings
+	•	Tabbed by league (NBA highlighted), table with zebra stripes subtle, your teams bold/glow (Rockets #1 with red border).
+	•	Add win streak icons (fire emoji streak), PCT in green/red.
+	•	Tap team for quick popup with recent form graph.
+5. Profile
+	•	Circular avatar with Rockets flair overlay.
+	•	Stats section: “Teams Followed” as colorful badges, “Leagues” horizontal pills.
+	•	Add fun 2026 touches: Season arc progress bar (“Rockets Playoff Push: 75%”), games watched counter, favorite player radar chart if integrated.
+Here are some visual inspirations pulled from current premium dark-mode app trends that match the cool, fresh direction you’re after (sleek dashboards, live sports UIs, news feeds): 0 “LARGE” 1 “LARGE” 10 “LARGE” 9 “LARGE”
+These capture the immersive dark mode, glowing elements, big visuals for live/content, and clean personalization we want. Imagine swapping in sports icons/logos and it fits FOURTH QUARTER perfectly.
+Quick Implementation Wins
+	•	Use Expo + Reanimated for smooth animations (pulse on live, swipe gestures).
+	•	Add glassmorphism (blur backdrop) for cards.
+	•	Integrate Unsplash/Pexels-style hero images for matches/news (auto-pull team/player pics).
+	•	AI summaries: Short “Your Angle” blurbs for Rockets stories.
+Want me to:
+	•	Sketch a full text-based wireframe for the My Hub screen?
+	•	Suggest exact hex codes + font stack?
+	•	Add features like live reaction clips or Houston-specific alerts?
+	•	Or pivot to blending in GYM ARC-style “team arc” narratives for following the Rockets’ season?
+Let’s make this thing look like it belongs in 2026 — hit me with priorities! 🚀
