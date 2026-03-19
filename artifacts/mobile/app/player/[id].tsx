@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { getPlayerById, type Player, type TeamData } from "@/constants/teamData";
+import { ALL_PLAYERS } from "@/constants/allPlayers";
 
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
@@ -222,7 +223,59 @@ export default function PlayerScreen() {
 
   const result = getPlayerById(id ?? "");
 
-  if (!result) {
+  // Build fallback from ALL_PLAYERS if not in detailed registry
+  const fallbackSearchPlayer = result
+    ? null
+    : ALL_PLAYERS.find(p => {
+        const slug = p.name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9\s]/g, "")
+          .trim()
+          .replace(/\s+/g, "-");
+        return slug === (id ?? "");
+      });
+
+  // Determine which league color to use for fallback
+  const LEAGUE_COLOR: Record<string, string> = {
+    NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls,
+  };
+
+  const player: Player = result?.player ?? (fallbackSearchPlayer ? {
+    id: id ?? "",
+    name: fallbackSearchPlayer.name,
+    number: fallbackSearchPlayer.number ?? "—",
+    position: fallbackSearchPlayer.position,
+    age: 0,
+    height: "—",
+    weight: "—",
+    group: "Guards" as const,
+    stats: {},
+    bio: `${fallbackSearchPlayer.name} plays ${fallbackSearchPlayer.position} for the ${fallbackSearchPlayer.team}. 2025-26 season: ${fallbackSearchPlayer.stat}`,
+  } : null as any);
+
+  const team: TeamData = result?.team ?? (fallbackSearchPlayer ? {
+    id: `${fallbackSearchPlayer.league.toLowerCase()}-fallback`,
+    name: fallbackSearchPlayer.team,
+    shortName: fallbackSearchPlayer.team.split(" ").pop() ?? fallbackSearchPlayer.team,
+    abbr: fallbackSearchPlayer.league,
+    league: fallbackSearchPlayer.league as any,
+    division: fallbackSearchPlayer.league,
+    color: LEAGUE_COLOR[fallbackSearchPlayer.league] ?? C.accent,
+    colorSecondary: C.accentBlue,
+    record: "—",
+    standing: "—",
+    coach: "—",
+    stadium: "—",
+    city: "—",
+    founded: 0,
+    roster: [],
+    recentGames: [],
+    stats: [],
+  } : null as any);
+
+  if (!player || !team) {
     return (
       <View style={[styles.container, { paddingTop: topPad }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
@@ -234,8 +287,6 @@ export default function PlayerScreen() {
       </View>
     );
   }
-
-  const { player, team } = result;
 
   const renderOverview = () => {
     if (team.league === "NBA") return <NBAOverview player={player} team={team} />;
