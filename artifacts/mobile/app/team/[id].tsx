@@ -9,8 +9,78 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
-import { getTeamById, type TeamData, type Player } from "@/constants/teamData";
+import { getTeamById, teamColor, type TeamData, type Player } from "@/constants/teamData";
+import { ALL_TEAMS, ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { usePreferences } from "@/context/PreferencesContext";
+
+function slugify(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "-");
+}
+
+function searchPlayerToPlayer(sp: SearchPlayer): Player {
+  const league = sp.league;
+  let group: Player["group"] = "Guards";
+  const pos = sp.position;
+  if (["C", "PF", "PF/C", "C/PF"].includes(pos)) group = league === "NBA" ? "Bigs" : league === "MLB" ? "Hitting" : "Forwards/Centers";
+  else if (["SF", "SF/PF", "PF/SF", "F"].includes(pos)) group = "Forwards/Centers";
+  else if (league === "NFL") {
+    if (["QB", "RB", "WR", "TE", "OT", "OG", "OL"].includes(pos)) group = "Offense";
+    else if (["K", "P", "LS"].includes(pos)) group = "Special Teams";
+    else group = "Defense";
+  } else if (league === "MLB") {
+    if (["SP", "RP", "CL"].includes(pos)) group = "Pitching";
+    else group = "Hitting";
+  } else if (league === "MLS") {
+    if (["ST", "FW", "CF", "LW", "RW", "AM"].includes(pos)) group = "Forwards";
+    else if (["CM", "CDM", "CAM", "MF", "LM", "RM"].includes(pos)) group = "Midfielders";
+    else if (["CB", "LB", "RB", "LWB", "RWB", "DF"].includes(pos)) group = "Defenders";
+    else group = "Goalkeepers";
+  }
+  return {
+    id: slugify(sp.name),
+    name: sp.name,
+    number: sp.number ?? "—",
+    position: sp.position,
+    age: 0,
+    height: "—",
+    weight: "—",
+    group,
+    stats: {},
+    bio: `${sp.stat}`,
+  };
+}
+
+function buildFallbackTeam(id: string): TeamData | null {
+  const league = (id.match(/^(nba|nfl|mlb|mls|nhl)/) ?? [])[0]?.toUpperCase() as any;
+  const nameSlug = id.replace(/^(nba|nfl|mlb|mls|nhl)-/, "");
+  const searchTeam = ALL_TEAMS.find(t =>
+    slugify(t.name) === nameSlug || slugify(t.name).replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") === nameSlug
+  );
+  if (!searchTeam) return null;
+  const [primary, secondary] = teamColor(nameSlug);
+  const players = ALL_PLAYERS
+    .filter(p => p.team === searchTeam.name)
+    .map(searchPlayerToPlayer);
+  return {
+    id,
+    name: searchTeam.name,
+    shortName: searchTeam.name.split(" ").pop() ?? searchTeam.name,
+    abbr: searchTeam.abbr,
+    league: searchTeam.league as any,
+    division: searchTeam.rank,
+    color: primary,
+    colorSecondary: secondary,
+    record: "2025-26",
+    standing: searchTeam.rank,
+    coach: "—",
+    stadium: "—",
+    city: searchTeam.city ?? searchTeam.name.split(" ").slice(0, -1).join(" "),
+    founded: 0,
+    roster: players,
+    recentGames: [],
+    stats: [],
+  };
+}
 
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
@@ -193,7 +263,7 @@ export default function TeamScreen() {
   const [activeTab, setActiveTab] = useState<Tab>("Roster");
   const tabScrollRef = useRef<ScrollView>(null);
 
-  const team = getTeamById(id ?? "");
+  const team = getTeamById(id ?? "") ?? buildFallbackTeam(id ?? "");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 

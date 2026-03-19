@@ -294,6 +294,9 @@ export const NBA_PLAYERS: SearchPlayer[] = [
   { name: "Jaden McDaniels", team: "Minnesota Timberwolves", league: "NBA", position: "SF/PF", stat: "14.8 PPG", number: "3" },
   { name: "Julius Randle", team: "Minnesota Timberwolves", league: "NBA", position: "PF", stat: "18.4 PPG, 8.8 REB", number: "30" },
   { name: "Naz Reid", team: "Minnesota Timberwolves", league: "NBA", position: "C/PF", stat: "12.4 PPG", number: "11" },
+  { name: "Rob Dillingham", team: "Minnesota Timberwolves", league: "NBA", position: "PG", stat: "11.8 PPG, 4.2 APG (rookie)", number: "10" },
+  { name: "Nickeil Alexander-Walker", team: "Minnesota Timberwolves", league: "NBA", position: "SG", stat: "9.4 PPG", number: "9" },
+  { name: "Donte DiVincenzo", team: "Minnesota Timberwolves", league: "NBA", position: "SG", stat: "11.2 PPG", number: "0" },
   // New Orleans Pelicans
   { name: "Zion Williamson", team: "New Orleans Pelicans", league: "NBA", position: "PF", stat: "22.8 PPG, 6.4 REB", number: "1" },
   { name: "CJ McCollum", team: "New Orleans Pelicans", league: "NBA", position: "SG", stat: "18.4 PPG", number: "3" },
