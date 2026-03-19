@@ -18,10 +18,10 @@ const C = Colors.dark;
 const FILTERS = ["All", "My Teams", "NBA", "NFL", "MLB", "MLS"];
 
 const LEAGUE_DISPLAY: Record<string, string> = {
-  NBA: "#E8334A",
-  NFL: "#4A90D9",
-  MLB: "#4A90D9",
-  MLS: "#3CB371",
+  NBA: C.nba,
+  NFL: C.nfl,
+  MLB: C.mlb,
+  MLS: C.mls,
 };
 
 export default function NewsScreen() {

@@ -16,10 +16,14 @@ import { StatusBar } from "expo-status-bar";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PreferencesProvider, usePreferences } from "@/context/PreferencesContext";
+import { SearchProvider } from "@/context/SearchContext";
+import { SearchModal } from "@/components/SearchModal";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+const BG = "#0A0907";
 
 function RootLayoutNav() {
   const { preferences, isLoaded } = usePreferences();
@@ -32,12 +36,16 @@ function RootLayoutNav() {
   }, [isLoaded, preferences.onboardingComplete]);
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#0A0A0F" } }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="game/[id]" options={{ headerShown: false, presentation: "card" }} />
-      <Stack.Screen name="article/[id]" options={{ headerShown: false, presentation: "card" }} />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: BG } }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="game/[id]" options={{ headerShown: false, presentation: "card" }} />
+        <Stack.Screen name="article/[id]" options={{ headerShown: false, presentation: "card" }} />
+      </Stack>
+      {/* Global search modal — available on every screen */}
+      <SearchModal />
+    </>
   );
 }
 
@@ -62,12 +70,14 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <PreferencesProvider>
-            <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#0A0A0F" }}>
-              <KeyboardProvider>
-                <StatusBar style="light" />
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
+            <SearchProvider>
+              <GestureHandlerRootView style={{ flex: 1, backgroundColor: BG }}>
+                <KeyboardProvider>
+                  <StatusBar style="light" />
+                  <RootLayoutNav />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </SearchProvider>
           </PreferencesProvider>
         </QueryClientProvider>
       </ErrorBoundary>

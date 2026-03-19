@@ -1,64 +1,80 @@
+import Colors from "./colors";
+
+const C = Colors.dark;
+
 export const SPORTS = [
-  { id: "NFL", label: "NFL", icon: "football", color: "#013087" },
-  { id: "NBA", label: "NBA", icon: "basketball", color: "#C9082A" },
-  { id: "MLB", label: "MLB", icon: "baseball", color: "#002D72" },
-  { id: "MLS", label: "MLS", icon: "football", color: "#1A1A2E" },
-  { id: "UFC", label: "UFC", icon: "fitness", color: "#D20A0A" },
-  { id: "NHL", label: "NHL", icon: "snow", color: "#0038A8" },
+  { id: "NFL", label: "NFL", icon: "football", color: C.nfl },
+  { id: "NBA", label: "NBA", icon: "basketball", color: C.nba },
+  { id: "MLB", label: "MLB", icon: "baseball", color: C.mlb },
+  { id: "MLS", label: "MLS", icon: "football", color: C.mls },
+  { id: "UFC", label: "UFC", icon: "fitness", color: C.ufc },
+  { id: "NHL", label: "NHL", icon: "snow", color: C.nhl },
 ];
 
 export const TEAMS_BY_LEAGUE: Record<string, string[]> = {
   NFL: [
     "Kansas City Chiefs",
     "Buffalo Bills",
-    "San Francisco 49ers",
-    "Dallas Cowboys",
     "Philadelphia Eagles",
     "Baltimore Ravens",
-    "Miami Dolphins",
-    "Detroit Lions",
     "Houston Texans",
+    "Detroit Lions",
     "Los Angeles Rams",
+    "Minnesota Vikings",
+    "Denver Broncos",
+    "San Francisco 49ers",
+    "Dallas Cowboys",
+    "Miami Dolphins",
+    "Washington Commanders",
     "Cincinnati Bengals",
     "New England Patriots",
   ],
   NBA: [
     "Houston Rockets",
-    "Golden State Warriors",
     "Los Angeles Lakers",
     "Boston Celtics",
-    "Miami Heat",
+    "Oklahoma City Thunder",
+    "San Antonio Spurs",
+    "Detroit Pistons",
+    "Cleveland Cavaliers",
+    "Minnesota Timberwolves",
     "Denver Nuggets",
+    "New York Knicks",
+    "Golden State Warriors",
+    "Miami Heat",
+    "Dallas Mavericks",
     "Phoenix Suns",
     "Milwaukee Bucks",
-    "Dallas Mavericks",
-    "Oklahoma City Thunder",
-    "Minnesota Timberwolves",
-    "New York Knicks",
   ],
   MLB: [
     "Houston Astros",
     "New York Yankees",
     "Los Angeles Dodgers",
     "Atlanta Braves",
-    "Texas Rangers",
     "Boston Red Sox",
-    "Chicago Cubs",
     "San Diego Padres",
-    "Toronto Blue Jays",
-    "Chicago White Sox",
     "Seattle Mariners",
-    "Tampa Bay Rays",
+    "Philadelphia Phillies",
+    "Baltimore Orioles",
+    "Texas Rangers",
+    "Chicago Cubs",
+    "Toronto Blue Jays",
   ],
   MLS: [
-    "Inter Miami",
+    "Houston Dynamo",
+    "Vancouver Whitecaps",
+    "Los Angeles FC",
+    "Inter Miami CF",
+    "New England Revolution",
     "LA Galaxy",
     "Atlanta United",
-    "NYCFC",
-    "Seattle Sounders",
+    "New York City FC",
+    "Nashville SC",
     "Portland Timbers",
+    "Seattle Sounders",
     "Austin FC",
     "Charlotte FC",
+    "San Diego FC",
   ],
   UFC: [],
   NHL: [
@@ -74,10 +90,11 @@ export const TEAMS_BY_LEAGUE: Record<string, string[]> = {
 };
 
 export const LEAGUE_COLORS: Record<string, string> = {
-  NFL: "#013087",
-  NBA: "#C9082A",
-  MLB: "#002D72",
-  MLS: "#3A7D2C",
-  UFC: "#D20A0A",
-  NHL: "#0038A8",
+  NFL:  C.nfl,        // Vivid Teal
+  NBA:  C.nba,        // Energy Orange
+  MLB:  C.mlb,        // Steel Blue
+  MLS:  C.mls,        // Vivid Teal
+  UFC:  C.ufc,        // Energy Orange
+  NHL:  C.nhl,        // Steel Blue
+  NCAA: C.accentGold, // Gold
 };

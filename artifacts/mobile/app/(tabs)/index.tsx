@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { api } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
+import { useSearch } from "@/context/SearchContext";
 import { GameCard } from "@/components/GameCard";
 import { NewsCard } from "@/components/NewsCard";
 import { RecapCard } from "@/components/RecapCard";
@@ -31,6 +32,7 @@ const HOUSTON_TEAMS = ["Houston Rockets", "Houston Astros", "Houston Texans"];
 export default function HubScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
+  const { openSearch } = useSearch();
   const [refreshing, setRefreshing] = useState(false);
   const [heroDot, setHeroDot] = useState(0);
 
@@ -102,16 +104,16 @@ export default function HubScreen() {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <Pressable style={styles.headerBtn} onPress={() => router.push("/(tabs)/live" as any)}>
-              {liveGames.length > 0 ? (
-                <>
-                  <View style={styles.headerDot} />
-                  <Text style={styles.headerBtnText}>{liveGames.length} Live</Text>
-                </>
-              ) : (
-                <Text style={styles.headerBtnText}>Schedule</Text>
-              )}
+            <Pressable style={styles.searchPill} onPress={() => openSearch()}>
+              <Ionicons name="search" size={14} color={C.accent} />
+              <Text style={styles.searchPillText}>Search</Text>
             </Pressable>
+            {liveGames.length > 0 && (
+              <Pressable style={styles.livePill} onPress={() => router.push("/(tabs)/live" as any)}>
+                <View style={styles.headerDot} />
+                <Text style={styles.livePillText}>{liveGames.length} Live</Text>
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -293,27 +295,44 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
-  headerRight: { alignItems: "flex-end", paddingTop: 18 },
-  headerBtn: {
+  headerRight: { alignItems: "flex-end", paddingTop: 18, gap: 8 },
+  searchPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    backgroundColor: C.card,
+    borderWidth: 1.5,
+    borderColor: C.cardBorderActive,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 22,
+  },
+  searchPillText: {
+    color: C.accent,
+    fontSize: 13,
+    fontWeight: "700",
+    fontFamily: "Inter_600SemiBold",
+  },
+  livePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: C.card,
+    backgroundColor: "rgba(239,120,40,0.10)",
     borderWidth: 1,
-    borderColor: C.cardBorder,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderColor: "rgba(239,120,40,0.28)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
   },
   headerDot: {
     width: 7, height: 7, borderRadius: 4,
     backgroundColor: C.live,
   },
-  headerBtnText: {
-    color: C.textSecondary,
-    fontSize: 13,
-    fontWeight: "600",
-    fontFamily: "Inter_600SemiBold",
+  livePillText: {
+    color: C.live,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
 
   heroSection: { gap: 10, marginBottom: 8 },

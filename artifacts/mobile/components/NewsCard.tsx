@@ -8,11 +8,12 @@ import type { NewsArticle } from "@/utils/api";
 const C = Colors.dark;
 
 const LEAGUE_DISPLAY_COLORS: Record<string, string> = {
-  NBA: "#E8334A",
-  NFL: "#4A90D9",
-  MLB: "#4A90D9",
-  MLS: "#3CB371",
-  NHL: "#4A90D9",
+  NBA:  C.nba,        // Energy Orange
+  NFL:  C.nfl,        // Vivid Teal
+  MLB:  C.mlb,        // Steel Blue
+  MLS:  C.mls,        // Vivid Teal
+  NHL:  C.accentBlue,
+  NCAA: C.accentGold,
 };
 
 function timeAgo(iso: string): string {

@@ -15,12 +15,12 @@ import { TEAMS_BY_LEAGUE, SPORTS } from "@/constants/sports";
 const C = Colors.dark;
 
 const LEAGUE_COLORS: Record<string, string> = {
-  NBA: "#E8334A",
-  NFL: "#4A90D9",
-  MLB: "#4A90D9",
-  MLS: "#3CB371",
-  NHL: "#4A90D9",
-  UFC: "#FF3B30",
+  NBA: C.nba,
+  NFL: C.nfl,
+  MLB: C.mlb,
+  MLS: C.mls,
+  NHL: C.nhl,
+  UFC: C.ufc,
 };
 
 function StatCard({ value, label, color }: { value: string | number; label: string; color?: string }) {

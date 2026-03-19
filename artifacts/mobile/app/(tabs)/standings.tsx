@@ -14,10 +14,10 @@ import { usePreferences } from "@/context/PreferencesContext";
 const C = Colors.dark;
 
 const LEAGUE_META: Record<string, { color: string; label: string }> = {
-  NBA: { color: "#E8334A", label: "NBA" },
-  NFL: { color: "#4A90D9", label: "NFL" },
-  MLB: { color: "#4A90D9", label: "MLB" },
-  MLS: { color: "#3CB371", label: "MLS" },
+  NBA: { color: C.nba, label: "NBA" },
+  NFL: { color: C.nfl, label: "NFL" },
+  MLB: { color: C.mlb, label: "MLB" },
+  MLS: { color: C.mls, label: "MLS" },
 };
 
 function StreakIcon({ streak }: { streak: string | null }) {
