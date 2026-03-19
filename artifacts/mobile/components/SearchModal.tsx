@@ -12,6 +12,7 @@ import Colors from "@/constants/colors";
 import { useSearch } from "@/context/SearchContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import { api } from "@/utils/api";
+import { TEAM_NAME_TO_ID, PLAYER_TEAM_MAP } from "@/constants/teamData";
 
 const C = Colors.dark;
 
@@ -259,14 +260,27 @@ export function SearchModal() {
   }, [closeSearch]);
 
   const goTeam = (team: (typeof TEAM_INDEX)[0]) => {
+    const id = TEAM_NAME_TO_ID[team.name];
     handleClose();
-    router.push({ pathname: "/(tabs)/standings" } as any);
+    if (id) {
+      router.push({ pathname: "/team/[id]", params: { id } } as any);
+    } else {
+      router.push({ pathname: "/(tabs)/standings" } as any);
+    }
   };
 
   const goPlayer = (player: (typeof PLAYER_INDEX)[0]) => {
     handleClose();
-    // Find news about this player's team and navigate there
-    router.push({ pathname: "/(tabs)/news" } as any);
+    // Build player ID from name
+    const rawId = player.name.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, "").trim()
+      .replace(/\s+/g, "-");
+    if (PLAYER_TEAM_MAP[rawId]) {
+      router.push({ pathname: "/player/[id]", params: { id: rawId } } as any);
+    } else {
+      router.push({ pathname: "/(tabs)/news" } as any);
+    }
   };
 
   const goGame = (gameId: string) => {

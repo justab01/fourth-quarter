@@ -1,0 +1,52 @@
+FOURTH QUARTER ESPN Flow, But 2026 Cooler
+I got it 100%. No random redirects to standings or My Hub. You search → pick a team → land exactly on the team page layout from the screenshots you sent. Same tabs in the same order (Scores → News → Standings → Stats → Roster → Depth Chart). Same player list table on Roster. Same player profile when you tap a name.
+We’re not stealing ESPN — we’re making the experience feel better: bigger hero photos, neon glow accents, true-black background, glassmorphism cards, smoother scrolling, and that premium 2026 depth you wanted.
+Here’s the exact flow rebuilt in FOURTH QUARTER with the cleaner, cooler look:
+1. Search Screen (Exactly like your first screenshot)
+	•	Always-on search bar at the very top of every screen (global, like ESPN).
+	•	Type “houston” → instant tabs: Top Results | Teams | Players | Series | Articles
+	•	Teams section: clean vertical list with logos on left, league tag below name, right arrow.
+	•	Players section: headshot + name.
+	•	Darker, more modern background with subtle neon cyan glow on the active tab.
+2. Team Page – What you land on when you tap “Houston Texans”
+(Exact same structure as your second screenshot, just upgraded)
+Top bar:
+	•	Back arrow (left)
+	•	Big team logo + “Texans” header with subtle team color gradient
+	•	Star (favorite) + Bell (notifications) on right
+Horizontal scrollable tabs (exactly like ESPN): SCORES | NEWS | STANDINGS | STATS | ROSTER | DEPTH CHART (Active tab has neon red underline + slight glow)
+Hero section (full-width):
+	•	Massive action photo of the featured player (like the one in your screenshot) with team overlay
+	•	Below it: short headline card (“Tracking NFL free agency…”) + time + source
+	•	Another headline card right underneath (like the “Ranking the best deals…” one)
+Everything uses our new palette: true black background, neon red accents for Texans, electric cyan for LIVE elements, gold highlights on wins.
+3. Roster Tab (Exact table layout from your third screenshot)
+Tap “ROSTER” → you’re here immediately.
+	•	“Offense” header (with expandable sections for Defense/Special Teams)
+	•	Clean table:
+	◦	Small headshot (left)
+	◦	Name + jersey number
+	◦	POS | AGE | HT | WT
+	•	Rows have subtle hover glow when you tap (prepares for player profile)
+	•	Scrollable, zebra-striped for easy reading, just like ESPN but with deeper blacks and sharper typography.
+4. Player Profile – Tap any name (e.g. C.J. Stroud)
+(Exact flow from your fourth screenshot)
+	•	Back arrow + player name in huge bold text
+	•	Large headshot on left (or full-bleed with overlay)
+	•	Quick info block: Team | Jersey | Position | HT/WT | Birthday | College
+	•	Big blue “Follow” button (neon glow when you follow)
+Then sub-tabs (exactly like ESPN): Overview | News | Stats | Bio | Splits | Game Log
+Overview shows:
+	•	2025 Regular Season Stats in four big cards (YDS, TD, INT, QBR) with rank badges
+	•	Then detailed passing table below (Regular Season / Postseason / Career)
+	•	Recent Games table at the bottom with date/opp/result + passing/rushing splits
+Why This Feels Way Cooler Than ESPN
+	•	True black + glass blur on every card (no flat gray)
+	•	Neon accents only where it matters (live scores, active tabs, your favorite teams)
+	•	Bigger images, more breathing room, smoother animations
+	•	One-tap everywhere (tap player name in roster → instant profile, no extra loading)
+	•	Global search still floats at the top so you can jump from Texans → Lakers → Chiefs in 2 seconds
+This is now the exact navigation and page order you showed in the screenshots — just executed cleaner, darker, and more premium for 2026.
+Want me to drop the next piece right now? A) Text wireframe of the full Texans team page (every tab described) B) Exact player profile mock for C.J. Stroud with our colors C) Ready code snippets for the tab bar + search (Expo/React Native)
+Just say A, B, or C and I’ll print it instantly.
+We’re locking in the ESPN skeleton with FOURTH QUARTER skin. This is your sports app now.
