@@ -240,11 +240,17 @@ function GameLogTab({
   league: string;
   teamColor: string;
 }) {
+  // ESPN season year = ending year: NBA 2025-26 → "2026", NFL 2025 → "2025", MLB 2025 → "2025"
+  const defaultSeason = (league === "NBA" || league === "MLS") ? "2026" : "2025";
+  const seasonButtons = (league === "NBA" || league === "MLS")
+    ? ["2026", "2025", "2024"]
+    : ["2025", "2024", "2023"];
+
   const [rows, setRows] = useState<GameLogRow[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [season, setSeason] = useState("2025");
+  const [season, setSeason] = useState(defaultSeason);
 
   const load = useCallback(async (s: string) => {
     setLoading(true);
@@ -324,7 +330,7 @@ function GameLogTab({
   useEffect(() => { load(season); }, [load, season]);
 
   const COL_W = 52;
-  const LEFT_W = 130;
+  const LEFT_W = 196;
   const ROW_H = 36;
 
   if (loading) {
@@ -364,14 +370,14 @@ function GameLogTab({
     <View style={{ flex: 1 }}>
       {/* Season selector */}
       <View style={gl.seasonRow}>
-        {["2025", "2024", "2023"].map(s => (
+        {seasonButtons.map(s => (
           <Pressable
             key={s}
             onPress={() => { setSeason(s); load(s); }}
             style={[gl.seasonBtn, season === s && { backgroundColor: teamColor }]}
           >
             <Text style={[gl.seasonBtnTxt, season === s && { color: "#fff" }]}>
-              {league === "NFL" || league === "MLB" ? s : `${parseInt(s) - 1}-${s.slice(2)}`}
+              {(league === "NFL" || league === "MLB") ? s : `${parseInt(s) - 1}-${s.slice(2)}`}
             </Text>
           </Pressable>
         ))}
@@ -385,34 +391,33 @@ function GameLogTab({
         <View style={[gl.leftCol, { width: LEFT_W }]}>
           {/* Header */}
           <View style={[gl.headerRow, { height: ROW_H }]}>
-            <Text style={[gl.headerCell, { flex: 1 }]}>DATE</Text>
-            <Text style={[gl.headerCell, { width: 38 }]}>OPP</Text>
-            <Text style={[gl.headerCell, { width: 28 }]}>W/L</Text>
+            <Text style={[gl.headerCell, { width: 50 }]}>DATE</Text>
+            <Text style={[gl.headerCell, { width: 40 }]}>OPP</Text>
+            <Text style={[gl.headerCell, { flex: 1 }]}>RESULT</Text>
           </View>
           {/* Rows */}
           <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
-            {rows.map((row, i) => (
-              <View
-                key={row.eventId}
-                style={[
-                  gl.dataRow,
-                  { height: ROW_H, backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.03)" },
-                ]}
-              >
-                <Text style={[gl.leftDateTxt, { flex: 1 }]}>{row.date}</Text>
-                <Text style={[gl.leftOppTxt, { width: 38 }]}>
-                  {row.atVs === "@" ? "@" : "vs"} {row.opponent}
-                </Text>
-                <Text
+            {rows.map((row, i) => {
+              const resultColor = row.result === "W" ? "#3ECF8E" : row.result === "L" ? "#FF6B6B" : C.textTertiary;
+              const scoreDisplay = row.score && row.score !== "—" ? `${row.result} ${row.score}` : row.result;
+              return (
+                <View
+                  key={row.eventId}
                   style={[
-                    gl.resultTxt,
-                    { width: 28, color: row.result === "W" ? "#3ECF8E" : row.result === "L" ? "#FF6B6B" : C.textTertiary },
+                    gl.dataRow,
+                    { height: ROW_H, backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.03)" },
                   ]}
                 >
-                  {row.result}
-                </Text>
-              </View>
-            ))}
+                  <Text style={[gl.leftDateTxt, { width: 50 }]}>{row.date}</Text>
+                  <Text style={[gl.leftOppTxt, { width: 40 }]}>
+                    {row.atVs === "@" ? "@" : "vs"} {row.opponent}
+                  </Text>
+                  <Text style={[gl.resultTxt, { flex: 1, color: resultColor }]} numberOfLines={1}>
+                    {scoreDisplay}
+                  </Text>
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -492,7 +497,7 @@ const gl = StyleSheet.create({
   },
   leftDateTxt: { color: C.textTertiary, fontSize: 11 },
   leftOppTxt: { color: C.textSecondary, fontSize: 11 },
-  resultTxt: { fontSize: 12, fontWeight: "700", textAlign: "center" },
+  resultTxt: { fontSize: 11, fontWeight: "700", textAlign: "left" },
   statCell: {
     color: C.textSecondary, fontSize: 12, textAlign: "right",
     fontFamily: "Inter_400Regular",

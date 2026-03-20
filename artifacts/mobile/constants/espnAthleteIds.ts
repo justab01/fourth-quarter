@@ -4951,11 +4951,13 @@ export function getEspnAthleteId(name: string, league: string): string | undefin
 export function getEspnGamelogUrl(name: string, league: string, season?: string): string | null {
   const id = getEspnAthleteId(name, league);
   if (!id) return null;
+  // Season year = ending year of season
+  // NBA 2025-26 = 2026, NFL 2025 season = 2025, MLB 2025 = 2025, MLS 2026 = 2026
   const leagueConfig: Record<string, { sport: string; league: string; defaultSeason: string }> = {
-    NBA: { sport: "basketball", league: "nba", defaultSeason: "2025" },
+    NBA: { sport: "basketball", league: "nba", defaultSeason: "2026" },
     NFL: { sport: "football", league: "nfl", defaultSeason: "2025" },
     MLB: { sport: "baseball", league: "mlb", defaultSeason: "2025" },
-    MLS: { sport: "soccer", league: "usa.1", defaultSeason: "2025" },
+    MLS: { sport: "soccer", league: "usa.1", defaultSeason: "2026" },
   };
   const cfg = leagueConfig[league];
   if (!cfg) return null;
