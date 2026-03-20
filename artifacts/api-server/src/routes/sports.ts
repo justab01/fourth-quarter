@@ -685,7 +685,7 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
 
     } else if (league === "MLB") {
       const json = await espnFetch(
-        "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings?season=2026"
+        "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings"
       ) as EspnStandingsResponse;
       const allRaw: (Omit<StandingEntry, "rank">)[] = [];
       for (const child of json.children ?? []) {
@@ -716,11 +716,19 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const points = Number(getStat(stats, "points")?.value ?? 0);
           const rankChange = Number(getStat(stats, "rankChange")?.value ?? 0);
           const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
-          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack: null, streak: null, conference: child.name ?? null, division: null, rankChange, points });
+          // MLS has no gamesBehind/streak in ESPN data; will compute pointsBack below
+          const streakStat = getStat(stats, "streak")?.displayValue ?? null;
+          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack: null, streak: streakStat, conference: child.name ?? null, division: null, rankChange, points });
         }
       }
       allRaw.sort((a, b) => b.points - a.points);
-      entries = allRaw.map(({ points: _pts, ...e }, i) => ({ ...e, rank: i + 1 }));
+      const leaderPts = allRaw[0]?.points ?? 0;
+      entries = allRaw.map(({ points, ...e }, i) => ({
+        ...e,
+        rank: i + 1,
+        // Express points behind leader as gamesBack equivalent for MLS
+        gamesBack: leaderPts - points,
+      }));
     }
 
     setCached(cacheKey, entries, 300_000);

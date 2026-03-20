@@ -123,6 +123,7 @@ export default function StandingsScreen() {
               <Text style={styles.thStat}>W</Text>
               <Text style={styles.thStat}>L</Text>
               <Text style={styles.thStat}>PCT</Text>
+              <Text style={styles.thStat}>GB</Text>
               <Text style={styles.thStat}>STK</Text>
             </View>
 
@@ -174,6 +175,9 @@ export default function StandingsScreen() {
                   <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.losses}</Text>
                   <Text style={[styles.tdStat, isMyTeam && { color: leagueMeta.color, fontFamily: "Inter_700Bold" }]}>
                     {entry.winPct.toFixed(3)}
+                  </Text>
+                  <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>
+                    {entry.gamesBack == null ? "—" : entry.gamesBack === 0 ? "-" : entry.gamesBack}
                   </Text>
                   <View style={styles.tdStreak}>
                     <StreakIcon streak={entry.streak} />
@@ -254,7 +258,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   thStat: {
-    width: 42,
+    width: 38,
     textAlign: "center",
     color: C.textTertiary,
     fontSize: 10,
@@ -326,14 +330,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tdStat: {
-    width: 42,
+    width: 38,
     textAlign: "center",
     color: C.textTertiary,
     fontSize: 13,
     fontFamily: "Inter_400Regular",
   },
   tdStreak: {
-    width: 42,
+    width: 38,
     alignItems: "center",
   },
   legendRow: {

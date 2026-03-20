@@ -49,9 +49,18 @@ interface EspnNewsResponse {
   articles?: EspnNewsArticle[];
 }
 
+interface EspnContentHeadline {
+  story?: string;
+}
+
+interface EspnContentResponse {
+  headlines?: EspnContentHeadline[];
+}
+
 // ─── Mapped output shape (matches NewsArticle in mobile/utils/api.ts) ─────────
 interface MappedArticle {
   id: string;
+  rawId: string;
   title: string;
   summary: string;
   content: string;
@@ -64,7 +73,7 @@ interface MappedArticle {
   leagues: string[];
 }
 
-// ─── ESPN fetch ───────────────────────────────────────────────────────────────
+// ─── ESPN fetchers ────────────────────────────────────────────────────────────
 function espnFetch(url: string): Promise<EspnNewsResponse> {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { "User-Agent": "Mozilla/5.0" } }, (res) => {
@@ -78,6 +87,40 @@ function espnFetch(url: string): Promise<EspnNewsResponse> {
     req.on("error", reject);
     req.setTimeout(8000, () => { req.destroy(); reject(new Error("ESPN news timeout")); });
   });
+}
+
+function espnContentFetch(url: string): Promise<EspnContentResponse> {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { "User-Agent": "Mozilla/5.0" } }, (res) => {
+      let raw = "";
+      res.on("data", (chunk: string) => (raw += chunk));
+      res.on("end", () => {
+        try { resolve(JSON.parse(raw) as EspnContentResponse); }
+        catch (e) { reject(e); }
+      });
+    });
+    req.on("error", reject);
+    req.setTimeout(6000, () => { req.destroy(); reject(new Error("ESPN content timeout")); });
+  });
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
+}
+
+async function fetchStory(rawId: string): Promise<string | null> {
+  if (!rawId || !/^\d+$/.test(rawId)) return null;
+  try {
+    const json = await espnContentFetch(
+      `https://content.core.api.espn.com/v1/sports/news/${rawId}`
+    );
+    const story = json.headlines?.[0]?.story;
+    return typeof story === "string" && story.length > 0
+      ? stripHtml(story).slice(0, 3000)
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 // ─── League mapping ───────────────────────────────────────────────────────────
@@ -123,17 +166,18 @@ function mapArticle(raw: EspnNewsArticle, defaultLeague: string): MappedArticle 
     .map((c) => c.description ?? "")
     .filter((s): s is string => s.length > 0);
 
-  const rawId = raw.id ?? raw.nowId ?? raw.dataSourceIdentifier ?? String(Math.random());
+  const rawId = String(raw.id ?? raw.nowId ?? raw.dataSourceIdentifier ?? "");
   const id = `espn-${rawId}`;
   const sourceUrl = raw.links?.web?.href ?? `https://www.espn.com/${defaultLeague.toLowerCase()}/`;
   const imageUrl = raw.images?.[0]?.url ?? null;
-  const text = raw.description ?? raw.headline ?? "";
+  const fallbackText = raw.description ?? raw.headline ?? "";
 
   return {
     id,
+    rawId,
     title: raw.headline ?? "Sports Update",
-    summary: text,
-    content: text,
+    summary: fallbackText,
+    content: fallbackText,
     source: "ESPN",
     sourceUrl,
     imageUrl,
@@ -144,10 +188,10 @@ function mapArticle(raw: EspnNewsArticle, defaultLeague: string): MappedArticle 
   };
 }
 
-// ─── Fetch all leagues in parallel ───────────────────────────────────────────
-async function fetchAllNews(): Promise<MappedArticle[]> {
+// ─── Fetch all leagues + enrich stories ──────────────────────────────────────
+async function fetchAllNews(): Promise<Omit<MappedArticle, "rawId">[]> {
   const cacheKey = "news-all";
-  const cached = getCached<MappedArticle[]>(cacheKey);
+  const cached = getCached<Omit<MappedArticle, "rawId">[]>(cacheKey);
   if (cached) return cached;
 
   const results = await Promise.allSettled(
@@ -172,8 +216,21 @@ async function fetchAllNews(): Promise<MappedArticle[]> {
   }
 
   articles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  setCached(cacheKey, articles, 120_000);
-  return articles;
+
+  // Enrich the top 20 articles with full story text from ESPN content API
+  const TOP_STORY_COUNT = 20;
+  await Promise.allSettled(
+    articles.slice(0, TOP_STORY_COUNT).map(async (article) => {
+      if (article.rawId) {
+        const story = await fetchStory(article.rawId);
+        if (story) article.content = story;
+      }
+    })
+  );
+
+  const output = articles.map(({ rawId: _raw, ...rest }) => rest);
+  setCached(cacheKey, output, 120_000);
+  return output;
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────
