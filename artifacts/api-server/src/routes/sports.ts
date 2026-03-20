@@ -156,6 +156,8 @@ interface GameShape {
   league: string;
   homeTeam: string;
   awayTeam: string;
+  homeTeamId?: string;
+  awayTeamId?: string;
   homeScore: number | null;
   awayScore: number | null;
   status: "live" | "finished" | "upcoming";
@@ -220,6 +222,8 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     league: leagueKey,
     homeTeam: home?.team.displayName ?? "Home",
     awayTeam: away?.team.displayName ?? "Away",
+    homeTeamId: home?.team.id,
+    awayTeamId: away?.team.id,
     homeScore: status === "upcoming" ? null : homeScore,
     awayScore: status === "upcoming" ? null : awayScore,
     status,
@@ -362,9 +366,16 @@ function extractBoxscore(
   let homePlayerStats: PlayerStatLine[] = [];
   let awayPlayerStats: PlayerStatLine[] = [];
 
+  // Helper: determine if an ESPN team entry belongs to the home team.
+  // Prefers stable ID comparison; falls back to display name if IDs unavailable.
+  const isHomeTeam = (teamId: string, displayName: string): boolean => {
+    if (game.homeTeamId && teamId) return teamId === game.homeTeamId;
+    return displayName === game.homeTeam;
+  };
+
   // ─── Per-team data from boxscore.players ──────────────────────────────────
   for (const playerEntry of bs.players ?? []) {
-    const isHome = playerEntry.team.displayName === game.homeTeam;
+    const isHome = isHomeTeam(playerEntry.team.id, playerEntry.team.displayName);
 
     if (isMLB) {
       // MLB has two stat groups: batting + pitching
@@ -402,7 +413,7 @@ function extractBoxscore(
 
   // ─── Team aggregate stats from boxscore.teams ─────────────────────────────
   for (const teamEntry of bs.teams ?? []) {
-    const isHome = teamEntry.team.displayName === game.homeTeam;
+    const isHome = isHomeTeam(teamEntry.team.id, teamEntry.team.displayName);
     let stats: Record<string, string | number> = {};
     if (isNBA) stats = buildNBATeamStats(teamEntry);
     else if (isMLS) stats = buildMLSTeamStats(teamEntry);
@@ -491,13 +502,28 @@ router.get("/sports/games", async (req, res) => {
 
 router.get("/sports/game/:gameId", async (req, res) => {
   const { gameId } = req.params;
-  const dashIdx = gameId.indexOf("-");
-  if (dashIdx === -1) { res.status(400).json({ error: "Invalid game ID format" }); return; }
 
-  const leagueKey = gameId.slice(0, dashIdx).toUpperCase();
-  const espnId = gameId.slice(dashIdx + 1);
-  const cfg = LEAGUE_CONFIG[leagueKey];
-  if (!cfg) { res.status(400).json({ error: `Unknown league: ${leagueKey}` }); return; }
+  // Support two ID formats:
+  //   1. Prefixed:  "nba-401810863"  (canonical)
+  //   2. Raw + query: "401810863?league=NBA"  (backward-compat fallback)
+  const dashIdx = gameId.indexOf("-");
+  const queryLeague = (req.query.league as string | undefined)?.toUpperCase();
+
+  let leagueKey: string;
+  let espnId: string;
+
+  if (dashIdx !== -1 && LEAGUE_CONFIG[gameId.slice(0, dashIdx).toUpperCase()]) {
+    leagueKey = gameId.slice(0, dashIdx).toUpperCase();
+    espnId = gameId.slice(dashIdx + 1);
+  } else if (queryLeague && LEAGUE_CONFIG[queryLeague]) {
+    leagueKey = queryLeague;
+    espnId = gameId;
+  } else {
+    res.status(400).json({ error: "Invalid game ID. Use format '{league}-{id}' or add ?league= param." });
+    return;
+  }
+
+  const cfg = LEAGUE_CONFIG[leagueKey]!;
 
   const cacheKey = `game-detail-${gameId}`;
   const cached = getCached<GameDetailShape>(cacheKey);
