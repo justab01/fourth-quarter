@@ -3,7 +3,7 @@ import https from "https";
 
 const router: IRouter = Router();
 
-// ─── Simple in-memory cache ───────────────────────────────────────────────────
+// ─── In-memory cache ──────────────────────────────────────────────────────────
 interface CacheEntry { data: unknown; expiresAt: number }
 const cache = new Map<string, CacheEntry>();
 
@@ -17,6 +17,7 @@ function setCached(key: string, data: unknown, ttlMs: number): void {
   cache.set(key, { data, expiresAt: Date.now() + ttlMs });
 }
 
+// ─── ESPN fetch helper ────────────────────────────────────────────────────────
 async function espnFetch(url: string): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { "User-Agent": "Mozilla/5.0" } }, (res) => {
@@ -32,6 +33,152 @@ async function espnFetch(url: string): Promise<unknown> {
   });
 }
 
+// ─── Minimal ESPN response shapes ────────────────────────────────────────────
+
+interface EspnTeam {
+  id: string;
+  displayName: string;
+  logo?: string;
+}
+
+interface EspnCompetitor {
+  homeAway: "home" | "away";
+  team: EspnTeam;
+  score?: string;
+}
+
+interface EspnStatusType {
+  state: "pre" | "in" | "post";
+  description: string;
+  detail?: string;
+  shortDetail?: string;
+}
+
+interface EspnStatus {
+  type: EspnStatusType;
+}
+
+interface EspnVenue {
+  fullName: string;
+}
+
+interface EspnCompetition {
+  id: string;
+  date?: string;
+  startDate?: string;
+  status: EspnStatus;
+  competitors: EspnCompetitor[];
+  venue?: EspnVenue;
+}
+
+interface EspnEvent {
+  id: string;
+  date: string;
+  name: string;
+  status: EspnStatus;
+  competitions: EspnCompetition[];
+}
+
+interface EspnScoreboard {
+  events: EspnEvent[];
+}
+
+interface EspnAthleteEntry {
+  athlete: { id: string; displayName: string };
+  active: boolean;
+  starter: boolean;
+  didNotPlay: boolean;
+  ejected: boolean;
+  stats: string[];
+}
+
+interface EspnStatisticsGroup {
+  type?: string;
+  names: string[];
+  labels: string[];
+  athletes: EspnAthleteEntry[];
+  totals?: string[];
+}
+
+interface EspnPlayerEntry {
+  team: EspnTeam;
+  statistics: EspnStatisticsGroup[];
+}
+
+interface EspnTeamStats {
+  team: EspnTeam;
+  statistics: Array<{ name: string; displayValue: string }>;
+}
+
+interface EspnBoxscore {
+  players: EspnPlayerEntry[];
+  teams: EspnTeamStats[];
+}
+
+interface EspnPlay {
+  id: string;
+  text: string;
+  scoringPlay: boolean;
+  team?: { id: string };
+  period?: { displayValue: string };
+  clock?: { displayValue: string };
+}
+
+interface EspnRosterEntry {
+  athlete?: { displayName: string };
+}
+
+interface EspnRoster {
+  team: EspnTeam;
+  entries: EspnRosterEntry[];
+}
+
+interface EspnSummary {
+  boxscore: EspnBoxscore;
+  plays?: EspnPlay[];
+  rosters?: EspnRoster[];
+  header?: {
+    competitions: EspnCompetition[];
+  };
+}
+
+// ─── Our app's response shapes ────────────────────────────────────────────────
+
+interface PlayerStatLine {
+  name: string;
+  starter: boolean;
+  stats: Record<string, string>;
+}
+
+interface GameShape {
+  id: string;
+  sport: string;
+  league: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: "live" | "finished" | "upcoming";
+  startTime: string;
+  quarter: string | null;
+  timeRemaining: string | null;
+  venue: string | null;
+  homeTeamLogo: string | null;
+  awayTeamLogo: string | null;
+}
+
+interface GameDetailShape {
+  game: GameShape;
+  keyPlays: Array<{ time: string; description: string; team: string }>;
+  homeStats: Record<string, string | number>;
+  awayStats: Record<string, string | number>;
+  homeLineup: string[];
+  awayLineup: string[];
+  homePlayerStats: PlayerStatLine[];
+  awayPlayerStats: PlayerStatLine[];
+  aiSummary: null;
+}
+
 // ─── League config ────────────────────────────────────────────────────────────
 interface LeagueConfig { espnPath: string; displaySport: string }
 const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
@@ -41,7 +188,7 @@ const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
   MLS: { espnPath: "soccer/usa.1", displaySport: "Soccer" },
 };
 
-// ─── ESPN status → app status ─────────────────────────────────────────────────
+// ─── ESPN helpers ─────────────────────────────────────────────────────────────
 function mapStatus(state: string): "live" | "finished" | "upcoming" {
   if (state === "in") return "live";
   if (state === "post") return "finished";
@@ -56,51 +203,44 @@ function parseDetail(detail: string | undefined, state: string): { quarter: stri
   return { quarter: detail, timeRemaining: null };
 }
 
-// ─── Map ESPN scoreboard event → Game object ──────────────────────────────────
-function mapEvent(ev: Record<string, any>, leagueKey: string): Record<string, any> {
-  const comp = (ev.competitions as any[])?.[0];
-  const competitors: any[] = comp?.competitors ?? [];
-  const home = competitors.find((c) => c.homeAway === "home");
-  const away = competitors.find((c) => c.homeAway === "away");
+function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
+  const comp = ev.competitions[0];
+  const home = comp.competitors.find((c) => c.homeAway === "home");
+  const away = comp.competitors.find((c) => c.homeAway === "away");
   const cfg = LEAGUE_CONFIG[leagueKey];
-  const statusType = ev.status?.type ?? comp?.status?.type ?? {};
-  const state: string = statusType.state ?? "pre";
+  const statusType = ev.status?.type ?? comp.status?.type;
+  const state: string = statusType?.state ?? "pre";
   const status = mapStatus(state);
-  const { quarter, timeRemaining } = parseDetail(statusType.detail ?? statusType.shortDetail, state);
-
-  const homeScore = home?.score != null && home.score !== "" ? parseInt(String(home.score)) : null;
-  const awayScore = away?.score != null && away.score !== "" ? parseInt(String(away.score)) : null;
-
+  const { quarter, timeRemaining } = parseDetail(statusType?.detail ?? statusType?.shortDetail, state);
+  const homeScore = home?.score != null && home.score !== "" ? parseInt(home.score) : null;
+  const awayScore = away?.score != null && away.score !== "" ? parseInt(away.score) : null;
   return {
     id: `${leagueKey.toLowerCase()}-${ev.id}`,
     sport: cfg.displaySport,
     league: leagueKey,
-    homeTeam: home?.team?.displayName ?? "Home",
-    awayTeam: away?.team?.displayName ?? "Away",
+    homeTeam: home?.team.displayName ?? "Home",
+    awayTeam: away?.team.displayName ?? "Away",
     homeScore: status === "upcoming" ? null : homeScore,
     awayScore: status === "upcoming" ? null : awayScore,
     status,
-    startTime: ev.date ?? comp?.startDate ?? new Date().toISOString(),
+    startTime: ev.date ?? comp.startDate ?? new Date().toISOString(),
     quarter,
     timeRemaining,
-    venue: comp?.venue?.fullName ?? null,
-    homeTeamLogo: home?.team?.logo ?? null,
-    awayTeamLogo: away?.team?.logo ?? null,
+    venue: comp.venue?.fullName ?? null,
+    homeTeamLogo: home?.team.logo ?? null,
+    awayTeamLogo: away?.team.logo ?? null,
   };
 }
 
-// ─── Fetch scoreboard for one league ─────────────────────────────────────────
-async function fetchLeagueGames(leagueKey: string): Promise<Record<string, any>[]> {
+async function fetchLeagueGames(leagueKey: string): Promise<GameShape[]> {
   const cacheKey = `scoreboard-${leagueKey}`;
-  const cached = getCached<Record<string, any>[]>(cacheKey);
+  const cached = getCached<GameShape[]>(cacheKey);
   if (cached) return cached;
-
   const cfg = LEAGUE_CONFIG[leagueKey];
   const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard`;
   try {
-    const json = await espnFetch(url) as Record<string, any>;
-    const events: any[] = json.events ?? [];
-    const games = events.map((ev) => mapEvent(ev, leagueKey));
+    const json = (await espnFetch(url)) as EspnScoreboard;
+    const games = json.events.map((ev) => mapEvent(ev, leagueKey));
     const hasLive = games.some((g) => g.status === "live");
     setCached(cacheKey, games, hasLive ? 15_000 : 30_000);
     return games;
@@ -110,186 +250,222 @@ async function fetchLeagueGames(leagueKey: string): Promise<Record<string, any>[
   }
 }
 
-// ─── Extract boxscore + lineups + key plays from summary JSON ─────────────────
-function extractBoxscore(json: Record<string, any>, leagueKey: string, game: Record<string, any>): {
+// ─── Per-player stat extraction from ESPN boxscore.players ────────────────────
+function extractPlayerStats(
+  group: EspnStatisticsGroup,
+  statKeys: string[],
+): PlayerStatLine[] {
+  return group.athletes
+    .filter((a) => !a.didNotPlay && !a.ejected)
+    .map((a) => {
+      const statsObj: Record<string, string> = {};
+      statKeys.forEach((key, i) => {
+        const val = a.stats[i];
+        if (val != null) statsObj[key] = val;
+      });
+      return { name: a.athlete.displayName, starter: a.starter, stats: statsObj };
+    });
+}
+
+// ─── Team aggregate stats from boxscore.teams ────────────────────────────────
+function getTeamStat(team: EspnTeamStats, name: string): string {
+  return team.statistics.find((s) => s.name === name)?.displayValue ?? "—";
+}
+
+function buildNBATeamStats(team: EspnTeamStats): Record<string, string | number> {
+  return {
+    "FG": getTeamStat(team, "fieldGoalsMade-fieldGoalsAttempted"),
+    "3PT": getTeamStat(team, "threePointFieldGoalsMade-threePointFieldGoalsAttempted"),
+    "FT": getTeamStat(team, "freeThrowsMade-freeThrowsAttempted"),
+    "REB": getTeamStat(team, "totalRebounds"),
+    "AST": getTeamStat(team, "assists"),
+    "TO": getTeamStat(team, "turnovers"),
+    "STL": getTeamStat(team, "steals"),
+    "BLK": getTeamStat(team, "blocks"),
+  };
+}
+
+function buildMLSTeamStats(team: EspnTeamStats): Record<string, string | number> {
+  return {
+    "Shots": getTeamStat(team, "shots"),
+    "On Target": getTeamStat(team, "shotsOnTarget"),
+    "Possession": getTeamStat(team, "possessionPct"),
+    "Corners": getTeamStat(team, "cornerKicks"),
+    "Fouls": getTeamStat(team, "fouls"),
+  };
+}
+
+function buildNFLTeamStats(team: EspnTeamStats): Record<string, string | number> {
+  return {
+    "Pass Yds": getTeamStat(team, "netPassingYards"),
+    "Rush Yds": getTeamStat(team, "rushingYards"),
+    "Total Yds": getTeamStat(team, "totalYards"),
+    "Turnovers": getTeamStat(team, "turnovers"),
+    "3rd Down": getTeamStat(team, "thirdDownPct"),
+  };
+}
+
+// ─── MLB stats from player group totals ───────────────────────────────────────
+function buildMLBTeamStatsFromGroups(groups: EspnStatisticsGroup[]): Record<string, string | number> {
+  const batting = groups.find((g) => g.type === "batting");
+  const pitching = groups.find((g) => g.type === "pitching");
+  const statsObj: Record<string, string | number> = {};
+  if (batting) {
+    const getIdx = (name: string) => batting.names.indexOf(name);
+    const t = batting.totals ?? [];
+    statsObj["H"] = t[getIdx("H")] ?? "—";
+    statsObj["AB"] = t[getIdx("AB")] ?? "—";
+    statsObj["R"] = t[getIdx("R")] ?? "—";
+    statsObj["RBI"] = t[getIdx("RBI")] ?? "—";
+    statsObj["HR"] = t[getIdx("HR")] ?? "—";
+    statsObj["BB"] = t[getIdx("BB")] ?? "—";
+    statsObj["K"] = t[getIdx("K")] ?? "—";
+  }
+  if (pitching) {
+    const getIdx = (name: string) => pitching.names.indexOf(name);
+    const t = pitching.totals ?? [];
+    statsObj["IP"] = t[getIdx("IP")] ?? "—";
+    statsObj["K (P)"] = t[getIdx("K")] ?? "—";
+    statsObj["BB (P)"] = t[getIdx("BB")] ?? "—";
+  }
+  return statsObj;
+}
+
+// ─── Full boxscore extraction ─────────────────────────────────────────────────
+function extractBoxscore(
+  json: EspnSummary,
+  leagueKey: string,
+  game: GameShape,
+): {
   homeStats: Record<string, string | number>;
   awayStats: Record<string, string | number>;
+  homePlayerStats: PlayerStatLine[];
+  awayPlayerStats: PlayerStatLine[];
   homeLineup: string[];
   awayLineup: string[];
-  keyPlays: { time: string; description: string; team: string }[];
+  keyPlays: Array<{ time: string; description: string; team: string }>;
 } {
-  const bs: Record<string, any> = json.boxscore ?? {};
+  const bs = json.boxscore;
   const isNBA = leagueKey === "NBA";
   const isMLB = leagueKey === "MLB";
   const isMLS = leagueKey === "MLS";
 
-  // ─── Lineups from boxscore.players ────────────────────────────────────────
-  const homePlayers: string[] = [];
-  const awayPlayers: string[] = [];
+  // NBA/NFL stat keys to show per-player
+  const NBA_PLAYER_KEYS = ["MIN", "PTS", "FG", "3PT", "FT", "REB", "AST", "TO", "STL", "BLK"];
+  const NFL_PLAYER_KEYS = ["POS", "C/ATT", "YDS", "TD", "INT"];
+  const MLB_BATTING_KEYS = ["H-AB", "R", "H", "RBI", "HR", "BB", "K"];
+  const MLB_PITCHING_KEYS = ["IP", "H", "R", "ER", "BB", "K"];
+  const MLS_PLAYER_KEYS = ["MIN", "G", "A", "SHT", "SV"];
 
-  const bsPlayers: any[] = bs.players ?? [];
-  bsPlayers.forEach((p: any) => {
-    const teamName: string = p.team?.displayName ?? "";
-    const isHome = teamName === game.homeTeam;
-    const statsGroup: any = (p.statistics as any[])?.[0];
-    const athletes: any[] = statsGroup?.athletes ?? [];
-    const names = athletes
-      .filter((a) => a.active !== false)
-      .map((a) => a.athlete?.displayName as string)
-      .filter(Boolean);
-    if (isHome) homePlayers.push(...names);
-    else awayPlayers.push(...names);
-  });
-
-  // ─── MLB: use rosters for lineups ─────────────────────────────────────────
-  if (isMLB && homePlayers.length === 0) {
-    const rosters: any[] = json.rosters ?? [];
-    rosters.forEach((r: any) => {
-      const teamName: string = r.team?.displayName ?? "";
-      const isHome = teamName === game.homeTeam;
-      const entries: any[] = r.entries ?? [];
-      const names = entries.map((e: any) => e.athlete?.displayName as string).filter(Boolean);
-      if (isHome) homePlayers.push(...names.slice(0, 9));
-      else awayPlayers.push(...names.slice(0, 9));
-    });
-  }
-
-  // ─── Team stats ───────────────────────────────────────────────────────────
   let homeStats: Record<string, string | number> = {};
   let awayStats: Record<string, string | number> = {};
+  let homePlayerStats: PlayerStatLine[] = [];
+  let awayPlayerStats: PlayerStatLine[] = [];
 
-  const bsTeams: any[] = bs.teams ?? [];
+  // ─── Per-team data from boxscore.players ──────────────────────────────────
+  for (const playerEntry of bs.players ?? []) {
+    const isHome = playerEntry.team.displayName === game.homeTeam;
 
-  const getStat = (team: any, name: string): string => {
-    const stats: any[] = team.statistics ?? [];
-    return stats.find((s) => s.name === name)?.displayValue ?? "—";
-  };
-
-  bsTeams.forEach((t: any) => {
-    const teamName: string = t.team?.displayName ?? "";
-    const isHome = teamName === game.homeTeam;
-    const statsObj: Record<string, string | number> = {};
-
-    if (isNBA) {
-      statsObj["FG"] = getStat(t, "fieldGoalsMade-fieldGoalsAttempted");
-      statsObj["3PT"] = getStat(t, "threePointFieldGoalsMade-threePointFieldGoalsAttempted");
-      statsObj["FT"] = getStat(t, "freeThrowsMade-freeThrowsAttempted");
-      statsObj["REB"] = getStat(t, "totalRebounds");
-      statsObj["AST"] = getStat(t, "assists");
-      statsObj["TO"] = getStat(t, "turnovers");
-      statsObj["STL"] = getStat(t, "steals");
-      statsObj["BLK"] = getStat(t, "blocks");
-    } else if (isMLB) {
-      // MLB: team-level stats come from player stats group totals (handled separately below)
-      statsObj["_needsPlayerTotals"] = 1;
-    } else if (isMLS) {
-      statsObj["Shots"] = getStat(t, "shots");
-      statsObj["On Target"] = getStat(t, "shotsOnTarget");
-      statsObj["Possession"] = getStat(t, "possessionPct");
-      statsObj["Corners"] = getStat(t, "cornerKicks");
-      statsObj["Fouls"] = getStat(t, "fouls");
-    } else {
-      statsObj["Pass Yds"] = getStat(t, "netPassingYards");
-      statsObj["Rush Yds"] = getStat(t, "rushingYards");
-      statsObj["Total Yds"] = getStat(t, "totalYards");
-      statsObj["Turnovers"] = getStat(t, "turnovers");
-      statsObj["3rd Down"] = getStat(t, "thirdDownPct");
-    }
-
-    if (isHome) homeStats = statsObj;
-    else awayStats = statsObj;
-  });
-
-  // ─── MLB: extract team totals from player stats groups ───────────────────
-  if (isMLB && (homeStats["_needsPlayerTotals"] || awayStats["_needsPlayerTotals"])) {
-    delete homeStats["_needsPlayerTotals"];
-    delete awayStats["_needsPlayerTotals"];
-    bsPlayers.forEach((p: any) => {
-      const teamName: string = p.team?.displayName ?? "";
-      const isHome = teamName === game.homeTeam;
-      const statsGroup = (p.statistics as any[]) ?? [];
-      const batting = statsGroup.find((sg: any) => sg.type === "batting");
-      const pitching = statsGroup.find((sg: any) => sg.type === "pitching");
-      const statsObj: Record<string, string | number> = {};
-
+    if (isMLB) {
+      // MLB has two stat groups: batting + pitching
+      const batting = playerEntry.statistics.find((sg) => sg.type === "batting");
+      const pitching = playerEntry.statistics.find((sg) => sg.type === "pitching");
+      const lines: PlayerStatLine[] = [];
       if (batting) {
-        const names: string[] = batting.names ?? [];
-        const totals: string[] = batting.totals ?? [];
-        const get = (name: string) => totals[names.indexOf(name)] ?? "—";
-        statsObj["H"] = get("H");
-        statsObj["AB"] = get("AB");
-        statsObj["R"] = get("R");
-        statsObj["RBI"] = get("RBI");
-        statsObj["HR"] = get("HR");
-        statsObj["BB"] = get("BB");
-        statsObj["K"] = get("K");
+        const statKeys = batting.names.slice(0, MLB_BATTING_KEYS.length);
+        lines.push(...extractPlayerStats(batting, statKeys));
       }
       if (pitching) {
-        const names: string[] = pitching.names ?? [];
-        const totals: string[] = pitching.totals ?? [];
-        const get = (name: string) => totals[names.indexOf(name)] ?? "—";
-        statsObj["IP"] = get("IP");
-        statsObj["ERA-H"] = get("H");
-        statsObj["ERA-BB"] = get("BB");
-        statsObj["ERA-K"] = get("K");
+        const statKeys = pitching.names.slice(0, MLB_PITCHING_KEYS.length);
+        const pitchers = extractPlayerStats(pitching, statKeys);
+        // Mark pitchers distinctly
+        pitchers.forEach((p) => { p.stats["role"] = "P"; });
+        lines.push(...pitchers);
       }
-
-      if (isHome) homeStats = statsObj;
-      else awayStats = statsObj;
-    });
-  }
-
-  // Fallbacks if stats are empty
-  if (Object.keys(homeStats).length === 0) {
-    const h = game.homeScore ?? 0;
-    const a = game.awayScore ?? 0;
-    if (isNBA) {
-      homeStats = { Points: h, Rebounds: "—", Assists: "—", FG: "—", "3PT": "—" };
-      awayStats = { Points: a, Rebounds: "—", Assists: "—", FG: "—", "3PT": "—" };
-    } else if (isMLB) {
-      homeStats = { R: h, H: "—", E: "—" };
-      awayStats = { R: a, H: "—", E: "—" };
+      if (isHome) {
+        homePlayerStats = lines;
+        homeStats = buildMLBTeamStatsFromGroups(playerEntry.statistics);
+      } else {
+        awayPlayerStats = lines;
+        awayStats = buildMLBTeamStatsFromGroups(playerEntry.statistics);
+      }
     } else {
-      homeStats = { Goals: h, Shots: "—", Possession: "—" };
-      awayStats = { Goals: a, Shots: "—", Possession: "—" };
+      // NBA / NFL / MLS — single stats group
+      const sg = playerEntry.statistics[0];
+      if (!sg) continue;
+      const statKeys = isNBA ? NBA_PLAYER_KEYS : isMLS ? MLS_PLAYER_KEYS : NFL_PLAYER_KEYS;
+      const lines = extractPlayerStats(sg, statKeys.filter((k) => sg.names.includes(k)));
+      if (isHome) homePlayerStats = lines;
+      else awayPlayerStats = lines;
     }
   }
 
-  // ─── Key plays from scoring plays ─────────────────────────────────────────
-  const keyPlays: { time: string; description: string; team: string }[] = [];
-  const plays: any[] = json.plays ?? [];
-
-  const homeTeamId: string = bsTeams.find((t) => t.team?.displayName === game.homeTeam)?.team?.id ?? "";
-
-  const scoringPlays = plays.filter((p) => p.scoringPlay === true);
-  const playsToShow = scoringPlays.slice(-8);
-
-  playsToShow.forEach((p) => {
-    const period: string = p.period?.displayValue ?? "";
-    const clock: string = p.clock?.displayValue ?? "";
-    const time = [clock, period].filter(Boolean).join(" · ");
-    const teamId: string = p.team?.id ?? "";
-    const teamName = teamId ? (teamId === homeTeamId ? game.homeTeam : game.awayTeam) : "";
-    keyPlays.push({ time, description: p.text ?? "", team: teamName });
-  });
-
-  // Fallback: show recent plays if no scoring plays
-  if (keyPlays.length === 0) {
-    plays.slice(-5).filter((p) => p.text).forEach((p) => {
-      const period: string = p.period?.displayValue ?? "";
-      const clock: string = p.clock?.displayValue ?? "";
-      const time = [clock, period].filter(Boolean).join(" · ");
-      keyPlays.push({ time, description: p.text, team: "" });
-    });
+  // ─── Team aggregate stats from boxscore.teams ─────────────────────────────
+  for (const teamEntry of bs.teams ?? []) {
+    const isHome = teamEntry.team.displayName === game.homeTeam;
+    let stats: Record<string, string | number> = {};
+    if (isNBA) stats = buildNBATeamStats(teamEntry);
+    else if (isMLS) stats = buildMLSTeamStats(teamEntry);
+    else if (!isMLB) stats = buildNFLTeamStats(teamEntry);
+    if (isHome) homeStats = { ...stats, ...homeStats };
+    else awayStats = { ...stats, ...awayStats };
   }
 
-  return {
-    homeStats,
-    awayStats,
-    homeLineup: homePlayers.slice(0, 12),
-    awayLineup: awayPlayers.slice(0, 12),
-    keyPlays,
+  // ─── MLB: roster fallback for lineups if boxscore.players missing ──────────
+  if (isMLB && homePlayerStats.length === 0) {
+    for (const roster of json.rosters ?? []) {
+      const isHome = roster.team.displayName === game.homeTeam;
+      const names = roster.entries
+        .map((e) => e.athlete?.displayName)
+        .filter((n): n is string => Boolean(n))
+        .slice(0, 9);
+      const lines: PlayerStatLine[] = names.map((name) => ({
+        name,
+        starter: true,
+        stats: {},
+      }));
+      if (isHome) homePlayerStats = lines;
+      else awayPlayerStats = lines;
+    }
+  }
+
+  // ─── Starters-first lineups (string arrays for existing interface) ─────────
+  const toLineup = (players: PlayerStatLine[]) => {
+    const starters = players.filter((p) => p.starter).map((p) => p.name);
+    const bench = players.filter((p) => !p.starter).map((p) => p.name);
+    return [...starters, ...bench];
   };
+  const homeLineup = toLineup(homePlayerStats);
+  const awayLineup = toLineup(awayPlayerStats);
+
+  // ─── Key plays from scoring plays ─────────────────────────────────────────
+  const keyPlays: Array<{ time: string; description: string; team: string }> = [];
+  const plays = json.plays ?? [];
+  const homeTeamId = bs.teams?.find((t) => t.team.displayName === game.homeTeam)?.team.id ?? "";
+  const scoringPlays = plays.filter((p) => p.scoringPlay);
+  scoringPlays.slice(-8).forEach((p) => {
+    const period = p.period?.displayValue ?? "";
+    const clock = p.clock?.displayValue ?? "";
+    const time = [clock, period].filter(Boolean).join(" · ");
+    const teamId = p.team?.id ?? "";
+    const teamName = teamId ? (teamId === homeTeamId ? game.homeTeam : game.awayTeam) : "";
+    keyPlays.push({ time, description: p.text, team: teamName });
+  });
+
+  // Fallback: recent plays if no scoring plays yet (e.g. upcoming)
+  if (keyPlays.length === 0) {
+    plays
+      .filter((p) => p.text)
+      .slice(-5)
+      .forEach((p) => {
+        const period = p.period?.displayValue ?? "";
+        const clock = p.clock?.displayValue ?? "";
+        const time = [clock, period].filter(Boolean).join(" · ");
+        keyPlays.push({ time, description: p.text, team: "" });
+      });
+  }
+
+  return { homeStats, awayStats, homePlayerStats, awayPlayerStats, homeLineup, awayLineup, keyPlays };
 }
 
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
@@ -297,18 +473,16 @@ function extractBoxscore(json: Record<string, any>, leagueKey: string, game: Rec
 router.get("/sports/games", async (req, res) => {
   const { league } = req.query as { league?: string };
   const leagues = league
-    ? [league.toUpperCase()].filter((l) => LEAGUE_CONFIG[l])
+    ? [league.toUpperCase()].filter((l) => l in LEAGUE_CONFIG)
     : ["NBA", "MLB", "MLS", "NFL"];
 
   try {
     const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l)));
     const games = results.flat();
-
     games.sort((a, b) => {
       const pri: Record<string, number> = { live: 0, upcoming: 1, finished: 2 };
-      return (pri[a.status as string] ?? 3) - (pri[b.status as string] ?? 3);
+      return (pri[a.status] ?? 3) - (pri[b.status] ?? 3);
     });
-
     res.json({ games });
   } catch {
     res.status(500).json({ error: "Failed to fetch games" });
@@ -317,7 +491,6 @@ router.get("/sports/games", async (req, res) => {
 
 router.get("/sports/game/:gameId", async (req, res) => {
   const { gameId } = req.params;
-
   const dashIdx = gameId.indexOf("-");
   if (dashIdx === -1) { res.status(400).json({ error: "Invalid game ID format" }); return; }
 
@@ -327,7 +500,7 @@ router.get("/sports/game/:gameId", async (req, res) => {
   if (!cfg) { res.status(400).json({ error: `Unknown league: ${leagueKey}` }); return; }
 
   const cacheKey = `game-detail-${gameId}`;
-  const cached = getCached<Record<string, any>>(cacheKey);
+  const cached = getCached<GameDetailShape>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   try {
@@ -335,50 +508,49 @@ router.get("/sports/game/:gameId", async (req, res) => {
     const scoreUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard`;
 
     const [summaryJson, scoreJson] = await Promise.all([
-      espnFetch(summaryUrl) as Promise<Record<string, any>>,
-      espnFetch(scoreUrl).catch(() => null) as Promise<Record<string, any> | null>,
+      espnFetch(summaryUrl) as Promise<EspnSummary>,
+      espnFetch(scoreUrl).catch(() => null) as Promise<EspnScoreboard | null>,
     ]);
 
-    // Build game object — prefer scoreboard for live scores
-    let game: Record<string, any> | null = null;
-
+    // Prefer live scoreboard for up-to-date score
+    let game: GameShape | null = null;
     if (scoreJson?.events) {
-      const ev = (scoreJson.events as any[]).find((e) => e.id === espnId);
+      const ev = scoreJson.events.find((e) => e.id === espnId);
       if (ev) game = mapEvent(ev, leagueKey);
     }
 
-    // Fallback: build from summary header
-    if (!game) {
-      const headerComp = (summaryJson.header as any)?.competitions?.[0];
-      if (headerComp) {
-        const fakeEvent: Record<string, any> = {
-          id: espnId,
-          date: headerComp.date ?? headerComp.startDate,
-          status: headerComp.status,
-          competitions: [headerComp],
-          name: "",
-        };
-        game = mapEvent(fakeEvent, leagueKey);
-      }
+    // Fallback: reconstruct game from summary header
+    if (!game && summaryJson.header?.competitions?.[0]) {
+      const comp = summaryJson.header.competitions[0];
+      const fakeEvent: EspnEvent = {
+        id: espnId,
+        date: comp.date ?? comp.startDate ?? new Date().toISOString(),
+        name: "",
+        status: comp.status,
+        competitions: [comp],
+      };
+      game = mapEvent(fakeEvent, leagueKey);
     }
 
     if (!game) { res.status(404).json({ error: "Game not found" }); return; }
 
-    const { homeStats, awayStats, homeLineup, awayLineup, keyPlays } = extractBoxscore(summaryJson, leagueKey, game);
+    const { homeStats, awayStats, homePlayerStats, awayPlayerStats, homeLineup, awayLineup, keyPlays } =
+      extractBoxscore(summaryJson, leagueKey, game);
 
-    const detail: Record<string, any> = {
+    const detail: GameDetailShape = {
       game,
       keyPlays,
       homeStats,
       awayStats,
       homeLineup,
       awayLineup,
+      homePlayerStats,
+      awayPlayerStats,
       aiSummary: null,
     };
 
     const isLive = game.status === "live";
     setCached(cacheKey, detail, isLive ? 15_000 : 30_000);
-
     res.json(detail);
   } catch (err) {
     console.error("ESPN game detail error:", err);
@@ -386,9 +558,9 @@ router.get("/sports/game/:gameId", async (req, res) => {
   }
 });
 
-// ─── STANDINGS (kept from previous hardcoded data — Task #3 will replace) ────
+// ─── STANDINGS (hardcoded — Task #3 will replace with live ESPN) ─────────────
 
-const NBA_EAST_STANDINGS = [
+const NBA_EAST = [
   { rank: 1, teamName: "Detroit Pistons", wins: 49, losses: 19, winPct: 0.720, gamesBack: 0, streak: "W3", rankChange: 0 },
   { rank: 2, teamName: "Boston Celtics", wins: 46, losses: 23, winPct: 0.667, gamesBack: 3.5, streak: "W2", rankChange: 0 },
   { rank: 3, teamName: "New York Knicks", wins: 44, losses: 24, winPct: 0.647, gamesBack: 5.0, streak: "L1", rankChange: 1 },
@@ -406,7 +578,7 @@ const NBA_EAST_STANDINGS = [
   { rank: 15, teamName: "Washington Wizards", wins: 16, losses: 52, winPct: 0.235, gamesBack: 33.0, streak: "L5", rankChange: 0 },
 ];
 
-const NBA_WEST_STANDINGS = [
+const NBA_WEST = [
   { rank: 1, teamName: "Oklahoma City Thunder", wins: 52, losses: 15, winPct: 0.776, gamesBack: 0, streak: "W9", rankChange: 0 },
   { rank: 2, teamName: "San Antonio Spurs", wins: 47, losses: 20, winPct: 0.701, gamesBack: 5.0, streak: "W5", rankChange: 0 },
   { rank: 3, teamName: "Los Angeles Lakers", wins: 45, losses: 22, winPct: 0.672, gamesBack: 7.0, streak: "W7", rankChange: 1 },
@@ -424,7 +596,7 @@ const NBA_WEST_STANDINGS = [
   { rank: 15, teamName: "Utah Jazz", wins: 16, losses: 52, winPct: 0.235, gamesBack: 36.0, streak: "L6", rankChange: 0 },
 ];
 
-const NFL_OFFSEASON_STANDINGS = [
+const NFL_FINAL = [
   { rank: 1, teamName: "Kansas City Chiefs", wins: 15, losses: 2, winPct: 0.882, gamesBack: 0, streak: "SB Champs", rankChange: 0 },
   { rank: 2, teamName: "Philadelphia Eagles", wins: 13, losses: 4, winPct: 0.765, gamesBack: 2.0, streak: "—", rankChange: 0 },
   { rank: 3, teamName: "Detroit Lions", wins: 13, losses: 5, winPct: 0.722, gamesBack: 2.5, streak: "—", rankChange: 0 },
@@ -435,7 +607,7 @@ const NFL_OFFSEASON_STANDINGS = [
   { rank: 8, teamName: "Minnesota Vikings", wins: 10, losses: 7, winPct: 0.588, gamesBack: 5.0, streak: "—", rankChange: 0 },
 ];
 
-const MLS_EAST_STANDINGS = [
+const MLS_EAST = [
   { rank: 1, teamName: "New England Revolution", wins: 3, losses: 1, winPct: 0.750, gamesBack: 0, streak: "W2", rankChange: 0 },
   { rank: 2, teamName: "New York City FC", wins: 2, losses: 1, winPct: 0.667, gamesBack: 2.0, streak: "D1", rankChange: 0 },
   { rank: 3, teamName: "Atlanta United", wins: 2, losses: 2, winPct: 0.500, gamesBack: 3.0, streak: "W1", rankChange: 1 },
@@ -446,7 +618,7 @@ const MLS_EAST_STANDINGS = [
   { rank: 8, teamName: "Columbus Crew", wins: 1, losses: 4, winPct: 0.200, gamesBack: 6.0, streak: "L4", rankChange: 0 },
 ];
 
-const MLS_WEST_STANDINGS = [
+const MLS_WEST = [
   { rank: 1, teamName: "Vancouver Whitecaps", wins: 3, losses: 0, winPct: 1.000, gamesBack: 0, streak: "W4", rankChange: 0 },
   { rank: 2, teamName: "Los Angeles FC", wins: 3, losses: 0, winPct: 1.000, gamesBack: 0, streak: "W4", rankChange: 0 },
   { rank: 3, teamName: "Houston Dynamo", wins: 2, losses: 1, winPct: 0.667, gamesBack: 2.0, streak: "W1", rankChange: 1 },
@@ -459,15 +631,13 @@ const MLS_WEST_STANDINGS = [
 
 router.get("/sports/standings", (req, res) => {
   const { league } = req.query as { league?: string };
-
-  let standings: typeof NBA_EAST_STANDINGS = [];
+  type StandingRow = typeof NBA_EAST[0];
+  let standings: StandingRow[] = [];
 
   if (league === "NBA") {
-    standings = [...NBA_EAST_STANDINGS, ...NBA_WEST_STANDINGS]
-      .sort((a, b) => b.wins - a.wins)
-      .map((s, i) => ({ ...s, rank: i + 1 }));
+    standings = [...NBA_EAST, ...NBA_WEST].sort((a, b) => b.wins - a.wins).map((s, i) => ({ ...s, rank: i + 1 }));
   } else if (league === "NFL") {
-    standings = NFL_OFFSEASON_STANDINGS;
+    standings = NFL_FINAL;
   } else if (league === "MLB") {
     standings = [
       { rank: 1, teamName: "Los Angeles Dodgers", wins: 95, losses: 67, winPct: 0.586, gamesBack: 0, streak: "Spring", rankChange: 0 },
@@ -480,13 +650,9 @@ router.get("/sports/standings", (req, res) => {
       { rank: 8, teamName: "Baltimore Orioles", wins: 82, losses: 80, winPct: 0.506, gamesBack: 13.0, streak: "Spring", rankChange: 0 },
     ];
   } else if (league === "MLS") {
-    standings = [...MLS_EAST_STANDINGS, ...MLS_WEST_STANDINGS]
-      .sort((a, b) => b.wins - a.wins)
-      .map((s, i) => ({ ...s, rank: i + 1 }));
+    standings = [...MLS_EAST, ...MLS_WEST].sort((a, b) => b.wins - a.wins).map((s, i) => ({ ...s, rank: i + 1 }));
   } else {
-    standings = [...NBA_EAST_STANDINGS, ...NBA_WEST_STANDINGS]
-      .sort((a, b) => b.wins - a.wins)
-      .map((s, i) => ({ ...s, rank: i + 1 }));
+    standings = [...NBA_EAST, ...NBA_WEST].sort((a, b) => b.wins - a.wins).map((s, i) => ({ ...s, rank: i + 1 }));
   }
 
   res.json({ standings });

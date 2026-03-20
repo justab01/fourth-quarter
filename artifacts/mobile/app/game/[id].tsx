@@ -9,13 +9,21 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
-import { api } from "@/utils/api";
+import { api, type PlayerStatLine } from "@/utils/api";
 import { LEAGUE_COLORS } from "@/constants/sports";
 import { goToTeam, goToPlayer } from "@/utils/navHelpers";
 
 const C = Colors.dark;
 
 type GameTab = "summary" | "stats" | "lineups";
+
+// Which per-player stat columns to show per league (in display order)
+const PLAYER_STAT_COLS: Record<string, string[]> = {
+  NBA: ["MIN", "PTS", "REB", "AST", "FG"],
+  NFL: ["YDS", "TD", "INT", "C/ATT"],
+  MLB: ["H-AB", "R", "RBI", "HR", "BB", "K"],
+  MLS: ["MIN", "G", "A", "SHT"],
+};
 
 export default function GameDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,7 +44,6 @@ export default function GameDetailScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: topPad }]}>
-      {/* Back button */}
       <View style={styles.navBar}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color={C.text} />
@@ -105,7 +112,7 @@ export default function GameDetailScreen() {
             ))}
           </View>
 
-          {/* Tab Content */}
+          {/* ─── Summary tab ──────────────────────────────────────────────── */}
           {activeTab === "summary" && (
             <View style={styles.tabContent}>
               {data.aiSummary && (
@@ -118,21 +125,27 @@ export default function GameDetailScreen() {
                 </View>
               )}
               <Text style={styles.subTitle}>Key Plays</Text>
-              {data.keyPlays.map((play, i) => (
-                <View key={i} style={styles.playRow}>
-                  <View style={[styles.playDot, { backgroundColor: displayColor }]} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.playTime}>{play.time}</Text>
-                    <Text style={styles.playDesc}>{play.description}</Text>
+              {data.keyPlays.length === 0 ? (
+                <Text style={styles.emptyText}>No key plays yet</Text>
+              ) : (
+                data.keyPlays.map((play, i) => (
+                  <View key={i} style={styles.playRow}>
+                    <View style={[styles.playDot, { backgroundColor: displayColor }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.playTime}>{play.time}</Text>
+                      <Text style={styles.playDesc}>{play.description}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                ))
+              )}
             </View>
           )}
 
+          {/* ─── Stats tab ────────────────────────────────────────────────── */}
           {activeTab === "stats" && (
             <View style={styles.tabContent}>
-              <StatsSection
+              {/* Team aggregate stats */}
+              <TeamStatsSection
                 homeTeam={game.homeTeam}
                 awayTeam={game.awayTeam}
                 homeStats={data.homeStats}
@@ -140,35 +153,42 @@ export default function GameDetailScreen() {
                 displayColor={displayColor}
                 league={game.league}
               />
+
+              {/* Per-player boxscore */}
+              {(data.homePlayerStats?.length || data.awayPlayerStats?.length) ? (
+                <>
+                  <PlayerBoxscore
+                    teamName={game.awayTeam}
+                    players={data.awayPlayerStats ?? []}
+                    league={game.league}
+                    displayColor={displayColor}
+                  />
+                  <PlayerBoxscore
+                    teamName={game.homeTeam}
+                    players={data.homePlayerStats ?? []}
+                    league={game.league}
+                    displayColor={displayColor}
+                  />
+                </>
+              ) : null}
             </View>
           )}
 
+          {/* ─── Lineups tab ──────────────────────────────────────────────── */}
           {activeTab === "lineups" && (
             <View style={styles.tabContent}>
-              <Pressable onPress={() => goToTeam(game.awayTeam, game.league)}>
-                <Text style={[styles.subTitle, styles.teamTappable]}>{game.awayTeam}</Text>
-              </Pressable>
-              <View style={styles.lineupList}>
-                {data.awayLineup.map((player, i) => (
-                  <Pressable key={player} style={styles.lineupItem} onPress={() => goToPlayer(player)}>
-                    <Text style={styles.lineupNum}>{i + 1}</Text>
-                    <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player}</Text>
-                    <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
-                  </Pressable>
-                ))}
-              </View>
-              <Pressable onPress={() => goToTeam(game.homeTeam, game.league)}>
-                <Text style={[styles.subTitle, styles.teamTappable]}>{game.homeTeam}</Text>
-              </Pressable>
-              <View style={styles.lineupList}>
-                {data.homeLineup.map((player, i) => (
-                  <Pressable key={player} style={styles.lineupItem} onPress={() => goToPlayer(player)}>
-                    <Text style={styles.lineupNum}>{i + 1}</Text>
-                    <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player}</Text>
-                    <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
-                  </Pressable>
-                ))}
-              </View>
+              <LineupSection
+                teamName={game.awayTeam}
+                league={game.league}
+                players={data.awayPlayerStats ?? data.awayLineup.map(name => ({ name, starter: true, stats: {} }))}
+                displayColor={displayColor}
+              />
+              <LineupSection
+                teamName={game.homeTeam}
+                league={game.league}
+                players={data.homePlayerStats ?? data.homeLineup.map(name => ({ name, starter: true, stats: {} }))}
+                displayColor={displayColor}
+              />
             </View>
           )}
         </ScrollView>
@@ -177,7 +197,8 @@ export default function GameDetailScreen() {
   );
 }
 
-function StatsSection({ homeTeam, awayTeam, homeStats, awayStats, displayColor, league }: {
+// ─── Team aggregate stats table ───────────────────────────────────────────────
+function TeamStatsSection({ homeTeam, awayTeam, homeStats, awayStats, displayColor, league }: {
   homeTeam: string; awayTeam: string;
   homeStats: Record<string, string | number>;
   awayStats: Record<string, string | number>;
@@ -185,15 +206,16 @@ function StatsSection({ homeTeam, awayTeam, homeStats, awayStats, displayColor, 
   league: string;
 }) {
   const statKeys = Object.keys(homeStats);
+  if (statKeys.length === 0) return null;
   return (
     <View style={styles.statsTable}>
       <View style={styles.statsHeader}>
         <Pressable style={{ flex: 1 }} onPress={() => goToTeam(awayTeam, league)}>
           <Text style={[styles.statsTeam, styles.teamTappable]} numberOfLines={1}>{awayTeam}</Text>
         </Pressable>
-        <Text style={styles.statsCat}>STAT</Text>
+        <Text style={styles.statsCat}>TEAM STATS</Text>
         <Pressable style={{ flex: 1 }} onPress={() => goToTeam(homeTeam, league)}>
-          <Text style={[styles.statsTeam, styles.teamTappable]} numberOfLines={1}>{homeTeam}</Text>
+          <Text style={[styles.statsTeam, styles.teamTappable, { textAlign: "right" }]} numberOfLines={1}>{homeTeam}</Text>
         </Pressable>
       </View>
       {statKeys.map(key => (
@@ -203,6 +225,105 @@ function StatsSection({ homeTeam, awayTeam, homeStats, awayStats, displayColor, 
           <Text style={styles.statVal}>{homeStats[key]}</Text>
         </View>
       ))}
+    </View>
+  );
+}
+
+// ─── Per-player boxscore stat lines ───────────────────────────────────────────
+function PlayerBoxscore({ teamName, players, league, displayColor }: {
+  teamName: string;
+  players: PlayerStatLine[];
+  league: string;
+  displayColor: string;
+}) {
+  if (players.length === 0) return null;
+  const cols = PLAYER_STAT_COLS[league] ?? ["PTS", "REB", "AST"];
+  const availableCols = cols.filter(c => players.some(p => p.stats[c] != null));
+  if (availableCols.length === 0) return null;
+
+  return (
+    <View style={styles.playerBoxCard}>
+      <Pressable onPress={() => goToTeam(teamName, league)}>
+        <Text style={[styles.playerBoxTeam, { color: displayColor }]}>{teamName}</Text>
+      </Pressable>
+      {/* Header row */}
+      <View style={styles.playerBoxRow}>
+        <Text style={[styles.playerBoxName, styles.playerBoxHeader]}>PLAYER</Text>
+        {availableCols.map(c => (
+          <Text key={c} style={[styles.playerBoxStat, styles.playerBoxHeader]}>{c}</Text>
+        ))}
+      </View>
+      {/* Player rows */}
+      {players.map((player) => (
+        <Pressable key={player.name} style={styles.playerBoxRow} onPress={() => goToPlayer(player.name)}>
+          <View style={styles.playerBoxNameCell}>
+            {player.starter && (
+              <View style={[styles.starterDot, { backgroundColor: displayColor }]} />
+            )}
+            <Text style={styles.playerBoxName} numberOfLines={1}>{player.name}</Text>
+          </View>
+          {availableCols.map(c => (
+            <Text key={c} style={styles.playerBoxStat}>{player.stats[c] ?? "—"}</Text>
+          ))}
+        </Pressable>
+      ))}
+      <Text style={styles.playerBoxNote}>Starters indicated by dot</Text>
+    </View>
+  );
+}
+
+// ─── Lineups tab section (starters / bench) ───────────────────────────────────
+function LineupSection({ teamName, league, players, displayColor }: {
+  teamName: string;
+  league: string;
+  players: PlayerStatLine[];
+  displayColor: string;
+}) {
+  const starters = players.filter(p => p.starter);
+  const bench = players.filter(p => !p.starter);
+  return (
+    <View style={{ marginBottom: 8 }}>
+      <Pressable onPress={() => goToTeam(teamName, league)}>
+        <Text style={[styles.subTitle, styles.teamTappable]}>{teamName}</Text>
+      </Pressable>
+
+      {starters.length > 0 && (
+        <>
+          <Text style={styles.rosterLabel}>STARTERS</Text>
+          <View style={styles.lineupList}>
+            {starters.map((player, i) => (
+              <Pressable key={player.name} style={styles.lineupItem} onPress={() => goToPlayer(player.name)}>
+                <View style={[styles.starterBadge, { backgroundColor: displayColor + "22" }]}>
+                  <Text style={[styles.lineupNum, { color: displayColor }]}>{i + 1}</Text>
+                </View>
+                <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player.name}</Text>
+                <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
+
+      {bench.length > 0 && (
+        <>
+          <Text style={styles.rosterLabel}>BENCH</Text>
+          <View style={styles.lineupList}>
+            {bench.map((player, i) => (
+              <Pressable key={player.name} style={styles.lineupItem} onPress={() => goToPlayer(player.name)}>
+                <View style={styles.benchBadge}>
+                  <Text style={styles.lineupNum}>{i + 1}</Text>
+                </View>
+                <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player.name}</Text>
+                <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
+
+      {players.length === 0 && (
+        <Text style={styles.emptyText}>No lineup data available</Text>
+      )}
     </View>
   );
 }
@@ -252,10 +373,13 @@ const styles = StyleSheet.create({
   aiTitle: { fontSize: 13, fontWeight: "700", letterSpacing: 0.5 },
   aiText: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
   subTitle: { fontSize: 16, fontWeight: "700", color: C.text, fontFamily: "Inter_700Bold" },
+  emptyText: { color: C.textTertiary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", paddingVertical: 12 },
   playRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   playDot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
   playTime: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular" },
   playDesc: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20, marginTop: 2 },
+
+  // Team aggregate stats table
   statsTable: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
   statsHeader: { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.separator },
   statsTeam: { flex: 1, color: C.textSecondary, fontSize: 12, fontWeight: "700", textAlign: "center" },
@@ -266,13 +390,42 @@ const styles = StyleSheet.create({
   },
   statVal: { flex: 1, color: C.text, fontSize: 14, fontWeight: "600", textAlign: "center", fontFamily: "Inter_600SemiBold" },
   statKey: { width: 100, textAlign: "center", color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular" },
-  lineupList: { gap: 8, marginBottom: 16 },
+
+  // Player boxscore
+  playerBoxCard: {
+    backgroundColor: C.card, borderRadius: 16, padding: 14,
+    borderWidth: 1, borderColor: C.cardBorder, gap: 2,
+  },
+  playerBoxTeam: { fontSize: 13, fontWeight: "700", letterSpacing: 0.3, marginBottom: 8, fontFamily: "Inter_700Bold" },
+  playerBoxRow: { flexDirection: "row", alignItems: "center", paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: C.separator },
+  playerBoxNameCell: { flex: 1, flexDirection: "row", alignItems: "center", gap: 5 },
+  playerBoxName: { flex: 1, color: C.text, fontSize: 13, fontFamily: "Inter_500Medium" },
+  playerBoxStat: { width: 44, color: C.textSecondary, fontSize: 12, textAlign: "center", fontFamily: "Inter_500Medium" },
+  playerBoxHeader: { color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
+  playerBoxNote: { color: C.textTertiary, fontSize: 10, marginTop: 6, fontFamily: "Inter_400Regular" },
+  starterDot: { width: 6, height: 6, borderRadius: 3, flexShrink: 0 },
+
+  // Lineups
+  rosterLabel: {
+    color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 1,
+    marginBottom: 4, marginTop: 8, fontFamily: "Inter_700Bold",
+  },
+  lineupList: { gap: 6, marginBottom: 4 },
   lineupItem: {
     flexDirection: "row", alignItems: "center", gap: 12,
     backgroundColor: C.card, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
     borderWidth: 1, borderColor: C.cardBorder,
   },
-  lineupNum: { width: 24, color: C.textTertiary, fontSize: 13, fontWeight: "600", textAlign: "center", fontFamily: "Inter_600SemiBold" },
+  starterBadge: {
+    width: 26, height: 26, borderRadius: 13,
+    alignItems: "center", justifyContent: "center",
+  },
+  benchBadge: {
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center", justifyContent: "center",
+  },
+  lineupNum: { color: C.textTertiary, fontSize: 13, fontWeight: "600", textAlign: "center", fontFamily: "Inter_600SemiBold" },
   lineupName: { flex: 1, color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
   lineupNameTappable: { color: C.accent },
 });

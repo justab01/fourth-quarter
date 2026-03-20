@@ -65,6 +65,12 @@ export interface Game {
   awayTeamLogo: string | null;
 }
 
+export interface PlayerStatLine {
+  name: string;
+  starter: boolean;
+  stats: Record<string, string>;
+}
+
 export interface GameDetail {
   game: Game;
   keyPlays: { time: string; description: string; team: string }[];
@@ -72,6 +78,8 @@ export interface GameDetail {
   awayStats: Record<string, string | number>;
   homeLineup: string[];
   awayLineup: string[];
+  homePlayerStats?: PlayerStatLine[];
+  awayPlayerStats?: PlayerStatLine[];
   aiSummary: string | null;
 }
 
