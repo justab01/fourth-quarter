@@ -122,8 +122,8 @@ export default function StandingsScreen() {
               <Text style={styles.thTeam}>TEAM</Text>
               <Text style={styles.thStat}>W</Text>
               <Text style={styles.thStat}>L</Text>
-              <Text style={styles.thStat}>{activeLeague === "MLS" ? "PTS" : "PCT"}</Text>
-              <Text style={styles.thStat}>{activeLeague === "MLS" ? "REC" : "STK"}</Text>
+              <Text style={styles.thStat}>PCT</Text>
+              <Text style={styles.thStat}>STK</Text>
             </View>
 
             {standings.map((entry, idx) => {
@@ -173,14 +173,10 @@ export default function StandingsScreen() {
                   <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.wins}</Text>
                   <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.losses}</Text>
                   <Text style={[styles.tdStat, isMyTeam && { color: leagueMeta.color, fontFamily: "Inter_700Bold" }]}>
-                    {activeLeague === "MLS"
-                      ? String(entry.gamesBack ?? 0)
-                      : entry.winPct.toFixed(3)}
+                    {entry.winPct.toFixed(3)}
                   </Text>
                   <View style={styles.tdStreak}>
-                    {activeLeague === "MLS"
-                      ? <Text style={[streakStyles.text, { color: C.textSecondary, fontSize: 10 }]}>{entry.streak ?? ""}</Text>
-                      : <StreakIcon streak={entry.streak} />}
+                    <StreakIcon streak={entry.streak} />
                   </View>
                 </Pressable>
               );
