@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Dimensions,
-  ActivityIndicator,
+  ActivityIndicator, Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,13 +11,33 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { getPlayerById, type Player, type TeamData } from "@/constants/teamData";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
-import { getEspnGamelogUrl } from "@/constants/espnAthleteIds";
+import { getEspnGamelogUrl, getEspnHeadshotUrl, getEspnStatsUrl } from "@/constants/espnAthleteIds";
 
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
 
 const PLAYER_TABS = ["Overview", "News", "Stats", "Bio", "Splits", "Game Log"] as const;
 type PlayerTab = (typeof PLAYER_TABS)[number];
+
+// ─── ESPN stats fetch + parse ─────────────────────────────────────────────────
+type LiveStats = Record<string, string>;
+
+function parseEspnStats(data: any): LiveStats {
+  const result: LiveStats = {};
+  for (const cat of data.categories ?? []) {
+    const names: string[] = cat.names ?? [];
+    const statsArr: Array<{ season?: { year?: number }; stats?: string[] }> = cat.statistics ?? [];
+    const latest = [...statsArr].sort(
+      (a, b) => (b.season?.year ?? 0) - (a.season?.year ?? 0)
+    )[0];
+    if (!latest) continue;
+    const vals = latest.stats ?? [];
+    names.forEach((n, i) => {
+      if (vals[i] !== undefined) result[n] = vals[i];
+    });
+  }
+  return result;
+}
 
 // ─── Stat card for key metrics ────────────────────────────────────────────────
 function StatBigCard({ value, label, color }: { value: string | number; label: string; color: string }) {
@@ -40,42 +60,53 @@ const card = StyleSheet.create({
 });
 
 // ─── NBA Overview ─────────────────────────────────────────────────────────────
-function NBAOverview({ player, team }: { player: Player; team: TeamData }) {
+function NBAOverview({ player, team, liveStats }: { player: Player; team: TeamData; liveStats: LiveStats | null }) {
   const s = player.stats ?? {};
+  const ppg = liveStats?.avgPoints ?? s.PPG ?? "—";
+  const rpg = liveStats?.avgRebounds ?? s.RPG ?? "—";
+  const apg = liveStats?.avgAssists ?? s.APG ?? "—";
+  const fg = liveStats?.fieldGoalPct ?? s.FG ?? "—";
+
+  const tableRows = liveStats
+    ? [
+        ["Points", liveStats.avgPoints],
+        ["Rebounds", liveStats.avgRebounds],
+        ["Assists", liveStats.avgAssists],
+        ["Blocks", liveStats.avgBlocks],
+        ["Steals", liveStats.avgSteals],
+        ["FG%", liveStats.fieldGoalPct ? `${liveStats.fieldGoalPct}%` : undefined],
+        ["3P%", liveStats.threePointFieldGoalPct ? `${liveStats.threePointFieldGoalPct}%` : undefined],
+        ["FT%", liveStats.freeThrowPct ? `${liveStats.freeThrowPct}%` : undefined],
+        ["Minutes", liveStats.avgMinutes],
+        ["Turnovers", liveStats.avgTurnovers],
+      ].filter(([, v]) => v !== undefined)
+    : [
+        ["Points", s.PTS],
+        ["Rebounds", s.REB],
+        ["Assists", s.AST],
+        ["Blocks", s.BLK],
+        ["Steals", s.STL],
+        ["FG%", s.FG],
+        ["Minutes", s.MIN],
+      ].filter(([, v]) => v !== undefined);
+
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-      {/* Key stat cards */}
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <StatBigCard value={s.PPG ?? "—"} label="PPG" color={team.color} />
-        <StatBigCard value={s.RPG ?? "—"} label="RPG" color={C.accentTeal} />
-        <StatBigCard value={s.APG ?? "—"} label="APG" color={C.accentBlue} />
-        <StatBigCard value={s.FG ?? "—"} label="FG%" color={C.accentGold} />
+        <StatBigCard value={ppg} label="PPG" color={team.color} />
+        <StatBigCard value={rpg} label="RPG" color={C.accentTeal} />
+        <StatBigCard value={apg} label="APG" color={C.accentBlue} />
+        <StatBigCard value={fg} label="FG%" color={C.accentGold} />
       </View>
-
-      {/* Bio if present */}
-      {player.bio && (
-        <View style={bio.card}>
-          <Text style={bio.text}>{player.bio}</Text>
-        </View>
-      )}
-
-      {/* Season stats table */}
+      {player.bio && <View style={bio.card}><Text style={bio.text}>{player.bio}</Text></View>}
       <View style={table.card}>
-        <Text style={table.title}>2025-26 Regular Season</Text>
+        <Text style={table.title}>{liveStats ? "2025-26 Live Season Averages" : "2025-26 Regular Season"}</Text>
         <View style={table.header}>
           {["STAT", "VALUE"].map(h => (
             <Text key={h} style={[table.headerCell, h === "STAT" ? { flex: 1 } : { width: 80, textAlign: "right" }]}>{h}</Text>
           ))}
         </View>
-        {[
-          ["Points", s.PTS],
-          ["Rebounds", s.REB],
-          ["Assists", s.AST],
-          ["Blocks", s.BLK],
-          ["Steals", s.STL],
-          ["FG%", s.FG],
-          ["Minutes", s.MIN],
-        ].filter(([, v]) => v !== undefined).map(([label, val], i) => (
+        {tableRows.map(([label, val], i) => (
           <View key={label as string} style={[table.row, { backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.025)" }]}>
             <Text style={[table.cell, { flex: 1 }]}>{label as string}</Text>
             <Text style={[table.cell, { width: 80, textAlign: "right", color: C.text, fontWeight: "700" }]}>{val as string}</Text>
@@ -87,31 +118,32 @@ function NBAOverview({ player, team }: { player: Player; team: TeamData }) {
 }
 
 // ─── NFL Overview ─────────────────────────────────────────────────────────────
-function NFLOverview({ player, team }: { player: Player; team: TeamData }) {
+function NFLOverview({ player, team, liveStats }: { player: Player; team: TeamData; liveStats: LiveStats | null }) {
   const s = player.stats ?? {};
   const isQB = player.position === "QB";
-  const isSkill = ["WR", "TE", "RB"].includes(player.position);
+  const isRB = player.position === "RB";
+  const isSkill = ["WR", "TE"].includes(player.position);
 
   const statCards = isQB
     ? [
-        { v: s.YDS ?? s.YARDS, l: "PASS YDS" },
-        { v: s.TD, l: "TD" },
-        { v: s.INT, l: "INT" },
-        { v: s.QBR, l: "QBR" },
+        { v: liveStats?.passingYards ?? s.YDS ?? s.YARDS, l: "PASS YDS" },
+        { v: liveStats?.passingTouchdowns ?? s.TD, l: "TD" },
+        { v: liveStats?.interceptions ?? s.INT, l: "INT" },
+        { v: liveStats?.adjQBR ?? liveStats?.QBRating ?? s.QBR, l: "QBR" },
       ]
-    : isSkill && player.position === "RB"
+    : isRB
     ? [
-        { v: s.RUSH_YDS, l: "RUSH YDS" },
-        { v: s.RUSH_TD, l: "RUSH TD" },
-        { v: s.CAR, l: "CARRIES" },
-        { v: s.YPC, l: "YPC" },
+        { v: liveStats?.rushingYards ?? s.RUSH_YDS, l: "RUSH YDS" },
+        { v: liveStats?.rushingTouchdowns ?? s.RUSH_TD, l: "RUSH TD" },
+        { v: liveStats?.rushingAttempts ?? s.CAR, l: "CARRIES" },
+        { v: liveStats?.yardsPerRushAttempt ?? s.YPC, l: "YPC" },
       ]
     : isSkill
     ? [
-        { v: s.REC, l: "REC" },
-        { v: s.YDS, l: "REC YDS" },
-        { v: s.TD, l: "TD" },
-        { v: s.YPR, l: "YPR" },
+        { v: liveStats?.receptions ?? s.REC, l: "REC" },
+        { v: liveStats?.receivingYards ?? s.YDS, l: "REC YDS" },
+        { v: liveStats?.receivingTouchdowns ?? s.TD, l: "TD" },
+        { v: liveStats?.yardsPerReception ?? s.YPR, l: "YPR" },
       ]
     : [
         { v: s.SACKS, l: "SACKS" },
@@ -130,7 +162,7 @@ function NFLOverview({ player, team }: { player: Player; team: TeamData }) {
       </View>
       {player.bio && <View style={bio.card}><Text style={bio.text}>{player.bio}</Text></View>}
       <View style={table.card}>
-        <Text style={table.title}>2025 Season Stats</Text>
+        <Text style={table.title}>{liveStats && Object.keys(liveStats).length > 0 ? "2025 Live Season Stats" : "2025 Season Stats"}</Text>
         {Object.entries(s).map(([k, v], i) => (
           <View key={k} style={[table.row, { backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.025)" }]}>
             <Text style={[table.cell, { flex: 1 }]}>{k}</Text>
@@ -143,21 +175,21 @@ function NFLOverview({ player, team }: { player: Player; team: TeamData }) {
 }
 
 // ─── MLB Overview ─────────────────────────────────────────────────────────────
-function MLBOverview({ player, team }: { player: Player; team: TeamData }) {
+function MLBOverview({ player, team, liveStats }: { player: Player; team: TeamData; liveStats: LiveStats | null }) {
   const s = player.stats ?? {};
   const isPitcher = ["SP", "RP", "CL"].includes(player.position);
   const statCards = isPitcher
     ? [
-        { v: s.ERA, l: "ERA" },
-        { v: s.W, l: "W" },
-        { v: s.SO, l: "K" },
-        { v: s.WHIP, l: "WHIP" },
+        { v: liveStats?.ERA ?? s.ERA, l: "ERA" },
+        { v: liveStats?.wins ?? s.W, l: "W" },
+        { v: liveStats?.strikeouts ?? s.SO, l: "K" },
+        { v: liveStats?.WHIP ?? s.WHIP, l: "WHIP" },
       ]
     : [
-        { v: s.AVG, l: "AVG" },
-        { v: s.HR, l: "HR" },
-        { v: s.RBI, l: "RBI" },
-        { v: s.OPS, l: "OPS" },
+        { v: liveStats?.avg ?? liveStats?.battingAvg ?? s.AVG, l: "AVG" },
+        { v: liveStats?.homeRuns ?? s.HR, l: "HR" },
+        { v: liveStats?.RBIs ?? s.RBI, l: "RBI" },
+        { v: liveStats?.OPS ?? s.OPS, l: "OPS" },
       ];
 
   return (
@@ -183,10 +215,27 @@ function MLBOverview({ player, team }: { player: Player; team: TeamData }) {
 }
 
 // ─── Generic overview fallback ────────────────────────────────────────────────
-function GenericOverview({ player, team }: { player: Player; team: TeamData }) {
+function GenericOverview({ player, team, liveStats }: { player: Player; team: TeamData; liveStats: LiveStats | null }) {
   const s = player.stats ?? {};
+
+  const mlsCards = liveStats
+    ? [
+        { v: liveStats.goals, l: "GOALS" },
+        { v: liveStats.assists, l: "ASSISTS" },
+        { v: liveStats.minutesPlayed, l: "MINUTES" },
+        { v: liveStats.shotsOnGoal ?? liveStats.shots, l: "SHOTS" },
+      ].filter(({ v }) => v !== undefined)
+    : [];
+
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+      {mlsCards.length > 0 && (
+        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+          {mlsCards.map(({ v, l }) => (
+            <StatBigCard key={l} value={v as string} label={l} color={team.color} />
+          ))}
+        </View>
+      )}
       {player.bio && <View style={bio.card}><Text style={bio.text}>{player.bio}</Text></View>}
       {Object.keys(s).length > 0 && (
         <View style={table.card}>
@@ -240,7 +289,6 @@ function GameLogTab({
   league: string;
   teamColor: string;
 }) {
-  // ESPN season year = ending year: NBA 2025-26 → "2026", NFL 2025 → "2025", MLB 2025 → "2025"
   const defaultSeason = (league === "NBA" || league === "MLS") ? "2026" : "2025";
   const seasonButtons = (league === "NBA" || league === "MLS")
     ? ["2026", "2025", "2024"]
@@ -268,9 +316,6 @@ function GameLogTab({
 
       const allLabels: string[] = data.labels ?? [];
 
-      // Collect all game entries from seasonTypes
-      // NOTE: categories.events keys are numeric indices (0,1,2...) —
-      // the real game ID lives inside each value as ev.eventId
       const merged: Record<string, { stats: string[] }> = {};
       (data.seasonTypes ?? []).forEach((st: any) => {
         (st.categories ?? []).forEach((cat: any) => {
@@ -281,7 +326,6 @@ function GameLogTab({
         });
       });
 
-      // Sort events by date descending
       const eventMeta: Record<string, any> = data.events ?? {};
       const built: GameLogRow[] = Object.keys(merged)
         .filter(eid => eventMeta[eid])
@@ -312,7 +356,6 @@ function GameLogTab({
           };
         });
 
-      // Choose which labels to show — prefer known cols, fallback to all
       const preferred = PREFERRED_COLS[league] ?? [];
       const shown = preferred.length
         ? preferred.filter(l => allLabels.includes(l))
@@ -368,7 +411,6 @@ function GameLogTab({
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Season selector */}
       <View style={gl.seasonRow}>
         {seasonButtons.map(s => (
           <Pressable
@@ -385,17 +427,13 @@ function GameLogTab({
         <Text style={gl.gamesCount}>{rows.length} games</Text>
       </View>
 
-      {/* Table — fixed left + scrollable right */}
       <View style={{ flex: 1, flexDirection: "row" }}>
-        {/* Fixed left column: Date + Opp + W/L */}
         <View style={[gl.leftCol, { width: LEFT_W }]}>
-          {/* Header */}
           <View style={[gl.headerRow, { height: ROW_H }]}>
             <Text style={[gl.headerCell, { width: 50 }]}>DATE</Text>
             <Text style={[gl.headerCell, { width: 40 }]}>OPP</Text>
             <Text style={[gl.headerCell, { flex: 1 }]}>RESULT</Text>
           </View>
-          {/* Rows */}
           <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
             {rows.map((row, i) => {
               const resultColor = row.result === "W" ? "#3ECF8E" : row.result === "L" ? "#FF6B6B" : C.textTertiary;
@@ -421,16 +459,13 @@ function GameLogTab({
           </ScrollView>
         </View>
 
-        {/* Scrollable right columns: stats */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
           <View>
-            {/* Header */}
             <View style={[gl.headerRow, { height: ROW_H }]}>
               {labels.map(lbl => (
                 <Text key={lbl} style={[gl.headerCell, { width: COL_W, textAlign: "right" }]}>{lbl}</Text>
               ))}
             </View>
-            {/* Rows — must sync scroll with left side using ScrollView */}
             <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
               {rows.map((row, i) => (
                 <View
@@ -510,13 +545,14 @@ export default function PlayerScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<PlayerTab>("Overview");
   const [followed, setFollowed] = useState(false);
+  const [headshotError, setHeadshotError] = useState(false);
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const result = getPlayerById(id ?? "");
 
-  // Build fallback from ALL_PLAYERS if not in detailed registry
   const fallbackSearchPlayer = result
     ? null
     : ALL_PLAYERS.find(p => {
@@ -530,7 +566,6 @@ export default function PlayerScreen() {
         return slug === (id ?? "");
       });
 
-  // Determine which league color to use for fallback
   const LEAGUE_COLOR: Record<string, string> = {
     NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls,
   };
@@ -568,6 +603,21 @@ export default function PlayerScreen() {
     stats: [],
   } : null as any);
 
+  // Fetch live ESPN stats when player page opens
+  useEffect(() => {
+    if (!player || !team) return;
+    setLiveStats(null);
+    const url = getEspnStatsUrl(player.name, team.league);
+    if (!url) return;
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const parsed = parseEspnStats(data);
+        if (Object.keys(parsed).length > 0) setLiveStats(parsed);
+      })
+      .catch(() => {}); // silent fallback to static stats
+  }, [player?.name, team?.league]);
+
   if (!player || !team) {
     return (
       <View style={[styles.container, { paddingTop: topPad }]}>
@@ -581,11 +631,13 @@ export default function PlayerScreen() {
     );
   }
 
+  const headshotUrl = getEspnHeadshotUrl(player.name, team.league);
+
   const renderOverview = () => {
-    if (team.league === "NBA") return <NBAOverview player={player} team={team} />;
-    if (team.league === "NFL") return <NFLOverview player={player} team={team} />;
-    if (team.league === "MLB") return <MLBOverview player={player} team={team} />;
-    return <GenericOverview player={player} team={team} />;
+    if (team.league === "NBA") return <NBAOverview player={player} team={team} liveStats={liveStats} />;
+    if (team.league === "NFL") return <NFLOverview player={player} team={team} liveStats={liveStats} />;
+    if (team.league === "MLB") return <MLBOverview player={player} team={team} liveStats={liveStats} />;
+    return <GenericOverview player={player} team={team} liveStats={liveStats} />;
   };
 
   const renderTab = () => {
@@ -652,15 +704,24 @@ export default function PlayerScreen() {
 
         {/* Player identity */}
         <View style={styles.playerIdentity}>
-          <View style={[styles.playerAvatar, { backgroundColor: `${team.color}35`, borderColor: `${team.color}60` }]}>
-            <Text style={styles.avatarNum}>#{player.number}</Text>
-            <Text style={styles.avatarPos}>{player.position}</Text>
-          </View>
+          {/* Headshot or letter avatar */}
+          {headshotUrl && !headshotError ? (
+            <Image
+              source={{ uri: headshotUrl }}
+              style={[styles.headshotImg, { borderColor: `${team.color}60` }]}
+              onError={() => setHeadshotError(true)}
+            />
+          ) : (
+            <View style={[styles.playerAvatar, { backgroundColor: `${team.color}35`, borderColor: `${team.color}60` }]}>
+              <Text style={styles.avatarNum}>#{player.number}</Text>
+              <Text style={styles.avatarPos}>{player.position}</Text>
+            </View>
+          )}
+
           <View style={{ flex: 1 }}>
             <Text style={styles.playerName}>{player.name}</Text>
             <Pressable
               onPress={() => {
-                const teamId = `${team.league.toLowerCase()}-${team.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`;
                 router.push({ pathname: "/team/[id]", params: { id: team.id } } as any);
               }}
             >
@@ -716,6 +777,11 @@ const styles = StyleSheet.create({
   followBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.35)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.3)" },
   followText: { color: "#fff", fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
   playerIdentity: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
+  headshotImg: {
+    width: 80, height: 80, borderRadius: 40,
+    borderWidth: 2, flexShrink: 0,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
   playerAvatar: {
     width: 80, height: 80, borderRadius: 40,
     alignItems: "center", justifyContent: "center",

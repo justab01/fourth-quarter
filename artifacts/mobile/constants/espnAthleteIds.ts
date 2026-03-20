@@ -4948,6 +4948,32 @@ export function getEspnAthleteId(name: string, league: string): string | undefin
   }
 }
 
+const HEADSHOT_SPORT: Record<string, string> = {
+  NBA: "nba", NFL: "nfl", MLB: "mlb", MLS: "soccer",
+};
+
+export function getEspnHeadshotUrl(name: string, league: string): string | null {
+  const id = getEspnAthleteId(name, league);
+  if (!id) return null;
+  const sport = HEADSHOT_SPORT[league];
+  if (!sport) return null;
+  return `https://a.espncdn.com/combiner/i?img=/i/headshots/${sport}/players/full/${id}.png`;
+}
+
+export function getEspnStatsUrl(name: string, league: string): string | null {
+  const id = getEspnAthleteId(name, league);
+  if (!id) return null;
+  const leagueConfig: Record<string, { sport: string; league: string }> = {
+    NBA: { sport: "basketball", league: "nba" },
+    NFL: { sport: "football", league: "nfl" },
+    MLB: { sport: "baseball", league: "mlb" },
+    MLS: { sport: "soccer", league: "usa.1" },
+  };
+  const cfg = leagueConfig[league];
+  if (!cfg) return null;
+  return `https://site.web.api.espn.com/apis/common/v3/sports/${cfg.sport}/${cfg.league}/athletes/${id}/stats`;
+}
+
 export function getEspnGamelogUrl(name: string, league: string, season?: string): string | null {
   const id = getEspnAthleteId(name, league);
   if (!id) return null;

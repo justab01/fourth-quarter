@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Platform, ActivityIndicator
+  Platform, ActivityIndicator, Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,6 +12,7 @@ import Colors from "@/constants/colors";
 import { api, type PlayerStatLine } from "@/utils/api";
 import { LEAGUE_COLORS } from "@/constants/sports";
 import { goToTeam, goToPlayer } from "@/utils/navHelpers";
+import { getEspnHeadshotUrl } from "@/constants/espnAthleteIds";
 
 const C = Colors.dark;
 
@@ -272,6 +273,26 @@ function PlayerBoxscore({ teamName, players, league, displayColor }: {
   );
 }
 
+// ─── Small headshot circle for lineup rows ────────────────────────────────────
+function LineupHeadshot({ name, league }: { name: string; league: string }) {
+  const [error, setError] = useState(false);
+  const url = getEspnHeadshotUrl(name, league);
+  if (!url || error) {
+    return (
+      <View style={styles.lineupHeadshotPlaceholder}>
+        <Text style={styles.lineupHeadshotInitial}>{name.charAt(0)}</Text>
+      </View>
+    );
+  }
+  return (
+    <Image
+      source={{ uri: url }}
+      style={styles.lineupHeadshot}
+      onError={() => setError(true)}
+    />
+  );
+}
+
 // ─── Lineups tab section (starters / bench) ───────────────────────────────────
 function LineupSection({ teamName, league, players, displayColor }: {
   teamName: string;
@@ -296,6 +317,7 @@ function LineupSection({ teamName, league, players, displayColor }: {
                 <View style={[styles.starterBadge, { backgroundColor: displayColor + "22" }]}>
                   <Text style={[styles.lineupNum, { color: displayColor }]}>{i + 1}</Text>
                 </View>
+                <LineupHeadshot name={player.name} league={league} />
                 <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player.name}</Text>
                 <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
               </Pressable>
@@ -313,6 +335,7 @@ function LineupSection({ teamName, league, players, displayColor }: {
                 <View style={styles.benchBadge}>
                   <Text style={styles.lineupNum}>{i + 1}</Text>
                 </View>
+                <LineupHeadshot name={player.name} league={league} />
                 <Text style={[styles.lineupName, styles.lineupNameTappable]}>{player.name}</Text>
                 <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
               </Pressable>
@@ -428,4 +451,16 @@ const styles = StyleSheet.create({
   lineupNum: { color: C.textTertiary, fontSize: 13, fontWeight: "600", textAlign: "center", fontFamily: "Inter_600SemiBold" },
   lineupName: { flex: 1, color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
   lineupNameTappable: { color: C.accent },
+  lineupHeadshot: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  lineupHeadshotPlaceholder: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center", justifyContent: "center",
+  },
+  lineupHeadshotInitial: {
+    color: C.textTertiary, fontSize: 12, fontWeight: "700",
+  },
 });
