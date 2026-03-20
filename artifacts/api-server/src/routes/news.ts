@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import https from "https";
+import crypto from "crypto";
 
 const router: IRouter = Router();
 
@@ -166,7 +167,12 @@ function mapArticle(raw: EspnNewsArticle, defaultLeague: string): MappedArticle 
     .map((c) => c.description ?? "")
     .filter((s): s is string => s.length > 0);
 
-  const rawId = String(raw.id ?? raw.nowId ?? raw.dataSourceIdentifier ?? "");
+  // Use ESPN's numeric ID if present; fall back to a hash of headline+published
+  // to guarantee uniqueness even if ESPN omits the id field.
+  const providedId = raw.id ?? raw.nowId ?? raw.dataSourceIdentifier;
+  const rawId = providedId != null
+    ? String(providedId)
+    : crypto.createHash("md5").update(`${raw.headline ?? ""}|${raw.published ?? ""}`).digest("hex").slice(0, 12);
   const id = `espn-${rawId}`;
   const sourceUrl = raw.links?.web?.href ?? `https://www.espn.com/${defaultLeague.toLowerCase()}/`;
   const imageUrl = raw.images?.[0]?.url ?? null;

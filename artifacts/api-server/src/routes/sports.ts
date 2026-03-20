@@ -723,10 +723,13 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
       }
       allRaw.sort((a, b) => b.points - a.points);
       const leaderPts = allRaw[0]?.points ?? 0;
+      // ESPN MLS standings do not include a gamesBehind stat; MLS uses a points
+      // system (3 for win, 1 for draw). We express "points behind the leader"
+      // (overall, not conference-relative) as the gamesBack proxy so the UI can
+      // show a meaningful numeric distance from first place.
       entries = allRaw.map(({ points, ...e }, i) => ({
         ...e,
         rank: i + 1,
-        // Express points behind leader as gamesBack equivalent for MLS
         gamesBack: leaderPts - points,
       }));
     }
