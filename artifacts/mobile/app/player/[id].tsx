@@ -713,8 +713,7 @@ export default function PlayerScreen() {
             />
           ) : (
             <View style={[styles.playerAvatar, { backgroundColor: `${team.color}35`, borderColor: `${team.color}60` }]}>
-              <Text style={styles.avatarNum}>#{player.number}</Text>
-              <Text style={styles.avatarPos}>{player.position}</Text>
+              <Text style={styles.avatarInitial}>{player.name.charAt(0).toUpperCase()}</Text>
             </View>
           )}
 
@@ -787,8 +786,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     borderWidth: 2, flexShrink: 0,
   },
-  avatarNum: { color: "#fff", fontSize: 22, fontWeight: "900", fontFamily: "Inter_700Bold" },
-  avatarPos: { color: "rgba(255,255,255,0.65)", fontSize: 12, fontFamily: "Inter_500Medium" },
+  avatarInitial: { color: "#fff", fontSize: 32, fontWeight: "900", fontFamily: "Inter_700Bold" },
   playerName: { color: "#fff", fontSize: 24, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 28 },
   teamLink: { color: "rgba(255,255,255,0.75)", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 2 },
   infoPill: { backgroundColor: "rgba(0,0,0,0.3)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },

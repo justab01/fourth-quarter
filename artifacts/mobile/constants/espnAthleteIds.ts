@@ -4971,6 +4971,8 @@ export function getEspnStatsUrl(name: string, league: string): string | null {
   };
   const cfg = leagueConfig[league];
   if (!cfg) return null;
+  // Using /stats on site.web.api.espn.com (not /statistics on site.api.espn.com) because
+  // /statistics returns a 404 for most athletes while /stats reliably returns per-season averages.
   return `https://site.web.api.espn.com/apis/common/v3/sports/${cfg.sport}/${cfg.league}/athletes/${id}/stats`;
 }
 
