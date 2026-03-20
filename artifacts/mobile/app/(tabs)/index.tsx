@@ -39,10 +39,11 @@ export default function HubScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
-  const { data: gamesData, isLoading: gamesLoading, refetch: refetchGames } = useQuery({
+  const { data: gamesData, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
     queryKey: ["games"],
     queryFn: () => api.getGames(),
     staleTime: 30000,
+    retry: 2,
   });
 
   const { data: newsData, isLoading: newsLoading, refetch: refetchNews } = useQuery({
@@ -167,6 +168,12 @@ export default function HubScreen() {
                 <View key={i} style={{ width: 170 }}><GameCardSkeleton /></View>
               ))}
             </ScrollView>
+          ) : gamesError ? (
+            <Pressable style={styles.emptyCard} onPress={() => refetchGames()}>
+              <Ionicons name="wifi-outline" size={32} color={C.textTertiary} />
+              <Text style={styles.emptyText}>Couldn't load games</Text>
+              <Text style={[styles.emptyText, { fontSize: 12, marginTop: 4 }]}>Tap to retry</Text>
+            </Pressable>
           ) : scrollGames.length === 0 ? (
             <View style={styles.emptyCard}>
               <Ionicons name="calendar-outline" size={32} color={C.textTertiary} />
