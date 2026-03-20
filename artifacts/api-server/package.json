@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development tsx ./src/index.ts",
+    "dev": "while true; do NODE_ENV=development NODE_OPTIONS=--max-old-space-size=256 tsx ./src/index.ts; echo '[api-server] crashed, restarting in 2s...'; sleep 2; done",
     "build": "tsx ./build.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -61,22 +61,27 @@ export default function HubScreen() {
   const allGames = gamesData?.games ?? [];
   const myTeams = preferences.favoriteTeams;
 
-  const myGames = myTeams.length > 0
-    ? allGames.filter(g => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam))
-    : allGames.slice(0, 8);
+  const sortByStatus = (arr: typeof allGames) =>
+    [...arr].sort((a, b) => ({ live: 0, upcoming: 1, finished: 2 }[a.status] - { live: 0, upcoming: 1, finished: 2 }[b.status]));
 
-  const liveGames = myGames.filter(g => g.status === "live");
-  const upcomingGames = myGames.filter(g => g.status === "upcoming");
-  const finishedGames = myGames.filter(g => g.status === "finished");
+  const myTeamGames = myTeams.length > 0
+    ? allGames.filter(g => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam))
+    : [];
+
+  // When favorites have no games today, fall back gracefully to all games
+  const myTeamsPlaying = myTeamGames.length > 0;
+  const displayGames = myTeamsPlaying ? myTeamGames : allGames.slice(0, 10);
+  const gameSectionLabel = myTeamsPlaying ? "Today's Games" : "Today's Games";
+
+  const liveGames = displayGames.filter(g => g.status === "live");
+  const upcomingGames = displayGames.filter(g => g.status === "upcoming");
+  const finishedGames = displayGames.filter(g => g.status === "finished");
 
   const heroGames = liveGames.length > 0
     ? liveGames.slice(0, 3)
     : [...upcomingGames.slice(0, 2), ...finishedGames.slice(0, 1)];
 
-  const scrollGames = [...myGames].sort((a, b) => {
-    const s = { live: 0, upcoming: 1, finished: 2 };
-    return s[a.status] - s[b.status];
-  });
+  const scrollGames = sortByStatus(displayGames);
 
   const articles = newsData?.articles ?? [];
   const heroArticle = articles[0];
@@ -157,7 +162,14 @@ export default function HubScreen() {
         {/* TODAY'S GAMES — HORIZONTAL SCROLL */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Games</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text style={styles.sectionTitle}>Today's Games</Text>
+              {!gamesLoading && !gamesError && myTeams.length > 0 && !myTeamsPlaying && allGames.length > 0 && (
+                <View style={{ backgroundColor: C.surface2, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                  <Text style={{ color: C.textTertiary, fontSize: 10, fontWeight: "600" }}>AROUND THE LEAGUE</Text>
+                </View>
+              )}
+            </View>
             <Pressable onPress={() => router.push("/(tabs)/live" as any)}>
               <Text style={styles.seeAll}>See All</Text>
             </Pressable>

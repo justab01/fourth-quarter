@@ -205,6 +205,18 @@ function parseDetail(detail: string | undefined, state: string): { quarter: stri
   return { quarter: detail, timeRemaining: null };
 }
 
+// ESPN uses some team names that differ from the app's canonical names
+const TEAM_NAME_MAP: Record<string, string> = {
+  "Houston Dynamo FC": "Houston Dynamo",
+  "Red Bull New York": "New York Red Bulls",
+  "Inter Miami CF": "Inter Miami",
+  "Austin FC": "Austin FC",
+  "St. Louis CITY SC": "St. Louis City SC",
+};
+function normalizeTeamName(name: string): string {
+  return TEAM_NAME_MAP[name] ?? name;
+}
+
 function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   const comp = ev.competitions[0];
   const home = comp.competitors.find((c) => c.homeAway === "home");
@@ -220,8 +232,8 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     id: `${leagueKey.toLowerCase()}-${ev.id}`,
     sport: cfg.displaySport,
     league: leagueKey,
-    homeTeam: home?.team.displayName ?? "Home",
-    awayTeam: away?.team.displayName ?? "Away",
+    homeTeam: normalizeTeamName(home?.team.displayName ?? "Home"),
+    awayTeam: normalizeTeamName(away?.team.displayName ?? "Away"),
     homeTeamId: home?.team.id,
     awayTeamId: away?.team.id,
     homeScore: status === "upcoming" ? null : homeScore,
