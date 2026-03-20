@@ -118,11 +118,18 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 
 ### `artifacts/api-server` routes
 
-- `GET /api/sports/games?league=` — mock games (NFL/NBA/MLB/MLS)
-- `GET /api/sports/game/:id` — mock game detail with key plays, stats, lineups
-- `GET /api/sports/standings?league=` — mock standings with win/loss/pct/streak
-- `GET /api/news?teams=&leagues=` — 8 mock articles, filterable
-- `POST /api/ai/summarize` — OpenAI gpt-5-mini article/game summary
-- `POST /api/ai/recap` — OpenAI gpt-5-mini postgame recap (JSON format)
+- `GET /api/sports/games?league=` — **live ESPN** scoreboard for NFL/NBA/MLB/MLS; 15s cache live, 30s finished
+- `GET /api/sports/game/:id` — **live ESPN** game detail with key plays, stats, lineups; 15s/30s cache
+- `GET /api/sports/standings?league=` — **live ESPN** standings for NBA/NFL/MLB/MLS; 5-minute cache
+- `GET /api/news?teams=&leagues=` — **live ESPN** news, 55 articles from 4 leagues; 2-minute cache; filterable by team/league
+- `POST /api/ai/summarize` — OpenAI gpt-4o-mini article/game summary
+- `POST /api/ai/recap` — OpenAI gpt-4o-mini postgame recap (JSON format)
 - `GET /api/user/preferences?userId=` — fetch from Postgres
 - `POST /api/user/preferences` — upsert to Postgres (userPreferences table)
+
+### ESPN Data Notes (March 2026)
+- **NBA standings**: 30 teams sorted by win% from `site.web.api.espn.com` standings v2 API
+- **NFL standings**: 32 teams sorted by wins (off-season, 2025 final records) 
+- **MLB standings**: 30 teams (spring training groups: Cactus League / Grapefruit League)
+- **MLS standings**: 30 teams sorted by points; PCT column shows points-based ratio; REC column shows W-D-L record
+- **News**: Fetches from NBA/NFL/MLB/MLS endpoints at ESPN, deduped by article ID, sorted newest-first

@@ -596,103 +596,155 @@ router.get("/sports/game/:gameId", async (req, res) => {
   }
 });
 
-// ─── STANDINGS (hardcoded — Task #3 will replace with live ESPN) ─────────────
+// ─── STANDINGS — Live ESPN data ───────────────────────────────────────────────
 
-const NBA_EAST = [
-  { rank: 1, teamName: "Detroit Pistons", wins: 49, losses: 19, winPct: 0.720, gamesBack: 0, streak: "W3", rankChange: 0 },
-  { rank: 2, teamName: "Boston Celtics", wins: 46, losses: 23, winPct: 0.667, gamesBack: 3.5, streak: "W2", rankChange: 0 },
-  { rank: 3, teamName: "New York Knicks", wins: 44, losses: 24, winPct: 0.647, gamesBack: 5.0, streak: "L1", rankChange: 1 },
-  { rank: 4, teamName: "Cleveland Cavaliers", wins: 42, losses: 26, winPct: 0.618, gamesBack: 7.0, streak: "W2", rankChange: 0 },
-  { rank: 5, teamName: "Milwaukee Bucks", wins: 38, losses: 29, winPct: 0.567, gamesBack: 10.5, streak: "L1", rankChange: -1 },
-  { rank: 6, teamName: "Orlando Magic", wins: 37, losses: 30, winPct: 0.552, gamesBack: 11.5, streak: "L1", rankChange: 0 },
-  { rank: 7, teamName: "Miami Heat", wins: 35, losses: 33, winPct: 0.515, gamesBack: 14.0, streak: "L2", rankChange: 0 },
-  { rank: 8, teamName: "Atlanta Hawks", wins: 33, losses: 35, winPct: 0.485, gamesBack: 16.0, streak: "W4", rankChange: 2 },
-  { rank: 9, teamName: "Philadelphia 76ers", wins: 30, losses: 38, winPct: 0.441, gamesBack: 19.0, streak: "L3", rankChange: -1 },
-  { rank: 10, teamName: "Charlotte Hornets", wins: 29, losses: 39, winPct: 0.426, gamesBack: 20.0, streak: "W3", rankChange: 1 },
-  { rank: 11, teamName: "Chicago Bulls", wins: 26, losses: 42, winPct: 0.382, gamesBack: 23.0, streak: "L2", rankChange: 0 },
-  { rank: 12, teamName: "Indiana Pacers", wins: 24, losses: 44, winPct: 0.353, gamesBack: 25.0, streak: "L1", rankChange: 0 },
-  { rank: 13, teamName: "Toronto Raptors", wins: 21, losses: 47, winPct: 0.309, gamesBack: 28.0, streak: "W1", rankChange: 0 },
-  { rank: 14, teamName: "Brooklyn Nets", wins: 18, losses: 50, winPct: 0.265, gamesBack: 31.0, streak: "L4", rankChange: 0 },
-  { rank: 15, teamName: "Washington Wizards", wins: 16, losses: 52, winPct: 0.235, gamesBack: 33.0, streak: "L5", rankChange: 0 },
-];
+interface StandingEntry {
+  rank: number;
+  teamName: string;
+  wins: number;
+  losses: number;
+  winPct: number;
+  gamesBack: number | null;
+  streak: string | null;
+  conference: string | null;
+  division: string | null;
+  rankChange: number | null;
+}
 
-const NBA_WEST = [
-  { rank: 1, teamName: "Oklahoma City Thunder", wins: 52, losses: 15, winPct: 0.776, gamesBack: 0, streak: "W9", rankChange: 0 },
-  { rank: 2, teamName: "San Antonio Spurs", wins: 47, losses: 20, winPct: 0.701, gamesBack: 5.0, streak: "W5", rankChange: 0 },
-  { rank: 3, teamName: "Los Angeles Lakers", wins: 45, losses: 22, winPct: 0.672, gamesBack: 7.0, streak: "W7", rankChange: 1 },
-  { rank: 4, teamName: "Minnesota Timberwolves", wins: 43, losses: 27, winPct: 0.614, gamesBack: 10.0, streak: "L2", rankChange: -1 },
-  { rank: 5, teamName: "Houston Rockets", wins: 41, losses: 26, winPct: 0.612, gamesBack: 10.0, streak: "L2", rankChange: 0 },
-  { rank: 6, teamName: "Denver Nuggets", wins: 40, losses: 27, winPct: 0.597, gamesBack: 11.5, streak: "W1", rankChange: -1 },
-  { rank: 7, teamName: "Phoenix Suns", wins: 37, losses: 31, winPct: 0.544, gamesBack: 15.0, streak: "W2", rankChange: 0 },
-  { rank: 8, teamName: "Los Angeles Clippers", wins: 36, losses: 32, winPct: 0.529, gamesBack: 16.0, streak: "L1", rankChange: 0 },
-  { rank: 9, teamName: "Portland Trail Blazers", wins: 34, losses: 36, winPct: 0.486, gamesBack: 18.5, streak: "W1", rankChange: 0 },
-  { rank: 10, teamName: "Golden State Warriors", wins: 33, losses: 35, winPct: 0.485, gamesBack: 18.5, streak: "L3", rankChange: -1 },
-  { rank: 11, teamName: "Dallas Mavericks", wins: 30, losses: 38, winPct: 0.441, gamesBack: 22.0, streak: "L1", rankChange: 0 },
-  { rank: 12, teamName: "Memphis Grizzlies", wins: 28, losses: 39, winPct: 0.418, gamesBack: 23.5, streak: "W2", rankChange: 1 },
-  { rank: 13, teamName: "New Orleans Pelicans", wins: 25, losses: 44, winPct: 0.362, gamesBack: 27.5, streak: "L4", rankChange: 0 },
-  { rank: 14, teamName: "Sacramento Kings", wins: 22, losses: 46, winPct: 0.324, gamesBack: 30.0, streak: "W1", rankChange: 0 },
-  { rank: 15, teamName: "Utah Jazz", wins: 16, losses: 52, winPct: 0.235, gamesBack: 36.0, streak: "L6", rankChange: 0 },
-];
+function statVal(stats: any[], name: string): any {
+  return stats?.find((s: any) => s.name === name);
+}
 
-const NFL_FINAL = [
-  { rank: 1, teamName: "Kansas City Chiefs", wins: 15, losses: 2, winPct: 0.882, gamesBack: 0, streak: "SB Champs", rankChange: 0 },
-  { rank: 2, teamName: "Philadelphia Eagles", wins: 13, losses: 4, winPct: 0.765, gamesBack: 2.0, streak: "—", rankChange: 0 },
-  { rank: 3, teamName: "Detroit Lions", wins: 13, losses: 5, winPct: 0.722, gamesBack: 2.5, streak: "—", rankChange: 0 },
-  { rank: 4, teamName: "Buffalo Bills", wins: 13, losses: 4, winPct: 0.765, gamesBack: 2.0, streak: "—", rankChange: 0 },
-  { rank: 5, teamName: "Baltimore Ravens", wins: 11, losses: 6, winPct: 0.647, gamesBack: 4.0, streak: "—", rankChange: 0 },
-  { rank: 6, teamName: "Los Angeles Rams", wins: 11, losses: 7, winPct: 0.611, gamesBack: 4.5, streak: "—", rankChange: 0 },
-  { rank: 7, teamName: "Washington Commanders", wins: 11, losses: 6, winPct: 0.647, gamesBack: 4.0, streak: "—", rankChange: 0 },
-  { rank: 8, teamName: "Minnesota Vikings", wins: 10, losses: 7, winPct: 0.588, gamesBack: 5.0, streak: "—", rankChange: 0 },
-];
+async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
+  const cacheKey = `standings-${league}`;
+  const cached = getCached<StandingEntry[]>(cacheKey);
+  if (cached) return cached;
 
-const MLS_EAST = [
-  { rank: 1, teamName: "New England Revolution", wins: 3, losses: 1, winPct: 0.750, gamesBack: 0, streak: "W2", rankChange: 0 },
-  { rank: 2, teamName: "New York City FC", wins: 2, losses: 1, winPct: 0.667, gamesBack: 2.0, streak: "D1", rankChange: 0 },
-  { rank: 3, teamName: "Atlanta United", wins: 2, losses: 2, winPct: 0.500, gamesBack: 3.0, streak: "W1", rankChange: 1 },
-  { rank: 4, teamName: "Inter Miami CF", wins: 2, losses: 2, winPct: 0.500, gamesBack: 3.0, streak: "W1", rankChange: 0 },
-  { rank: 5, teamName: "Nashville SC", wins: 1, losses: 1, winPct: 0.500, gamesBack: 3.0, streak: "D3", rankChange: 0 },
-  { rank: 6, teamName: "Orlando City SC", wins: 2, losses: 2, winPct: 0.500, gamesBack: 3.0, streak: "L1", rankChange: 0 },
-  { rank: 7, teamName: "Charlotte FC", wins: 1, losses: 2, winPct: 0.333, gamesBack: 4.0, streak: "W1", rankChange: 0 },
-  { rank: 8, teamName: "Columbus Crew", wins: 1, losses: 4, winPct: 0.200, gamesBack: 6.0, streak: "L4", rankChange: 0 },
-];
+  try {
+    let entries: StandingEntry[] = [];
 
-const MLS_WEST = [
-  { rank: 1, teamName: "Vancouver Whitecaps", wins: 3, losses: 0, winPct: 1.000, gamesBack: 0, streak: "W4", rankChange: 0 },
-  { rank: 2, teamName: "Los Angeles FC", wins: 3, losses: 0, winPct: 1.000, gamesBack: 0, streak: "W4", rankChange: 0 },
-  { rank: 3, teamName: "Houston Dynamo", wins: 2, losses: 1, winPct: 0.667, gamesBack: 2.0, streak: "W1", rankChange: 1 },
-  { rank: 4, teamName: "San Diego FC", wins: 1, losses: 1, winPct: 0.500, gamesBack: 3.0, streak: "D2", rankChange: 0 },
-  { rank: 5, teamName: "Portland Timbers", wins: 1, losses: 2, winPct: 0.333, gamesBack: 4.0, streak: "L1", rankChange: 0 },
-  { rank: 6, teamName: "LA Galaxy", wins: 1, losses: 2, winPct: 0.333, gamesBack: 4.0, streak: "W1", rankChange: 0 },
-  { rank: 7, teamName: "Seattle Sounders", wins: 1, losses: 2, winPct: 0.333, gamesBack: 4.0, streak: "L1", rankChange: 0 },
-  { rank: 8, teamName: "Colorado Rapids", wins: 0, losses: 3, winPct: 0.000, gamesBack: 6.0, streak: "L3", rankChange: -2 },
-];
+    if (league === "NBA") {
+      const json: any = await espnFetch(
+        "https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings" +
+        "?region=us&lang=en&contentorigin=espn&type=1&level=1&sort=winpercent%3Adesc&limit=500"
+      );
+      entries = (json.standings?.entries ?? []).map((e: any, i: number) => {
+        const stats: any[] = e.stats ?? [];
+        const wins = Number(statVal(stats, "wins")?.value ?? 0);
+        const losses = Number(statVal(stats, "losses")?.value ?? 0);
+        const pctStr = statVal(stats, "winPercent")?.displayValue ?? "0";
+        const gbStr = statVal(stats, "gamesBehind")?.displayValue ?? null;
+        const streakStr = statVal(stats, "streak")?.displayValue ?? null;
+        return {
+          rank: i + 1,
+          teamName: e.team?.displayName ?? "Unknown",
+          wins,
+          losses,
+          winPct: parseFloat(pctStr) || 0,
+          gamesBack: !gbStr || gbStr === "-" ? 0 : parseFloat(gbStr),
+          streak: streakStr,
+          conference: null,
+          division: null,
+          rankChange: null,
+        };
+      });
 
-router.get("/sports/standings", (req, res) => {
-  const { league } = req.query as { league?: string };
-  type StandingRow = typeof NBA_EAST[0];
-  let standings: StandingRow[] = [];
+    } else if (league === "NFL") {
+      const json: any = await espnFetch(
+        "https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings" +
+        "?region=us&lang=en&contentorigin=espn&type=1&level=1&sort=winpercent%3Adesc&limit=500"
+      );
+      const raw = (json.standings?.entries ?? []).map((e: any) => {
+        const stats: any[] = e.stats ?? [];
+        const wins = Number(statVal(stats, "wins")?.value ?? 0);
+        const losses = Number(statVal(stats, "losses")?.value ?? 0);
+        const pctStr = statVal(stats, "winPercent")?.displayValue ?? "0";
+        return {
+          teamName: e.team?.displayName ?? "Unknown",
+          wins,
+          losses,
+          winPct: parseFloat(pctStr) || 0,
+          gamesBack: null,
+          streak: null,
+          conference: null,
+          division: null,
+          rankChange: null,
+        };
+      });
+      raw.sort((a: any, b: any) => b.wins - a.wins || a.losses - b.losses);
+      entries = raw.map((e: any, i: number) => ({ ...e, rank: i + 1 }));
 
-  if (league === "NBA") {
-    standings = [...NBA_EAST, ...NBA_WEST].sort((a, b) => b.wins - a.wins).map((s, i) => ({ ...s, rank: i + 1 }));
-  } else if (league === "NFL") {
-    standings = NFL_FINAL;
-  } else if (league === "MLB") {
-    standings = [
-      { rank: 1, teamName: "Los Angeles Dodgers", wins: 95, losses: 67, winPct: 0.586, gamesBack: 0, streak: "Spring", rankChange: 0 },
-      { rank: 2, teamName: "New York Yankees", wins: 94, losses: 68, winPct: 0.580, gamesBack: 1.0, streak: "Spring", rankChange: 0 },
-      { rank: 3, teamName: "Houston Astros", wins: 90, losses: 72, winPct: 0.556, gamesBack: 5.0, streak: "Spring", rankChange: 1 },
-      { rank: 4, teamName: "Atlanta Braves", wins: 89, losses: 73, winPct: 0.549, gamesBack: 6.0, streak: "Spring", rankChange: 0 },
-      { rank: 5, teamName: "San Diego Padres", wins: 87, losses: 75, winPct: 0.537, gamesBack: 8.0, streak: "Spring", rankChange: 0 },
-      { rank: 6, teamName: "Seattle Mariners", wins: 85, losses: 77, winPct: 0.525, gamesBack: 10.0, streak: "Spring", rankChange: 2 },
-      { rank: 7, teamName: "Philadelphia Phillies", wins: 83, losses: 79, winPct: 0.512, gamesBack: 12.0, streak: "Spring", rankChange: -1 },
-      { rank: 8, teamName: "Baltimore Orioles", wins: 82, losses: 80, winPct: 0.506, gamesBack: 13.0, streak: "Spring", rankChange: 0 },
-    ];
-  } else if (league === "MLS") {
-    standings = [...MLS_EAST, ...MLS_WEST].sort((a, b) => b.wins - a.wins).map((s, i) => ({ ...s, rank: i + 1 }));
-  } else {
-    standings = [...NBA_EAST, ...NBA_WEST].sort((a, b) => b.wins - a.wins).map((s, i) => ({ ...s, rank: i + 1 }));
+    } else if (league === "MLB") {
+      const json: any = await espnFetch(
+        "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings?season=2026"
+      );
+      const allRaw: any[] = [];
+      for (const child of json.children ?? []) {
+        for (const e of child.standings?.entries ?? []) {
+          const stats: any[] = e.stats ?? [];
+          const wins = Number(statVal(stats, "wins")?.value ?? 0);
+          const losses = Number(statVal(stats, "losses")?.value ?? 0);
+          const pctStr = statVal(stats, "winPercent")?.displayValue ?? "0";
+          const gbStr = statVal(stats, "gamesBehind")?.displayValue ?? null;
+          const streakStr = statVal(stats, "streak")?.displayValue ?? null;
+          allRaw.push({
+            teamName: e.team?.displayName ?? "Unknown",
+            wins,
+            losses,
+            winPct: parseFloat(pctStr) || 0,
+            gamesBack: !gbStr || gbStr === "-" ? 0 : parseFloat(gbStr),
+            streak: streakStr,
+            conference: child.name ?? null,
+            division: null,
+            rankChange: null,
+          });
+        }
+      }
+      allRaw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+      entries = allRaw.map((e, i) => ({ ...e, rank: i + 1 }));
+
+    } else if (league === "MLS") {
+      const json: any = await espnFetch(
+        "https://site.api.espn.com/apis/v2/sports/soccer/usa.1/standings"
+      );
+      const allRaw: any[] = [];
+      for (const child of json.children ?? []) {
+        for (const e of child.standings?.entries ?? []) {
+          const stats: any[] = e.stats ?? [];
+          const wins = Number(statVal(stats, "wins")?.value ?? 0);
+          const losses = Number(statVal(stats, "losses")?.value ?? 0);
+          const gamesPlayed = Number(statVal(stats, "gamesPlayed")?.value ?? 1);
+          const points = Number(statVal(stats, "points")?.value ?? 0);
+          const rankChange = Number(statVal(stats, "rankChange")?.value ?? 0);
+          const overall = statVal(stats, "overall")?.displayValue ?? null;
+          allRaw.push({
+            teamName: e.team?.displayName ?? "Unknown",
+            wins,
+            losses,
+            winPct: gamesPlayed > 0 ? Math.round((points / (gamesPlayed * 3)) * 1000) / 1000 : 0,
+            gamesBack: points,
+            streak: overall,
+            conference: child.name ?? null,
+            division: null,
+            rankChange,
+          });
+        }
+      }
+      allRaw.sort((a, b) => (b.gamesBack as number) - (a.gamesBack as number));
+      entries = allRaw.map((e, i) => ({ ...e, rank: i + 1 }));
+    }
+
+    setCached(cacheKey, entries, 300_000);
+    return entries;
+  } catch (err) {
+    console.error(`Standings fetch error for ${league}:`, err);
+    return [];
   }
+}
 
+router.get("/sports/standings", async (req, res) => {
+  const league = ((req.query.league as string) ?? "NBA").toUpperCase();
+  const standings = await fetchLeagueStandings(league);
   res.json({ standings });
 });
 
