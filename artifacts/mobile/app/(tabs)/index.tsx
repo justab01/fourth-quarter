@@ -4,6 +4,7 @@ import {
   Pressable, Platform, Dimensions, FlatList
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -95,6 +96,98 @@ const secStyles = StyleSheet.create({
   },
   arrowBtn: { flexDirection: "row", alignItems: "center", gap: 1 },
   arrowLabel: { color: C.accent, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+});
+
+// ─── My Teams logo tiles ─────────────────────────────────────────────────────
+const LEAGUE_COLORS: Record<string, string> = {
+  NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls, NHL: C.accentBlue,
+};
+
+function getLeagueColor(league: string) {
+  return LEAGUE_COLORS[league] ?? C.accent;
+}
+
+function MyTeamsTiles({
+  myTeams, allGames, onTeamPress,
+}: { myTeams: string[]; allGames: Game[]; onTeamPress: (team: string, league: string) => void }) {
+  if (myTeams.length === 0) return null;
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: 12, paddingRight: 4 }}
+    >
+      {myTeams.map(team => {
+        const teamGames = allGames.filter(g => g.homeTeam === team || g.awayTeam === team);
+        const live = teamGames.find(g => g.status === "live");
+        const next = teamGames.find(g => g.status === "upcoming");
+        const last = teamGames.find(g => g.status === "finished");
+        const featured = live ?? next ?? last;
+        const league = featured?.league ?? "NBA";
+        const color = getLeagueColor(league);
+        const abbr = team.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
+
+        let statusLine = "";
+        if (live) statusLine = "● LIVE";
+        else if (next) statusLine = formatTileTime(next.startTime);
+        else if (last) {
+          const isHome = last.homeTeam === team;
+          const myScore = isHome ? last.homeScore : last.awayScore;
+          const theirScore = isHome ? last.awayScore : last.homeScore;
+          const won = (myScore ?? 0) > (theirScore ?? 0);
+          statusLine = `${won ? "W" : "L"} ${myScore}–${theirScore}`;
+        }
+
+        return (
+          <Pressable
+            key={team}
+            onPress={() => onTeamPress(team, league)}
+            style={tileStyles.tile}
+          >
+            <View style={[tileStyles.circle, { borderColor: `${color}55`, shadowColor: color }]}>
+              <LinearGradient
+                colors={[`${color}20`, `${color}06`]}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              />
+              <Text style={[tileStyles.abbr, { color }]}>{abbr}</Text>
+            </View>
+            <Text style={tileStyles.teamShort} numberOfLines={1}>{abbr}</Text>
+            {statusLine ? (
+              <Text style={[tileStyles.status, live && { color: C.live }]} numberOfLines={1}>
+                {statusLine}
+              </Text>
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function formatTileTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+const tileStyles = StyleSheet.create({
+  tile: { alignItems: "center", gap: 6, width: 72 },
+  circle: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 2,
+    alignItems: "center", justifyContent: "center",
+    overflow: "hidden",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  abbr: { fontSize: 18, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  teamShort: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  status: { color: C.textTertiary, fontSize: 10, fontWeight: "600", textAlign: "center" },
 });
 
 // ─── Sport tab pill ───────────────────────────────────────────────────────────
@@ -418,6 +511,18 @@ export default function HubScreen() {
                 ))}
               </View>
             )}
+          </View>
+        )}
+
+        {/* MY TEAMS — large logo tiles */}
+        {myTeams.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeading label="My Teams" accentColor={C.accent} />
+            <MyTeamsTiles
+              myTeams={myTeams}
+              allGames={allGames}
+              onTeamPress={(team, league) => router.push({ pathname: "/team/[name]", params: { name: team, league } } as any)}
+            />
           </View>
         )}
 

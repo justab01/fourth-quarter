@@ -1,0 +1,70 @@
+FOURTH QUARTER – The New 2026 Homepage Your Personal Live Sports Venue
+This is the final, ultra-polished blueprint. No flashing dots, no cheap red pulses, no clutter. It feels exactly like the premium inspiration you sent: calm, immersive, venue-first, big logos, clean cards, elegant gradients.
+Every user gets their own personal color spectrum (they pick one primary hue from the full rainbow + secondary accent). The app auto-generates beautiful gradients, glass cards, and subtle glows around that color. Backgrounds shift from deep black to a soft venue texture (court lines, pitch grass, rink ice, track rubber, gridiron turf — auto-swapped per sport).
+Overall Premise & Feel
+	•	The entire app feels like you’re inside the arena watching from the best seat.
+	•	Every screen starts with a full-bleed venue background (faint, blurred, elegant — never busy).
+	•	Big, crisp team logos (shield/circular, 120–160px) are the hero of every card.
+	•	Live elements use subtle glowing pills (soft neon ring in your chosen color) — no flashing.
+	•	Odds appear as tiny, elegant badges only if the user turns them on (1.84 style, same as inspiration).
+	•	Everything is thumb-friendly, generous spacing, glassmorphism cards with 8–12px blur.
+My Hub Homepage – Exact Layout (Replit-Ready)
+Top Bar (fixed, 10% height)
+	•	Left: Circular avatar + “Good evening, Abraham” + your chosen accent color glow
+	•	Right: Search pill (magnifying glass) + HOU badge (your favorite team pill in your color)
+Hero Live Game (40% height – the venue moment) Full-bleed background = current venue (e.g., Ball Arena for Nuggets game → faint court lines + crowd blur). Center card (glass, rounded 24px):
+	•	Two huge team logos side-by-side (left/right)
+	•	Massive score (83 – 74) in your accent color
+	•	Sport icon top-left (basketball, soccer, etc.)
+	•	Subtle “3rd Quarter • 4:02” below score
+	•	“Watch Live” button (soft glowing border in your color)
+	•	Venue name + city faded underneath
+If no live game → auto-switches to “Next Up” with countdown + venue preview.
+Today’s Games Carousel (horizontal swipe – 20% height) 3–5 large cards side-by-side (like inspiration’s top event). Each card:
+	•	Venue background faint
+	•	Big logos left/right
+	•	Score or “21:00” time
+	•	Sport badge top
+	•	Tiny odds badges if enabled (1.84 • x4.2 • 1.3.74) Swipe feels buttery with momentum.
+My Teams Section (horizontal scroll – clean tiles) Large logo tiles (your color outline glow). Each tile shows:
+	•	Logo (huge)
+	•	Last result or next game time
+	•	Tiny “FT 117” or streak icon Your HOU teams get a soft highlight ring in your chosen color.
+Around the League / Top Story (stacked cards – 20% height) Two-column or vertical feed:
+	•	Left: “Around the League” mini live cards (logos + score + subtle time)
+	•	Right: Top Story hero card with thumbnail image + headline (“Golden State vs Detroit Highlights”)
+	•	“More Stories” below as clean list (no images needed, just title + source + time)
+Floating Navigation (the coolest part)
+	•	Bottom bar is minimal icons only (Home • Live • News • Standings • Profile) — your accent color on active tab.
+	•	Floating Action Button (center, always visible): big circular button with your color gradient. Long-press opens quick menu: “Search Any Sport” or “Switch Venue View”.
+	•	Top-right floating search pill (like inspiration) — tap anywhere to search teams/players instantly.
+How It Adapts to Every Sport (Venue-First Magic)
+The app auto-detects the sport and swaps the background + card styling:
+	•	Basketball → faint court lines + parquet texture, score in huge font
+	•	Football / NFL → gridiron turf + yard lines, down & distance shown
+	•	Soccer → green pitch with goalposts faint, goal scorers list like inspiration
+	•	Hockey → ice rink texture + puck icon
+	•	Rugby → pitch with posts, try count
+	•	Track & Field → stadium track overlay, lane numbers + times
+	•	MLB → diamond dirt + outfield grass
+Logos always stay massive. Odds badges stay tiny and elegant.
+Color & Personalization System (What Users Will Love)
+Every user opens Settings → “Theme Studio” and picks:
+	•	Primary hue (any color in the spectrum)
+	•	Accent glow intensity
+	•	Background texture opacity (0–100%)
+	•	Card glass blur level
+The app instantly regenerates every gradient, every glow, every button using that color. Your Rockets fan gets deep red → orange gradients. A soccer fan in Europe picks emerald green like the inspiration. No two users see the exact same app — but the structure is identical and perfect.
+Exact Replication Instructions for Replit/Expo
+Use these exact elements (copy-paste ready for your dev):
+	1	Hero: expo-linear-gradient + ImageBackground with venue photo (low opacity) + two large Image logos + massive Text score.
+	2	Cards: BlurView (glassmorphism) with 12px radius + subtle border in user accent color.
+	3	Carousel: react-native-snap-carousel or FlatList horizontal with scale animation.
+	4	Floating button: TouchableOpacity with LinearGradient border + shadow.
+	5	Sport detection: store user’s followed leagues → on load pick correct venue asset from assets folder (court.png, pitch.png, rink.png, etc.).
+This is now the final, living, breathing homepage that feels like a real 2026 sports app — calm, premium, venue-immersive, logo-dominant, and fully customizable.
+Want me to:
+	•	Generate the next tab (Live tab or News tab) in the exact same style?
+	•	Give you the full component code structure for the hero?
+	•	Or iterate the My Teams section even more?
+Just say the word and we’ll lock the next page. This is your app now — and it finally feels alive. 🏟️

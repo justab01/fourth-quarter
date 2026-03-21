@@ -35,6 +35,17 @@ function getLeagueColor(league: string): string {
   return map[league] ?? C.accent;
 }
 
+function getSportVenueGradient(league: string): [string, string, string, string] {
+  const map: Record<string, [string, string, string, string]> = {
+    NBA: ["#5C2800", "#301400", "#160900", "#0F0F0F"],
+    NFL: ["#0A1E34", "#06121F", "#03090F", "#0F0F0F"],
+    MLB: ["#320A0A", "#1A0505", "#0D0303", "#0F0F0F"],
+    MLS: ["#062A12", "#031508", "#010A04", "#0F0F0F"],
+    NHL: ["#061828", "#030D16", "#01060B", "#0F0F0F"],
+  };
+  return map[league] ?? ["#16091E", "#0D0512", "#060209", "#0F0F0F"];
+}
+
 function PulsingDot() {
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -78,12 +89,21 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
 
   // ── HERO ─────────────────────────────────────────────────────────────────
   if (variant === "hero") {
+    const venueGradient = getSportVenueGradient(game.league);
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
           <View style={hero.card}>
+            {/* Deep sport-themed venue gradient */}
             <LinearGradient
-              colors={[`${leagueColor}20`, `${leagueColor}08`, "transparent"]}
+              colors={venueGradient}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+            />
+            {/* Subtle league color tint overlay */}
+            <LinearGradient
+              colors={[`${leagueColor}18`, "transparent", `${leagueColor}0A`]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -162,12 +182,17 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               </Pressable>
             </View>
 
-            <View style={[hero.cta, { borderTopColor: `${leagueColor}20` }]}>
-              <Text style={[hero.ctaText, { color: leagueColor }]}>
-                {isLive ? "Watch Live" : isFinished ? "Full Recap" : "Match Preview"}
-              </Text>
-              <View style={[hero.ctaArrow, { backgroundColor: `${leagueColor}22` }]}>
-                <Text style={[hero.ctaArrowText, { color: leagueColor }]}>›</Text>
+            <View style={hero.ctaRow}>
+              <View style={[hero.ctaPill, { borderColor: `${leagueColor}60`, backgroundColor: `${leagueColor}18` }]}>
+                <Ionicons
+                  name={isLive ? "radio" : isFinished ? "document-text-outline" : "play-circle-outline"}
+                  size={13}
+                  color={leagueColor}
+                />
+                <Text style={[hero.ctaPillText, { color: leagueColor }]}>
+                  {isLive ? "Watch Live" : isFinished ? "Full Recap" : "Match Preview"}
+                </Text>
+                <Text style={[hero.ctaChevron, { color: leagueColor }]}>›</Text>
               </View>
             </View>
           </View>
@@ -395,12 +420,12 @@ const hero = StyleSheet.create({
   },
   teamCol: { flex: 1, alignItems: "flex-start", gap: 6 },
   logo: {
-    width: 52, height: 52, borderRadius: 26,
+    width: 80, height: 80, borderRadius: 40,
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 2,
     alignItems: "center", justifyContent: "center",
   },
-  logoLetter: { color: "#fff", fontSize: 20, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  logoLetter: { color: "#fff", fontSize: 30, fontWeight: "900", fontFamily: "Inter_700Bold" },
   teamName: {
     color: C.text, fontSize: 14, fontWeight: "700",
     fontFamily: "Inter_700Bold", lineHeight: 18, flex: 1,
@@ -415,20 +440,23 @@ const hero = StyleSheet.create({
   timeRemaining: { color: C.live, fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
   kickoffTime: { color: C.textSecondary, fontSize: 13, fontWeight: "600" },
   venue: { color: C.textTertiary, fontSize: 10, textAlign: "center" },
-  cta: {
+  ctaRow: {
+    paddingHorizontal: 20,
+    paddingBottom: 18,
+    paddingTop: 4,
+    alignItems: "center",
+  },
+  ctaPill: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderTopWidth: 1,
+    gap: 8,
+    borderWidth: 1.5,
+    borderRadius: 28,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
   },
-  ctaText: { fontSize: 13, fontWeight: "700", letterSpacing: 0.3, fontFamily: "Inter_700Bold" },
-  ctaArrow: {
-    width: 26, height: 26, borderRadius: 13,
-    alignItems: "center", justifyContent: "center",
-  },
-  ctaArrowText: { fontSize: 18, fontWeight: "700", lineHeight: 22 },
+  ctaPillText: { fontSize: 13, fontWeight: "800", letterSpacing: 0.4, fontFamily: "Inter_700Bold" },
+  ctaChevron: { fontSize: 20, fontWeight: "700", lineHeight: 20 },
 });
 
 // ── Compact styles ───────────────────────────────────────────────────────────
