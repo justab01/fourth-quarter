@@ -54,93 +54,47 @@ function prominenceScore(g: Game): number {
   return 100;
 }
 
-// ─── Pinned favourite game row ────────────────────────────────────────────────
-function PinnedGameCard({ game, onPress, sportColor }: { game: Game; onPress: () => void; sportColor: string }) {
-  const isLive = game.status === "live";
-  const isFinished = game.status === "finished";
-
+// ─── Livescore-style section header ─────────────────────────────────────────
+function SectionHeading({
+  label, accentColor, onSeeAll, badge,
+}: {
+  label: string;
+  accentColor?: string;
+  onSeeAll?: () => void;
+  badge?: React.ReactNode;
+}) {
   return (
-    <Pressable onPress={onPress} style={[pinnedStyles.card, { borderLeftColor: sportColor }]}>
-      <View style={pinnedStyles.inner}>
-        <View style={pinnedStyles.teams}>
-          <Text style={pinnedStyles.teamName} numberOfLines={1}>{game.awayTeam}</Text>
-          <Text style={pinnedStyles.vs}>@</Text>
-          <Text style={pinnedStyles.teamName} numberOfLines={1}>{game.homeTeam}</Text>
-        </View>
-
-        <View style={pinnedStyles.right}>
-          {isLive ? (
-            <View style={pinnedStyles.liveRow}>
-              <View style={pinnedStyles.liveDot} />
-              <Text style={pinnedStyles.liveScore}>{game.awayScore ?? 0}–{game.homeScore ?? 0}</Text>
-              {game.quarter && <Text style={pinnedStyles.livePeriod}>{game.quarter}</Text>}
-            </View>
-          ) : isFinished ? (
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={pinnedStyles.finalScore}>{game.awayScore}–{game.homeScore}</Text>
-              <Text style={pinnedStyles.finalLabel}>Final</Text>
-            </View>
-          ) : (
-            <Text style={pinnedStyles.time}>
-              {new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-            </Text>
-          )}
-        </View>
-      </View>
-      <View style={[pinnedStyles.starBadge, { backgroundColor: sportColor + "22", borderColor: sportColor + "55" }]}>
-        <Ionicons name="star" size={10} color={sportColor} />
-        <Text style={[pinnedStyles.starText, { color: sportColor }]}>MY TEAM</Text>
-      </View>
-    </Pressable>
+    <View style={secStyles.row}>
+      {accentColor && <View style={[secStyles.accent, { backgroundColor: accentColor }]} />}
+      <Text style={secStyles.label}>{label}</Text>
+      {badge}
+      <View style={{ flex: 1 }} />
+      {onSeeAll && (
+        <Pressable onPress={onSeeAll} style={secStyles.arrowBtn} hitSlop={8}>
+          <Text style={secStyles.arrowLabel}>All</Text>
+          <Ionicons name="chevron-forward" size={14} color={C.accent} />
+        </Pressable>
+      )}
+    </View>
   );
 }
 
-const pinnedStyles = StyleSheet.create({
-  card: {
-    backgroundColor: C.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-    borderLeftWidth: 4,
-    padding: 14,
-    marginBottom: 8,
-    position: "relative",
-  },
-  inner: {
+const secStyles = StyleSheet.create({
+  row: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
-  teams: { flex: 1, gap: 2 },
-  teamName: {
-    fontSize: 15,
-    fontWeight: "700",
+  accent: { width: 4, height: 18, borderRadius: 2, flexShrink: 0 },
+  label: {
+    fontSize: 18,
+    fontWeight: "800",
     color: C.text,
     fontFamily: "Inter_700Bold",
+    letterSpacing: -0.3,
   },
-  vs: { fontSize: 11, color: C.textTertiary, fontWeight: "600" },
-  right: { alignItems: "flex-end", minWidth: 70 },
-  liveRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.live },
-  liveScore: { fontSize: 18, fontWeight: "900", color: C.text, fontFamily: "Inter_700Bold" },
-  livePeriod: { fontSize: 11, color: C.textTertiary },
-  finalScore: { fontSize: 16, fontWeight: "800", color: C.text },
-  finalLabel: { fontSize: 11, color: C.textTertiary },
-  time: { fontSize: 14, fontWeight: "700", color: C.accent },
-  starBadge: {
-    position: "absolute",
-    top: 8,
-    right: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  starText: { fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
+  arrowBtn: { flexDirection: "row", alignItems: "center", gap: 1 },
+  arrowLabel: { color: C.accent, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 });
 
 // ─── Sport tab pill ───────────────────────────────────────────────────────────
@@ -263,28 +217,29 @@ function TodaysGamesWidget({
           <Text style={widgetStyles.emptyText}>No {activeSport} games today</Text>
         </View>
       ) : (
-        <View style={{ gap: 0 }}>
-          {/* Pinned favourite games */}
+        <View style={{ gap: 16 }}>
+          {/* Pinned favourite games — full Livescore-row GameCards */}
           {favGames.length > 0 && (
-            <View style={{ marginBottom: 4 }}>
-              <View style={widgetStyles.sectionLabel}>
-                <Ionicons name="star" size={11} color={sportColor} />
-                <Text style={[widgetStyles.sectionLabelText, { color: sportColor }]}>MY TEAMS</Text>
-              </View>
+            <View style={{ gap: 8 }}>
+              <SectionHeading
+                label="My Teams"
+                accentColor={sportColor}
+              />
               {favGames.map(g => (
-                <PinnedGameCard key={g.id} game={g} onPress={() => onGamePress(g)} sportColor={sportColor} />
+                <GameCard
+                  key={g.id}
+                  game={g}
+                  isFavorite
+                  onPress={() => onGamePress(g)}
+                />
               ))}
             </View>
           )}
 
-          {/* Top 5 prominent games */}
+          {/* Top games — horizontal compact scroll */}
           {topGames.length > 0 && (
-            <View>
-              {favGames.length > 0 && (
-                <View style={widgetStyles.sectionLabel}>
-                  <Text style={widgetStyles.sectionLabelText}>AROUND THE LEAGUE</Text>
-                </View>
-              )}
+            <View style={{ gap: 10 }}>
+              <SectionHeading label="Around the League" />
               <FlatList
                 horizontal
                 data={topGames}
@@ -321,13 +276,7 @@ const widgetStyles = StyleSheet.create({
     borderColor: C.cardBorder,
   },
   emptyText: { color: C.textTertiary, fontSize: 14, fontFamily: "Inter_400Regular" },
-  sectionLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginBottom: 8,
-  },
-  sectionLabelText: {
+  _unused: {
     fontSize: 10,
     fontWeight: "800",
     color: C.textTertiary,
@@ -463,12 +412,11 @@ export default function HubScreen() {
 
         {/* TODAY'S GAMES — sport-tabbed widget */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Games</Text>
-            <Pressable onPress={() => router.push("/(tabs)/live" as any)}>
-              <Text style={styles.seeAll}>See All</Text>
-            </Pressable>
-          </View>
+          <SectionHeading
+            label="Today's Games"
+            accentColor={C.accent}
+            onSeeAll={() => router.push("/(tabs)/live" as any)}
+          />
           <TodaysGamesWidget
             allGames={allGames}
             myTeams={myTeams}
@@ -482,9 +430,7 @@ export default function HubScreen() {
         {/* TOP STORY */}
         {!newsLoading && heroArticle && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Top Story</Text>
-            </View>
+            <SectionHeading label="Top Story" accentColor={C.nba} />
             <NewsCard
               article={heroArticle}
               hero
@@ -496,12 +442,10 @@ export default function HubScreen() {
         {/* MORE STORIES */}
         {restArticles.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>More Stories</Text>
-              <Pressable onPress={() => router.push("/(tabs)/news" as any)}>
-                <Text style={styles.seeAll}>See All</Text>
-              </Pressable>
-            </View>
+            <SectionHeading
+              label="More Stories"
+              onSeeAll={() => router.push("/(tabs)/news" as any)}
+            />
             {newsLoading ? (
               <View style={styles.cardList}>
                 {[1, 2].map(i => <NewsCardSkeleton key={i} />)}
@@ -523,12 +467,14 @@ export default function HubScreen() {
         {/* POSTGAME RECAPS */}
         {finishedGames.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.recapBadge}>
-                <Ionicons name="sparkles" size={12} color={C.accentGold} />
-                <Text style={styles.recapBadgeText}>AI RECAPS</Text>
-              </View>
-            </View>
+            <SectionHeading
+              label="AI Recaps"
+              badge={
+                <View style={styles.recapBadge}>
+                  <Ionicons name="sparkles" size={11} color={C.accentGold} />
+                </View>
+              }
+            />
             <View style={styles.cardList}>
               {finishedGames.slice(0, 2).map(g => (
                 <RecapCard key={g.id} game={g} />
@@ -583,16 +529,13 @@ const styles = StyleSheet.create({
   heroDotActive: { width: 20, backgroundColor: C.accent },
 
   section: { gap: 14, paddingVertical: 4 },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  sectionTitle: {
-    fontSize: 20, fontWeight: "800", color: C.text,
-    fontFamily: "Inter_700Bold", letterSpacing: -0.3,
-  },
-  seeAll: { fontSize: 14, color: C.accent, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
   cardList: { gap: 12 },
-  recapBadge: { flexDirection: "row", alignItems: "center", gap: 6 },
-  recapBadgeText: {
-    color: C.accentGold, fontSize: 13, fontWeight: "800",
-    letterSpacing: 1, fontFamily: "Inter_700Bold",
+  recapBadge: {
+    backgroundColor: `${C.accentGold}14`,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

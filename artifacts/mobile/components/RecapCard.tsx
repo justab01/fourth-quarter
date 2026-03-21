@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import type { Game, RecapResponse } from "@/utils/api";
@@ -55,6 +56,14 @@ export function RecapCard({ game }: RecapCardProps) {
 
   return (
     <View style={styles.card}>
+      {/* Subtle gold-tinted gradient overlay */}
+      <LinearGradient
+        colors={[`${C.accentGold}12`, "transparent", `${C.accentGold}06`]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        pointerEvents="none"
+      />
       <View style={styles.headerRow}>
         <View style={styles.aiBadge}>
           <Ionicons name="sparkles" size={10} color={C.accentGold} />
