@@ -1,11 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
   Platform, ActivityIndicator, Image, Animated, Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
@@ -14,6 +14,9 @@ import { LEAGUE_COLORS } from "@/constants/sports";
 import { goToTeam, goToPlayer } from "@/utils/navHelpers";
 import { getEspnHeadshotUrl } from "@/constants/espnAthleteIds";
 import { TeamLogo } from "@/components/GameCard";
+import { ArenaRenderer } from "@/components/ArenaRenderer";
+import { MomentumGraph } from "@/components/MomentumGraph";
+import { useGameSocket } from "@/hooks/useGameSocket";
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -97,6 +100,7 @@ function playBadge(type: PlayType, desc: string): string | null {
 export default function GameDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<GameTab>("gamecast");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -104,6 +108,21 @@ export default function GameDetailScreen() {
     queryKey: ["game", id],
     queryFn: () => api.getGameDetail(id ?? ""),
     enabled: !!id,
+    refetchInterval: (query) => {
+      const status = (query.state.data as any)?.game?.status;
+      return status === "live" ? 20_000 : 60_000;
+    },
+  });
+
+  // WebSocket: invalidate query on push update
+  const onWsUpdate = useCallback((wsData: unknown) => {
+    queryClient.invalidateQueries({ queryKey: ["game", id] });
+  }, [id, queryClient]);
+
+  useGameSocket({
+    gameId: id ?? "",
+    enabled: !!id && data?.game?.status === "live",
+    onUpdate: onWsUpdate,
   });
 
   const game = data?.game;
@@ -303,28 +322,46 @@ export default function GameDetailScreen() {
 // ─── Gamecast tab ──────────────────────────────────────────────────────────────
 function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
   const isLive = game.status === "live";
-  const total = (game.homeScore ?? 0) + (game.awayScore ?? 0);
-  const homePct = total > 0 ? ((game.homeScore ?? 0) / total) : 0.5;
+  const isFinished = game.status === "finished";
   const keyPlays = data.keyPlays ?? [];
 
   return (
     <View style={s.tabSection}>
-      {/* Win probability bar */}
-      {(isLive || game.status === "finished") && total > 0 && (
-        <View style={s.winProbCard}>
-          <Text style={s.winProbLabel}>Score Share</Text>
-          <View style={s.winProbRow}>
-            <Text style={[s.winProbTeam, { color: dc }]} numberOfLines={1}>{game.awayTeam.split(" ").slice(-1)[0]}</Text>
-            <View style={s.winProbBar}>
-              <View style={[s.winProbFillAway, { flex: 1 - homePct, backgroundColor: `${dc}66` }]} />
-              <View style={[s.winProbFillHome, { flex: homePct, backgroundColor: dc }]} />
-            </View>
-            <Text style={[s.winProbTeam, { color: dc, textAlign: "right" }]} numberOfLines={1}>{game.homeTeam.split(" ").slice(-1)[0]}</Text>
+
+      {/* ── Arena Renderer (sport-specific SVG field) ─────────────────────── */}
+      <View style={s.arenaWrap}>
+        <View style={s.arenaLabelRow}>
+          <View style={[s.sectionAccent, { backgroundColor: dc }]} />
+          <Text style={s.sectionTitle}>Arena</Text>
+          <View style={[s.leagueBadge, { borderColor: `${dc}40` }]}>
+            <Text style={[s.leagueBadgeText, { color: dc }]}>{game.league}</Text>
           </View>
-          <View style={s.winProbPcts}>
-            <Text style={s.winProbPct}>{Math.round((1 - homePct) * 100)}%</Text>
-            <Text style={s.winProbPct}>{Math.round(homePct * 100)}%</Text>
-          </View>
+        </View>
+        <ArenaRenderer
+          league={game.league}
+          width={SCREEN_W - 32}
+          accentColor={dc}
+          homeScore={game.homeScore}
+          awayScore={game.awayScore}
+          homeTeam={game.homeTeam}
+          awayTeam={game.awayTeam}
+          status={game.status}
+        />
+      </View>
+
+      {/* ── Momentum Wave + Win Probability (analytics engine) ────────────── */}
+      {(isLive || isFinished) && keyPlays.length > 0 && (
+        <View>
+          <MomentumGraph
+            plays={keyPlays}
+            homeTeam={game.homeTeam}
+            awayTeam={game.awayTeam}
+            homeScore={game.homeScore ?? 0}
+            awayScore={game.awayScore ?? 0}
+            accentColor={dc}
+            width={SCREEN_W - 32}
+            league={game.league}
+          />
         </View>
       )}
 
@@ -343,6 +380,12 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
       <View style={s.sectionHeader}>
         <View style={[s.sectionAccent, { backgroundColor: dc }]} />
         <Text style={s.sectionTitle}>Key Plays</Text>
+        {isLive && (
+          <View style={s.liveChip}>
+            <View style={s.liveDotSmall} />
+            <Text style={s.liveChipText}>LIVE</Text>
+          </View>
+        )}
       </View>
       {keyPlays.length === 0 ? (
         <Text style={s.empty}>No key plays yet{isLive ? " — check back soon" : ""}</Text>
@@ -647,6 +690,26 @@ const s = StyleSheet.create({
   winProbFillHome: { borderRadius: 2 },
   winProbPcts: { flexDirection: "row", justifyContent: "space-between" },
   winProbPct: { color: C.textTertiary, fontSize: 11, fontWeight: "600" },
+
+  // arena renderer
+  arenaWrap: { gap: 10 },
+  arenaLabelRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  leagueBadge: {
+    paddingHorizontal: 8, paddingVertical: 2,
+    borderRadius: 8, borderWidth: 1,
+    marginLeft: "auto" as any,
+  },
+  leagueBadgeText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
+
+  // live chip in section header
+  liveChip: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "rgba(232,22,43,0.15)",
+    paddingHorizontal: 8, paddingVertical: 2,
+    borderRadius: 8, marginLeft: "auto" as any,
+  },
+  liveDotSmall: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  liveChipText: { color: C.live, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
 
   // section headers
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },

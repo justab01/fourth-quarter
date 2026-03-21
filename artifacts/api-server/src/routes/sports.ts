@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import https from "https";
+import { db, sportGameEvents, sportGameStates } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -629,11 +630,91 @@ router.get("/sports/game/:gameId", async (req, res) => {
     const isLive = game.status === "live";
     setCached(cacheKey, detail, isLive ? 15_000 : 30_000);
     res.json(detail);
+
+    // ── Fire-and-forget: persist events + game state to DB ─────────────────
+    // This is the data moat — "store everything, forever"
+    persistGameData(game, leagueKey, keyPlays).catch(() => {/* silent */});
+
   } catch (err) {
     console.error("ESPN game detail error:", err);
     res.status(500).json({ error: "Failed to fetch game detail" });
   }
 });
+
+// ─── Event Ingestion ──────────────────────────────────────────────────────────
+async function persistGameData(
+  game: GameShape,
+  league: string,
+  keyPlays: Array<{ time: string; description: string; team: string }>
+): Promise<void> {
+  const gameId = game.id;
+
+  // Upsert game state snapshot
+  await db.insert(sportGameStates).values({
+    gameId,
+    league,
+    status: game.status,
+    homeTeam: game.homeTeam,
+    awayTeam: game.awayTeam,
+    homeTeamLogo: game.homeTeamLogo ?? null,
+    awayTeamLogo: game.awayTeamLogo ?? null,
+    scoreHome: game.homeScore ?? 0,
+    scoreAway: game.awayScore ?? 0,
+    period: game.quarter ?? null,
+    clock: game.timeRemaining ?? null,
+    venue: game.venue ?? null,
+    startTime: game.startTime ?? null,
+  }).onConflictDoUpdate({
+    target: sportGameStates.gameId,
+    set: {
+      status: game.status,
+      scoreHome: game.homeScore ?? 0,
+      scoreAway: game.awayScore ?? 0,
+      period: game.quarter ?? null,
+      clock: game.timeRemaining ?? null,
+      updatedAt: new Date(),
+    },
+  });
+
+  // Insert new events (only those not already stored for this game)
+  if (keyPlays.length > 0) {
+    const eventRows = keyPlays.map((play, i) => ({
+      gameId,
+      league,
+      eventType: classifyEventType(play.description),
+      period: game.quarter ?? null,
+      clock: play.time,
+      teamName: play.team || null,
+      description: play.description,
+      scoreHome: game.homeScore ?? null,
+      scoreAway: game.awayScore ?? null,
+      espnEventId: `${gameId}_${i}`,
+    }));
+
+    // Insert ignore duplicates using DO NOTHING on espnEventId
+    for (const row of eventRows) {
+      await db.insert(sportGameEvents).values(row).onConflictDoNothing().catch(() => {/* ignore */});
+    }
+  }
+}
+
+function classifyEventType(description: string): string {
+  const d = description.toLowerCase();
+  if (d.includes("three point") || d.includes("3-point")) return "three_pointer";
+  if (d.includes("free throw")) return "free_throw";
+  if (d.includes("timeout")) return "timeout";
+  if (d.includes("enters the game") || d.includes("substitution")) return "substitution";
+  if (d.includes("foul")) return "foul";
+  if (d.includes("touchdown")) return "touchdown";
+  if (d.includes("field goal")) return "field_goal";
+  if (d.includes("goal") || d.includes("scores")) return "goal";
+  if (d.includes("shot") || d.includes("makes") || d.includes("dunk") || d.includes("layup")) return "basket";
+  if (d.includes("interception")) return "interception";
+  if (d.includes("fumble")) return "fumble";
+  if (d.includes("home run")) return "home_run";
+  if (d.includes("strikeout")) return "strikeout";
+  return "play";
+}
 
 // ─── TEAM INFO — Live ESPN data (used for new leagues without static data) ────
 

@@ -121,13 +121,27 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 ### `artifacts/api-server` routes
 
 - `GET /api/sports/games?league=` — **live ESPN** scoreboard. No param = all 10 leagues; comma-separated (e.g. `NBA,NHL`); `ALL` = everything. 15s live / 30s finished cache
-- `GET /api/sports/game/:id` — **live ESPN** game detail with key plays, stats, lineups; 15s/30s cache
+- `GET /api/sports/game/:id` — **live ESPN** game detail with key plays, stats, lineups; 15s/30s cache; **fire-and-forget DB ingestion** to `sport_game_events` + `sport_game_states`
 - `GET /api/sports/standings?league=` — **live ESPN** standings for NBA/NFL/MLB/MLS/NHL/WNBA/NCAAB/EPL/UCL/LIGA; 5-minute cache
 - `GET /api/news?teams=&leagues=` — **live ESPN** news, filterable by team/league; 2-minute cache
 - `POST /api/ai/summarize` — OpenAI gpt-4o-mini article/game summary
 - `POST /api/ai/recap` — OpenAI gpt-4o-mini postgame recap (JSON format)
 - `GET /api/user/preferences?userId=` — fetch from Postgres
 - `POST /api/user/preferences` — upsert to Postgres (userPreferences table)
+- **`WS /ws`** — WebSocket push server; clients subscribe to `games` (all scores) or `game:<id>` (specific game); broadcasts every 15s for live games
+
+### Universal Sports Model (Database)
+
+Per the "sports operating system" blueprint, the PostgreSQL DB now has:
+- `user_preferences` — personalization
+- `sport_game_events` — universal event table (gameId, league, eventType, period, clock, teamName, athleteName, description, coords, metadata, espnEventId). The data moat — every event stored forever
+- `sport_game_states` — live game snapshots (scoreHome, scoreAway, period, clock, possession, winProbHome, momentumScore). Upserted on every game detail fetch
+
+### Mobile Gamecast Engine (Layer 3)
+
+- **`components/ArenaRenderer.tsx`** — sport-specific SVG courts/fields: NBA half court (paint, 3-point arc, basket), NFL field (yard lines, hash marks, end zones, numbers), Soccer pitch (penalty areas, goal boxes, center circle, corner arcs), Hockey rink (blue lines, face-off circles, goal creases), Baseball diamond (infield, bases, outfield arc, foul lines). Falls back to generic circle for unrecognized leagues
+- **`components/MomentumGraph.tsx`** — analytics momentum wave graph. Computes from play-by-play with decay weighting, renders as SVG bezier wave + win probability bar. Shows team-labeled fills, live momentum badge, period markers
+- **`hooks/useGameSocket.ts`** — WebSocket client hook; connects to `/ws`, subscribes to `game:<id>`, auto-reconnects; triggers React Query cache invalidation on push update
 
 ### Supported Leagues (March 2026)
 All ESPN API paths are in `LEAGUE_CONFIG` in `sports.ts`. Package `sportsdataverse@2.0.0` is installed and was used to discover ESPN endpoint patterns.
