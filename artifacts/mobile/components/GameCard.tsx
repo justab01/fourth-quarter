@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
-  View, Text, StyleSheet, Pressable, Animated
+  View, Text, StyleSheet, Pressable, Animated, Image
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -75,6 +75,38 @@ const dot = StyleSheet.create({
   core: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
 });
 
+// ── Team logo: real image with letter fallback ────────────────────────────────
+export function TeamLogo({
+  uri, name, size, borderColor, fontSize,
+}: { uri?: string | null; name: string; size: number; borderColor?: string; fontSize?: number }) {
+  const [failed, setFailed] = useState(false);
+  const letter = name.charAt(0).toUpperCase();
+  const r = size / 2;
+  return (
+    <View style={{
+      width: size, height: size, borderRadius: r,
+      backgroundColor: "rgba(255,255,255,0.08)",
+      borderWidth: 2,
+      borderColor: borderColor ?? "rgba(255,255,255,0.12)",
+      overflow: "hidden",
+      alignItems: "center", justifyContent: "center",
+    }}>
+      {uri && !failed ? (
+        <Image
+          source={{ uri }}
+          style={{ width: size * 0.72, height: size * 0.72 }}
+          resizeMode="contain"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <Text style={{ color: "#fff", fontSize: fontSize ?? size * 0.38, fontWeight: "900", fontFamily: "Inter_700Bold" }}>
+          {letter}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 export function GameCard({ game, onPress, variant = "default", isFavorite = false, grouped = false }: GameCardProps) {
   const isLive     = game.status === "live";
   const isFinished = game.status === "finished";
@@ -135,9 +167,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
                 hitSlop={8}
               >
-                <View style={[hero.logo, { borderColor: `${leagueColor}44` }]}>
-                  <Text style={hero.logoLetter}>{game.awayTeam.charAt(0)}</Text>
-                </View>
+                <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={80} borderColor={`${leagueColor}55`} />
                 <Text style={hero.teamName} numberOfLines={2}>{game.awayTeam}</Text>
                 <Text style={hero.teamLabel}>Away</Text>
               </Pressable>
@@ -174,9 +204,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
                 hitSlop={8}
               >
-                <View style={[hero.logo, { borderColor: `${leagueColor}44` }]}>
-                  <Text style={hero.logoLetter}>{game.homeTeam.charAt(0)}</Text>
-                </View>
+                <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={80} borderColor={`${leagueColor}55`} />
                 <Text style={[hero.teamName, { textAlign: "right" }]} numberOfLines={2}>{game.homeTeam}</Text>
                 <Text style={[hero.teamLabel, { textAlign: "right" }]}>Home</Text>
               </Pressable>
@@ -243,9 +271,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
                 hitSlop={4}
               >
-                <View style={cpt.logo}>
-                  <Text style={cpt.logoLetter}>{game.awayTeam.charAt(0)}</Text>
-                </View>
+                <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={22} />
                 <Text style={[cpt.teamName, isFinished && !awayWin && cpt.teamDim]} numberOfLines={1}>
                   {game.awayTeam}
                 </Text>
@@ -263,9 +289,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
                 hitSlop={4}
               >
-                <View style={cpt.logo}>
-                  <Text style={cpt.logoLetter}>{game.homeTeam.charAt(0)}</Text>
-                </View>
+                <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={22} />
                 <Text style={[cpt.teamName, isFinished && !homeWin && cpt.teamDim]} numberOfLines={1}>
                   {game.homeTeam}
                 </Text>
@@ -328,9 +352,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
               hitSlop={4}
             >
-              <View style={dflt.logo}>
-                <Text style={dflt.logoLetter}>{game.awayTeam.charAt(0)}</Text>
-              </View>
+              <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={28} />
               <Text style={[dflt.teamName, isFinished && !awayWin && dflt.teamDim]} numberOfLines={1}>
                 {game.awayTeam}
               </Text>
@@ -350,9 +372,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
               hitSlop={4}
             >
-              <View style={dflt.logo}>
-                <Text style={dflt.logoLetter}>{game.homeTeam.charAt(0)}</Text>
-              </View>
+              <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={28} />
               <Text style={[dflt.teamName, isFinished && !homeWin && dflt.teamDim]} numberOfLines={1}>
                 {game.homeTeam}
               </Text>

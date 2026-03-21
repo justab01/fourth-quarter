@@ -13,7 +13,7 @@ import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { useSearch } from "@/context/SearchContext";
-import { GameCard } from "@/components/GameCard";
+import { GameCard, TeamLogo } from "@/components/GameCard";
 import { NewsCard } from "@/components/NewsCard";
 import { RecapCard } from "@/components/RecapCard";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
@@ -139,21 +139,22 @@ function MyTeamsTiles({
           statusLine = `${won ? "W" : "L"} ${myScore}–${theirScore}`;
         }
 
+        const logoUri = featured
+          ? (featured.homeTeam === team ? featured.homeTeamLogo : featured.awayTeamLogo)
+          : null;
+
         return (
           <Pressable
             key={team}
             onPress={() => onTeamPress(team, league)}
             style={tileStyles.tile}
           >
-            <View style={[tileStyles.circle, { borderColor: `${color}55`, shadowColor: color }]}>
-              <LinearGradient
-                colors={[`${color}20`, `${color}06`]}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-              />
-              <Text style={[tileStyles.abbr, { color }]}>{abbr}</Text>
-            </View>
+            <TeamLogo
+              uri={logoUri}
+              name={team}
+              size={64}
+              borderColor={`${color}55`}
+            />
             <Text style={tileStyles.teamShort} numberOfLines={1}>{abbr}</Text>
             {statusLine ? (
               <Text style={[tileStyles.status, live && { color: C.live }]} numberOfLines={1}>
