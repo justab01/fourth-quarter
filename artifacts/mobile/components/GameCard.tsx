@@ -106,7 +106,9 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               )}
             </View>
 
+            {/* Teams + centered score block */}
             <View style={hero.teams}>
+              {/* Away team column */}
               <Pressable
                 style={hero.teamCol}
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
@@ -116,29 +118,36 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                   <Text style={hero.logoLetter}>{game.awayTeam.charAt(0)}</Text>
                 </View>
                 <Text style={hero.teamName} numberOfLines={2}>{game.awayTeam}</Text>
-                {(isLive || isFinished) && (
-                  <Text style={[hero.score, !awayWin && isFinished && hero.scoreDim]}>
-                    {game.awayScore}
-                  </Text>
-                )}
-                {isFinished && <Text style={hero.label}>Away</Text>}
+                <Text style={hero.teamLabel}>Away</Text>
               </Pressable>
 
+              {/* Center: score or VS */}
               <View style={hero.centerCol}>
-                {!isLive && !isFinished && (
+                {(isLive || isFinished) ? (
+                  <View style={hero.scoreBlock}>
+                    <Text style={[hero.score, !awayWin && isFinished && hero.scoreDim]}>
+                      {game.awayScore ?? 0}
+                    </Text>
+                    <Text style={hero.scoreSep}>–</Text>
+                    <Text style={[hero.score, !homeWin && isFinished && hero.scoreDim]}>
+                      {game.homeScore ?? 0}
+                    </Text>
+                  </View>
+                ) : (
                   <Text style={hero.vsText}>VS</Text>
                 )}
                 {isLive && game.timeRemaining && (
                   <Text style={hero.timeRemaining}>{game.timeRemaining}</Text>
                 )}
-                {isFinished && (
-                  <Text style={hero.vsText}>—</Text>
+                {!isLive && !isFinished && (
+                  <Text style={hero.kickoffTime}>{formatTime(game.startTime)}</Text>
                 )}
                 {game.venue && (
-                  <Text style={hero.venue} numberOfLines={2}>{game.venue}</Text>
+                  <Text style={hero.venue} numberOfLines={1}>{game.venue}</Text>
                 )}
               </View>
 
+              {/* Home team column */}
               <Pressable
                 style={[hero.teamCol, { alignItems: "flex-end" }]}
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
@@ -148,12 +157,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                   <Text style={hero.logoLetter}>{game.homeTeam.charAt(0)}</Text>
                 </View>
                 <Text style={[hero.teamName, { textAlign: "right" }]} numberOfLines={2}>{game.homeTeam}</Text>
-                {(isLive || isFinished) && (
-                  <Text style={[hero.score, !homeWin && isFinished && hero.scoreDim]}>
-                    {game.homeScore}
-                  </Text>
-                )}
-                {isFinished && <Text style={[hero.label, { textAlign: "right" }]}>Home</Text>}
+                <Text style={[hero.teamLabel, { textAlign: "right" }]}>Home</Text>
               </Pressable>
             </View>
 
@@ -384,7 +388,7 @@ const hero = StyleSheet.create({
     paddingVertical: 16,
     gap: 12,
   },
-  teamCol: { flex: 1, alignItems: "flex-start", gap: 8 },
+  teamCol: { flex: 1, alignItems: "flex-start", gap: 6 },
   logo: {
     width: 52, height: 52, borderRadius: 26,
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -396,13 +400,16 @@ const hero = StyleSheet.create({
     color: C.text, fontSize: 14, fontWeight: "700",
     fontFamily: "Inter_700Bold", lineHeight: 18, flex: 1,
   },
-  score: { color: C.text, fontSize: 38, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  scoreBlock: { flexDirection: "row", alignItems: "baseline", gap: 4 },
+  score: { color: C.text, fontSize: 40, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 46 },
+  scoreSep: { color: C.textTertiary, fontSize: 24, fontWeight: "300", lineHeight: 46 },
   scoreDim: { color: C.textTertiary },
-  label: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
-  centerCol: { alignItems: "center", gap: 4, paddingHorizontal: 4 },
-  vsText: { color: C.textTertiary, fontSize: 14, fontWeight: "700", letterSpacing: 1 },
-  timeRemaining: { color: C.textSecondary, fontSize: 11, fontWeight: "600" },
-  venue: { color: C.textTertiary, fontSize: 10, textAlign: "center", maxWidth: 64 },
+  teamLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
+  centerCol: { flex: 1, alignItems: "center", gap: 6 },
+  vsText: { color: C.textTertiary, fontSize: 22, fontWeight: "800", letterSpacing: 2 },
+  timeRemaining: { color: C.live, fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+  kickoffTime: { color: C.textSecondary, fontSize: 13, fontWeight: "600" },
+  venue: { color: C.textTertiary, fontSize: 10, textAlign: "center" },
   cta: {
     flexDirection: "row",
     alignItems: "center",

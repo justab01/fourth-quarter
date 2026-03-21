@@ -9,77 +9,72 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { api } from "@/utils/api";
+import type { Game } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
 import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { usePreferences } from "@/context/PreferencesContext";
 
 const C = Colors.dark;
 
-const LEAGUES = ["All", "NBA", "NFL", "MLB", "MLS"];
+const LEAGUES = ["All", "NBA", "NFL", "MLB", "MLS"] as const;
+type League = typeof LEAGUES[number];
 
-const LEAGUE_COLORS: Record<string, string> = {
-  NBA: C.nba,
-  NFL: C.nfl,
-  MLB: C.mlb,
-  MLS: C.mls,
-  All: C.accent,
+const LEAGUE_META: Record<string, { color: string }> = {
+  All:  { color: C.accent },
+  NBA:  { color: C.nba },
+  NFL:  { color: C.nfl },
+  MLB:  { color: C.mlb },
+  MLS:  { color: C.mls },
 };
 
-function MomentumBar({ awayScore, homeScore, color }: { awayScore: number; homeScore: number; color: string }) {
-  const total = awayScore + homeScore;
-  const awayPct = total === 0 ? 0.5 : awayScore / total;
-  const homePct = 1 - awayPct;
+const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
-  return (
-    <View style={momentum.container}>
-      <View style={[momentum.barAway, { width: `${awayPct * 100}%` as any, backgroundColor: `${color}77` }]} />
-      <View style={[momentum.barHome, { width: `${homePct * 100}%` as any, backgroundColor: color }]} />
-    </View>
-  );
-}
+function LeagueSectionHeader({ league, games }: { league: string; games: Game[] }) {
+  const meta    = LEAGUE_META[league] ?? { color: C.accent };
+  const liveN   = games.filter(g => g.status === "live").length;
+  const totalN  = games.length;
 
-const momentum = StyleSheet.create({
-  container: {
-    height: 2,
-    flexDirection: "row",
-    borderRadius: 1,
-    overflow: "hidden",
-    backgroundColor: C.separator,
-    marginHorizontal: 0,
-  },
-  barAway: { height: "100%" },
-  barHome: { height: "100%" },
-});
-
-function SectionHeader({ label, count, color }: { label: string; count: number; color?: string }) {
   return (
     <View style={secH.row}>
-      {color ? (
-        <View style={[secH.dot, { backgroundColor: color }]} />
-      ) : (
-        <View style={secH.dotMuted} />
+      <View style={[secH.colorBar, { backgroundColor: meta.color }]} />
+      <Text style={secH.label}>{league}</Text>
+      {liveN > 0 && (
+        <View style={secH.livePill}>
+          <View style={secH.liveDot} />
+          <Text style={secH.liveCount}>{liveN} LIVE</Text>
+        </View>
       )}
-      <Text style={secH.label}>{label}</Text>
-      <View style={secH.sep} />
+      <View style={{ flex: 1 }} />
       <View style={secH.countPill}>
-        <Text style={secH.countText}>{count}</Text>
+        <Text style={secH.countText}>{totalN} games</Text>
       </View>
     </View>
   );
 }
 
 const secH = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  dotMuted: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.textTertiary },
+  row: { flexDirection: "row", alignItems: "center", gap: 10 },
+  colorBar: { width: 4, height: 18, borderRadius: 2, flexShrink: 0 },
   label: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "800",
     color: C.text,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.2,
   },
-  sep: { flex: 1, height: 1, backgroundColor: C.separator },
+  livePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: `${C.live}14`,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: `${C.live}28`,
+  },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  liveCount: { color: C.live, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
   countPill: {
     backgroundColor: C.card,
     borderWidth: 1,
@@ -88,13 +83,13 @@ const secH = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 10,
   },
-  countText: { color: C.textTertiary, fontSize: 11, fontWeight: "700" },
+  countText: { color: C.textTertiary, fontSize: 11, fontWeight: "600" },
 });
 
 export default function LiveScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
-  const [activeLeague, setActiveLeague] = useState("All");
+  const [activeLeague, setActiveLeague] = useState<League>("All");
   const [refreshing, setRefreshing] = useState(false);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -114,22 +109,28 @@ export default function LiveScreen() {
 
   const all = data?.games ?? [];
   const myTeams = preferences.favoriteTeams;
+  const isFav = (g: Game) => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam);
 
-  const filtered = activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
-  const sorted = [...filtered].sort((a, b) => {
-    const pri = { live: 0, upcoming: 1, finished: 2 };
-    const aFav = myTeams.includes(a.homeTeam) || myTeams.includes(a.awayTeam) ? -10 : 0;
-    const bFav = myTeams.includes(b.homeTeam) || myTeams.includes(b.awayTeam) ? -10 : 0;
-    return (pri[a.status] + aFav) - (pri[b.status] + bFav);
-  });
+  const totalLive = all.filter(g => g.status === "live").length;
 
-  const liveGames    = sorted.filter(g => g.status === "live");
-  const upcomingGames = sorted.filter(g => g.status === "upcoming");
-  const finishedGames = sorted.filter(g => g.status === "finished");
-  const leagueColor   = LEAGUE_COLORS[activeLeague] ?? C.accent;
+  const leagueList = activeLeague === "All"
+    ? (["NBA", "NFL", "MLB", "MLS"] as string[])
+    : [activeLeague as string];
 
-  const isFav = (game: { homeTeam: string; awayTeam: string }) =>
-    myTeams.includes(game.homeTeam) || myTeams.includes(game.awayTeam);
+  const filteredAll = activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
+
+  const leagueSections = leagueList
+    .map(league => ({
+      league,
+      games: filteredAll
+        .filter(g => g.league === league)
+        .sort((a, b) => {
+          const aFav = isFav(a) ? -5 : 0;
+          const bFav = isFav(b) ? -5 : 0;
+          return (STATUS_ORDER[a.status] + aFav) - (STATUS_ORDER[b.status] + bFav);
+        }),
+    }))
+    .filter(s => s.games.length > 0);
 
   return (
     <View style={styles.container}>
@@ -141,10 +142,10 @@ export default function LiveScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Live</Text>
-          {liveGames.length > 0 && (
+          {totalLive > 0 && (
             <View style={styles.liveBadge}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveCount}>{liveGames.length} LIVE</Text>
+              <Text style={styles.liveCount}>{totalLive} LIVE</Text>
             </View>
           )}
         </View>
@@ -158,7 +159,7 @@ export default function LiveScreen() {
         >
           {LEAGUES.map(league => {
             const active = activeLeague === league;
-            const color  = LEAGUE_COLORS[league] ?? C.accent;
+            const color  = LEAGUE_META[league]?.color ?? C.accent;
             const count  = league === "All"
               ? all.length
               : all.filter(g => g.league === league).length;
@@ -178,47 +179,24 @@ export default function LiveScreen() {
           })}
         </ScrollView>
 
+        {/* Content */}
         {isLoading ? (
           <View style={styles.list}>
             {[1, 2, 3].map(i => <GameCardSkeleton key={i} />)}
           </View>
-        ) : sorted.length === 0 ? (
+        ) : leagueSections.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="tv-outline" size={52} color={C.textTertiary} />
             <Text style={styles.emptyTitle}>No Games</Text>
             <Text style={styles.emptyText}>Check back for live matchups</Text>
           </View>
         ) : (
-          <>
-            {liveGames.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader label="Live Now" count={liveGames.length} color={C.live} />
+          <View style={styles.sections}>
+            {leagueSections.map(({ league, games }) => (
+              <View key={league} style={styles.section}>
+                <LeagueSectionHeader league={league} games={games} />
                 <View style={styles.list}>
-                  {liveGames.map(game => (
-                    <View key={game.id}>
-                      <GameCard
-                        game={game}
-                        isFavorite={isFav(game)}
-                        onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
-                      />
-                      {(game.homeScore ?? 0) + (game.awayScore ?? 0) > 0 && (
-                        <MomentumBar
-                          awayScore={game.awayScore ?? 0}
-                          homeScore={game.homeScore ?? 0}
-                          color={leagueColor}
-                        />
-                      )}
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {upcomingGames.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader label="Upcoming" count={upcomingGames.length} />
-                <View style={styles.list}>
-                  {upcomingGames.map(game => (
+                  {games.map(game => (
                     <GameCard
                       key={game.id}
                       game={game}
@@ -228,24 +206,8 @@ export default function LiveScreen() {
                   ))}
                 </View>
               </View>
-            )}
-
-            {finishedGames.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader label="Final" count={finishedGames.length} />
-                <View style={styles.list}>
-                  {finishedGames.map(game => (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      isFavorite={isFav(game)}
-                      onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
-                    />
-                  ))}
-                </View>
-              </View>
-            )}
-          </>
+            ))}
+          </View>
         )}
       </ScrollView>
     </View>
@@ -307,7 +269,8 @@ const styles = StyleSheet.create({
   },
   chipCountText: { fontSize: 10, fontWeight: "700", color: C.textTertiary },
 
-  section: { gap: 12, paddingVertical: 6 },
+  sections: { gap: 24, paddingVertical: 8 },
+  section: { gap: 12 },
   list: { gap: 8 },
 
   empty: { alignItems: "center", paddingVertical: 80, gap: 12 },

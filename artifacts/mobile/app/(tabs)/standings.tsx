@@ -115,8 +115,7 @@ export default function StandingsScreen() {
               <Text style={styles.thTeam}>TEAM</Text>
               <Text style={styles.thStat}>W</Text>
               <Text style={styles.thStat}>L</Text>
-              <Text style={styles.thStat}>PCT</Text>
-              <Text style={styles.thStat}>GB</Text>
+              <Text style={styles.thStat}>W-L%</Text>
               <Text style={styles.thStreak}>STK</Text>
             </View>
 
@@ -173,14 +172,11 @@ export default function StandingsScreen() {
                     )}
                   </View>
 
-                  {/* Stats */}
+                  {/* Stats: W | L | W-L% | STK */}
                   <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.wins}</Text>
                   <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.losses}</Text>
                   <Text style={[styles.tdStat, isMyTeam && { color: leagueMeta.color, fontWeight: "700" }]}>
                     {entry.winPct.toFixed(3)}
-                  </Text>
-                  <Text style={styles.tdStat}>
-                    {entry.gamesBack == null ? "—" : entry.gamesBack === 0 ? "-" : entry.gamesBack}
                   </Text>
                   <View style={styles.tdStreak}>
                     <StreakBadge streak={entry.streak} />
