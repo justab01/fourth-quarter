@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, Animated
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import type { Game } from "@/utils/api";
 import { goToTeam } from "@/utils/navHelpers";
@@ -13,6 +14,7 @@ interface GameCardProps {
   game: Game;
   onPress: () => void;
   variant?: "default" | "hero" | "compact";
+  isFavorite?: boolean;
 }
 
 function formatTime(iso: string) {
@@ -61,7 +63,7 @@ const dot = StyleSheet.create({
   core: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
 });
 
-export function GameCard({ game, onPress, variant = "default" }: GameCardProps) {
+export function GameCard({ game, onPress, variant = "default", isFavorite = false }: GameCardProps) {
   const isLive     = game.status === "live";
   const isFinished = game.status === "finished";
   const leagueColor = getLeagueColor(game.league);
@@ -174,7 +176,7 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={[cpt.card, isLive && { borderColor: `${leagueColor}44` }]}>
+          <View style={[cpt.card, isLive && { borderColor: `${leagueColor}44` }, isFavorite && { borderColor: `${C.accent}44` }]}>
             {isLive && (
               <LinearGradient
                 colors={[`${leagueColor}14`, "transparent"]}
@@ -186,6 +188,12 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
             <View style={[cpt.stripe, { backgroundColor: leagueColor }]} />
 
             <View style={cpt.body}>
+              {isFavorite && (
+                <View style={cpt.starRow}>
+                  <Ionicons name="star" size={9} color={C.accent} />
+                  <Text style={cpt.starText}>MY TEAM</Text>
+                </View>
+              )}
               {isLive && (
                 <View style={cpt.livePill}>
                   <View style={cpt.liveDot} />
@@ -324,8 +332,15 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
             </Pressable>
           </View>
 
-          {/* League accent bar on right edge */}
-          <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
+          {/* Favorite star + league accent bar on right edge */}
+          <View style={dflt.rightCol}>
+            {isFavorite && (
+              <View style={dflt.starBadge}>
+                <Ionicons name="star" size={10} color={C.accent} />
+              </View>
+            )}
+            <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
+          </View>
         </View>
       </Pressable>
     </Animated.View>
@@ -443,6 +458,8 @@ const cpt = StyleSheet.create({
   teamDim: { color: C.textTertiary },
   score: { color: C.text, fontSize: 16, fontWeight: "800", fontFamily: "Inter_700Bold", minWidth: 24, textAlign: "right" },
   scoreDim: { color: C.textTertiary },
+  starRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 },
+  starText: { color: C.accent, fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
 });
 
 // ── Default (Livescore row) styles ───────────────────────────────────────────
@@ -547,9 +564,22 @@ const dflt = StyleSheet.create({
 
   hSep: { height: 1, backgroundColor: C.separator, marginLeft: 38 },
 
+  rightCol: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingRight: 2,
+    alignSelf: "stretch",
+  },
+  starBadge: {
+    paddingTop: 4,
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
   leagueAccent: {
     width: 3,
     alignSelf: "stretch",
     flexShrink: 0,
+    borderRadius: 2,
   },
 });

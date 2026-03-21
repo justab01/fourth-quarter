@@ -21,39 +21,31 @@ const LEAGUE_META: Record<string, { color: string; label: string }> = {
   MLS: { color: C.mls, label: "MLS" },
 };
 
-function StreakIcon({ streak }: { streak: string | null }) {
+function StreakBadge({ streak }: { streak: string | null }) {
   if (!streak) return null;
   const isWin = streak.startsWith("W");
   const num = parseInt(streak.slice(1));
   return (
-    <View style={[streakStyles.pill, { backgroundColor: isWin ? "rgba(52,199,89,0.15)" : "rgba(255,59,48,0.12)" }]}>
-      <Text style={[streakStyles.text, { color: isWin ? C.accentGreen : C.accent }]}>
+    <View style={[streak_s.pill, { backgroundColor: isWin ? `${C.accentGreen}18` : `${C.live}14` }]}>
+      <Text style={[streak_s.text, { color: isWin ? C.accentGreen : C.live }]}>
         {isWin ? "W" : "L"}{num}
       </Text>
     </View>
   );
 }
 
-const streakStyles = StyleSheet.create({
-  pill: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  text: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
+const streak_s = StyleSheet.create({
+  pill: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5 },
+  text: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3 },
 });
 
 function RankChange({ delta }: { delta: number | null }) {
-  if (!delta || delta === 0) return <View style={{ width: 16 }} />;
+  if (!delta || delta === 0) return <View style={{ width: 10 }} />;
   return (
     <Ionicons
       name={delta > 0 ? "caret-up" : "caret-down"}
-      size={10}
-      color={delta > 0 ? C.accentGreen : C.accent}
+      size={9}
+      color={delta > 0 ? C.accentGreen : C.live}
     />
   );
 }
@@ -78,7 +70,6 @@ export default function StandingsScreen() {
 
   const standings = data?.standings ?? [];
   const leagueMeta = LEAGUE_META[activeLeague] ?? { color: C.accent, label: activeLeague };
-  const displayLeagues = supportedLeagues;
 
   return (
     <View style={styles.container}>
@@ -86,24 +77,26 @@ export default function StandingsScreen() {
         contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Standings</Text>
+          <View style={[styles.leagueDot, { backgroundColor: leagueMeta.color }]} />
         </View>
 
-        {/* League Tabs */}
+        {/* League tabs */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.leagueRow}
           style={styles.leagueScroll}
         >
-          {displayLeagues.map(l => {
+          {supportedLeagues.map(l => {
             const active = activeLeague === l;
-            const meta = LEAGUE_META[l] ?? { color: C.accent };
+            const meta   = LEAGUE_META[l] ?? { color: C.accent };
             return (
               <Pressable key={l} onPress={() => setActiveLeague(l)}>
-                <View style={[styles.leagueChip, active && { borderColor: meta.color, backgroundColor: `${meta.color}18` }]}>
-                  <Text style={[styles.leagueChipText, active && { color: meta.color }]}>{l}</Text>
+                <View style={[styles.chip, active && { borderColor: meta.color, backgroundColor: `${meta.color}18` }]}>
+                  <Text style={[styles.chipText, active && { color: meta.color }]}>{l}</Text>
                 </View>
               </Pressable>
             );
@@ -116,7 +109,7 @@ export default function StandingsScreen() {
           </View>
         ) : (
           <View style={styles.table}>
-            {/* Table Header */}
+            {/* Table header */}
             <View style={[styles.tableHead, { borderBottomColor: `${leagueMeta.color}33` }]}>
               <Text style={styles.thRank}>#</Text>
               <Text style={styles.thTeam}>TEAM</Text>
@@ -124,12 +117,12 @@ export default function StandingsScreen() {
               <Text style={styles.thStat}>L</Text>
               <Text style={styles.thStat}>PCT</Text>
               <Text style={styles.thStat}>GB</Text>
-              <Text style={styles.thStat}>STK</Text>
+              <Text style={styles.thStreak}>STK</Text>
             </View>
 
             {standings.map((entry, idx) => {
               const isMyTeam = preferences.favoriteTeams.includes(entry.teamName);
-              const isEven = idx % 2 === 1;
+              const isEven   = idx % 2 === 1;
 
               return (
                 <Pressable
@@ -137,13 +130,14 @@ export default function StandingsScreen() {
                   onPress={() => goToTeam(entry.teamName, activeLeague)}
                   style={[
                     styles.tableRow,
-                    isEven && styles.tableRowStripe,
+                    isEven && styles.tableRowAlt,
+                    idx < standings.length - 1 && styles.tableRowBorder,
                     isMyTeam && styles.tableRowHighlight,
                   ]}
                 >
                   {isMyTeam && (
                     <LinearGradient
-                      colors={[`${leagueMeta.color}18`, "transparent"]}
+                      colors={[`${leagueMeta.color}16`, "transparent"]}
                       style={StyleSheet.absoluteFill}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
@@ -152,35 +146,44 @@ export default function StandingsScreen() {
                   {isMyTeam && (
                     <View style={[styles.myTeamBar, { backgroundColor: leagueMeta.color }]} />
                   )}
+
+                  {/* Rank */}
                   <View style={styles.tdRank}>
-                    <Text style={[styles.rankNum, isMyTeam && { color: leagueMeta.color, fontFamily: "Inter_700Bold" }]}>
+                    <Text style={[styles.rankNum, isMyTeam && { color: leagueMeta.color, fontWeight: "800" }]}>
                       {entry.rank}
                     </Text>
                     <RankChange delta={entry.rankChange} />
                   </View>
 
+                  {/* Team */}
                   <View style={styles.tdTeam}>
-                    <View style={[styles.teamDot, { backgroundColor: isMyTeam ? leagueMeta.color : "rgba(255,255,255,0.12)" }]}>
-                      <Text style={styles.teamDotText}>{entry.teamName.charAt(0)}</Text>
+                    <View style={[styles.teamCircle, { backgroundColor: isMyTeam ? `${leagueMeta.color}22` : "rgba(255,255,255,0.06)" }]}>
+                      <Text style={[styles.teamCircleLetter, isMyTeam && { color: leagueMeta.color }]}>
+                        {entry.teamName.charAt(0)}
+                      </Text>
                     </View>
                     <Text
-                      style={[styles.teamText, isMyTeam && { color: C.text, fontFamily: "Inter_700Bold" }]}
+                      style={[styles.teamText, isMyTeam && { color: C.text, fontWeight: "700" }]}
                       numberOfLines={1}
                     >
                       {entry.teamName}
                     </Text>
+                    {isMyTeam && (
+                      <Ionicons name="star" size={10} color={leagueMeta.color} style={{ marginLeft: 2 }} />
+                    )}
                   </View>
 
+                  {/* Stats */}
                   <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.wins}</Text>
                   <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.losses}</Text>
-                  <Text style={[styles.tdStat, isMyTeam && { color: leagueMeta.color, fontFamily: "Inter_700Bold" }]}>
+                  <Text style={[styles.tdStat, isMyTeam && { color: leagueMeta.color, fontWeight: "700" }]}>
                     {entry.winPct.toFixed(3)}
                   </Text>
-                  <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>
+                  <Text style={styles.tdStat}>
                     {entry.gamesBack == null ? "—" : entry.gamesBack === 0 ? "-" : entry.gamesBack}
                   </Text>
                   <View style={styles.tdStreak}>
-                    <StreakIcon streak={entry.streak} />
+                    <StreakBadge streak={entry.streak} />
                   </View>
                 </Pressable>
               );
@@ -188,11 +191,11 @@ export default function StandingsScreen() {
           </View>
         )}
 
-        {/* My Teams legend note */}
+        {/* Legend */}
         {preferences.favoriteTeams.length > 0 && (
-          <View style={styles.legendRow}>
+          <View style={styles.legend}>
             <View style={[styles.legendDot, { backgroundColor: leagueMeta.color }]} />
-            <Text style={styles.legendText}>Your teams are highlighted · Tap any row to see team page</Text>
+            <Text style={styles.legendText}>Your teams highlighted · Tap any row to view team</Text>
           </View>
         )}
       </ScrollView>
@@ -203,34 +206,45 @@ export default function StandingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   scroll: { paddingHorizontal: 20, gap: 4 },
-  header: { paddingTop: 16, paddingBottom: 12 },
+
+  header: {
+    paddingTop: 16,
+    paddingBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: "900",
     color: C.text,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.5,
   },
-  leagueScroll: { marginBottom: 16 },
+  leagueDot: { width: 10, height: 10, borderRadius: 5 },
+
+  leagueScroll: { marginBottom: 14 },
   leagueRow: { gap: 8, paddingRight: 20 },
-  leagueChip: {
+  chip: {
     paddingHorizontal: 18,
-    paddingVertical: 9,
+    paddingVertical: 8,
     borderRadius: 22,
     backgroundColor: C.card,
     borderWidth: 1.5,
     borderColor: C.cardBorder,
   },
-  leagueChipText: {
+  chipText: {
     color: C.textSecondary,
     fontSize: 13,
     fontWeight: "800",
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
+
   loading: { paddingVertical: 80, alignItems: "center" },
+
   table: {
     backgroundColor: C.card,
-    borderRadius: 20,
+    borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: C.cardBorder,
@@ -238,49 +252,57 @@ const styles = StyleSheet.create({
   tableHead: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderBottomWidth: 1.5,
     backgroundColor: "rgba(255,255,255,0.02)",
   },
   thRank: {
-    width: 44,
+    width: 40,
     color: C.textTertiary,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1,
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    paddingLeft: 6,
   },
   thTeam: {
     flex: 1,
     color: C.textTertiary,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1,
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.2,
   },
   thStat: {
+    width: 36,
+    textAlign: "center",
+    color: C.textTertiary,
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+  },
+  thStreak: {
     width: 38,
     textAlign: "center",
     color: C.textTertiary,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1,
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.2,
   },
+
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: C.separator,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     position: "relative",
     overflow: "hidden",
   },
-  tableRowStripe: {
-    backgroundColor: "rgba(255,255,255,0.015)",
+  tableRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.separator,
   },
-  tableRowHighlight: {
-    borderBottomColor: "rgba(255,255,255,0.04)",
-  },
+  tableRowAlt: { backgroundColor: "rgba(255,255,255,0.012)" },
+  tableRowHighlight: {},
   myTeamBar: {
     position: "absolute",
     left: 0,
@@ -289,12 +311,13 @@ const styles = StyleSheet.create({
     width: 3,
     borderRadius: 2,
   },
+
   tdRank: {
-    width: 44,
+    width: 40,
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
-    paddingLeft: 6,
+    gap: 2,
+    paddingLeft: 4,
   },
   rankNum: {
     color: C.textSecondary,
@@ -303,25 +326,20 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     minWidth: 18,
   },
+
   tdTeam: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 9,
   },
-  teamDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
+  teamCircle: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
-  teamDotText: {
-    color: C.text,
-    fontSize: 12,
-    fontWeight: "700",
-    fontFamily: "Inter_700Bold",
+  teamCircleLetter: {
+    color: C.text, fontSize: 11, fontWeight: "800", fontFamily: "Inter_700Bold",
   },
   teamText: {
     color: C.textSecondary,
@@ -329,29 +347,22 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     flex: 1,
   },
+
   tdStat: {
-    width: 38,
+    width: 36,
     textAlign: "center",
     color: C.textTertiary,
     fontSize: 13,
     fontFamily: "Inter_400Regular",
   },
-  tdStreak: {
-    width: 38,
-    alignItems: "center",
-  },
-  legendRow: {
+  tdStreak: { width: 38, alignItems: "center" },
+
+  legend: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     paddingVertical: 12,
   },
-  legendDot: {
-    width: 8, height: 8, borderRadius: 4,
-  },
-  legendText: {
-    color: C.textTertiary,
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-  },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular" },
 });

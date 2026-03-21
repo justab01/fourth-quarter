@@ -70,7 +70,7 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
               <Text style={heroS.emoji}>{emoji}</Text>
             </View>
             <LinearGradient
-              colors={["transparent", "rgba(15,15,15,0.92)", "#0F0F0F"]}
+              colors={["transparent", "rgba(15,15,15,0.94)", "#0F0F0F"]}
               style={heroS.overlay}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
@@ -97,11 +97,12 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
     );
   }
 
+  // Default — left-edge league stripe, text-forward dark card
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
         <View style={card.container}>
-          <View style={[card.topBar, { backgroundColor: accentColor }]} />
+          <View style={[card.leftStripe, { backgroundColor: accentColor }]} />
           <View style={card.body}>
             <View style={card.meta}>
               <View style={[card.leagueTag, { backgroundColor: `${accentColor}18` }]}>
@@ -194,15 +195,25 @@ const heroS = StyleSheet.create({
 const card = StyleSheet.create({
   container: {
     backgroundColor: C.card,
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: C.cardBorder,
+    flexDirection: "row",
   },
-  topBar: { height: 3 },
+  leftStripe: {
+    width: 4,
+    alignSelf: "stretch",
+    flexShrink: 0,
+    margin: 12,
+    marginRight: 0,
+    borderRadius: 2,
+  },
   body: {
-    padding: 14,
-    gap: 7,
+    flex: 1,
+    padding: 12,
+    paddingLeft: 12,
+    gap: 6,
   },
   meta: {
     flexDirection: "row",

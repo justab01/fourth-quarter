@@ -17,11 +17,13 @@ const C = Colors.dark;
 
 const FILTERS = ["All", "My Teams", "NBA", "NFL", "MLB", "MLS"];
 
-const LEAGUE_DISPLAY: Record<string, string> = {
+const FILTER_COLORS: Record<string, string> = {
   NBA: C.nba,
   NFL: C.nfl,
   MLB: C.mlb,
   MLS: C.mls,
+  "My Teams": C.accent,
+  All: C.textTertiary,
 };
 
 export default function NewsScreen() {
@@ -68,14 +70,18 @@ export default function NewsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
       >
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>News</Text>
           {filter === "My Teams" && preferences.favoriteTeams.length > 0 && (
-            <Text style={styles.headerSub}>Personalized for you</Text>
+            <View style={styles.personalTag}>
+              <Ionicons name="star" size={11} color={C.accent} />
+              <Text style={styles.personalTagText}>Personalized</Text>
+            </View>
           )}
         </View>
 
-        {/* Filters */}
+        {/* Filter chips */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -84,11 +90,14 @@ export default function NewsScreen() {
         >
           {FILTERS.map(f => {
             const active = filter === f;
-            const color = LEAGUE_DISPLAY[f] ?? C.accent;
+            const color  = FILTER_COLORS[f] ?? C.accent;
             return (
               <Pressable key={f} onPress={() => setFilter(f)}>
-                <View style={[styles.filterChip, active && { borderColor: color, backgroundColor: `${color}18` }]}>
-                  <Text style={[styles.filterText, active && { color }]}>{f}</Text>
+                <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}18` }]}>
+                  {active && f === "My Teams" && (
+                    <Ionicons name="star" size={11} color={color} />
+                  )}
+                  <Text style={[styles.chipText, active && { color }]}>{f}</Text>
                 </View>
               </Pressable>
             );
@@ -114,6 +123,7 @@ export default function NewsScreen() {
                 onPress={() => router.push({ pathname: "/article/[id]", params: { id: heroArticle.id, article: JSON.stringify(heroArticle) } } as any)}
               />
             )}
+            <View style={styles.divider} />
             {restArticles.map(article => (
               <NewsCard
                 key={article.id}
@@ -131,40 +141,62 @@ export default function NewsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   scroll: { paddingHorizontal: 20, gap: 4 },
+
   header: {
     paddingTop: 16,
     paddingBottom: 12,
-    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: "900",
     color: C.text,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.5,
   },
-  headerSub: {
-    color: C.textTertiary,
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
+  personalTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: `${C.accent}14`,
+    borderWidth: 1,
+    borderColor: `${C.accent}33`,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
+  personalTagText: {
+    color: C.accent,
+    fontSize: 12,
+    fontWeight: "700",
+    fontFamily: "Inter_600SemiBold",
+  },
+
   filterScroll: { marginBottom: 8 },
   filterRow: { gap: 8, paddingRight: 20 },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 22,
     backgroundColor: C.card,
     borderWidth: 1.5,
     borderColor: C.cardBorder,
   },
-  filterText: {
+  chipText: {
     color: C.textSecondary,
     fontSize: 13,
     fontWeight: "700",
     fontFamily: "Inter_600SemiBold",
   },
-  list: { gap: 12, paddingVertical: 4 },
+
+  list: { gap: 10, paddingVertical: 4 },
+  divider: { height: 1, backgroundColor: C.separator, marginVertical: 4 },
+
   empty: { alignItems: "center", paddingVertical: 70, gap: 12 },
   emptyTitle: {
     fontSize: 20,
@@ -172,9 +204,5 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     fontFamily: "Inter_700Bold",
   },
-  emptyText: {
-    fontSize: 14,
-    color: C.textTertiary,
-    fontFamily: "Inter_400Regular",
-  },
+  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: "Inter_400Regular" },
 });

@@ -296,6 +296,7 @@ function TodaysGamesWidget({
                     <GameCard
                       game={item}
                       variant="compact"
+                      isFavorite={myTeams.includes(item.homeTeam) || myTeams.includes(item.awayTeam)}
                       onPress={() => onGamePress(item)}
                     />
                   </View>
