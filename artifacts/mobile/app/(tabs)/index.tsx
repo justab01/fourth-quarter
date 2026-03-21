@@ -218,21 +218,26 @@ function TodaysGamesWidget({
         </View>
       ) : (
         <View style={{ gap: 16 }}>
-          {/* Pinned favourite games — full Livescore-row GameCards */}
+          {/* Pinned favourite games — grouped Livescore-row GameCards */}
           {favGames.length > 0 && (
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: 10 }}>
               <SectionHeading
                 label="My Teams"
                 accentColor={sportColor}
               />
-              {favGames.map(g => (
-                <GameCard
-                  key={g.id}
-                  game={g}
-                  isFavorite
-                  onPress={() => onGamePress(g)}
-                />
-              ))}
+              <View style={widgetStyles.groupedList}>
+                {favGames.map((g, idx) => (
+                  <View key={g.id}>
+                    {idx > 0 && <View style={widgetStyles.rowDivider} />}
+                    <GameCard
+                      game={g}
+                      isFavorite
+                      grouped
+                      onPress={() => onGamePress(g)}
+                    />
+                  </View>
+                ))}
+              </View>
             </View>
           )}
 
@@ -276,11 +281,17 @@ const widgetStyles = StyleSheet.create({
     borderColor: C.cardBorder,
   },
   emptyText: { color: C.textTertiary, fontSize: 14, fontFamily: "Inter_400Regular" },
-  _unused: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: C.textTertiary,
-    letterSpacing: 1,
+  groupedList: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  rowDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.separator,
+    marginLeft: 70,
   },
 });
 

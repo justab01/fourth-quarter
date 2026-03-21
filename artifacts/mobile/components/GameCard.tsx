@@ -15,6 +15,7 @@ interface GameCardProps {
   onPress: () => void;
   variant?: "default" | "hero" | "compact";
   isFavorite?: boolean;
+  grouped?: boolean;
 }
 
 function formatTime(iso: string) {
@@ -63,7 +64,7 @@ const dot = StyleSheet.create({
   core: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
 });
 
-export function GameCard({ game, onPress, variant = "default", isFavorite = false }: GameCardProps) {
+export function GameCard({ game, onPress, variant = "default", isFavorite = false, grouped = false }: GameCardProps) {
   const isLive     = game.status === "live";
   const isFinished = game.status === "finished";
   const leagueColor = getLeagueColor(game.league);
@@ -260,7 +261,11 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={[dflt.card, isLive && { borderColor: `${C.live}30` }]}>
+        <View style={[
+          dflt.card,
+          grouped && dflt.cardGrouped,
+          isLive && !grouped && { borderColor: `${C.live}30` },
+        ]}>
           {isLive && (
             <LinearGradient
               colors={["rgba(232,22,43,0.06)", "transparent"]}
@@ -479,6 +484,12 @@ const dflt = StyleSheet.create({
     borderColor: C.cardBorder,
     flexDirection: "row",
     alignItems: "stretch",
+  },
+  cardGrouped: {
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    borderWidth: 0,
+    borderColor: "transparent",
   },
 
   statusCol: {

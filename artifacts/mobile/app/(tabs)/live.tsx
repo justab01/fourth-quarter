@@ -19,44 +19,141 @@ const C = Colors.dark;
 const LEAGUES = ["All", "NBA", "NFL", "MLB", "MLS"] as const;
 type League = typeof LEAGUES[number];
 
-const LEAGUE_META: Record<string, { color: string }> = {
-  All:  { color: C.accent },
-  NBA:  { color: C.nba },
-  NFL:  { color: C.nfl },
-  MLB:  { color: C.mlb },
-  MLS:  { color: C.mls },
+const LEAGUE_META: Record<string, { color: string; emoji: string; fullName: string }> = {
+  NBA: { color: C.nba,  emoji: "🏀", fullName: "NBA" },
+  NFL: { color: C.nfl,  emoji: "🏈", fullName: "NFL" },
+  MLB: { color: C.mlb,  emoji: "⚾", fullName: "MLB" },
+  MLS: { color: C.mls,  emoji: "⚽", fullName: "MLS" },
 };
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
+function getDateLabel(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  if (offset === 0) return "Today";
+  if (offset === -1) return "Yesterday";
+  if (offset === 1) return "Tomorrow";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function DateStrip({ offset, onChange }: { offset: number; onChange: (o: number) => void }) {
+  const prev = offset - 1;
+  const next = offset + 1;
+  return (
+    <View style={ds.container}>
+      <Pressable style={ds.arrow} onPress={() => onChange(offset - 1)} hitSlop={10}>
+        <Ionicons name="chevron-back" size={16} color={C.textSecondary} />
+      </Pressable>
+
+      <Pressable style={ds.dayBtn} onPress={() => onChange(prev)}>
+        <Text style={ds.dayLabel}>{getDateLabel(prev)}</Text>
+      </Pressable>
+
+      <View style={ds.todayBtn}>
+        {offset === 0 && (
+          <View style={ds.liveDot} />
+        )}
+        <Text style={[ds.todayLabel, offset === 0 && ds.todayLabelActive]}>
+          {getDateLabel(offset)}
+        </Text>
+      </View>
+
+      <Pressable style={ds.dayBtn} onPress={() => onChange(next)}>
+        <Text style={ds.dayLabel}>{getDateLabel(next)}</Text>
+      </Pressable>
+
+      <Pressable style={ds.arrow} onPress={() => onChange(offset + 1)} hitSlop={10}>
+        <Ionicons name="chevron-forward" size={16} color={C.textSecondary} />
+      </Pressable>
+    </View>
+  );
+}
+
+const ds = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: C.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    marginBottom: 8,
+  },
+  arrow: {
+    paddingHorizontal: 8,
+  },
+  dayBtn: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  dayLabel: {
+    color: C.textTertiary,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  todayBtn: {
+    flex: 1.3,
+    alignItems: "center",
+    paddingVertical: 4,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 5,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: C.live,
+  },
+  todayLabel: {
+    color: C.textSecondary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  todayLabelActive: {
+    color: C.text,
+    fontWeight: "800",
+  },
+});
+
 function LeagueSectionHeader({ league, games }: { league: string; games: Game[] }) {
-  const meta    = LEAGUE_META[league] ?? { color: C.accent };
-  const liveN   = games.filter(g => g.status === "live").length;
-  const totalN  = games.length;
+  const meta  = LEAGUE_META[league] ?? { color: C.accent, emoji: "🏆", fullName: league };
+  const liveN = games.filter(g => g.status === "live").length;
 
   return (
     <View style={secH.row}>
       <View style={[secH.colorBar, { backgroundColor: meta.color }]} />
-      <Text style={secH.label}>{league}</Text>
+      <Text style={secH.emoji}>{meta.emoji}</Text>
+      <Text style={secH.label}>{meta.fullName}</Text>
       {liveN > 0 && (
         <View style={secH.livePill}>
           <View style={secH.liveDot} />
-          <Text style={secH.liveCount}>{liveN} LIVE</Text>
+          <Text style={secH.liveText}>{liveN}</Text>
         </View>
       )}
       <View style={{ flex: 1 }} />
-      <View style={secH.countPill}>
-        <Text style={secH.countText}>{totalN} games</Text>
-      </View>
+      <Pressable style={secH.moreBtn} hitSlop={8}>
+        <Text style={secH.moreText}>{">>"}</Text>
+      </Pressable>
     </View>
   );
 }
 
 const secH = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 10 },
-  colorBar: { width: 4, height: 18, borderRadius: 2, flexShrink: 0 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 2,
+  },
+  colorBar: { width: 4, height: 20, borderRadius: 2, flexShrink: 0 },
+  emoji: { fontSize: 16 },
   label: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "800",
     color: C.text,
     fontFamily: "Inter_700Bold",
@@ -65,31 +162,23 @@ const secH = StyleSheet.create({
   livePill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    backgroundColor: `${C.live}14`,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: `${C.live}28`,
-  },
-  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
-  liveCount: { color: C.live, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
-  countPill: {
-    backgroundColor: C.card,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-    paddingHorizontal: 8,
+    gap: 4,
+    backgroundColor: C.live,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: 6,
   },
-  countText: { color: C.textTertiary, fontSize: 11, fontWeight: "600" },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: "#fff" },
+  liveText: { color: "#fff", fontSize: 10, fontWeight: "900" },
+  moreBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
+  moreText: { color: C.textTertiary, fontSize: 13, fontWeight: "700", letterSpacing: -1 },
 });
 
 export default function LiveScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
   const [activeLeague, setActiveLeague] = useState<League>("All");
+  const [dateOffset, setDateOffset] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -110,7 +199,6 @@ export default function LiveScreen() {
   const all = data?.games ?? [];
   const myTeams = preferences.favoriteTeams;
   const isFav = (g: Game) => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam);
-
   const totalLive = all.filter(g => g.status === "live").length;
 
   const leagueList = activeLeague === "All"
@@ -132,23 +220,33 @@ export default function LiveScreen() {
     }))
     .filter(s => s.games.length > 0);
 
+  const isOffDay = dateOffset !== 0;
+
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.live} />}
       >
-        {/* Header */}
+        {/* Header row */}
         <View style={styles.header}>
-          <Text style={styles.title}>Live</Text>
-          {totalLive > 0 && (
-            <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveCount}>{totalLive} LIVE</Text>
-            </View>
-          )}
+          <Text style={styles.title}>Scores</Text>
+          <View style={styles.headerRight}>
+            {totalLive > 0 && !isOffDay && (
+              <View style={styles.liveBadge}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveCount}>{totalLive} LIVE</Text>
+              </View>
+            )}
+            <Pressable style={styles.searchBtn} onPress={() => {}}>
+              <Ionicons name="search" size={18} color={C.textSecondary} />
+            </Pressable>
+          </View>
         </View>
+
+        {/* Date strip */}
+        <DateStrip offset={dateOffset} onChange={setDateOffset} />
 
         {/* League filter chips */}
         <ScrollView
@@ -159,14 +257,17 @@ export default function LiveScreen() {
         >
           {LEAGUES.map(league => {
             const active = activeLeague === league;
-            const color  = LEAGUE_META[league]?.color ?? C.accent;
+            const meta   = LEAGUE_META[league as string] ?? { color: C.accent };
+            const color  = meta?.color ?? C.accent;
             const count  = league === "All"
               ? all.length
               : all.filter(g => g.league === league).length;
             return (
               <Pressable key={league} onPress={() => setActiveLeague(league)}>
-                <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}18` }]}>
-                  {active && <View style={[styles.chipDot, { backgroundColor: color }]} />}
+                <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}1A` }]}>
+                  {league !== "All" && LEAGUE_META[league] && (
+                    <Text style={styles.chipEmoji}>{LEAGUE_META[league].emoji}</Text>
+                  )}
                   <Text style={[styles.chipText, active && { color }]}>{league}</Text>
                   {count > 0 && (
                     <View style={[styles.chipCount, active && { backgroundColor: `${color}30` }]}>
@@ -180,14 +281,23 @@ export default function LiveScreen() {
         </ScrollView>
 
         {/* Content */}
-        {isLoading ? (
+        {isOffDay ? (
+          <View style={styles.offDay}>
+            <Text style={styles.offDayEmoji}>📅</Text>
+            <Text style={styles.offDayTitle}>{getDateLabel(dateOffset)}</Text>
+            <Text style={styles.offDayText}>Live scores are only available for today</Text>
+            <Pressable style={styles.offDayBtn} onPress={() => setDateOffset(0)}>
+              <Text style={styles.offDayBtnText}>Back to Today</Text>
+            </Pressable>
+          </View>
+        ) : isLoading ? (
           <View style={styles.list}>
             {[1, 2, 3].map(i => <GameCardSkeleton key={i} />)}
           </View>
         ) : leagueSections.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="tv-outline" size={52} color={C.textTertiary} />
-            <Text style={styles.emptyTitle}>No Games</Text>
+            <Text style={styles.emptyTitle}>No Games Today</Text>
             <Text style={styles.emptyText}>Check back for live matchups</Text>
           </View>
         ) : (
@@ -195,14 +305,17 @@ export default function LiveScreen() {
             {leagueSections.map(({ league, games }) => (
               <View key={league} style={styles.section}>
                 <LeagueSectionHeader league={league} games={games} />
-                <View style={styles.list}>
-                  {games.map(game => (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      isFavorite={isFav(game)}
-                      onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
-                    />
+                <View style={[styles.list, styles.listCard]}>
+                  {games.map((game, idx) => (
+                    <View key={game.id}>
+                      {idx > 0 && <View style={styles.rowDivider} />}
+                      <GameCard
+                        game={game}
+                        isFavorite={isFav(game)}
+                        grouped
+                        onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+                      />
+                    </View>
                   ))}
                 </View>
               </View>
@@ -216,69 +329,106 @@ export default function LiveScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { paddingHorizontal: 20, gap: 4 },
+  scroll: { paddingHorizontal: 16, gap: 4 },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+    paddingHorizontal: 4,
   },
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: "900",
     color: C.text,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.5,
   },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 10 },
   liveBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    backgroundColor: `${C.live}14`,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: `${C.live}30`,
+    gap: 6,
+    backgroundColor: C.live,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.live },
-  liveCount: { color: C.live, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#fff" },
+  liveCount: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.5 },
+  searchBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   filterScroll: { marginBottom: 6 },
-  filterRow: { gap: 8, paddingRight: 20 },
+  filterRow: { gap: 7, paddingRight: 16 },
   chip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 22,
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
     backgroundColor: C.card,
     borderWidth: 1.5,
     borderColor: C.cardBorder,
   },
-  chipDot: { width: 5, height: 5, borderRadius: 3 },
-  chipText: { color: C.textSecondary, fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  chipEmoji: { fontSize: 12 },
+  chipText: { color: C.textSecondary, fontSize: 13, fontWeight: "700" },
   chipCount: {
     backgroundColor: C.cardBorder,
-    borderRadius: 8,
+    borderRadius: 7,
     paddingHorizontal: 5,
     paddingVertical: 1,
+    minWidth: 18,
+    alignItems: "center",
   },
   chipCountText: { fontSize: 10, fontWeight: "700", color: C.textTertiary },
 
-  sections: { gap: 24, paddingVertical: 8 },
-  section: { gap: 12 },
-  list: { gap: 8 },
+  sections: { gap: 20, paddingVertical: 6 },
+  section: { gap: 10 },
+  list: { gap: 0 },
+  listCard: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  rowDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.separator,
+    marginLeft: 70,
+  },
 
   empty: { alignItems: "center", paddingVertical: 80, gap: 12 },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
     color: C.textSecondary,
     fontFamily: "Inter_700Bold",
   },
-  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: "Inter_400Regular" },
+  emptyText: { fontSize: 14, color: C.textTertiary },
+
+  offDay: { alignItems: "center", paddingVertical: 70, gap: 12 },
+  offDayEmoji: { fontSize: 48 },
+  offDayTitle: { fontSize: 22, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold" },
+  offDayText: { fontSize: 14, color: C.textTertiary, textAlign: "center" },
+  offDayBtn: {
+    backgroundColor: C.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  offDayBtnText: { color: "#fff", fontSize: 14, fontWeight: "800" },
 });
