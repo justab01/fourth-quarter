@@ -1,391 +1,395 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import Svg, {
-  Rect, Circle, Line, Path, Ellipse, G, Text as SvgText,
-} from "react-native-svg";
+import { View, Text, StyleSheet } from "react-native";
+import Svg, { Rect, Circle, Line, Path, G, Defs, ClipPath } from "react-native-svg";
 
 // ─── Arena Renderer ───────────────────────────────────────────────────────────
-// Draws sport-specific venue SVG for the Gamecast tab.
-// League → court/field/pitch/rink/diamond.
+// Sport-specific venue SVGs for the Gamecast tab.
+// Design principles: minimal lines, crisp edges, all elements inside viewBox.
 
 interface ArenaProps {
   league: string;
   width: number;
   accentColor: string;
-  // Optional last-event coordinates (0-1 normalized, origin = home end zone)
-  eventX?: number;
-  eventY?: number;
   homeScore?: number;
   awayScore?: number;
   homeTeam?: string;
   awayTeam?: string;
   status?: string;
+  eventX?: number;
+  eventY?: number;
 }
 
-const SURFACE = "#111318";
-const LINE    = "#2A2D35";
-const LINE_B  = "#3A3D47";
+// Shared palette
+const BG     = "#0E1014";   // near-black surface
+const MARK   = "#252830";   // subtle marking lines
+const MARK2  = "#303540";   // slightly brighter lines
+const GRASS  = "#071A0C";   // dark grass green
+const GRASS2 = "#091E0E";   // slightly lighter grass
+const ICE    = "#030E1C";   // ice surface
+const DIRT   = "#1E1005";   // infield dirt
 
 export function ArenaRenderer({
   league, width, accentColor,
-  eventX, eventY, homeScore, awayScore, homeTeam, awayTeam, status,
+  homeScore, awayScore, homeTeam, awayTeam, status,
+  eventX, eventY,
 }: ArenaProps) {
-  const h = Math.round(width * 0.58);
+  const H = Math.round(width * 0.54);
+  const sport = (league ?? "").toUpperCase();
+  const showScore = (status === "live" || status === "finished")
+    && homeScore != null && awayScore != null;
 
-  const dot = eventX != null && eventY != null ? {
-    cx: eventX * width,
-    cy: eventY * h,
-  } : null;
+  const dot = (eventX != null && eventY != null)
+    ? { cx: eventX * width, cy: eventY * H }
+    : null;
 
-  const content = (() => {
-    const sport = league?.toUpperCase();
-    if (["NBA", "WNBA", "NCAAB"].includes(sport)) return <BasketballCourt w={width} h={h} ac={accentColor} dot={dot} />;
-    if (["NFL", "NCAAF"].includes(sport)) return <FootballField w={width} h={h} ac={accentColor} dot={dot} />;
-    if (["MLS", "EPL", "UCL", "LIGA"].includes(sport)) return <SoccerPitch w={width} h={h} ac={accentColor} dot={dot} />;
-    if (sport === "NHL") return <HockeyRink w={width} h={h} ac={accentColor} dot={dot} />;
-    if (sport === "MLB") return <BaseballDiamond w={width} h={h} ac={accentColor} dot={dot} />;
-    return <GenericArena w={width} h={h} ac={accentColor} />;
-  })();
+  const renderArena = () => {
+    if (["NBA", "WNBA", "NCAAB"].includes(sport))      return <BasketballCourt w={width} h={H} ac={accentColor} dot={dot} />;
+    if (["NFL", "NCAAF"].includes(sport))               return <FootballField   w={width} h={H} ac={accentColor} dot={dot} />;
+    if (["MLS", "EPL", "UCL", "LIGA"].includes(sport))  return <SoccerPitch     w={width} h={H} ac={accentColor} dot={dot} />;
+    if (sport === "NHL")                                 return <HockeyRink      w={width} h={H} ac={accentColor} dot={dot} />;
+    if (sport === "MLB")                                 return <BaseballDiamond w={width} h={H} ac={accentColor} dot={dot} />;
+    return <GenericArena w={width} h={H} ac={accentColor} />;
+  };
 
   return (
-    <View style={[styles.wrap, { width, height: h }]}>
-      <Svg width={width} height={h} viewBox={`0 0 ${width} ${h}`}>
-        {/* Dark surface */}
-        <Rect x={0} y={0} width={width} height={h} fill={SURFACE} rx={12} />
-        {content}
-        {/* Score overlay on arena */}
-        {(status === "live" || status === "finished") && homeScore != null && awayScore != null && (
-          <ScoreOverlay
-            w={width} h={h} ac={accentColor}
-            homeScore={homeScore} awayScore={awayScore}
-            homeTeam={homeTeam ?? ""} awayTeam={awayTeam ?? ""}
-          />
-        )}
-      </Svg>
+    <View style={styles.outer}>
+      {/* SVG venue */}
+      <View style={[styles.svgWrap, { width, height: H }]}>
+        <Svg width={width} height={H} viewBox={`0 0 ${width} ${H}`}>
+          <Defs>
+            <ClipPath id="arenaClip">
+              <Rect x={0} y={0} width={width} height={H} rx={10} />
+            </ClipPath>
+          </Defs>
+          <Rect x={0} y={0} width={width} height={H} fill={BG} rx={10} />
+          <G clipPath="url(#arenaClip)">
+            {renderArena()}
+          </G>
+        </Svg>
+      </View>
+
+      {/* Score row — React Native View (clean, no SVG text clutter) */}
+      {showScore && (
+        <View style={styles.scoreRow}>
+          <Text style={styles.teamName} numberOfLines={1}>
+            {(awayTeam ?? "").split(" ").slice(-1)[0]}
+          </Text>
+          <View style={[styles.scorePill, { borderColor: `${accentColor}30` }]}>
+            <Text style={[styles.score, { color: accentColor }]}>{awayScore}</Text>
+            <Text style={styles.scoreSep}>–</Text>
+            <Text style={[styles.score, { color: accentColor }]}>{homeScore}</Text>
+          </View>
+          <Text style={[styles.teamName, { textAlign: "right" }]} numberOfLines={1}>
+            {(homeTeam ?? "").split(" ").slice(-1)[0]}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
 
-// ─── Score overlay (always readable on top of the arena) ──────────────────────
-function ScoreOverlay({ w, h, ac, homeScore, awayScore, homeTeam, awayTeam }: {
-  w: number; h: number; ac: string;
-  homeScore: number; awayScore: number;
-  homeTeam: string; awayTeam: string;
-}) {
-  const cx = w / 2;
-  const cy = h - 28;
-  return (
-    <G>
-      <Rect x={cx - 70} y={cy - 14} width={140} height={26} rx={13} fill="#000000BB" />
-      <SvgText x={cx - 32} y={cy + 5} fill="#ffffff" fontSize={13} fontWeight="bold" textAnchor="middle">
-        {awayTeam.split(" ").slice(-1)[0].slice(0, 10)}
-      </SvgText>
-      <SvgText x={cx - 8} y={cy + 5} fill={ac} fontSize={14} fontWeight="bold" textAnchor="middle">
-        {awayScore}
-      </SvgText>
-      <SvgText x={cx} y={cy + 5} fill="#666" fontSize={11} textAnchor="middle">–</SvgText>
-      <SvgText x={cx + 8} y={cy + 5} fill={ac} fontSize={14} fontWeight="bold" textAnchor="middle">
-        {homeScore}
-      </SvgText>
-      <SvgText x={cx + 32} y={cy + 5} fill="#ffffff" fontSize={13} fontWeight="bold" textAnchor="middle">
-        {homeTeam.split(" ").slice(-1)[0].slice(0, 10)}
-      </SvgText>
-    </G>
-  );
-}
-
-// ─── Basketball half court ────────────────────────────────────────────────────
+// ─── Basketball half-court ────────────────────────────────────────────────────
 function BasketballCourt({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
+  const pad = 10;
   const cx = w / 2;
-  const top = h * 0.08;
-  const paintW = w * 0.38;
-  const paintH = h * 0.50;
+  // Court fills the full card
+  const cw = w - pad * 2;
+  const ch = h - pad * 2;
+  const tx = pad;
+  const ty = pad;
+
+  // Key/paint: 35% wide, 52% tall
+  const paintW = cw * 0.35;
+  const paintH = ch * 0.52;
   const paintX = cx - paintW / 2;
-  const ftY = top + paintH;
-  const basketY = top + paintH * 0.12;
-  const threeR = h * 0.72;
+  const paintY = ty;
+
+  // Free throw line y
+  const ftY = ty + paintH;
+
+  // Basket
+  const basketY = ty + ch * 0.09;
+  const backboardW = paintW * 0.40;
+  const rimR = 6;
+
+  // Three-point arc — radius from basket
+  const threeR = cw * 0.44;
+  // Where arc meets the sidelines
+  const arcX1 = paintX - 0;                // arc connects at paint edge
+  const arcX2 = paintX + paintW;
+
+  // FT circle radius
+  const ftCircleR = paintW * 0.44;
 
   return (
     <G>
       {/* Court surface */}
-      <Rect x={w * 0.05} y={top} width={w * 0.90} height={h * 0.88} rx={6}
-        fill="#1A1200" stroke={LINE_B} strokeWidth={1.5} />
+      <Rect x={tx} y={ty} width={cw} height={ch} fill="#170F02" rx={4} />
+
+      {/* Three-point sidelines (vertical legs) */}
+      <Line x1={cx - threeR * 0.80} y1={ty} x2={cx - threeR * 0.80} y2={ty + ch * 0.14} stroke={MARK2} strokeWidth={1} />
+      <Line x1={cx + threeR * 0.80} y1={ty} x2={cx + threeR * 0.80} y2={ty + ch * 0.14} stroke={MARK2} strokeWidth={1} />
 
       {/* Three-point arc */}
       <Path
-        d={`M ${cx - threeR * 0.73} ${top + h * 0.02} A ${threeR} ${threeR} 0 0 1 ${cx + threeR * 0.73} ${top + h * 0.02}`}
-        fill="none" stroke={LINE_B} strokeWidth={1.5}
+        d={`M ${cx - threeR * 0.80} ${ty + ch * 0.14} A ${threeR} ${threeR} 0 0 1 ${cx + threeR * 0.80} ${ty + ch * 0.14}`}
+        fill="none" stroke={MARK2} strokeWidth={1}
       />
-      {/* Three-point sidelines */}
-      <Line x1={cx - threeR * 0.73} y1={top + h * 0.02} x2={cx - threeR * 0.73} y2={top + h * 0.18} stroke={LINE_B} strokeWidth={1.5} />
-      <Line x1={cx + threeR * 0.73} y1={top + h * 0.02} x2={cx + threeR * 0.73} y2={top + h * 0.18} stroke={LINE_B} strokeWidth={1.5} />
 
-      {/* Paint / key */}
-      <Rect x={paintX} y={top} width={paintW} height={paintH} rx={2}
-        fill="#2A1A00" stroke={LINE_B} strokeWidth={1.5} />
+      {/* Paint fill */}
+      <Rect x={paintX} y={paintY} width={paintW} height={paintH} fill="#1F1200" />
 
-      {/* Free throw circle */}
-      <Circle cx={cx} cy={ftY} r={paintW * 0.43} fill="none" stroke={LINE_B} strokeWidth={1.5} />
+      {/* Paint border */}
+      <Rect x={paintX} y={paintY} width={paintW} height={paintH} fill="none" stroke={MARK2} strokeWidth={1} />
 
       {/* Free throw line */}
-      <Line x1={paintX} y1={ftY} x2={paintX + paintW} y2={ftY} stroke={LINE_B} strokeWidth={1.5} />
+      <Line x1={paintX} y1={ftY} x2={paintX + paintW} y2={ftY} stroke={MARK2} strokeWidth={1} />
 
-      {/* Lane lines */}
-      <Line x1={paintX + paintW * 0.22} y1={top} x2={paintX + paintW * 0.22} y2={ftY} stroke={LINE_B} strokeWidth={1} />
-      <Line x1={paintX + paintW * 0.78} y1={top} x2={paintX + paintW * 0.78} y2={ftY} stroke={LINE_B} strokeWidth={1} />
-
-      {/* Basket + backboard */}
-      <Rect x={cx - paintW * 0.18} y={basketY - 3} width={paintW * 0.36} height={4}
-        rx={2} fill={LINE_B} />
-      <Circle cx={cx} cy={basketY + 8} r={8} fill="none" stroke={ac} strokeWidth={2} />
-      <Line x1={cx} y1={basketY + 8} x2={cx} y2={basketY - 3} stroke={ac} strokeWidth={1.5} />
-
-      {/* Restricted area arc */}
+      {/* FT circle — bottom half only (above the line) */}
       <Path
-        d={`M ${cx - 18} ${basketY + 8} A 18 18 0 0 1 ${cx + 18} ${basketY + 8}`}
-        fill="none" stroke={LINE_B} strokeWidth={1} strokeDasharray="3,3"
+        d={`M ${cx - ftCircleR} ${ftY} A ${ftCircleR} ${ftCircleR} 0 0 1 ${cx + ftCircleR} ${ftY}`}
+        fill="none" stroke={MARK2} strokeWidth={1}
+      />
+      {/* FT circle — top half (inside paint, dashed) */}
+      <Path
+        d={`M ${cx - ftCircleR} ${ftY} A ${ftCircleR} ${ftCircleR} 0 0 0 ${cx + ftCircleR} ${ftY}`}
+        fill="none" stroke={MARK2} strokeWidth={1} strokeDasharray="4,3"
       />
 
-      {/* Center court label */}
-      <SvgText x={cx} y={h * 0.93} fill="#333" fontSize={9} textAnchor="middle" fontWeight="600">
-        HALF COURT
-      </SvgText>
+      {/* Backboard */}
+      <Rect x={cx - backboardW / 2} y={basketY - 2} width={backboardW} height={3} rx={1} fill={MARK2} />
 
-      {/* Event dot */}
-      {dot && (
-        <G>
-          <Circle cx={dot.cx} cy={dot.cy} r={10} fill={`${ac}40`} />
-          <Circle cx={dot.cx} cy={dot.cy} r={5} fill={ac} />
-        </G>
-      )}
+      {/* Basket neck */}
+      <Line x1={cx} y1={basketY + 1} x2={cx} y2={basketY + 6} stroke={ac} strokeWidth={1} />
+
+      {/* Rim */}
+      <Circle cx={cx} cy={basketY + 6 + rimR} r={rimR} fill="none" stroke={ac} strokeWidth={1.5} />
+
+      {/* Restricted area (small arc under basket) */}
+      <Path
+        d={`M ${cx - 14} ${basketY + 6 + rimR} A 14 14 0 0 1 ${cx + 14} ${basketY + 6 + rimR}`}
+        fill="none" stroke={MARK} strokeWidth={1}
+      />
+
+      {/* Court outer border */}
+      <Rect x={tx} y={ty} width={cw} height={ch} fill="none" stroke={MARK2} strokeWidth={1} rx={4} />
+
+      {/* Center (bottom) circle indicator */}
+      <Line x1={tx} y1={ty + ch} x2={tx + cw} y2={ty + ch} stroke={MARK} strokeWidth={1} />
+
+      {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
   );
 }
 
-// ─── American Football field ──────────────────────────────────────────────────
+// ─── Football field ───────────────────────────────────────────────────────────
 function FootballField({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
-  const ezW = w * 0.08;
-  const fieldW = w * 0.84;
-  const fieldX = ezW;
-  const top = h * 0.10;
-  const fh = h * 0.80;
-  const yardW = fieldW / 10;
+  const pad = 8;
+  const ezPct = 0.09;      // end zone as fraction of total width
+  const ezW = w * ezPct;
+  const fw = w - pad * 2;  // total field width incl end zones
+  const fh = h - pad * 2;
+  const fx = pad;
+  const fy = pad;
+  const playW = fw - ezW * 2;  // playing field width
+  const playX = fx + ezW;
+  const cx = w / 2;
+  const hashY1 = fy + fh * 0.35;
+  const hashY2 = fy + fh * 0.65;
 
-  const yardLines = Array.from({ length: 11 }, (_, i) => i);
-  const hashY1 = top + fh * 0.38;
-  const hashY2 = top + fh * 0.62;
+  // 9 interior yard lines at 10-yd intervals (10,20,30,40,50,40,30,20,10)
+  const yardXs = Array.from({ length: 9 }, (_, i) => playX + ((i + 1) / 10) * playW);
+  const yardNums = [10, 20, 30, 40, 50, 40, 30, 20, 10];
 
   return (
     <G>
-      {/* End zones */}
-      <Rect x={0} y={top} width={ezW} height={fh} rx={4} fill={`${ac}22`} stroke={ac} strokeWidth={1} />
-      <Rect x={fieldX + fieldW} y={top} width={ezW} height={fh} rx={4} fill={`${ac}22`} stroke={ac} strokeWidth={1} />
+      {/* Full field background */}
+      <Rect x={fx} y={fy} width={fw} height={fh} fill={GRASS} rx={4} />
 
-      {/* End zone text */}
-      <SvgText x={ezW / 2} y={top + fh / 2 + 4} fill={ac} fontSize={8} textAnchor="middle" fontWeight="bold"
-        transform={`rotate(-90, ${ezW / 2}, ${top + fh / 2})`}>
-        AWAY
-      </SvgText>
-      <SvgText x={fieldX + fieldW + ezW / 2} y={top + fh / 2 + 4} fill={ac} fontSize={8} textAnchor="middle" fontWeight="bold"
-        transform={`rotate(90, ${fieldX + fieldW + ezW / 2}, ${top + fh / 2})`}>
-        HOME
-      </SvgText>
+      {/* End zones — subtle accent tint */}
+      <Rect x={fx} y={fy} width={ezW} height={fh} fill={`${ac}18`} />
+      <Rect x={fx + fw - ezW} y={fy} width={ezW} height={fh} fill={`${ac}18`} />
 
-      {/* Field surface */}
-      <Rect x={fieldX} y={top} width={fieldW} height={fh} fill="#051A08" stroke={LINE_B} strokeWidth={1} />
-
-      {/* Alternating green bands (5-yard sections) */}
-      {Array.from({ length: 10 }, (_, i) => (
-        i % 2 === 0 ? <Rect key={i} x={fieldX + i * yardW} y={top} width={yardW} height={fh} fill="#071E0A" /> : null
-      ))}
+      {/* End zone dividers */}
+      <Line x1={playX} y1={fy} x2={playX} y2={fy + fh} stroke={MARK2} strokeWidth={1} />
+      <Line x1={playX + playW} y1={fy} x2={playX + playW} y2={fy + fh} stroke={MARK2} strokeWidth={1} />
 
       {/* Yard lines */}
-      {yardLines.map(i => (
-        <Line key={i} x1={fieldX + i * yardW} y1={top} x2={fieldX + i * yardW} y2={top + fh}
-          stroke={LINE_B} strokeWidth={i === 5 ? 2 : 1} />
+      {yardXs.map((x, i) => (
+        <Line key={i} x1={x} y1={fy} x2={x} y2={fy + fh}
+          stroke={i === 4 ? MARK2 : MARK}
+          strokeWidth={i === 4 ? 1.5 : 1}
+        />
       ))}
 
-      {/* Hash marks */}
-      {Array.from({ length: 9 }, (_, i) => i + 1).map(i => (
+      {/* Hash marks — short horizontal ticks at each yard line */}
+      {yardXs.map((x, i) => (
         <G key={i}>
-          <Line x1={fieldX + i * yardW - 6} y1={hashY1} x2={fieldX + i * yardW + 6} y2={hashY1} stroke={LINE_B} strokeWidth={1} />
-          <Line x1={fieldX + i * yardW - 6} y1={hashY2} x2={fieldX + i * yardW + 6} y2={hashY2} stroke={LINE_B} strokeWidth={1} />
+          <Line x1={x - 5} y1={hashY1} x2={x + 5} y2={hashY1} stroke={MARK2} strokeWidth={1} />
+          <Line x1={x - 5} y1={hashY2} x2={x + 5} y2={hashY2} stroke={MARK2} strokeWidth={1} />
         </G>
       ))}
 
-      {/* Yard numbers */}
-      {[10, 20, 30, 40, 50, 40, 30, 20, 10].map((n, i) => (
-        <SvgText key={i} x={fieldX + (i + 0.5) * yardW} y={top + fh * 0.25} fill="#2A4A2A" fontSize={9}
-          textAnchor="middle" fontWeight="bold">{n}</SvgText>
-      ))}
+      {/* Field border */}
+      <Rect x={fx} y={fy} width={fw} height={fh} fill="none" stroke={MARK2} strokeWidth={1} rx={4} />
 
-      {/* Field borders */}
-      <Rect x={fieldX} y={top} width={fieldW} height={fh} fill="none" stroke={LINE_B} strokeWidth={1.5} />
-
-      {/* Event dot */}
-      {dot && (
-        <G>
-          <Circle cx={dot.cx} cy={dot.cy} r={10} fill={`${ac}40`} />
-          <Circle cx={dot.cx} cy={dot.cy} r={5} fill={ac} />
-        </G>
-      )}
+      {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
   );
 }
 
 // ─── Soccer pitch ─────────────────────────────────────────────────────────────
 function SoccerPitch({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
-  const cx = w / 2;
-  const cy = h / 2;
-  const pad = 12;
+  const pad = 10;
   const pw = w - pad * 2;
   const ph = h - pad * 2;
-  const penW = pw * 0.18;
+  const cx = w / 2;
+  const cy = h / 2;
+
+  // Penalty area: 17% of width × 44% of height
+  const penW = pw * 0.17;
   const penH = ph * 0.44;
-  const goalW = pw * 0.065;
-  const goalH = ph * 0.18;
-  const goalBoxW = pw * 0.10;
-  const goalBoxH = ph * 0.28;
+
+  // Goal box: inner 9% × 26%
+  const boxW = pw * 0.09;
+  const boxH = ph * 0.26;
+
+  // Goal mouth: 4px wide
+  const goalH = ph * 0.17;
+
+  // Center circle radius
+  const circleR = ph * 0.19;
+
+  // Corner arc radius
+  const cornerR = Math.min(pw, ph) * 0.05;
+
+  const L = pad;           // left edge
+  const R = pad + pw;      // right edge
+  const T = pad;           // top edge
+  const B = pad + ph;      // bottom edge
 
   return (
     <G>
       {/* Pitch surface */}
-      <Rect x={pad} y={pad} width={pw} height={ph} rx={4} fill="#062010" stroke="#1A4A20" strokeWidth={1.5} />
-
-      {/* Alternating stripe bands */}
-      {Array.from({ length: 8 }, (_, i) => (
-        i % 2 === 0
-          ? <Rect key={i} x={pad + (i / 8) * pw} y={pad} width={pw / 8} height={ph} fill="#072213" />
-          : null
-      ))}
+      <Rect x={L} y={T} width={pw} height={ph} fill={GRASS} rx={4} />
 
       {/* Center line */}
-      <Line x1={cx} y1={pad} x2={cx} y2={pad + ph} stroke="#1A4A20" strokeWidth={1.5} />
+      <Line x1={cx} y1={T} x2={cx} y2={B} stroke="#1A3D20" strokeWidth={1} />
 
       {/* Center circle */}
-      <Circle cx={cx} cy={cy} r={ph * 0.20} fill="none" stroke="#1A4A20" strokeWidth={1.5} />
-      <Circle cx={cx} cy={cy} r={3} fill="#1A4A20" />
+      <Circle cx={cx} cy={cy} r={circleR} fill="none" stroke="#1A3D20" strokeWidth={1} />
+      <Circle cx={cx} cy={cy} r={2.5} fill="#1A3D20" />
 
       {/* LEFT penalty area */}
-      <Rect x={pad} y={cy - penH / 2} width={penW} height={penH}
-        fill="none" stroke="#1A4A20" strokeWidth={1.5} />
+      <Rect x={L} y={cy - penH / 2} width={penW} height={penH}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
       {/* LEFT goal box */}
-      <Rect x={pad} y={cy - goalBoxH / 2} width={goalBoxW} height={goalBoxH}
-        fill="none" stroke="#1A4A20" strokeWidth={1} />
+      <Rect x={L} y={cy - boxH / 2} width={boxW} height={boxH}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
       {/* LEFT goal */}
-      <Rect x={pad - 6} y={cy - goalH / 2} width={6} height={goalH}
-        fill={`${ac}30`} stroke={ac} strokeWidth={1.5} />
+      <Rect x={L - 5} y={cy - goalH / 2} width={5} height={goalH}
+        fill={`${ac}25`} stroke={`${ac}70`} strokeWidth={1} />
       {/* LEFT penalty spot */}
-      <Circle cx={pad + penW * 0.72} cy={cy} r={2} fill="#1A4A20" />
-      {/* LEFT penalty arc */}
-      <Path d={`M ${pad + penW} ${cy - ph * 0.14} A ${ph * 0.20} ${ph * 0.20} 0 0 0 ${pad + penW} ${cy + ph * 0.14}`}
-        fill="none" stroke="#1A4A20" strokeWidth={1.5} />
+      <Circle cx={L + penW * 0.70} cy={cy} r={2} fill="#1A3D20" />
 
       {/* RIGHT penalty area */}
-      <Rect x={pad + pw - penW} y={cy - penH / 2} width={penW} height={penH}
-        fill="none" stroke="#1A4A20" strokeWidth={1.5} />
+      <Rect x={R - penW} y={cy - penH / 2} width={penW} height={penH}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
       {/* RIGHT goal box */}
-      <Rect x={pad + pw - goalBoxW} y={cy - goalBoxH / 2} width={goalBoxW} height={goalBoxH}
-        fill="none" stroke="#1A4A20" strokeWidth={1} />
+      <Rect x={R - boxW} y={cy - boxH / 2} width={boxW} height={boxH}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
       {/* RIGHT goal */}
-      <Rect x={pad + pw} y={cy - goalH / 2} width={6} height={goalH}
-        fill={`${ac}30`} stroke={ac} strokeWidth={1.5} />
+      <Rect x={R} y={cy - goalH / 2} width={5} height={goalH}
+        fill={`${ac}25`} stroke={`${ac}70`} strokeWidth={1} />
       {/* RIGHT penalty spot */}
-      <Circle cx={pad + pw - penW * 0.72} cy={cy} r={2} fill="#1A4A20" />
-      {/* RIGHT penalty arc */}
-      <Path d={`M ${pad + pw - penW} ${cy - ph * 0.14} A ${ph * 0.20} ${ph * 0.20} 0 0 1 ${pad + pw - penW} ${cy + ph * 0.14}`}
-        fill="none" stroke="#1A4A20" strokeWidth={1.5} />
+      <Circle cx={R - penW * 0.70} cy={cy} r={2} fill="#1A3D20" />
 
-      {/* Corner arcs */}
-      {[[pad, pad], [pad + pw, pad], [pad, pad + ph], [pad + pw, pad + ph]].map(([x, y], i) => {
-        const startA = [0, 90, 270, 180][i];
-        const r = 10;
-        const rad = (a: number) => (a * Math.PI) / 180;
-        const x1 = x + r * Math.cos(rad(startA));
-        const y1 = y + r * Math.sin(rad(startA));
-        const x2 = x + r * Math.cos(rad(startA + 90));
-        const y2 = y + r * Math.sin(rad(startA + 90));
-        return (
-          <Path key={i} d={`M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`}
-            fill="none" stroke="#1A4A20" strokeWidth={1.5} />
-        );
-      })}
+      {/* Corner arcs — quarter circles at each corner */}
+      <Path d={`M ${L} ${T + cornerR} A ${cornerR} ${cornerR} 0 0 1 ${L + cornerR} ${T}`}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
+      <Path d={`M ${R - cornerR} ${T} A ${cornerR} ${cornerR} 0 0 1 ${R} ${T + cornerR}`}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
+      <Path d={`M ${L} ${B - cornerR} A ${cornerR} ${cornerR} 0 0 0 ${L + cornerR} ${B}`}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
+      <Path d={`M ${R - cornerR} ${B} A ${cornerR} ${cornerR} 0 0 0 ${R} ${B - cornerR}`}
+        fill="none" stroke="#1A3D20" strokeWidth={1} />
 
       {/* Pitch border */}
-      <Rect x={pad} y={pad} width={pw} height={ph} fill="none" stroke="#1A4A20" strokeWidth={1.5} rx={4} />
+      <Rect x={L} y={T} width={pw} height={ph} fill="none" stroke="#1A3D20" strokeWidth={1.5} rx={4} />
 
-      {/* Event dot */}
-      {dot && (
-        <G>
-          <Circle cx={dot.cx} cy={dot.cy} r={10} fill={`${ac}40`} />
-          <Circle cx={dot.cx} cy={dot.cy} r={5} fill={ac} />
-        </G>
-      )}
+      {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
   );
 }
 
 // ─── Hockey rink ──────────────────────────────────────────────────────────────
 function HockeyRink({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
-  const cx = w / 2;
-  const cy = h / 2;
   const pad = 10;
   const rw = w - pad * 2;
   const rh = h - pad * 2;
-  const goalW = 14;
-  const goalH = rh * 0.18;
-  const blueX1 = pad + rw * 0.30;
-  const blueX2 = pad + rw * 0.70;
-  const dotR = 3;
-  const faceoffR = rh * 0.14;
+  const rx = pad;
+  const ry = pad;
+  const cx = w / 2;
+  const cy = h / 2;
+  const cornerR = rh * 0.20;
+
+  // Blue lines at 30%/70%
+  const blueX1 = rx + rw * 0.30;
+  const blueX2 = rx + rw * 0.70;
+
+  // Goal lines at 8%/92%
+  const goalX1 = rx + rw * 0.08;
+  const goalX2 = rx + rw * 0.92;
+
+  // Goal crease: inside the rink, near goal lines
+  const creaseW = rw * 0.05;
+  const creaseH = rh * 0.22;
+
+  // Face-off circle radius
+  const foR = rh * 0.14;
+  const dotR = 2.5;
+
+  // Zone face-off x positions
+  const foX1 = rx + rw * 0.18;
+  const foX2 = rx + rw * 0.82;
+  const foYTop = cy - rh * 0.28;
+  const foYBot = cy + rh * 0.28;
 
   return (
     <G>
       {/* Rink surface */}
-      <Rect x={pad} y={pad} width={rw} height={rh} rx={rh * 0.18}
-        fill="#03101E" stroke="#254060" strokeWidth={2} />
+      <Rect x={rx} y={ry} width={rw} height={rh} rx={cornerR} fill={ICE} stroke="#1A2E45" strokeWidth={1.5} />
 
       {/* Red center line */}
-      <Line x1={cx} y1={pad} x2={cx} y2={pad + rh} stroke="#8B0000" strokeWidth={2} />
+      <Line x1={cx} y1={ry} x2={cx} y2={ry + rh} stroke="#5B0000" strokeWidth={2} />
 
       {/* Blue lines */}
-      <Line x1={blueX1} y1={pad} x2={blueX1} y2={pad + rh} stroke="#00338D" strokeWidth={2} />
-      <Line x1={blueX2} y1={pad} x2={blueX2} y2={pad + rh} stroke="#00338D" strokeWidth={2} />
+      <Line x1={blueX1} y1={ry} x2={blueX1} y2={ry + rh} stroke="#002060" strokeWidth={2} />
+      <Line x1={blueX2} y1={ry} x2={blueX2} y2={ry + rh} stroke="#002060" strokeWidth={2} />
+
+      {/* Goal lines */}
+      <Line x1={goalX1} y1={ry} x2={goalX1} y2={ry + rh} stroke="#5B0000" strokeWidth={1} />
+      <Line x1={goalX2} y1={ry} x2={goalX2} y2={ry + rh} stroke="#5B0000" strokeWidth={1} />
+
+      {/* Goal creases — inside rink, centered on goal lines */}
+      <Rect x={goalX1} y={cy - creaseH / 2} width={creaseW} height={creaseH}
+        fill={`${ac}20`} stroke={ac} strokeWidth={1} rx={2} />
+      <Rect x={goalX2 - creaseW} y={cy - creaseH / 2} width={creaseW} height={creaseH}
+        fill={`${ac}20`} stroke={ac} strokeWidth={1} rx={2} />
 
       {/* Center face-off circle */}
-      <Circle cx={cx} cy={cy} r={faceoffR} fill="none" stroke="#8B0000" strokeWidth={1.5} />
-      <Circle cx={cx} cy={cy} r={dotR} fill="#8B0000" />
+      <Circle cx={cx} cy={cy} r={foR} fill="none" stroke="#5B0000" strokeWidth={1} />
+      <Circle cx={cx} cy={cy} r={dotR} fill="#5B0000" />
 
       {/* Zone face-off circles */}
-      {[
-        [pad + rw * 0.18, cy - rh * 0.28],
-        [pad + rw * 0.18, cy + rh * 0.28],
-        [pad + rw * 0.82, cy - rh * 0.28],
-        [pad + rw * 0.82, cy + rh * 0.28],
-      ].map(([fx, fy], i) => (
+      {[[foX1, foYTop], [foX1, foYBot], [foX2, foYTop], [foX2, foYBot]].map(([fx, fy], i) => (
         <G key={i}>
-          <Circle cx={fx} cy={fy} r={faceoffR * 0.85} fill="none" stroke="#8B0000" strokeWidth={1.5} />
-          <Circle cx={fx} cy={fy} r={dotR} fill="#8B0000" />
+          <Circle cx={fx} cy={fy} r={foR * 0.80} fill="none" stroke="#5B0000" strokeWidth={1} />
+          <Circle cx={fx} cy={fy} r={dotR} fill="#5B0000" />
         </G>
       ))}
 
-      {/* Goal creases */}
-      <Rect x={pad - goalW} y={cy - goalH / 2} width={goalW} height={goalH}
-        fill={`${ac}25`} stroke={ac} strokeWidth={1.5} rx={2} />
-      <Rect x={pad + rw} y={cy - goalH / 2} width={goalW} height={goalH}
-        fill={`${ac}25`} stroke={ac} strokeWidth={1.5} rx={2} />
-
-      {/* Goal lines */}
-      <Line x1={pad + rw * 0.05} y1={pad} x2={pad + rw * 0.05} y2={pad + rh} stroke="#8B0000" strokeWidth={1} />
-      <Line x1={pad + rw * 0.95} y1={pad} x2={pad + rw * 0.95} y2={pad + rh} stroke="#8B0000" strokeWidth={1} />
-
-      {/* Event dot */}
-      {dot && (
-        <G>
-          <Circle cx={dot.cx} cy={dot.cy} r={10} fill={`${ac}40`} />
-          <Circle cx={dot.cx} cy={dot.cy} r={5} fill={ac} />
-        </G>
-      )}
+      {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
   );
 }
@@ -393,86 +397,145 @@ function HockeyRink({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: 
 // ─── Baseball diamond ─────────────────────────────────────────────────────────
 function BaseballDiamond({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
   const cx = w / 2;
-  const homeY = h * 0.85;
-  const secondY = h * 0.25;
-  const baseSize = 10;
-  const sideLen = (homeY - secondY) / 2 * Math.SQRT2;
-  const firstX = cx + sideLen / Math.SQRT2;
-  const firstY = (homeY + secondY) / 2;
-  const thirdX = cx - sideLen / Math.SQRT2;
-  const thirdY = firstY;
-  const pitcherX = cx;
-  const pitcherY = (homeY + secondY) / 2 + 5;
-  const outfieldR = sideLen * 1.15;
+
+  // Fixed diamond coordinates — guaranteed to fit
+  const homeY = h * 0.82;
+  const secondY = h * 0.20;
+  const midY = (homeY + secondY) / 2;
+
+  // Half-width of diamond
+  const halfW = Math.min((homeY - secondY) / 2, w * 0.26);
+  const firstX = cx + halfW;
+  const thirdX = cx - halfW;
+  const firstY = midY;
+  const thirdY = midY;
+
+  const pitcherY = midY + (homeY - midY) * 0.28;
+
+  // Outfield arc — stays within bounds
+  const arcR = halfW * 1.6;
+  const arcTopY = secondY - h * 0.06;
+  const arcLeftX = Math.max(8, cx - arcR * 0.90);
+  const arcRightX = Math.min(w - 8, cx + arcR * 0.90);
+
+  const baseS = 9;
 
   return (
     <G>
       {/* Outfield grass */}
       <Path
-        d={`M ${cx} ${homeY} L ${firstX + 35} ${firstY - 50} A ${outfieldR} ${outfieldR} 0 0 0 ${thirdX - 35} ${thirdY - 50} Z`}
-        fill="#051A08" stroke="#1A4A20" strokeWidth={1.5}
+        d={`M ${cx} ${homeY} L ${firstX} ${firstY} L ${arcRightX} ${arcTopY} A ${arcR} ${arcR} 0 0 0 ${arcLeftX} ${arcTopY} L ${thirdX} ${thirdY} Z`}
+        fill={GRASS2}
       />
 
-      {/* Infield dirt */}
+      {/* Outfield warning track arc */}
+      <Path
+        d={`M ${arcLeftX} ${arcTopY} A ${arcR} ${arcR} 0 0 1 ${arcRightX} ${arcTopY}`}
+        fill="none" stroke="#1A3D20" strokeWidth={1.5}
+      />
+
+      {/* Infield dirt diamond */}
       <Path d={`M ${cx} ${homeY} L ${firstX} ${firstY} L ${cx} ${secondY} L ${thirdX} ${thirdY} Z`}
-        fill="#2A1800" stroke="#3A2500" strokeWidth={1} />
+        fill={DIRT} />
+
+      {/* Base paths */}
+      <Line x1={cx} y1={homeY} x2={firstX} y2={firstY} stroke="#2A1A08" strokeWidth={1} />
+      <Line x1={firstX} y1={firstY} x2={cx} y2={secondY} stroke="#2A1A08" strokeWidth={1} />
+      <Line x1={cx} y1={secondY} x2={thirdX} y2={thirdY} stroke="#2A1A08" strokeWidth={1} />
+      <Line x1={thirdX} y1={thirdY} x2={cx} y2={homeY} stroke="#2A1A08" strokeWidth={1} />
 
       {/* Pitcher's mound */}
-      <Ellipse cx={pitcherX} cy={pitcherY} rx={14} ry={9} fill="#3A2500" stroke="#4A3500" strokeWidth={1} />
-      <Circle cx={pitcherX} cy={pitcherY} r={3} fill="#5A4500" />
+      <Circle cx={cx} cy={pitcherY} r={8} fill="#251505" />
+      <Circle cx={cx} cy={pitcherY} r={2.5} fill="#301A08" />
 
       {/* Foul lines */}
-      <Line x1={cx} y1={homeY} x2={thirdX - 40} y2={thirdY - 55} stroke="#1A4A20" strokeWidth={1} strokeDasharray="4,4" />
-      <Line x1={cx} y1={homeY} x2={firstX + 40} y2={firstY - 55} stroke="#1A4A20" strokeWidth={1} strokeDasharray="4,4" />
+      <Line x1={cx} y1={homeY} x2={arcLeftX - 10} y2={arcTopY - 10}
+        stroke="#1A3D20" strokeWidth={1} strokeDasharray="5,4" />
+      <Line x1={cx} y1={homeY} x2={arcRightX + 10} y2={arcTopY - 10}
+        stroke="#1A3D20" strokeWidth={1} strokeDasharray="5,4" />
 
-      {/* Bases */}
+      {/* Bases — rotated squares */}
       {[
-        [cx, homeY],
-        [firstX, firstY],
-        [cx, secondY],
-        [thirdX, thirdY],
-      ].map(([bx, by], i) => (
-        <Rect key={i} x={bx - baseSize / 2} y={by - baseSize / 2}
-          width={baseSize} height={baseSize}
-          fill={i === 0 ? ac : "#FFFFFF"}
-          stroke="#444" strokeWidth={1}
+        { bx: cx,     by: homeY,  fill: ac,        isHome: true  },
+        { bx: firstX, by: firstY, fill: "#DDDDDD", isHome: false },
+        { bx: cx,     by: secondY,fill: "#DDDDDD", isHome: false },
+        { bx: thirdX, by: thirdY, fill: "#DDDDDD", isHome: false },
+      ].map(({ bx, by, fill }, i) => (
+        <Rect key={i}
+          x={bx - baseS / 2} y={by - baseS / 2}
+          width={baseS} height={baseS}
+          fill={fill} stroke="#555" strokeWidth={0.5}
           transform={`rotate(45, ${bx}, ${by})`}
         />
       ))}
 
-      {/* Outfield arc */}
-      <Path
-        d={`M ${cx - outfieldR * 0.75} ${homeY - outfieldR * 0.66} A ${outfieldR} ${outfieldR} 0 0 1 ${cx + outfieldR * 0.75} ${homeY - outfieldR * 0.66}`}
-        fill="none" stroke="#1A4A20" strokeWidth={1.5}
-      />
-
-      {/* Event dot */}
-      {dot && (
-        <G>
-          <Circle cx={dot.cx} cy={dot.cy} r={10} fill={`${ac}40`} />
-          <Circle cx={dot.cx} cy={dot.cy} r={5} fill={ac} />
-        </G>
-      )}
+      {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
   );
 }
 
-// ─── Generic arena (fallback) ─────────────────────────────────────────────────
+// ─── Generic (fallback) ───────────────────────────────────────────────────────
 function GenericArena({ w, h, ac }: { w: number; h: number; ac: string }) {
-  const cx = w / 2;
-  const cy = h / 2;
   return (
     <G>
-      <Circle cx={cx} cy={cy} r={Math.min(w, h) * 0.30} fill="none" stroke={`${ac}30`} strokeWidth={2} />
-      <Circle cx={cx} cy={cy} r={Math.min(w, h) * 0.15} fill={`${ac}10`} stroke={`${ac}40`} strokeWidth={1.5} />
-      <Line x1={cx} y1={h * 0.1} x2={cx} y2={h * 0.9} stroke={`${ac}20`} strokeWidth={1.5} />
+      <Circle cx={w / 2} cy={h / 2} r={Math.min(w, h) * 0.28}
+        fill="none" stroke={`${ac}25`} strokeWidth={1.5} />
+      <Circle cx={w / 2} cy={h / 2} r={Math.min(w, h) * 0.12}
+        fill={`${ac}08`} stroke={`${ac}30`} strokeWidth={1} />
+    </G>
+  );
+}
+
+// ─── Shared event dot ─────────────────────────────────────────────────────────
+function EventDot({ cx, cy, ac }: { cx: number; cy: number; ac: string }) {
+  return (
+    <G>
+      <Circle cx={cx} cy={cy} r={12} fill={`${ac}30`} />
+      <Circle cx={cx} cy={cy} r={5} fill={ac} />
+      <Circle cx={cx} cy={cy} r={2} fill="#fff" />
     </G>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    borderRadius: 12,
+  outer: {
+    gap: 0,
+  },
+  svgWrap: {
+    borderRadius: 10,
     overflow: "hidden",
+  },
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    gap: 8,
+  },
+  teamName: {
+    color: "#8A8A8E",
+    fontSize: 11,
+    fontWeight: "600",
+    flex: 1,
+  },
+  scorePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: "#1A1A1C",
+  },
+  score: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  scoreSep: {
+    color: "#444",
+    fontSize: 13,
+    fontWeight: "300",
   },
 });

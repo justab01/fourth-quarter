@@ -328,41 +328,30 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
   return (
     <View style={s.tabSection}>
 
-      {/* ── Arena Renderer (sport-specific SVG field) ─────────────────────── */}
-      <View style={s.arenaWrap}>
-        <View style={s.arenaLabelRow}>
-          <View style={[s.sectionAccent, { backgroundColor: dc }]} />
-          <Text style={s.sectionTitle}>Arena</Text>
-          <View style={[s.leagueBadge, { borderColor: `${dc}40` }]}>
-            <Text style={[s.leagueBadgeText, { color: dc }]}>{game.league}</Text>
-          </View>
-        </View>
-        <ArenaRenderer
-          league={game.league}
-          width={SCREEN_W - 32}
-          accentColor={dc}
-          homeScore={game.homeScore}
-          awayScore={game.awayScore}
+      {/* ── Arena (sport-specific SVG + inline score row) ─────────────────── */}
+      <ArenaRenderer
+        league={game.league}
+        width={SCREEN_W - 32}
+        accentColor={dc}
+        homeScore={game.homeScore}
+        awayScore={game.awayScore}
+        homeTeam={game.homeTeam}
+        awayTeam={game.awayTeam}
+        status={game.status}
+      />
+
+      {/* ── Momentum Wave + Win Probability ───────────────────────────────── */}
+      {(isLive || isFinished) && keyPlays.length > 0 && (
+        <MomentumGraph
+          plays={keyPlays}
           homeTeam={game.homeTeam}
           awayTeam={game.awayTeam}
-          status={game.status}
+          homeScore={game.homeScore ?? 0}
+          awayScore={game.awayScore ?? 0}
+          accentColor={dc}
+          width={SCREEN_W - 32}
+          league={game.league}
         />
-      </View>
-
-      {/* ── Momentum Wave + Win Probability (analytics engine) ────────────── */}
-      {(isLive || isFinished) && keyPlays.length > 0 && (
-        <View>
-          <MomentumGraph
-            plays={keyPlays}
-            homeTeam={game.homeTeam}
-            awayTeam={game.awayTeam}
-            homeScore={game.homeScore ?? 0}
-            awayScore={game.awayScore ?? 0}
-            accentColor={dc}
-            width={SCREEN_W - 32}
-            league={game.league}
-          />
-        </View>
       )}
 
       {/* AI summary */}
@@ -381,10 +370,13 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
         <View style={[s.sectionAccent, { backgroundColor: dc }]} />
         <Text style={s.sectionTitle}>Key Plays</Text>
         {isLive && (
-          <View style={s.liveChip}>
-            <View style={s.liveDotSmall} />
-            <Text style={s.liveChipText}>LIVE</Text>
-          </View>
+          <>
+            <View style={{ flex: 1 }} />
+            <View style={s.liveChip}>
+              <View style={s.liveDotSmall} />
+              <Text style={s.liveChipText}>LIVE</Text>
+            </View>
+          </>
         )}
       </View>
       {keyPlays.length === 0 ? (
@@ -397,7 +389,7 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
         </View>
       )}
 
-      {/* Quick team stats summary */}
+      {/* Quick team stats */}
       {Object.keys(data.homeStats ?? {}).length > 0 && (
         <>
           <View style={s.sectionHeader}>
@@ -691,22 +683,12 @@ const s = StyleSheet.create({
   winProbPcts: { flexDirection: "row", justifyContent: "space-between" },
   winProbPct: { color: C.textTertiary, fontSize: 11, fontWeight: "600" },
 
-  // arena renderer
-  arenaWrap: { gap: 10 },
-  arenaLabelRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  leagueBadge: {
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: 8, borderWidth: 1,
-    marginLeft: "auto" as any,
-  },
-  leagueBadgeText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
-
   // live chip in section header
   liveChip: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: "rgba(232,22,43,0.15)",
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: 8, marginLeft: "auto" as any,
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: 8,
   },
   liveDotSmall: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
   liveChipText: { color: C.live, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },

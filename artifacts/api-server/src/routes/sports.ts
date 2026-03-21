@@ -454,7 +454,8 @@ function extractBoxscore(
       else if (isSoccer) statKeys = MLS_PLAYER_KEYS;
       else if (isNHL) statKeys = NHL_PLAYER_KEYS;
       else statKeys = NFL_PLAYER_KEYS; // NFL + NCAAF share same ESPN stat keys
-      const lines = extractPlayerStats(sg, statKeys.filter((k) => sg.names.includes(k)));
+      const sgNames: string[] = sg.names ?? [];
+      const lines = extractPlayerStats(sg, statKeys.filter((k) => sgNames.includes(k)));
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
     }
