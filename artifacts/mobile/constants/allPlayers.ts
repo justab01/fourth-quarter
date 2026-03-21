@@ -3,7 +3,7 @@
 
 export type SearchTeam = {
   name: string;
-  league: "NBA" | "NFL" | "MLB" | "MLS" | "NHL";
+  league: "NBA" | "NFL" | "MLB" | "MLS" | "NHL" | "WNBA" | "NCAAB" | "NCAAF" | "EPL" | "UCL" | "LIGA" | string;
   abbr: string;
   rank: string;
   city?: string;
@@ -12,7 +12,7 @@ export type SearchTeam = {
 export type SearchPlayer = {
   name: string;
   team: string;
-  league: "NBA" | "NFL" | "MLB" | "MLS" | "NHL";
+  league: "NBA" | "NFL" | "MLB" | "MLS" | "NHL" | "WNBA" | "NCAAB" | "NCAAF" | "EPL" | "UCL" | "LIGA" | string;
   position: string;
   stat: string;
   number?: string;

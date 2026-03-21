@@ -22,7 +22,7 @@ export type TeamData = {
   name: string;
   shortName: string;
   abbr: string;
-  league: "NBA" | "NFL" | "MLB" | "MLS" | "NHL";
+  league: "NBA" | "NFL" | "MLB" | "MLS" | "NHL" | "WNBA" | "NCAAB" | "NCAAF" | "EPL" | "UCL" | "LIGA" | string;
   division: string;
   color: string;
   colorSecondary: string;

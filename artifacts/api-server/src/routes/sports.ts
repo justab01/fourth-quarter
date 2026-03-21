@@ -635,6 +635,148 @@ router.get("/sports/game/:gameId", async (req, res) => {
   }
 });
 
+// ─── TEAM INFO — Live ESPN data (used for new leagues without static data) ────
+
+interface EspnTeamEntry {
+  team: {
+    id: string;
+    displayName: string;
+    abbreviation: string;
+    location: string;
+    color?: string;
+    alternateColor?: string;
+    logos?: { href: string }[];
+  };
+}
+
+interface EspnTeamsResponse {
+  sports?: { leagues?: { teams?: EspnTeamEntry[] }[] }[];
+}
+
+interface EspnRosterGroup {
+  position?: { abbreviation: string };
+  items?: {
+    displayName: string;
+    jersey?: string;
+    position?: { abbreviation: string };
+  }[];
+  // Flat athlete format (NCAAB, EPL, etc.)
+  displayName?: string;
+  jersey?: string;
+}
+
+interface EspnRosterResponse {
+  athletes?: EspnRosterGroup[];
+  team?: {
+    displayName?: string;
+    color?: string;
+    alternateColor?: string;
+    logos?: { href: string }[];
+    abbreviation?: string;
+    location?: string;
+    venue?: { fullName?: string };
+  };
+  coach?: { firstName?: string; lastName?: string }[];
+}
+
+function normalizeName(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+router.get("/sports/team", async (req, res) => {
+  const { name, league } = req.query as { name?: string; league?: string };
+  if (!name || !league) { res.status(400).json({ error: "name and league required" }); return; }
+  const leagueKey = league.toUpperCase();
+  const cfg = LEAGUE_CONFIG[leagueKey];
+  if (!cfg) { res.status(400).json({ error: `Unknown league: ${league}` }); return; }
+
+  const cacheKey = `team-info-${leagueKey}-${normalizeName(name)}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    // 1. Fetch all teams for the league
+    const teamsUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/teams?limit=1000`;
+    const teamsJson = (await espnFetch(teamsUrl)) as EspnTeamsResponse;
+    const teams = teamsJson.sports?.[0]?.leagues?.[0]?.teams ?? [];
+
+    // 2. Find the matching team by name (fuzzy)
+    const needle = normalizeName(name);
+    const match = teams.find((t) => {
+      const dn = normalizeName(t.team.displayName);
+      const loc = normalizeName(t.team.location);
+      return dn === needle || dn.includes(needle) || needle.includes(loc) || loc === needle;
+    }) ?? teams.find((t) => {
+      // fallback: check if any word matches
+      const words = normalizeName(t.team.displayName).split("");
+      return needle.split("").every(c => words.includes(c)); // last resort substring
+    });
+
+    if (!match) { res.status(404).json({ error: `Team not found: ${name}` }); return; }
+    const espnTeamId = match.team.id;
+
+    // 3. Fetch roster
+    const rosterUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/teams/${espnTeamId}/roster`;
+    const rosterJson = (await espnFetch(rosterUrl).catch(() => null)) as EspnRosterResponse | null;
+
+    const color = `#${rosterJson?.team?.color ?? match.team.color ?? "333333"}`;
+    const altColor = `#${rosterJson?.team?.alternateColor ?? match.team.alternateColor ?? "666666"}`;
+    const logo = rosterJson?.team?.logos?.[0]?.href ?? match.team.logos?.[0]?.href ?? null;
+    const venue = rosterJson?.team?.venue?.fullName ?? null;
+    const coachData = rosterJson?.coach?.[0];
+    const coach = coachData ? `${coachData.firstName ?? ""} ${coachData.lastName ?? ""}`.trim() : null;
+
+    // 4. Build roster list — two ESPN formats:
+    //    • Grouped: athletes = [{ position, items: [{ displayName, jersey, position }] }]
+    //    • Flat:    athletes = [{ displayName, jersey, position }]
+    const roster: { name: string; jersey: string; position: string }[] = [];
+    const rawAthletes = rosterJson?.athletes ?? [];
+    const isGrouped = rawAthletes[0]?.items !== undefined;
+    if (isGrouped) {
+      for (const group of rawAthletes) {
+        for (const athlete of group.items ?? []) {
+          roster.push({
+            name: athlete.displayName,
+            jersey: athlete.jersey ?? "—",
+            position: athlete.position?.abbreviation ?? group.position?.abbreviation ?? "—",
+          });
+        }
+      }
+    } else {
+      // Flat format
+      for (const athlete of rawAthletes) {
+        if (athlete.displayName) {
+          roster.push({
+            name: athlete.displayName,
+            jersey: athlete.jersey ?? "—",
+            position: athlete.position?.abbreviation ?? "—",
+          });
+        }
+      }
+    }
+
+    const result = {
+      espnTeamId,
+      name: rosterJson?.team?.displayName ?? match.team.displayName,
+      abbreviation: rosterJson?.team?.abbreviation ?? match.team.abbreviation,
+      location: rosterJson?.team?.location ?? match.team.location,
+      color,
+      altColor,
+      logo,
+      venue,
+      coach,
+      league: leagueKey,
+      roster,
+    };
+
+    setCached(cacheKey, result, 3_600_000); // 1 hour cache — rosters don't change often
+    res.json(result);
+  } catch (err) {
+    console.error("ESPN team lookup error:", err);
+    res.status(500).json({ error: "Failed to fetch team data" });
+  }
+});
+
 // ─── STANDINGS — Live ESPN data ───────────────────────────────────────────────
 
 interface StandingEntry {

@@ -1,17 +1,19 @@
 import React, { useState, useRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Platform, Animated, FlatList, Dimensions,
+  Platform, Animated, FlatList, Dimensions, ActivityIndicator, Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { getTeamById, teamColor, type TeamData, type Player } from "@/constants/teamData";
 import { ALL_TEAMS, ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { usePreferences } from "@/context/PreferencesContext";
+import { api, type EspnTeamInfo } from "@/utils/api";
 
 function slugify(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "-");
@@ -50,9 +52,13 @@ function searchPlayerToPlayer(sp: SearchPlayer): Player {
   };
 }
 
+const ALL_LEAGUE_PREFIXES = "nba|nfl|mlb|mls|nhl|wnba|ncaab|ncaaf|epl|ucl|liga";
+const LEAGUE_PREFIX_RE = new RegExp(`^(${ALL_LEAGUE_PREFIXES})-`);
+
 function buildFallbackTeam(id: string): TeamData | null {
-  const league = (id.match(/^(nba|nfl|mlb|mls|nhl)/) ?? [])[0]?.toUpperCase() as any;
-  const nameSlug = id.replace(/^(nba|nfl|mlb|mls|nhl)-/, "");
+  const leagueMatch = id.match(new RegExp(`^(${ALL_LEAGUE_PREFIXES})`));
+  const league = leagueMatch?.[0]?.toUpperCase() as any;
+  const nameSlug = id.replace(LEAGUE_PREFIX_RE, "");
   const searchTeam = ALL_TEAMS.find(t =>
     slugify(t.name) === nameSlug || slugify(t.name).replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") === nameSlug
   );
@@ -77,6 +83,63 @@ function buildFallbackTeam(id: string): TeamData | null {
     city: searchTeam.city ?? searchTeam.name.split(" ").slice(0, -1).join(" "),
     founded: 0,
     roster: players,
+    recentGames: [],
+    stats: [],
+  };
+}
+
+function espnTeamToTeamData(info: EspnTeamInfo): TeamData {
+  function posToGroup(pos: string, league: string): Player["group"] {
+    const p = pos.toUpperCase();
+    if (["NBA","WNBA","NCAAB"].includes(league)) {
+      if (["C","PF","PF/C"].includes(p)) return "Bigs";
+      if (["SF","PF/SF"].includes(p)) return "Forwards/Centers";
+      return "Guards";
+    }
+    if (["NFL","NCAAF"].includes(league)) {
+      if (["QB","RB","WR","TE","OT","OG","OL"].includes(p)) return "Offense";
+      if (["K","P","LS"].includes(p)) return "Special Teams";
+      return "Defense";
+    }
+    if (league === "MLB") {
+      return ["SP","RP","CL"].includes(p) ? "Pitching" : "Hitting";
+    }
+    if (["MLS","EPL","UCL","LIGA"].includes(league)) {
+      if (["ST","FW","CF","LW","RW","AM"].includes(p)) return "Forwards";
+      if (["CM","CDM","CAM","MF","LM","RM"].includes(p)) return "Midfielders";
+      if (["CB","LB","RB","LWB","RWB","DF"].includes(p)) return "Defenders";
+      return "Goalkeepers";
+    }
+    if (league === "NHL") return "Forwards";
+    return "Guards";
+  }
+  const roster: Player[] = info.roster.map((p, i) => ({
+    id: `${i}`,
+    name: p.name,
+    number: p.jersey,
+    position: p.position,
+    age: 0,
+    height: "—",
+    weight: "—",
+    group: posToGroup(p.position, info.league),
+    stats: {},
+  }));
+  return {
+    id: `${info.league.toLowerCase()}-${slugify(info.name)}`,
+    name: info.name,
+    shortName: info.name.split(" ").pop() ?? info.name,
+    abbr: info.abbreviation,
+    league: info.league as any,
+    division: "—",
+    color: info.color,
+    colorSecondary: info.altColor,
+    record: "—",
+    standing: "—",
+    coach: info.coach ?? "—",
+    stadium: info.venue ?? "—",
+    city: info.location,
+    founded: 0,
+    roster,
     recentGames: [],
     stats: [],
   };
@@ -263,9 +326,27 @@ export default function TeamScreen() {
   const [activeTab, setActiveTab] = useState<Tab>("Roster");
   const tabScrollRef = useRef<ScrollView>(null);
 
-  const team = getTeamById(id ?? "") ?? buildFallbackTeam(id ?? "");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
+
+  // Try static registry first
+  const staticTeam = getTeamById(id ?? "") ?? buildFallbackTeam(id ?? "");
+
+  // Parse league + name from the slug for ESPN live fallback
+  const leagueMatch = (id ?? "").match(new RegExp(`^(${ALL_LEAGUE_PREFIXES})`));
+  const parsedLeague = leagueMatch?.[0]?.toUpperCase() ?? "";
+  const parsedName = (id ?? "").replace(LEAGUE_PREFIX_RE, "").replace(/-/g, " ");
+
+  // Only call ESPN when static data is missing
+  const { data: espnData, isLoading: espnLoading } = useQuery({
+    queryKey: ["team-info", id],
+    queryFn: () => api.getTeamInfo(parsedName, parsedLeague),
+    enabled: !staticTeam && !!parsedLeague && !!parsedName,
+    retry: 1,
+    staleTime: 3_600_000,
+  });
+
+  const team: TeamData | null = staticTeam ?? (espnData ? espnTeamToTeamData(espnData) : null);
 
   const isFav = team ? preferences.favoriteTeams.includes(team.name) : false;
 
@@ -277,6 +358,21 @@ export default function TeamScreen() {
       : [...preferences.favoriteTeams, team.name];
     savePreferences({ ...preferences, favoriteTeams: next });
   };
+
+  // Show loading while ESPN fetch is in progress
+  if (!staticTeam && espnLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: topPad }]}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={C.text} />
+        </Pressable>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <ActivityIndicator color={C.accent} size="large" />
+          <Text style={{ color: C.textSecondary, fontSize: 14 }}>Loading team data...</Text>
+        </View>
+      </View>
+    );
+  }
 
   if (!team) {
     return (

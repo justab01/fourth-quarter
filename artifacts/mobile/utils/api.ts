@@ -46,6 +46,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify(prefs),
     }),
+
+  getTeamInfo: (name: string, league: string) =>
+    apiFetch<EspnTeamInfo>(`/sports/team?name=${encodeURIComponent(name)}&league=${encodeURIComponent(league)}`),
 };
 
 export interface Game {
@@ -124,6 +127,20 @@ export interface RecapResponse {
   summary: string;
   keyPlayer: string;
   whatItMeans: string;
+}
+
+export interface EspnTeamInfo {
+  espnTeamId: string;
+  name: string;
+  abbreviation: string;
+  location: string;
+  color: string;
+  altColor: string;
+  logo: string | null;
+  venue: string | null;
+  coach: string | null;
+  league: string;
+  roster: { name: string; jersey: string; position: string }[];
 }
 
 export interface UserPreferencesPayload {
