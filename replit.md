@@ -99,11 +99,13 @@ Utility scripts package. Each script is a `.ts` file in `src/` with a correspond
 
 Expo React Native mobile app — "Fourth Quarter" sports app.
 
-- **Theme**: Warm dark aesthetic — Energy Orange (#EF7828), Vivid Teal (#206E6B), Graphite (#504D47), Steel Blue (#687C88), bg #0D0D0F
+- **Theme**: Livescore Dark — near-black bg (#0F0F0F), dark charcoal cards (#1C1C1E), red LIVE badge (#E8162B), white text, muted gray secondary (#8A8A8E), orange accent (#EF7828), gold AI (#D4A843), green wins (#30D158). Tab bar: white active, dark gray inactive.
+- **GameCard**: Livescore-style layout — status badge on left (LIVE/FT/time), team rows with 28px circle logos + name + score, league accent bar on right edge. Hero variant: large team logos + centered score. Compact: left stripe + stacked rows.
+- **NewsCard**: 3px colored top bar (league color) + dark card body. Hero: gradient backdrop + emoji + title overlay.
 - **Auth/state**: AsyncStorage preferences, onboarding flow (4 steps), Houston personalization (Rockets/Astros/Texans/Dynamo)
 - **Screens**: Onboarding, Hub (home), Live, News, Standings, Profile + Game Detail, Article Detail, Team Page, Player Page
 - **Components**: GameCard, NewsCard, RecapCard, SearchModal, GameCardSkeleton, NewsCardSkeleton, ErrorBoundary/Fallback
-- **Navigation**: Tabs via `expo-router` + NativeTabs (liquid glass on iOS 26+) fallback to BlurView tabs
+- **Navigation**: Tabs via `expo-router` — clean dark tab bar with white active icon, gray inactive; BlurView blur on iOS, solid dark on Android/web
 - **API**: `utils/api.ts` with `apiFetch` helper, typed interfaces for all models
 - **Context**: `PreferencesContext` — persists to AsyncStorage + syncs to backend
 - **AI**: RecapCard fetches `/api/ai/recap` (gpt-4o-mini) for postgame recaps

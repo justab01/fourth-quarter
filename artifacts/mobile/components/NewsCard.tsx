@@ -7,27 +7,36 @@ import type { NewsArticle } from "@/utils/api";
 
 const C = Colors.dark;
 
-const LEAGUE_DISPLAY_COLORS: Record<string, string> = {
-  NBA:  C.nba,        // Energy Orange
-  NFL:  C.nfl,        // Vivid Teal
-  MLB:  C.mlb,        // Steel Blue
-  MLS:  C.mls,        // Vivid Teal
+const LEAGUE_COLORS: Record<string, string> = {
+  NBA:  C.nba,
+  NFL:  C.nfl,
+  MLB:  C.mlb,
+  MLS:  C.mls,
   NHL:  C.accentBlue,
   NCAA: C.accentGold,
+};
+
+const SPORT_EMOJI: Record<string, string> = {
+  NBA: "🏀",
+  NFL: "🏈",
+  MLB: "⚾",
+  MLS: "⚽",
+  NHL: "🏒",
 };
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return "Just now";
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function getColor(leagues: string[]): string {
+function getLeagueColor(leagues: string[]): string {
   for (const l of leagues) {
-    if (LEAGUE_DISPLAY_COLORS[l]) return LEAGUE_DISPLAY_COLORS[l];
+    if (LEAGUE_COLORS[l]) return LEAGUE_COLORS[l];
   }
   return C.accent;
 }
@@ -40,52 +49,46 @@ interface NewsCardProps {
 
 export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
   const scale = useRef(new Animated.Value(1)).current;
-  const onPressIn = () =>
-    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 300, friction: 20 }).start();
-  const onPressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 300, friction: 20 }).start();
+  const onPressIn  = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 300, friction: 20 }).start();
+  const onPressOut = () => Animated.spring(scale, { toValue: 1,    useNativeDriver: true, tension: 300, friction: 20 }).start();
 
-  const accentColor = getColor(article.leagues);
+  const accentColor = getLeagueColor(article.leagues);
+  const emoji = SPORT_EMOJI[article.leagues[0]] ?? "📰";
 
   if (hero) {
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={styles.heroCard}>
-            <View style={styles.heroImagePlaceholder}>
+          <View style={heroS.card}>
+            <View style={heroS.imagePlaceholder}>
               <LinearGradient
-                colors={[`${accentColor}44`, `${accentColor}22`, "transparent"]}
+                colors={[`${accentColor}40`, `${accentColor}18`, "#0F0F0F00"]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               />
-              <Text style={styles.heroImageIcon}>
-                {article.leagues[0] === "NBA" ? "🏀" :
-                 article.leagues[0] === "NFL" ? "🏈" :
-                 article.leagues[0] === "MLB" ? "⚾" : "⚽"}
-              </Text>
+              <Text style={heroS.emoji}>{emoji}</Text>
             </View>
             <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.85)", "#000"]}
-              style={styles.heroOverlay}
+              colors={["transparent", "rgba(15,15,15,0.92)", "#0F0F0F"]}
+              style={heroS.overlay}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
             />
-            <View style={styles.heroContent}>
-              <View style={styles.heroMeta}>
-                <View style={[styles.sourceBadge, { backgroundColor: `${accentColor}22`, borderColor: `${accentColor}44` }]}>
-                  <Text style={[styles.sourceBadgeText, { color: accentColor }]}>{article.source}</Text>
+            <View style={heroS.content}>
+              <View style={heroS.meta}>
+                <View style={[heroS.leagueTag, { backgroundColor: `${accentColor}22`, borderColor: `${accentColor}44` }]}>
+                  <Text style={[heroS.leagueTagText, { color: accentColor }]}>
+                    {article.leagues[0] ?? "SPORT"}
+                  </Text>
                 </View>
-                <Text style={styles.heroTime}>{timeAgo(article.publishedAt)}</Text>
+                <Text style={heroS.time}>{timeAgo(article.publishedAt)}</Text>
               </View>
-              <Text style={styles.heroTitle} numberOfLines={3}>{article.title}</Text>
-              <Text style={styles.heroSummary} numberOfLines={2}>{article.summary}</Text>
-              <View style={styles.heroTagsRow}>
-                {article.tags.slice(0, 3).map(t => (
-                  <View key={t} style={styles.heroTag}>
-                    <Text style={styles.heroTagText}>{t}</Text>
-                  </View>
-                ))}
+              <Text style={heroS.title} numberOfLines={3}>{article.title}</Text>
+              <Text style={heroS.summary} numberOfLines={2}>{article.summary}</Text>
+              <View style={heroS.footer}>
+                <Text style={heroS.source}>{article.source}</Text>
+                <Ionicons name="arrow-forward-circle" size={18} color={accentColor} />
               </View>
             </View>
           </View>
@@ -97,27 +100,27 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={styles.card}>
-          <View style={[styles.cardAccentBar, { backgroundColor: accentColor }]} />
-          <View style={styles.cardBody}>
-            <View style={styles.cardMeta}>
-              <View style={[styles.tagPill, { backgroundColor: `${accentColor}22` }]}>
-                <Text style={[styles.tagPillText, { color: accentColor }]}>
-                  {article.tags[0] ?? article.leagues[0] ?? "Sport"}
+        <View style={card.container}>
+          <View style={[card.topBar, { backgroundColor: accentColor }]} />
+          <View style={card.body}>
+            <View style={card.meta}>
+              <View style={[card.leagueTag, { backgroundColor: `${accentColor}18` }]}>
+                <Text style={[card.leagueTagText, { color: accentColor }]}>
+                  {article.tags[0] ?? article.leagues[0] ?? "SPORT"}
                 </Text>
               </View>
-              <Text style={styles.cardTime}>{timeAgo(article.publishedAt)}</Text>
+              <Text style={card.time}>{timeAgo(article.publishedAt)}</Text>
             </View>
-            <Text style={styles.cardTitle} numberOfLines={2}>{article.title}</Text>
-            <Text style={styles.cardSummary} numberOfLines={2}>{article.summary}</Text>
-            <View style={styles.cardFooter}>
-              <View style={styles.sourceRow}>
-                <View style={styles.sourceAvatar}>
-                  <Text style={styles.sourceAvatarText}>{article.source.charAt(0)}</Text>
+            <Text style={card.title} numberOfLines={2}>{article.title}</Text>
+            <Text style={card.summary} numberOfLines={2}>{article.summary}</Text>
+            <View style={card.footer}>
+              <View style={card.sourceRow}>
+                <View style={card.sourceAvatar}>
+                  <Text style={card.sourceAvatarLetter}>{article.source.charAt(0)}</Text>
                 </View>
-                <Text style={styles.sourceText}>{article.source}</Text>
+                <Text style={card.sourceText}>{article.source}</Text>
               </View>
-              <Ionicons name="arrow-forward-circle" size={20} color={accentColor} />
+              <Ionicons name="chevron-forward" size={16} color={C.textTertiary} />
             </View>
           </View>
         </View>
@@ -126,171 +129,122 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  heroCard: {
-    borderRadius: 24,
+const heroS = StyleSheet.create({
+  card: {
+    borderRadius: 22,
     overflow: "hidden",
     backgroundColor: C.card,
     borderWidth: 1,
     borderColor: C.cardBorder,
-    minHeight: 280,
+    minHeight: 270,
   },
-  heroImagePlaceholder: {
-    height: 180,
+  imagePlaceholder: {
+    height: 170,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: C.cardElevated,
   },
-  heroImageIcon: {
-    fontSize: 64,
-  },
-  heroOverlay: {
+  emoji: { fontSize: 60 },
+  overlay: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 200,
+    bottom: 0, left: 0, right: 0,
+    height: 220,
   },
-  heroContent: {
+  content: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
+    bottom: 0, left: 0, right: 0,
+    padding: 18,
     gap: 8,
   },
-  heroMeta: {
+  meta: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  sourceBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  leagueTag: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 6,
     borderWidth: 1,
   },
-  sourceBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  heroTime: {
-    color: C.textTertiary,
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  heroTitle: {
+  leagueTagText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
+  time: { color: C.textTertiary, fontSize: 12, fontWeight: "500" },
+  title: {
     color: C.text,
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "800",
     fontFamily: "Inter_700Bold",
-    lineHeight: 26,
+    lineHeight: 25,
   },
-  heroSummary: {
+  summary: {
     color: C.textSecondary,
     fontSize: 13,
     lineHeight: 18,
     fontFamily: "Inter_400Regular",
   },
-  heroTagsRow: {
+  footer: {
     flexDirection: "row",
-    gap: 6,
-    marginTop: 4,
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 2,
   },
-  heroTag: {
-    backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  heroTagText: {
-    color: C.textSecondary,
-    fontSize: 11,
-    fontWeight: "600",
-  },
+  source: { color: C.textTertiary, fontSize: 12, fontWeight: "500" },
+});
 
-  card: {
+const card = StyleSheet.create({
+  container: {
     backgroundColor: C.card,
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: C.cardBorder,
-    flexDirection: "row",
   },
-  cardAccentBar: {
-    width: 4,
-    borderRadius: 2,
-    flexShrink: 0,
-    alignSelf: "stretch",
-    margin: 14,
-    marginRight: 0,
+  topBar: { height: 3 },
+  body: {
+    padding: 14,
+    gap: 7,
   },
-  cardBody: {
-    flex: 1,
-    padding: 16,
-    gap: 8,
-  },
-  cardMeta: {
+  meta: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  tagPill: {
+  leagueTag: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 5,
   },
-  tagPillText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  cardTime: {
-    color: C.textTertiary,
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  cardTitle: {
+  leagueTagText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
+  time: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
+  title: {
     color: C.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     fontFamily: "Inter_700Bold",
-    lineHeight: 22,
+    lineHeight: 21,
   },
-  cardSummary: {
+  summary: {
     color: C.textSecondary,
     fontSize: 13,
-    lineHeight: 19,
+    lineHeight: 18,
     fontFamily: "Inter_400Regular",
   },
-  cardFooter: {
+  footer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 4,
+    marginTop: 2,
   },
   sourceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 6,
   },
   sourceAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center", justifyContent: "center",
   },
-  sourceAvatarText: {
-    color: C.text,
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  sourceText: {
-    color: C.textTertiary,
-    fontSize: 12,
-    fontWeight: "500",
-  },
+  sourceAvatarLetter: { color: C.text, fontSize: 9, fontWeight: "700" },
+  sourceText: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
 });

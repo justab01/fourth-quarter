@@ -3,9 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, Animated
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import Colors from "@/constants/colors";
-import { LEAGUE_COLORS } from "@/constants/sports";
 import type { Game } from "@/utils/api";
 import { goToTeam } from "@/utils/navHelpers";
 
@@ -22,7 +20,7 @@ function formatTime(iso: string) {
   return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-function getDisplayColor(league: string): string {
+function getLeagueColor(league: string): string {
   const map: Record<string, string> = {
     NBA: C.nba,
     NFL: C.nfl,
@@ -35,131 +33,134 @@ function getDisplayColor(league: string): string {
 }
 
 function PulsingDot() {
-  const scale = useRef(new Animated.Value(1)).current;
-  const opacity = useRef(new Animated.Value(0.6)).current;
+  const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(scale, { toValue: 1.6, duration: 700, useNativeDriver: true }),
-          Animated.timing(scale, { toValue: 1, duration: 700, useNativeDriver: true }),
-        ]),
-        Animated.sequence([
-          Animated.timing(opacity, { toValue: 0.15, duration: 700, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 0.6, duration: 700, useNativeDriver: true }),
-        ]),
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 700, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
+  const scaleVal = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] });
+  const opacityVal = anim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0.1] });
+
   return (
-    <View style={styles.dotContainer}>
-      <Animated.View style={[styles.dotPulse, { transform: [{ scale }], opacity }]} />
-      <View style={styles.dotCore} />
+    <View style={dot.container}>
+      <Animated.View style={[dot.ring, { transform: [{ scale: scaleVal }], opacity: opacityVal }]} />
+      <View style={dot.core} />
     </View>
   );
 }
 
+const dot = StyleSheet.create({
+  container: { width: 10, height: 10, alignItems: "center", justifyContent: "center" },
+  ring: { position: "absolute", width: 10, height: 10, borderRadius: 5, backgroundColor: C.live },
+  core: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
+});
+
 export function GameCard({ game, onPress, variant = "default" }: GameCardProps) {
-  const isLive = game.status === "live";
+  const isLive     = game.status === "live";
   const isFinished = game.status === "finished";
-  const displayColor = getDisplayColor(game.league);
+  const leagueColor = getLeagueColor(game.league);
   const scale = useRef(new Animated.Value(1)).current;
 
-  const onPressIn = () =>
-    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 300, friction: 20 }).start();
-  const onPressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 300, friction: 20 }).start();
+  const onPressIn  = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 300, friction: 20 }).start();
+  const onPressOut = () => Animated.spring(scale, { toValue: 1,    useNativeDriver: true, tension: 300, friction: 20 }).start();
 
+  const awayWin = isFinished && (game.awayScore ?? 0) > (game.homeScore ?? 0);
+  const homeWin = isFinished && (game.homeScore ?? 0) > (game.awayScore ?? 0);
+
+  // ── HERO ─────────────────────────────────────────────────────────────────
   if (variant === "hero") {
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={styles.heroCard}>
+          <View style={hero.card}>
             <LinearGradient
-              colors={[`${displayColor}22`, `${displayColor}08`, "transparent"]}
+              colors={[`${leagueColor}20`, `${leagueColor}08`, "transparent"]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             />
-            {isLive && (
-              <View style={[styles.liveBorderTop, { backgroundColor: displayColor }]} />
-            )}
-            <View style={styles.heroHeader}>
-              <View style={[styles.leaguePill, { backgroundColor: `${displayColor}22` }]}>
-                <Text style={[styles.leaguePillText, { color: displayColor }]}>{game.league}</Text>
+            {isLive && <View style={[hero.topStripe, { backgroundColor: C.live }]} />}
+
+            <View style={hero.header}>
+              <View style={[hero.leaguePill, { backgroundColor: `${leagueColor}22` }]}>
+                <Text style={[hero.leagueText, { color: leagueColor }]}>{game.league}</Text>
               </View>
               {isLive ? (
-                <View style={styles.livePill}>
+                <View style={hero.livePill}>
                   <PulsingDot />
-                  <Text style={styles.livePillText}>LIVE</Text>
-                  {game.quarter && (
-                    <Text style={styles.liveQuarter}>{game.quarter} · {game.timeRemaining}</Text>
-                  )}
+                  <Text style={hero.liveText}>LIVE</Text>
+                  {game.quarter && <Text style={hero.quarterText}>{game.quarter}</Text>}
                 </View>
               ) : isFinished ? (
-                <Text style={styles.finalBadge}>FINAL</Text>
+                <Text style={hero.finalText}>FINAL</Text>
               ) : (
-                <Text style={styles.timeBadge}>{formatTime(game.startTime)}</Text>
+                <Text style={hero.timeText}>{formatTime(game.startTime)}</Text>
               )}
             </View>
 
-            <View style={styles.heroTeams}>
+            <View style={hero.teams}>
               <Pressable
-                style={styles.heroTeam}
+                style={hero.teamCol}
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
                 hitSlop={8}
               >
-                <View style={[styles.heroLogo, { borderColor: `${displayColor}44` }]}>
-                  <Text style={styles.heroLogoText}>{game.awayTeam.charAt(0)}</Text>
+                <View style={[hero.logo, { borderColor: `${leagueColor}44` }]}>
+                  <Text style={hero.logoLetter}>{game.awayTeam.charAt(0)}</Text>
                 </View>
-                <Text style={styles.heroTeamName} numberOfLines={2}>{game.awayTeam}</Text>
+                <Text style={hero.teamName} numberOfLines={2}>{game.awayTeam}</Text>
                 {(isLive || isFinished) && (
-                  <Text style={[styles.heroScore, isFinished && (game.awayScore ?? 0) < (game.homeScore ?? 0) ? styles.heroScoreDim : {}]}>
+                  <Text style={[hero.score, !awayWin && isFinished && hero.scoreDim]}>
                     {game.awayScore}
                   </Text>
                 )}
+                {isFinished && <Text style={hero.label}>Away</Text>}
               </Pressable>
 
-              <View style={styles.heroVs}>
-                {isLive ? (
-                  <Text style={[styles.heroVsText, { color: displayColor }]}>VS</Text>
-                ) : isFinished ? (
-                  <Text style={styles.heroDash}>—</Text>
-                ) : (
-                  <Text style={styles.heroVsText}>VS</Text>
+              <View style={hero.centerCol}>
+                {!isLive && !isFinished && (
+                  <Text style={hero.vsText}>VS</Text>
                 )}
-                {isLive && game.venue && (
-                  <Text style={styles.heroVenue} numberOfLines={1}>{game.venue}</Text>
+                {isLive && game.timeRemaining && (
+                  <Text style={hero.timeRemaining}>{game.timeRemaining}</Text>
+                )}
+                {isFinished && (
+                  <Text style={hero.vsText}>—</Text>
+                )}
+                {game.venue && (
+                  <Text style={hero.venue} numberOfLines={2}>{game.venue}</Text>
                 )}
               </View>
 
               <Pressable
-                style={[styles.heroTeam, { alignItems: "flex-end" }]}
+                style={[hero.teamCol, { alignItems: "flex-end" }]}
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
                 hitSlop={8}
               >
-                <View style={[styles.heroLogo, { borderColor: `${displayColor}44` }]}>
-                  <Text style={styles.heroLogoText}>{game.homeTeam.charAt(0)}</Text>
+                <View style={[hero.logo, { borderColor: `${leagueColor}44` }]}>
+                  <Text style={hero.logoLetter}>{game.homeTeam.charAt(0)}</Text>
                 </View>
-                <Text style={[styles.heroTeamName, { textAlign: "right" }]} numberOfLines={2}>
-                  {game.homeTeam}
-                </Text>
+                <Text style={[hero.teamName, { textAlign: "right" }]} numberOfLines={2}>{game.homeTeam}</Text>
                 {(isLive || isFinished) && (
-                  <Text style={[styles.heroScore, isFinished && (game.homeScore ?? 0) < (game.awayScore ?? 0) ? styles.heroScoreDim : {}]}>
+                  <Text style={[hero.score, !homeWin && isFinished && hero.scoreDim]}>
                     {game.homeScore}
                   </Text>
                 )}
+                {isFinished && <Text style={[hero.label, { textAlign: "right" }]}>Home</Text>}
               </Pressable>
             </View>
 
-            <View style={[styles.heroCta, { borderTopColor: `${displayColor}22` }]}>
-              <Text style={[styles.heroCtaText, { color: displayColor }]}>
+            <View style={[hero.cta, { borderTopColor: `${leagueColor}20` }]}>
+              <Text style={[hero.ctaText, { color: leagueColor }]}>
                 {isLive ? "Watch Live" : isFinished ? "Full Recap" : "Match Preview"}
               </Text>
-              <View style={[styles.heroCaret, { backgroundColor: `${displayColor}22` }]}>
-                <Text style={[styles.heroCaretText, { color: displayColor }]}>›</Text>
+              <View style={[hero.ctaArrow, { backgroundColor: `${leagueColor}22` }]}>
+                <Text style={[hero.ctaArrowText, { color: leagueColor }]}>›</Text>
               </View>
             </View>
           </View>
@@ -168,60 +169,74 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
     );
   }
 
+  // ── COMPACT (horizontal card for home screen widget) ─────────────────────
   if (variant === "compact") {
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={[styles.compactCard, isLive && { borderColor: `${displayColor}44` }]}>
+          <View style={[cpt.card, isLive && { borderColor: `${leagueColor}44` }]}>
             {isLive && (
               <LinearGradient
-                colors={[`${displayColor}12`, "transparent"]}
+                colors={[`${leagueColor}14`, "transparent"]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
               />
             )}
-            <View style={[styles.compactLeagueBar, { backgroundColor: displayColor }]} />
-            <View style={styles.compactContent}>
+            <View style={[cpt.stripe, { backgroundColor: leagueColor }]} />
+
+            <View style={cpt.body}>
               {isLive && (
-                <View style={styles.compactLivePill}>
-                  <View style={[styles.compactDot, { backgroundColor: C.live }]} />
-                  <Text style={styles.compactLiveText}>LIVE</Text>
+                <View style={cpt.livePill}>
+                  <View style={cpt.liveDot} />
+                  <Text style={cpt.liveText}>LIVE</Text>
+                  {game.quarter && <Text style={cpt.quarter}> · {game.quarter}</Text>}
                 </View>
               )}
+              {!isLive && !isFinished && (
+                <Text style={cpt.time}>{formatTime(game.startTime)}</Text>
+              )}
+              {isFinished && (
+                <Text style={cpt.ftLabel}>FT</Text>
+              )}
+
               <Pressable
-                style={styles.compactTeamRow}
+                style={cpt.row}
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
                 hitSlop={4}
               >
-                <View style={styles.compactLogoSmall}>
-                  <Text style={styles.compactLogoText}>{game.awayTeam.charAt(0)}</Text>
+                <View style={cpt.logo}>
+                  <Text style={cpt.logoLetter}>{game.awayTeam.charAt(0)}</Text>
                 </View>
-                <Text style={styles.compactTeamName} numberOfLines={1}>{game.awayTeam}</Text>
+                <Text style={[cpt.teamName, isFinished && !awayWin && cpt.teamDim]} numberOfLines={1}>
+                  {game.awayTeam}
+                </Text>
                 {(isLive || isFinished) && (
-                  <Text style={[styles.compactScore, isFinished && (game.awayScore ?? 0) < (game.homeScore ?? 0) && styles.compactScoreDim]}>
+                  <Text style={[cpt.score, isFinished && !awayWin && cpt.scoreDim]}>
                     {game.awayScore}
                   </Text>
                 )}
               </Pressable>
+
+              <View style={cpt.divider} />
+
               <Pressable
-                style={styles.compactTeamRow}
+                style={cpt.row}
                 onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
                 hitSlop={4}
               >
-                <View style={styles.compactLogoSmall}>
-                  <Text style={styles.compactLogoText}>{game.homeTeam.charAt(0)}</Text>
+                <View style={cpt.logo}>
+                  <Text style={cpt.logoLetter}>{game.homeTeam.charAt(0)}</Text>
                 </View>
-                <Text style={styles.compactTeamName} numberOfLines={1}>{game.homeTeam}</Text>
+                <Text style={[cpt.teamName, isFinished && !homeWin && cpt.teamDim]} numberOfLines={1}>
+                  {game.homeTeam}
+                </Text>
                 {(isLive || isFinished) && (
-                  <Text style={[styles.compactScore, isFinished && (game.homeScore ?? 0) < (game.awayScore ?? 0) && styles.compactScoreDim]}>
+                  <Text style={[cpt.score, isFinished && !homeWin && cpt.scoreDim]}>
                     {game.homeScore}
                   </Text>
                 )}
               </Pressable>
-              {!isLive && !isFinished && (
-                <Text style={styles.compactTime}>{formatTime(game.startTime)}</Text>
-              )}
             </View>
           </View>
         </Pressable>
@@ -229,122 +244,97 @@ export function GameCard({ game, onPress, variant = "default" }: GameCardProps) 
     );
   }
 
+  // ── DEFAULT — Livescore-style row (status | teams | scores) ──────────────
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={[styles.card, isLive && styles.cardLive, isLive && { borderColor: `${displayColor}40` }]}>
+        <View style={[dflt.card, isLive && { borderColor: `${C.live}30` }]}>
           {isLive && (
             <LinearGradient
-              colors={[`${displayColor}10`, "transparent"]}
+              colors={["rgba(232,22,43,0.06)", "transparent"]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
             />
           )}
-          <View style={styles.header}>
-            <View style={[styles.leaguePill, { backgroundColor: `${displayColor}22` }]}>
-              <Text style={[styles.leaguePillText, { color: displayColor }]}>{game.league}</Text>
-            </View>
+
+          {/* Left status column */}
+          <View style={dflt.statusCol}>
             {isLive ? (
-              <View style={styles.livePill}>
-                <PulsingDot />
-                <Text style={styles.livePillText}>LIVE</Text>
+              <>
+                <View style={dflt.liveBadge}>
+                  <Text style={dflt.liveBadgeText}>LIVE</Text>
+                </View>
                 {game.quarter && (
-                  <Text style={styles.liveQuarter}>{game.quarter} · {game.timeRemaining}</Text>
+                  <Text style={dflt.quarterText} numberOfLines={1}>{game.quarter}</Text>
                 )}
-              </View>
+              </>
             ) : isFinished ? (
-              <Text style={styles.finalBadge}>FINAL</Text>
+              <Text style={dflt.ftText}>FT</Text>
             ) : (
-              <Text style={styles.timeBadge}>{formatTime(game.startTime)}</Text>
+              <Text style={dflt.timeText}>{formatTime(game.startTime)}</Text>
             )}
           </View>
 
-          <View style={styles.matchup}>
+          {/* Thin vertical separator */}
+          <View style={dflt.vSep} />
+
+          {/* Teams + scores */}
+          <View style={dflt.teamsCol}>
             <Pressable
-              style={styles.teamRow}
+              style={dflt.teamRow}
               onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
               hitSlop={4}
             >
-              <View style={[styles.logo, { borderColor: isLive ? `${displayColor}55` : "transparent" }]}>
-                <Text style={styles.logoText}>{game.awayTeam.charAt(0)}</Text>
+              <View style={dflt.logo}>
+                <Text style={dflt.logoLetter}>{game.awayTeam.charAt(0)}</Text>
               </View>
-              <Text
-                style={[styles.teamName, isFinished && (game.awayScore ?? 0) < (game.homeScore ?? 0) && styles.teamNameDim]}
-                numberOfLines={1}
-              >
+              <Text style={[dflt.teamName, isFinished && !awayWin && dflt.teamDim]} numberOfLines={1}>
                 {game.awayTeam}
               </Text>
-              {(isLive || isFinished) && (
-                <Text
-                  style={[styles.score, isFinished && (game.awayScore ?? 0) < (game.homeScore ?? 0) && styles.scoreDim]}
-                >
+              {(isLive || isFinished) ? (
+                <Text style={[dflt.score, isFinished && !awayWin && dflt.scoreDim]}>
                   {game.awayScore}
                 </Text>
+              ) : (
+                <View style={dflt.scorePlaceholder} />
               )}
             </Pressable>
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              {!isLive && !isFinished && <Text style={styles.vsText}>{formatTime(game.startTime)}</Text>}
-              <View style={styles.dividerLine} />
-            </View>
+            <View style={dflt.hSep} />
 
             <Pressable
-              style={styles.teamRow}
+              style={dflt.teamRow}
               onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
               hitSlop={4}
             >
-              <View style={[styles.logo, { borderColor: isLive ? `${displayColor}55` : "transparent" }]}>
-                <Text style={styles.logoText}>{game.homeTeam.charAt(0)}</Text>
+              <View style={dflt.logo}>
+                <Text style={dflt.logoLetter}>{game.homeTeam.charAt(0)}</Text>
               </View>
-              <Text
-                style={[styles.teamName, isFinished && (game.homeScore ?? 0) < (game.awayScore ?? 0) && styles.teamNameDim]}
-                numberOfLines={1}
-              >
+              <Text style={[dflt.teamName, isFinished && !homeWin && dflt.teamDim]} numberOfLines={1}>
                 {game.homeTeam}
               </Text>
-              {(isLive || isFinished) && (
-                <Text
-                  style={[styles.score, isFinished && (game.homeScore ?? 0) < (game.awayScore ?? 0) && styles.scoreDim]}
-                >
+              {(isLive || isFinished) ? (
+                <Text style={[dflt.score, isFinished && !homeWin && dflt.scoreDim]}>
                   {game.homeScore}
                 </Text>
+              ) : (
+                <View style={dflt.scorePlaceholder} />
               )}
             </Pressable>
           </View>
+
+          {/* League accent bar on right edge */}
+          <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
         </View>
       </Pressable>
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  dotContainer: { width: 12, height: 12, alignItems: "center", justifyContent: "center" },
-  dotPulse: {
-    position: "absolute",
-    width: 12, height: 12, borderRadius: 6,
-    backgroundColor: C.live,
-  },
-  dotCore: {
-    width: 7, height: 7, borderRadius: 3.5,
-    backgroundColor: C.live,
-  },
-
+// ── Hero styles ──────────────────────────────────────────────────────────────
+const hero = StyleSheet.create({
   card: {
-    backgroundColor: C.card,
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-    overflow: "hidden",
-    gap: 14,
-  },
-  cardLive: {
-    borderWidth: 1.5,
-  },
-
-  heroCard: {
     backgroundColor: C.cardElevated,
     borderRadius: 24,
     overflow: "hidden",
@@ -352,11 +342,8 @@ const styles = StyleSheet.create({
     borderColor: C.cardBorder,
     minHeight: 200,
   },
-  liveBorderTop: {
-    height: 3,
-    width: "100%",
-  },
-  heroHeader: {
+  topStripe: { height: 3 },
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -364,74 +351,44 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  heroTeams: {
+  leaguePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  leagueText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
+  livePill: { flexDirection: "row", alignItems: "center", gap: 6 },
+  liveText: { color: C.live, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
+  quarterText: { color: C.textSecondary, fontSize: 12, fontWeight: "500" },
+  finalText: { color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
+  timeText: { color: C.textSecondary, fontSize: 12, fontWeight: "500" },
+  teams: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     gap: 12,
   },
-  heroTeam: {
-    flex: 1,
-    alignItems: "flex-start",
-    gap: 8,
-  },
-  heroLogo: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  teamCol: { flex: 1, alignItems: "flex-start", gap: 8 },
+  logo: {
+    width: 52, height: 52, borderRadius: 26,
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center", justifyContent: "center",
   },
-  heroLogoText: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "800",
-    fontFamily: "Inter_700Bold",
+  logoLetter: { color: "#fff", fontSize: 20, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  teamName: {
+    color: C.text, fontSize: 14, fontWeight: "700",
+    fontFamily: "Inter_700Bold", lineHeight: 18, flex: 1,
   },
-  heroTeamName: {
-    color: C.text,
-    fontSize: 14,
-    fontWeight: "700",
-    fontFamily: "Inter_700Bold",
-    lineHeight: 18,
-    flex: 1,
-  },
-  heroScore: {
-    color: C.text,
-    fontSize: 40,
-    fontWeight: "900",
-    fontFamily: "Inter_700Bold",
-    lineHeight: 44,
-  },
-  heroScoreDim: {
-    color: C.textTertiary,
-  },
-  heroVs: {
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 4,
-  },
-  heroVsText: {
-    color: C.textTertiary,
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
-  heroDash: {
-    color: C.textTertiary,
-    fontSize: 22,
-    fontWeight: "300",
-  },
-  heroVenue: {
-    color: C.textTertiary,
-    fontSize: 10,
-    textAlign: "center",
-    maxWidth: 60,
-  },
-  heroCta: {
+  score: { color: C.text, fontSize: 38, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  scoreDim: { color: C.textTertiary },
+  label: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
+  centerCol: { alignItems: "center", gap: 4, paddingHorizontal: 4 },
+  vsText: { color: C.textTertiary, fontSize: 14, fontWeight: "700", letterSpacing: 1 },
+  timeRemaining: { color: C.textSecondary, fontSize: 11, fontWeight: "600" },
+  venue: { color: C.textTertiary, fontSize: 10, textAlign: "center", maxWidth: 64 },
+  cta: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -439,19 +396,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: 1,
   },
-  heroCtaText: {
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-    fontFamily: "Inter_700Bold",
-  },
-  heroCaret: {
+  ctaText: { fontSize: 13, fontWeight: "700", letterSpacing: 0.3, fontFamily: "Inter_700Bold" },
+  ctaArrow: {
     width: 26, height: 26, borderRadius: 13,
     alignItems: "center", justifyContent: "center",
   },
-  heroCaretText: { fontSize: 18, fontWeight: "700", lineHeight: 20 },
+  ctaArrowText: { fontSize: 18, fontWeight: "700", lineHeight: 22 },
+});
 
-  compactCard: {
+// ── Compact styles ───────────────────────────────────────────────────────────
+const cpt = StyleSheet.create({
+  card: {
     backgroundColor: C.card,
     borderRadius: 18,
     overflow: "hidden",
@@ -460,169 +415,141 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     minWidth: 160,
   },
-  compactLeagueBar: {
-    width: 4,
+  stripe: {
+    width: 3,
     borderRadius: 2,
     margin: 10,
     marginRight: 0,
     alignSelf: "stretch",
     flexShrink: 0,
   },
-  compactContent: {
-    flex: 1,
-    padding: 12,
-    gap: 6,
-  },
-  compactLivePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginBottom: 2,
-  },
-  compactDot: {
-    width: 6, height: 6, borderRadius: 3,
-  },
-  compactLiveText: {
-    color: C.live,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-  },
-  compactTeamRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  compactLogoSmall: {
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.1)",
+  body: { flex: 1, padding: 12, gap: 6 },
+  livePill: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  liveText: { color: C.live, fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
+  quarter: { color: C.textTertiary, fontSize: 10, fontWeight: "500" },
+  time: { color: C.textTertiary, fontSize: 11, fontWeight: "600", marginBottom: 2 },
+  ftLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, marginBottom: 2 },
+  divider: { height: 1, backgroundColor: C.separator, marginLeft: 32 },
+  row: { flexDirection: "row", alignItems: "center", gap: 7 },
+  logo: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: "rgba(255,255,255,0.09)",
     alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
-  compactLogoText: {
-    color: C.text, fontSize: 10, fontWeight: "700",
-  },
-  compactTeamName: {
-    flex: 1,
-    color: C.textSecondary,
-    fontSize: 13,
-    fontWeight: "600",
-    fontFamily: "Inter_600SemiBold",
-  },
-  compactScore: {
-    color: C.text,
-    fontSize: 17,
-    fontWeight: "800",
-    fontFamily: "Inter_700Bold",
-    minWidth: 28,
-    textAlign: "right",
-  },
-  compactScoreDim: { color: C.textTertiary },
-  compactTime: {
-    color: C.textTertiary,
-    fontSize: 11,
-    fontWeight: "500",
-    marginTop: 2,
+  logoLetter: { color: C.text, fontSize: 9, fontWeight: "800" },
+  teamName: { flex: 1, color: C.textSecondary, fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  teamDim: { color: C.textTertiary },
+  score: { color: C.text, fontSize: 16, fontWeight: "800", fontFamily: "Inter_700Bold", minWidth: 24, textAlign: "right" },
+  scoreDim: { color: C.textTertiary },
+});
+
+// ── Default (Livescore row) styles ───────────────────────────────────────────
+const dflt = StyleSheet.create({
+  card: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    flexDirection: "row",
+    alignItems: "stretch",
   },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  statusCol: {
+    width: 56,
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    gap: 4,
+    flexShrink: 0,
   },
-  leaguePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  liveBadge: {
+    backgroundColor: C.live,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 5,
   },
-  leaguePillText: {
-    fontSize: 11,
-    fontWeight: "800",
+  liveBadgeText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "900",
     letterSpacing: 0.5,
   },
-  livePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  livePillText: {
-    color: C.live,
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-  },
-  liveQuarter: {
-    color: C.textSecondary,
-    fontSize: 12,
+  quarterText: {
+    color: C.textTertiary,
+    fontSize: 10,
     fontWeight: "500",
+    textAlign: "center",
   },
-  finalBadge: {
+  ftText: {
     color: C.textTertiary,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.8,
   },
-  timeBadge: {
+  timeText: {
     color: C.textSecondary,
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "600",
+    textAlign: "center",
   },
 
-  matchup: { gap: 0 },
+  vSep: {
+    width: 1,
+    backgroundColor: C.separator,
+    marginVertical: 12,
+    flexShrink: 0,
+  },
+
+  teamsCol: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingLeft: 12,
+    paddingRight: 12,
+    gap: 0,
+  },
   teamRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 6,
+    gap: 10,
+    paddingVertical: 7,
   },
   logo: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28, height: 28, borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
-  logoText: {
-    color: C.text,
-    fontSize: 14,
-    fontWeight: "800",
-    fontFamily: "Inter_700Bold",
+  logoLetter: {
+    color: C.text, fontSize: 11, fontWeight: "800", fontFamily: "Inter_700Bold",
   },
   teamName: {
     flex: 1,
     color: C.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     fontFamily: "Inter_600SemiBold",
   },
-  teamNameDim: { color: C.textTertiary },
+  teamDim: { color: C.textTertiary },
   score: {
     color: C.text,
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "800",
     fontFamily: "Inter_700Bold",
-    minWidth: 32,
+    minWidth: 28,
     textAlign: "right",
   },
   scoreDim: { color: C.textTertiary },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginVertical: 2,
-    marginLeft: 48,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: C.separator,
-  },
-  vsText: {
-    color: C.textTertiary,
-    fontSize: 11,
-    fontWeight: "500",
+  scorePlaceholder: { minWidth: 28 },
+
+  hSep: { height: 1, backgroundColor: C.separator, marginLeft: 38 },
+
+  leagueAccent: {
+    width: 3,
+    alignSelf: "stretch",
+    flexShrink: 0,
   },
 });

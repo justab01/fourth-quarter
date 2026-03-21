@@ -562,14 +562,14 @@ const styles = StyleSheet.create({
   headerRight: { alignItems: "flex-end", paddingTop: 18, gap: 8 },
   searchPill: {
     flexDirection: "row", alignItems: "center", gap: 7,
-    backgroundColor: C.card, borderWidth: 1.5, borderColor: C.cardBorderActive,
+    backgroundColor: C.card, borderWidth: 1.5, borderColor: `${C.accent}55`,
     paddingHorizontal: 14, paddingVertical: 9, borderRadius: 22,
   },
   searchPillText: { color: C.accent, fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
   livePill: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "rgba(239,120,40,0.10)", borderWidth: 1,
-    borderColor: "rgba(239,120,40,0.28)", paddingHorizontal: 12,
+    backgroundColor: `${C.live}14`, borderWidth: 1,
+    borderColor: `${C.live}33`, paddingHorizontal: 12,
     paddingVertical: 6, borderRadius: 20,
   },
   headerDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.live },

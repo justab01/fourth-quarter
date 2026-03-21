@@ -1,67 +1,64 @@
-// Fourth Quarter — Fitness/Sports Color Palette (March 2026)
-// Primary:  Energy Orange #EF7828
-// Secondary: Vivid Teal  #206E6B
-// Neutral:  Graphite     #504D47
-// Support:  Steel Blue   #687C88
+// Fourth Quarter — Livescore Dark Palette (March 2026)
+// Inspired by premium dark sports apps: near-black surfaces, clean white text,
+// red for LIVE, orange for favorites, muted gray for secondary info
 
-const accent     = "#EF7828";   // Energy Orange — primary CTA, live dots, highlights
-const accentTeal = "#206E6B";   // Vivid Teal — secondary accent, success, NFL/MLB
-const accentGold = "#D4A843";   // Muted gold for AI recaps
-const accentGreen= "#206E6B";   // Teal doubles as green for wins / positive
-const accentBlue = "#687C88";   // Steel Blue — links, info
-const graphite   = "#504D47";   // Graphite — card borders, dividers
+const liveRed    = "#E8162B";   // LIVE badge — bright red
+const orange     = "#EF7828";   // Favorites / CTA — orange
+const gold       = "#D4A843";   // AI recap gold
+const green      = "#30D158";   // Wins / positive (Apple green)
+const teal       = "#2CC4BF";   // Teal accent
 
 export default {
   dark: {
-    // Text
-    text:              "#F5F1ED",
-    textSecondary:     "rgba(245,241,237,0.68)",
-    textTertiary:      "#687C88",
+    // Text — crisp white hierarchy
+    text:              "#FFFFFF",
+    textSecondary:     "#8A8A8E",   // iOS muted gray
+    textTertiary:      "#4A4A4F",   // Very muted
 
-    // Backgrounds — warm dark (not cold black)
-    background:        "#0A0907",
-    backgroundSecondary: "#111009",
-    backgroundTertiary:  "#181510",
+    // Backgrounds — near-pure black
+    background:        "#0F0F0F",
+    backgroundSecondary: "#141414",
+    backgroundTertiary:  "#1A1A1A",
 
-    // Cards
-    card:              "#161310",
-    cardElevated:      "#201C18",
-    cardBorder:        "rgba(80,77,71,0.45)",
-    cardBorderActive:  "rgba(239,120,40,0.45)",
+    // Cards — dark charcoal with subtle elevation
+    card:              "#1C1C1E",   // Apple dark card
+    cardElevated:      "#242424",
+    cardBorder:        "#2A2A2A",
+    cardBorderActive:  `${liveRed}55`,
 
     // Accents
-    tint:       accent,
-    accent,                        // Energy Orange
-    accentTeal,                    // Vivid Teal
-    accentOrange: accent,
-    accentGold,
-    accentGreen,
-    accentBlue,
-    graphite,
+    tint:       orange,
+    accent:     orange,            // Orange — favorites / CTA
+    accentOrange: orange,
+    accentTeal: teal,
+    accentGold: gold,
+    accentGreen: green,
+    accentBlue: "#4A90D9",
+    graphite:   "#2A2A2A",
 
-    // Live indicator — energetic orange (not red)
-    live:     "#EF7828",
-    liveGlow: "rgba(239,120,40,0.35)",
-    liveGreen: accentTeal,
+    // Live indicator — ALWAYS red (Livescore style)
+    live:     liveRed,
+    liveGlow: "rgba(232,22,43,0.22)",
+    liveGreen: green,
 
-    // Tab bar
-    tabBarBg:         "rgba(10,9,7,0.92)",
-    tabIconDefault:   "rgba(104,124,136,0.6)",
-    tabIconSelected:  "#EF7828",
+    // Tab bar — dark, white active
+    tabBarBg:         "#0F0F0F",
+    tabIconDefault:   "#4A4A4F",
+    tabIconSelected:  "#FFFFFF",
 
-    // Separators / glass
-    separator:    "rgba(80,77,71,0.3)",
-    overlay:      "rgba(0,0,0,0.82)",
-    glassLight:   "rgba(239,120,40,0.04)",
-    glassBorder:  "rgba(80,77,71,0.4)",
+    // Separators
+    separator:    "#222222",
+    overlay:      "rgba(0,0,0,0.85)",
+    glassLight:   "rgba(255,255,255,0.04)",
+    glassBorder:  "#2A2A2A",
 
-    // League-specific accents
-    nba:  "#EF7828",   // Energy Orange
-    nfl:  "#206E6B",   // Vivid Teal
-    mlb:  "#687C88",   // Steel Blue
-    mls:  "#206E6B",   // Vivid Teal
-    nhl:  "#687C88",   // Steel Blue
-    ufc:  "#EF7828",   // Energy Orange
-    ncaa: "#D4A843",   // Gold
+    // League accent colors (vivid but not garish)
+    nba:  "#EF7828",   // Orange — NBA
+    nfl:  "#4A90D9",   // Blue — NFL
+    mlb:  "#E8162B",   // Red — MLB
+    mls:  "#30D158",   // Green — MLS/soccer
+    nhl:  "#4A90D9",   // Blue — NHL
+    ufc:  "#EF7828",   // Orange — UFC
+    ncaa: "#D4A843",   // Gold — NCAA
   },
 };
