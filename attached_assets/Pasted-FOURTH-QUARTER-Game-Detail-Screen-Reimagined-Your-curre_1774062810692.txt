@@ -1,0 +1,53 @@
+FOURTH QUARTER – Game Detail Screen (Reimagined)
+Your current screen feels like a raw prototype: black void, tiny text blocks, small logos, flat layout, no visual hierarchy, no immersion. ESPN’s version has that premium feel — court graphic as anchor, big score ticker, clean tab bar, structured play-by-play, timeout/substitution highlights, momentum cues — but it’s still busy and dated.
+We’re making it better than ESPN: calmer, more cinematic, venue-first, bigger visuals, elegant dark mode, and fully aligned with the calm/premium inspiration you sent (no flashing nonsense, subtle elegance, big logos, glass cards, floating elements).
+Core Improvements to Feel “Real” & Premium
+	•	Venue immersion — faint court background (parquet texture, center circle, free-throw lines) across the whole screen. Subtle gradient overlay (black to deep navy) so text stays readable.
+	•	Hero Score Ticker — massive, centered, with huge team logos (circular, 140px, sharp), score in 72pt bold font, quarter/clock in glowing pill (soft cyan/orange, no pulse).
+	•	Tabs — floating glass bar (blur effect) with icons + labels, active tab has subtle underline glow in user accent color.
+	•	Key Plays / Timeline — vertical scrollable list with time stamps, icons (basket, foul, timeout), short descriptions. Each entry has a mini court marker (dot on position).
+	•	Additional Sections — Box Score summary cards, momentum bar (subtle line graph), timeout/substitution highlights as cards with icons.
+	•	No clutter — generous spacing, no ads banners in view, elegant fonts (SF Pro or Inter), high contrast.
+Exact Layout Description (Page-by-Page Visual Blueprint)
+Top Bar (fixed)
+	•	Left: Back arrow (white)
+	•	Center: “Game Detail” in bold white
+	•	Right: Star (favorite) + Bell (notifications) + Share icon
+Hero Score Section (top 35% – the wow moment) Full-bleed faint court background (blurred parquet, center Nuggets logo watermark). Glass card overlay (12px blur, 24px radius):
+	•	Two huge team logos (left Toronto, right Denver)
+	•	Massive score: 101 : 104 (white with orange accent on Nuggets lead)
+	•	Below: “NBA • LIVE • 4th Quarter • 5:38” pill (soft glow)
+	•	Tiny “Ball Arena • Denver, CO” faded
+	•	“Watch Live” button (glass, play icon, your accent color border)
+Tab Bar (floating glass, below hero)
+	•	Summary | Stats | Box Score | Play-by-Play | Lineups | Videos
+	•	Active tab (e.g., Summary) has soft underline glow + bolder text
+Summary Tab (default view – Key Plays & More) Key Plays (scrollable list, clean cards):
+	•	Each play: time stamp (9:22) + icon (basket/foul/timeout) + description “Jamal Shead makes 5-foot two point shot” “Jamal Murray makes free throw 1 of 2”
+	•	Timeout/Sub cards: larger font, yellow icon for timeout
+	•	+3 Points / +2 Points highlights in orange badge
+Momentum / Quick Stats Subtle horizontal bar graph (possession, points in paint, 3PT%, etc.) Tiny “Win %: DEN 71.1%” badge
+Bottom Floating Nav (same as before, but glow on active “Scores” tab)
+This matches the calm, elegant, venue-centric feel of your inspiration screenshots — big logos, clean typography, glass effects, no chaos — but adapted perfectly to basketball (court view, play-by-play focus).
+How It Looks for Other Sports (Auto-Adaptive)
+The same structure applies, just swaps venue + icons:
+	•	Football/Soccer → pitch background, goal scorers list, possession circle
+	•	NFL → gridiron turf, down & distance, drive summary
+	•	Hockey → ice rink, shot clock, power play indicator
+	•	MLB → diamond dirt, inning marker, pitch count
+	•	Rugby → pitch with posts, try count
+	•	Track → stadium track, lane highlights, split times
+Logos always stay massive. Odds (if enabled) as tiny elegant pills (1.84 style).
+Personalization Tie-In
+User picks accent color → auto-applies to:
+	•	Score highlights
+	•	Active tab glow
+	•	Button borders
+	•	Momentum bars
+Background texture opacity slider lets them dial in how “venue” it feels.
+This is now ultra-real, premium, and ready to feel like a top-tier 2026 sports app.
+Want me to:
+	•	Generate visual mocks for this exact Game Detail screen?
+	•	Move to redesigning the Box Score or Play-by-Play tab?
+	•	Or give Expo code structure for the hero + court background?
+Let me know — we’ll nail every detail. 🏀
