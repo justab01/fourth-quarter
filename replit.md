@@ -105,7 +105,7 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 - **Auth/state**: AsyncStorage preferences, onboarding flow (4 steps), Houston personalization (Rockets/Astros/Texans/Dynamo)
 - **Screens**: Onboarding, Hub (home), Live, News, Standings, Profile + Game Detail, Article Detail, Team Page, Player Page
 - **Components**: GameCard, NewsCard, RecapCard, SearchModal, GameCardSkeleton, NewsCardSkeleton, ErrorBoundary/Fallback
-- **Navigation**: Tabs via `expo-router` — clean dark tab bar with white active icon, gray inactive; BlurView blur on iOS, solid dark on Android/web
+- **Navigation**: Tabs via `expo-router` — standard (non-floating) dark tab bar with hairline top separator; white active icon, gray inactive; consistent across iOS/Android/web (no BlurView)
 - **API**: `utils/api.ts` with `apiFetch` helper, typed interfaces for all models
 - **Context**: `PreferencesContext` — persists to AsyncStorage + syncs to backend
 - **AI**: RecapCard fetches `/api/ai/recap` (gpt-4o-mini) for postgame recaps
