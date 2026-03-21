@@ -16,14 +16,21 @@ import { usePreferences } from "@/context/PreferencesContext";
 
 const C = Colors.dark;
 
-const LEAGUES = ["All", "NBA", "NFL", "MLB", "MLS"] as const;
+const LEAGUES = ["All", "NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"] as const;
 type League = typeof LEAGUES[number];
 
 const LEAGUE_META: Record<string, { color: string; emoji: string; fullName: string }> = {
-  NBA: { color: C.nba,  emoji: "🏀", fullName: "NBA" },
-  NFL: { color: C.nfl,  emoji: "🏈", fullName: "NFL" },
-  MLB: { color: C.mlb,  emoji: "⚾", fullName: "MLB" },
-  MLS: { color: C.mls,  emoji: "⚽", fullName: "MLS" },
+  NBA:   { color: C.nba,       emoji: "🏀", fullName: "NBA" },
+  NFL:   { color: C.nfl,       emoji: "🏈", fullName: "NFL" },
+  MLB:   { color: C.mlb,       emoji: "⚾", fullName: "MLB" },
+  MLS:   { color: C.mls,       emoji: "⚽", fullName: "MLS" },
+  NHL:   { color: C.nhl,       emoji: "🏒", fullName: "NHL" },
+  WNBA:  { color: C.wnba,      emoji: "🏀", fullName: "WNBA" },
+  NCAAB: { color: C.ncaab,     emoji: "🎓", fullName: "NCAA Basketball" },
+  NCAAF: { color: C.ncaaf,     emoji: "🏈", fullName: "NCAA Football" },
+  EPL:   { color: C.eplBright, emoji: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", fullName: "Premier League" },
+  UCL:   { color: C.ucl,       emoji: "⭐", fullName: "Champions League" },
+  LIGA:  { color: C.liga,      emoji: "🇪🇸", fullName: "La Liga" },
 };
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
@@ -201,9 +208,8 @@ export default function LiveScreen() {
   const isFav = (g: Game) => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam);
   const totalLive = all.filter(g => g.status === "live").length;
 
-  const leagueList = activeLeague === "All"
-    ? (["NBA", "NFL", "MLB", "MLS"] as string[])
-    : [activeLeague as string];
+  const ALL_LEAGUES = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"] as string[];
+  const leagueList = activeLeague === "All" ? ALL_LEAGUES : [activeLeague as string];
 
   const filteredAll = activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
 

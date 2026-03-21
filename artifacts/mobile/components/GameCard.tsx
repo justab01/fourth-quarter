@@ -25,23 +25,35 @@ function formatTime(iso: string) {
 
 function getLeagueColor(league: string): string {
   const map: Record<string, string> = {
-    NBA: C.nba,
-    NFL: C.nfl,
-    MLB: C.mlb,
-    MLS: C.mls,
-    NHL: C.accentBlue,
-    NCAA: C.accentGold,
+    NBA:   C.nba,
+    NFL:   C.nfl,
+    MLB:   C.mlb,
+    MLS:   C.mls,
+    NHL:   C.nhl,
+    WNBA:  C.wnba,
+    NCAAB: C.ncaab,
+    NCAAF: C.ncaaf,
+    EPL:   C.eplBright,
+    UCL:   C.ucl,
+    LIGA:  C.liga,
+    NCAA:  C.accentGold,
   };
   return map[league] ?? C.accent;
 }
 
 function getSportVenueGradient(league: string): [string, string, string, string] {
   const map: Record<string, [string, string, string, string]> = {
-    NBA: ["#5C2800", "#301400", "#160900", "#0F0F0F"],
-    NFL: ["#0A1E34", "#06121F", "#03090F", "#0F0F0F"],
-    MLB: ["#320A0A", "#1A0505", "#0D0303", "#0F0F0F"],
-    MLS: ["#062A12", "#031508", "#010A04", "#0F0F0F"],
-    NHL: ["#061828", "#030D16", "#01060B", "#0F0F0F"],
+    NBA:   ["#5C2800", "#301400", "#160900", "#0F0F0F"],
+    WNBA:  ["#5C1F00", "#2A0E00", "#140700", "#0F0F0F"],
+    NCAAB: ["#001845", "#000E25", "#000710", "#0F0F0F"],
+    NFL:   ["#0A1E34", "#06121F", "#03090F", "#0F0F0F"],
+    NCAAF: ["#1A1000", "#0D0800", "#060400", "#0F0F0F"],
+    MLB:   ["#320A0A", "#1A0505", "#0D0303", "#0F0F0F"],
+    MLS:   ["#062A12", "#031508", "#010A04", "#0F0F0F"],
+    EPL:   ["#1A0028", "#0D0014", "#06000A", "#0F0F0F"],
+    UCL:   ["#001040", "#000820", "#000410", "#0F0F0F"],
+    LIGA:  ["#280505", "#140202", "#090101", "#0F0F0F"],
+    NHL:   ["#061828", "#030D16", "#01060B", "#0F0F0F"],
   };
   return map[league] ?? ["#16091E", "#0D0512", "#060209", "#0F0F0F"];
 }

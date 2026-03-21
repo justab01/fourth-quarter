@@ -15,10 +15,16 @@ import { goToTeam } from "@/utils/navHelpers";
 const C = Colors.dark;
 
 const LEAGUE_META: Record<string, { color: string; label: string }> = {
-  NBA: { color: C.nba, label: "NBA" },
-  NFL: { color: C.nfl, label: "NFL" },
-  MLB: { color: C.mlb, label: "MLB" },
-  MLS: { color: C.mls, label: "MLS" },
+  NBA:   { color: C.nba,       label: "NBA" },
+  NFL:   { color: C.nfl,       label: "NFL" },
+  MLB:   { color: C.mlb,       label: "MLB" },
+  MLS:   { color: C.mls,       label: "MLS" },
+  NHL:   { color: C.nhl,       label: "NHL" },
+  WNBA:  { color: C.wnba,      label: "WNBA" },
+  NCAAB: { color: C.ncaab,     label: "NCAAB" },
+  EPL:   { color: C.eplBright, label: "EPL" },
+  UCL:   { color: C.ucl,       label: "UCL" },
+  LIGA:  { color: C.liga,      label: "La Liga" },
 };
 
 function StreakBadge({ streak }: { streak: string | null }) {
@@ -54,7 +60,7 @@ export default function StandingsScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
 
-  const supportedLeagues = ["NBA", "NFL", "MLB", "MLS"];
+  const supportedLeagues = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "WNBA", "EPL", "UCL", "LIGA"];
   const myLeagues = preferences.favoriteLeagues.filter(l => supportedLeagues.includes(l));
   const defaultLeague = myLeagues[0] ?? "NBA";
   const [activeLeague, setActiveLeague] = useState(defaultLeague);

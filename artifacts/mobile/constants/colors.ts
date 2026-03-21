@@ -53,12 +53,19 @@ export default {
     glassBorder:  "#2A2A2A",
 
     // League accent colors (vivid but not garish)
-    nba:  "#EF7828",   // Orange — NBA
-    nfl:  "#4A90D9",   // Blue — NFL
-    mlb:  "#E8162B",   // Red — MLB
-    mls:  "#30D158",   // Green — MLS/soccer
-    nhl:  "#4A90D9",   // Blue — NHL
-    ufc:  "#EF7828",   // Orange — UFC
-    ncaa: "#D4A843",   // Gold — NCAA
+    nba:   "#EF7828",   // Orange — NBA
+    nfl:   "#4A90D9",   // Blue — NFL
+    mlb:   "#E8162B",   // Red — MLB
+    mls:   "#30D158",   // Green — MLS
+    nhl:   "#4A90D9",   // Blue — NHL
+    wnba:  "#FF6B35",   // Sunset orange — WNBA
+    ncaab: "#1D4ED8",   // Royal blue — NCAA Basketball
+    ncaaf: "#7C3AED",   // Purple — NCAA Football
+    epl:   "#38003C",   // Premier League purple (use as tint; show as bright purple)
+    eplBright: "#9B59B6", // Bright purple for display
+    ucl:   "#1B3FAB",   // UCL deep blue
+    liga:  "#EF4444",   // La Liga red
+    ufc:   "#EF7828",   // Orange — UFC
+    ncaa:  "#D4A843",   // Gold — NCAA
   },
 };

@@ -184,10 +184,17 @@ interface GameDetailShape {
 // ─── League config ────────────────────────────────────────────────────────────
 interface LeagueConfig { espnPath: string; displaySport: string }
 const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
-  NBA: { espnPath: "basketball/nba", displaySport: "Basketball" },
-  MLB: { espnPath: "baseball/mlb", displaySport: "Baseball" },
-  NFL: { espnPath: "football/nfl", displaySport: "Football" },
-  MLS: { espnPath: "soccer/usa.1", displaySport: "Soccer" },
+  NBA:   { espnPath: "basketball/nba",                    displaySport: "Basketball" },
+  MLB:   { espnPath: "baseball/mlb",                      displaySport: "Baseball"   },
+  NFL:   { espnPath: "football/nfl",                      displaySport: "Football"   },
+  MLS:   { espnPath: "soccer/usa.1",                      displaySport: "Soccer"     },
+  NHL:   { espnPath: "hockey/nhl",                        displaySport: "Hockey"     },
+  WNBA:  { espnPath: "basketball/wnba",                   displaySport: "Basketball" },
+  NCAAB: { espnPath: "basketball/mens-college-basketball", displaySport: "Basketball" },
+  NCAAF: { espnPath: "football/college-football",         displaySport: "Football"   },
+  EPL:   { espnPath: "soccer/eng.1",                      displaySport: "Soccer"     },
+  UCL:   { espnPath: "soccer/uefa.champions",             displaySport: "Soccer"     },
+  LIGA:  { espnPath: "soccer/esp.1",                      displaySport: "Soccer"     },
 };
 
 // ─── ESPN helpers ─────────────────────────────────────────────────────────────
@@ -311,6 +318,29 @@ function buildMLSTeamStats(team: EspnTeamStats): Record<string, string | number>
   };
 }
 
+function buildNHLTeamStats(team: EspnTeamStats): Record<string, string | number> {
+  return {
+    "Goals":   getTeamStat(team, "goals"),
+    "Shots":   getTeamStat(team, "shots"),
+    "Hits":    getTeamStat(team, "hits"),
+    "Blocked": getTeamStat(team, "blockedShots"),
+    "FOW%":    getTeamStat(team, "faceoffWinPct"),
+    "PP":      getTeamStat(team, "powerPlayGoals"),
+    "PIM":     getTeamStat(team, "penaltyMinutes"),
+  };
+}
+
+function buildSoccerTeamStats(team: EspnTeamStats): Record<string, string | number> {
+  return {
+    "Shots":      getTeamStat(team, "shots"),
+    "On Target":  getTeamStat(team, "shotsOnTarget"),
+    "Possession": getTeamStat(team, "possessionPct"),
+    "Corners":    getTeamStat(team, "cornerKicks"),
+    "Fouls":      getTeamStat(team, "fouls"),
+    "Offsides":   getTeamStat(team, "offsides"),
+  };
+}
+
 function buildNFLTeamStats(team: EspnTeamStats): Record<string, string | number> {
   return {
     "Pass Yds": getTeamStat(team, "netPassingYards"),
@@ -362,16 +392,18 @@ function extractBoxscore(
   keyPlays: Array<{ time: string; description: string; team: string }>;
 } {
   const bs = json.boxscore;
-  const isNBA = leagueKey === "NBA";
-  const isMLB = leagueKey === "MLB";
-  const isMLS = leagueKey === "MLS";
+  const isMLB   = leagueKey === "MLB";
+  const isNHL   = leagueKey === "NHL";
+  const isSoccer = ["MLS", "EPL", "UCL", "LIGA"].includes(leagueKey);
+  const isBasketball = ["NBA", "WNBA", "NCAAB"].includes(leagueKey);
 
-  // NBA/NFL stat keys to show per-player
-  const NBA_PLAYER_KEYS = ["MIN", "PTS", "FG", "3PT", "FT", "REB", "AST", "TO", "STL", "BLK"];
-  const NFL_PLAYER_KEYS = ["POS", "C/ATT", "YDS", "TD", "INT"];
+  // Stat keys to show per-player
+  const NBA_PLAYER_KEYS  = ["MIN", "PTS", "FG", "3PT", "FT", "REB", "AST", "TO", "STL", "BLK"];
+  const NFL_PLAYER_KEYS  = ["POS", "C/ATT", "YDS", "TD", "INT"];
   const MLB_BATTING_KEYS = ["H-AB", "R", "H", "RBI", "HR", "BB", "K"];
   const MLB_PITCHING_KEYS = ["IP", "H", "R", "ER", "BB", "K"];
-  const MLS_PLAYER_KEYS = ["MIN", "G", "A", "SHT", "SV"];
+  const MLS_PLAYER_KEYS  = ["MIN", "G", "A", "SHT", "SV"];
+  const NHL_PLAYER_KEYS  = ["G", "A", "PTS", "+/-", "PIM", "SOG", "TOI"];
 
   let homeStats: Record<string, string | number> = {};
   let awayStats: Record<string, string | number> = {};
@@ -413,10 +445,14 @@ function extractBoxscore(
         awayStats = buildMLBTeamStatsFromGroups(playerEntry.statistics);
       }
     } else {
-      // NBA / NFL / MLS — single stats group
+      // NBA / WNBA / NCAAB / NFL / NCAAF / MLS / NHL / soccer — single stats group
       const sg = playerEntry.statistics[0];
       if (!sg) continue;
-      const statKeys = isNBA ? NBA_PLAYER_KEYS : isMLS ? MLS_PLAYER_KEYS : NFL_PLAYER_KEYS;
+      let statKeys: string[];
+      if (isBasketball) statKeys = NBA_PLAYER_KEYS;
+      else if (isSoccer) statKeys = MLS_PLAYER_KEYS;
+      else if (isNHL) statKeys = NHL_PLAYER_KEYS;
+      else statKeys = NFL_PLAYER_KEYS; // NFL + NCAAF share same ESPN stat keys
       const lines = extractPlayerStats(sg, statKeys.filter((k) => sg.names.includes(k)));
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
@@ -427,8 +463,9 @@ function extractBoxscore(
   for (const teamEntry of bs.teams ?? []) {
     const isHome = isHomeTeam(teamEntry.team.id, teamEntry.team.displayName);
     let stats: Record<string, string | number> = {};
-    if (isNBA) stats = buildNBATeamStats(teamEntry);
-    else if (isMLS) stats = buildMLSTeamStats(teamEntry);
+    if (isBasketball) stats = buildNBATeamStats(teamEntry);
+    else if (isSoccer) stats = buildSoccerTeamStats(teamEntry);
+    else if (isNHL) stats = buildNHLTeamStats(teamEntry);
     else if (!isMLB) stats = buildNFLTeamStats(teamEntry);
     if (isHome) homeStats = { ...stats, ...homeStats };
     else awayStats = { ...stats, ...awayStats };
@@ -496,8 +533,10 @@ function extractBoxscore(
 router.get("/sports/games", async (req, res) => {
   const { league } = req.query as { league?: string };
   const leagues = league
-    ? [league.toUpperCase()].filter((l) => l in LEAGUE_CONFIG)
-    : ["NBA", "MLB", "MLS", "NFL"];
+    ? (league.toUpperCase() === "ALL"
+        ? Object.keys(LEAGUE_CONFIG)
+        : league.toUpperCase().split(",").filter((l) => l in LEAGUE_CONFIG))
+    : ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA"];
 
   try {
     const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l)));
@@ -701,6 +740,83 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
       }
       allRaw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
       entries = allRaw.map((e, i) => ({ ...e, rank: i + 1 }));
+
+    } else if (league === "NHL") {
+      const json = await espnFetch(
+        "https://site.web.api.espn.com/apis/v2/sports/hockey/nhl/standings" +
+        "?region=us&lang=en&contentorigin=espn&type=1&level=1&sort=winpercent%3Adesc&limit=500"
+      ) as EspnStandingsResponse;
+      entries = (json.standings?.entries ?? []).map((e, i) => {
+        const stats = e.stats ?? [];
+        const wins   = Number(getStat(stats, "wins")?.value ?? 0);
+        const losses = Number(getStat(stats, "losses")?.value ?? 0);
+        const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+        const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
+        const streak = getStat(stats, "streak")?.displayValue ?? null;
+        return { rank: i + 1, teamName: e.team.displayName, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+      });
+
+    } else if (league === "WNBA") {
+      const json = await espnFetch(
+        "https://site.web.api.espn.com/apis/v2/sports/basketball/wnba/standings" +
+        "?region=us&lang=en&contentorigin=espn&type=1&level=1&sort=winpercent%3Adesc&limit=500"
+      ) as EspnStandingsResponse;
+      entries = (json.standings?.entries ?? []).map((e, i) => {
+        const stats = e.stats ?? [];
+        const wins   = Number(getStat(stats, "wins")?.value ?? 0);
+        const losses = Number(getStat(stats, "losses")?.value ?? 0);
+        const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+        const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
+        const streak = getStat(stats, "streak")?.displayValue ?? null;
+        return { rank: i + 1, teamName: e.team.displayName, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+      });
+
+    } else if (league === "NCAAB") {
+      const json = await espnFetch(
+        "https://site.web.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/standings" +
+        "?region=us&lang=en&contentorigin=espn&type=0&level=1&sort=winpercent%3Adesc&limit=25"
+      ) as EspnStandingsResponse;
+      const raw = (json.standings?.entries ?? []).map((e) => {
+        const stats = e.stats ?? [];
+        const wins   = Number(getStat(stats, "wins")?.value ?? 0);
+        const losses = Number(getStat(stats, "losses")?.value ?? 0);
+        const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+        return { teamName: e.team.displayName, wins, losses, winPct, gamesBack: null as number | null, streak: null as string | null, conference: null as string | null, division: null as string | null, rankChange: null as number | null };
+      });
+      raw.sort((a, b) => b.winPct - a.winPct);
+      entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
+
+    } else if (["EPL", "UCL", "LIGA"].includes(league)) {
+      const cfg = LEAGUE_CONFIG[league]!;
+      const json = await espnFetch(
+        `https://site.api.espn.com/apis/v2/sports/soccer/${cfg.espnPath.split("/")[1]}/standings`
+      ) as EspnStandingsResponse;
+      const allRaw: (Omit<StandingEntry, "rank"> & { points: number })[] = [];
+      for (const child of json.children ?? []) {
+        for (const e of child.standings?.entries ?? []) {
+          const stats = e.stats ?? [];
+          const wins = Number(getStat(stats, "wins")?.value ?? 0);
+          const losses = Number(getStat(stats, "losses")?.value ?? 0);
+          const gamesPlayed = Number(getStat(stats, "gamesPlayed")?.value ?? 0);
+          const points = Number(getStat(stats, "points")?.value ?? 0);
+          const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
+          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
+        }
+      }
+      if (allRaw.length === 0) {
+        for (const e of (json.standings?.entries ?? [])) {
+          const stats = e.stats ?? [];
+          const wins = Number(getStat(stats, "wins")?.value ?? 0);
+          const losses = Number(getStat(stats, "losses")?.value ?? 0);
+          const points = Number(getStat(stats, "points")?.value ?? 0);
+          const gamesPlayed = Number(getStat(stats, "gamesPlayed")?.value ?? 0);
+          const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
+          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
+        }
+      }
+      allRaw.sort((a, b) => b.points - a.points);
+      const leaderPts = allRaw[0]?.points ?? 0;
+      entries = allRaw.map(({ points, ...e }, i) => ({ ...e, rank: i + 1, gamesBack: leaderPts - points }));
 
     } else if (league === "MLS") {
       const json = await espnFetch(

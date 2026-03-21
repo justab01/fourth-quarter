@@ -120,18 +120,34 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 
 ### `artifacts/api-server` routes
 
-- `GET /api/sports/games?league=` — **live ESPN** scoreboard for NFL/NBA/MLB/MLS; 15s cache live, 30s finished
+- `GET /api/sports/games?league=` — **live ESPN** scoreboard. No param = all 10 leagues; comma-separated (e.g. `NBA,NHL`); `ALL` = everything. 15s live / 30s finished cache
 - `GET /api/sports/game/:id` — **live ESPN** game detail with key plays, stats, lineups; 15s/30s cache
-- `GET /api/sports/standings?league=` — **live ESPN** standings for NBA/NFL/MLB/MLS; 5-minute cache
-- `GET /api/news?teams=&leagues=` — **live ESPN** news, 55 articles from 4 leagues; 2-minute cache; filterable by team/league
+- `GET /api/sports/standings?league=` — **live ESPN** standings for NBA/NFL/MLB/MLS/NHL/WNBA/NCAAB/EPL/UCL/LIGA; 5-minute cache
+- `GET /api/news?teams=&leagues=` — **live ESPN** news, filterable by team/league; 2-minute cache
 - `POST /api/ai/summarize` — OpenAI gpt-4o-mini article/game summary
 - `POST /api/ai/recap` — OpenAI gpt-4o-mini postgame recap (JSON format)
 - `GET /api/user/preferences?userId=` — fetch from Postgres
 - `POST /api/user/preferences` — upsert to Postgres (userPreferences table)
 
-### ESPN Data Notes (March 2026)
-- **NBA standings**: 30 teams sorted by win% from `site.web.api.espn.com` standings v2 API
-- **NFL standings**: 32 teams sorted by wins (off-season, 2025 final records) 
-- **MLB standings**: 30 teams (spring training groups: Cactus League / Grapefruit League)
-- **MLS standings**: 30 teams sorted by points; PCT column shows points-based ratio; REC column shows W-D-L record
-- **News**: Fetches from NBA/NFL/MLB/MLS endpoints at ESPN, deduped by article ID, sorted newest-first
+### Supported Leagues (March 2026)
+All ESPN API paths are in `LEAGUE_CONFIG` in `sports.ts`. Package `sportsdataverse@2.0.0` is installed and was used to discover ESPN endpoint patterns.
+
+| League | ESPN Path | Notes |
+|--------|-----------|-------|
+| NBA    | basketball/nba | In season |
+| NHL    | hockey/nhl | In season |
+| NFL    | football/nfl | Off-season (2025 records) |
+| MLB    | baseball/mlb | Spring training |
+| WNBA   | basketball/wnba | Pre-season |
+| NCAAB  | basketball/mens-college-basketball | **March Madness live** |
+| NCAAF  | football/college-football | Off-season |
+| MLS    | soccer/usa.1 | In season |
+| EPL    | soccer/eng.1 | In season |
+| UCL    | soccer/uefa.champions | In season |
+| LIGA   | soccer/esp.1 | In season |
+
+### League colors (`constants/colors.ts`)
+`nba`, `nfl`, `mlb`, `mls`, `nhl`, `wnba`, `ncaab`, `ncaaf`, `epl`/`eplBright`, `ucl`, `liga`
+
+### Sport-specific venue gradients
+Defined in both `GameCard.tsx` and `game/[id].tsx` — NBA (warm orange), NFL (midnight blue), MLB (red earth), MLS/EPL/UCL/LIGA (green/purple/blue/red), NHL (ice blue), WNBA (sunset orange), NCAAB (royal blue)

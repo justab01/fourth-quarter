@@ -29,19 +29,32 @@ const TABS: { key: GameTab; label: string; icon: string }[] = [
 ];
 
 const PLAYER_STAT_COLS: Record<string, string[]> = {
-  NBA: ["MIN", "PTS", "REB", "AST", "FG"],
-  NFL: ["YDS", "TD", "INT", "C/ATT"],
-  MLB: ["H-AB", "R", "RBI", "HR", "BB", "K"],
-  MLS: ["MIN", "G", "A", "SHT"],
+  NBA:   ["MIN", "PTS", "REB", "AST", "FG"],
+  WNBA:  ["MIN", "PTS", "REB", "AST", "FG"],
+  NCAAB: ["MIN", "PTS", "REB", "AST", "FG"],
+  NFL:   ["YDS", "TD", "INT", "C/ATT"],
+  NCAAF: ["YDS", "TD", "INT", "C/ATT"],
+  MLB:   ["H-AB", "R", "RBI", "HR", "BB", "K"],
+  MLS:   ["MIN", "G", "A", "SHT"],
+  EPL:   ["MIN", "G", "A", "SHT"],
+  UCL:   ["MIN", "G", "A", "SHT"],
+  LIGA:  ["MIN", "G", "A", "SHT"],
+  NHL:   ["G", "A", "PTS", "SOG", "TOI"],
 };
 
 function getSportVenueGradient(league: string): [string, string, string, string] {
   const map: Record<string, [string, string, string, string]> = {
-    NBA: ["#4A1A00", "#241000", "#100700", "#0F0F0F"],
-    NFL: ["#071525", "#040D17", "#02080D", "#0F0F0F"],
-    MLB: ["#280808", "#140404", "#090202", "#0F0F0F"],
-    MLS: ["#051F0D", "#020F06", "#010703", "#0F0F0F"],
-    NHL: ["#040E1C", "#020711", "#010408", "#0F0F0F"],
+    NBA:   ["#4A1A00", "#241000", "#100700", "#0F0F0F"],
+    WNBA:  ["#5C1F00", "#2A0E00", "#140700", "#0F0F0F"],
+    NCAAB: ["#001845", "#000E25", "#000710", "#0F0F0F"],
+    NFL:   ["#071525", "#040D17", "#02080D", "#0F0F0F"],
+    NCAAF: ["#1A1000", "#0D0800", "#060400", "#0F0F0F"],
+    MLB:   ["#280808", "#140404", "#090202", "#0F0F0F"],
+    MLS:   ["#051F0D", "#020F06", "#010703", "#0F0F0F"],
+    EPL:   ["#1A0028", "#0D0014", "#06000A", "#0F0F0F"],
+    UCL:   ["#001040", "#000820", "#000410", "#0F0F0F"],
+    LIGA:  ["#280505", "#140202", "#090101", "#0F0F0F"],
+    NHL:   ["#040E1C", "#020711", "#010408", "#0F0F0F"],
   };
   return map[league] ?? ["#100914", "#08040A", "#040205", "#0F0F0F"];
 }
