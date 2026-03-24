@@ -76,4 +76,31 @@ Format as JSON: { "summary": "...", "keyPlayer": "...", "whatItMeans": "..." }`;
   }
 });
 
+const REWRITE_PROMPTS: Record<string, string> = {
+  simple: `Rewrite this sports news summary in plain, friendly language for someone who is new to sports or casual fans. Avoid all technical jargon and sports-specific terms. If you must mention a rule or concept, briefly explain it in everyday words. Keep it to 2-3 sentences. Be warm and approachable.`,
+  toddler: `Rewrite this sports news summary as if you are explaining it to a 4-year-old child. Use the simplest possible words, make it playful and silly, use funny comparisons (like comparing the teams to animals or snacks or cartoon characters). Keep it to 2-3 short sentences. Make it fun!`,
+};
+
+router.post("/ai/rewrite", async (req, res) => {
+  const { content, title, mode } = req.body as { content: string; title: string; mode: "simple" | "toddler" };
+  const systemPrompt = REWRITE_PROMPTS[mode];
+  if (!systemPrompt) return res.status(400).json({ error: "Invalid mode" });
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      max_completion_tokens: 180,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Title: ${title || ""}\n\n${content}` },
+      ],
+    });
+    const rewritten = completion.choices[0]?.message?.content ?? content;
+    res.json({ rewritten });
+  } catch (err) {
+    console.error("AI rewrite error:", err);
+    res.json({ rewritten: content });
+  }
+});
+
 export default router;

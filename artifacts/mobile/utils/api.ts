@@ -35,6 +35,12 @@ export const api = {
       body: JSON.stringify({ type, content, title }),
     }),
 
+  rewriteArticle: (content: string, title: string, mode: "simple" | "toddler") =>
+    apiFetch<{ rewritten: string }>("/ai/rewrite", {
+      method: "POST",
+      body: JSON.stringify({ content, title, mode }),
+    }),
+
   generateRecap: (data: RecapRequest) =>
     apiFetch<RecapResponse>("/ai/recap", {
       method: "POST",
