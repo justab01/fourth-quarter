@@ -1,0 +1,64 @@
+# Sports App Development
+
+This folder contains an example implementation of a simple sports application.  The goal is to provide a working baseline that you can extend or adapt as needed.  It demonstrates a basic full‑stack architecture consisting of a small API server built with Express and a client built with React.  A SQLite database stores information about sports, leagues, teams, players, games and standings.
+
+## Running the project
+
+1. **Install dependencies**
+
+   ```bash
+   # From the sports_app directory
+   npm install
+   (cd frontend && npm install)
+   ```
+
+2. **Create the database**
+
+   The `db.sql` file contains the schema and some sample data.  You can load it into SQLite with:
+
+   ```bash
+   sqlite3 data.db < db.sql
+   ```
+
+3. **Start the API server**
+
+   ```bash
+   node server.js
+   ```
+
+   By default the server runs on port `3001` and serves the API at `http://localhost:3001/api`.
+
+4. **Start the front‑end**
+
+   ```bash
+   cd frontend
+   npm start
+   ```
+
+   The React development server runs on `http://localhost:3000` and proxies API requests to the backend.
+
+## Project structure
+
+```
+sports_app/
+├── db.sql          # SQL script for initializing the SQLite database
+├── db.js           # Helper for connecting to the SQLite database
+├── package.json    # Node dependencies for the API server
+├── server.js       # Express API server
+└── frontend/       # React application
+    ├── package.json
+    ├── src/
+    │   ├── index.js
+    │   ├── App.jsx
+    │   └── components/
+    │       ├── NavBar.jsx
+    │       ├── Home.jsx
+    │       ├── Scores.jsx
+    │       ├── Sports.jsx
+    │       ├── Standings.jsx
+    │       └── Profile.jsx
+    └── public/
+        └── index.html
+```
+
+This simple implementation does **not** include every feature of the original demo application, but it covers the core navigation and data displays.  All navigation buttons work and each page renders data from the database.  You can customize the color scheme or extend the schema with additional fields to improve readability and accessibility.
