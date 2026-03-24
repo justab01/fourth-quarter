@@ -12,8 +12,13 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
 }
 
 export const api = {
-  getGames: (league?: string) =>
-    apiFetch<{ games: Game[] }>(`/sports/games${league ? `?league=${league}` : ""}`),
+  getGames: (league?: string, date?: string) => {
+    const params = new URLSearchParams();
+    if (league) params.set("league", league);
+    if (date)   params.set("date", date);
+    const q = params.toString();
+    return apiFetch<{ games: Game[] }>(`/sports/games${q ? `?${q}` : ""}`);
+  },
 
   getGameDetail: (gameId: string) =>
     apiFetch<GameDetail>(`/sports/game/${gameId}`),

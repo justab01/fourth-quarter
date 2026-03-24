@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Pressable, Platform
+  Pressable, Platform, type ScrollView as ScrollViewType
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -110,52 +110,108 @@ function getImportanceTags(game: Game): ImportanceTag[] {
   return tags.slice(0, 2);
 }
 
-// ─── Date strip ───────────────────────────────────────────────────────────────
-function getDateLabel(offset: number): string {
+// ─── Calendar date strip ──────────────────────────────────────────────────────
+const CAL_DAYS_BACK  = 14;
+const CAL_DAYS_FWD   = 14;
+const CAL_TOTAL      = CAL_DAYS_BACK + 1 + CAL_DAYS_FWD;
+const CAL_CELL_W     = 52;
+const CAL_CELL_GAP   = 6;
+const CAL_CELL_TOTAL = CAL_CELL_W + CAL_CELL_GAP;
+
+const DAY_ABBR  = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+const MON_ABBR  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function offsetToDate(offset: number): Date {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  if (offset === 0) return "Today";
-  if (offset === -1) return "Yesterday";
-  if (offset === 1) return "Tomorrow";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return d;
 }
 
-function DateStrip({ offset, onChange }: { offset: number; onChange: (o: number) => void }) {
+function offsetToYYYYMMDD(offset: number): string | undefined {
+  if (offset === 0) return undefined;
+  const d = offsetToDate(offset);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}${m}${day}`;
+}
+
+function CalendarStrip({ offset, onChange, liveToday }: {
+  offset: number;
+  onChange: (o: number) => void;
+  liveToday: number;
+}) {
+  const scrollRef = useRef<ScrollViewType>(null);
+
+  useEffect(() => {
+    const activeIdx = offset + CAL_DAYS_BACK;
+    const x = activeIdx * CAL_CELL_TOTAL - 140;
+    scrollRef.current?.scrollTo({ x: Math.max(0, x), animated: true });
+  }, [offset]);
+
+  const days = Array.from({ length: CAL_TOTAL }, (_, i) => i - CAL_DAYS_BACK);
+
   return (
-    <View style={ds.container}>
-      <Pressable style={ds.arrow} onPress={() => onChange(offset - 1)} hitSlop={10}>
-        <Ionicons name="chevron-back" size={16} color={C.textSecondary} />
-      </Pressable>
-      <Pressable style={ds.dayBtn} onPress={() => onChange(offset - 1)}>
-        <Text style={ds.dayLabel}>{getDateLabel(offset - 1)}</Text>
-      </Pressable>
-      <View style={ds.todayBtn}>
-        {offset === 0 && <View style={ds.liveDot} />}
-        <Text style={[ds.todayLabel, offset === 0 && ds.todayLabelActive]}>{getDateLabel(offset)}</Text>
-      </View>
-      <Pressable style={ds.dayBtn} onPress={() => onChange(offset + 1)}>
-        <Text style={ds.dayLabel}>{getDateLabel(offset + 1)}</Text>
-      </Pressable>
-      <Pressable style={ds.arrow} onPress={() => onChange(offset + 1)} hitSlop={10}>
-        <Ionicons name="chevron-forward" size={16} color={C.textSecondary} />
-      </Pressable>
-    </View>
+    <ScrollView
+      ref={scrollRef as any}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={cal.row}
+      style={cal.strip}
+    >
+      {days.map(dayOff => {
+        const d        = offsetToDate(dayOff);
+        const isActive = dayOff === offset;
+        const isToday  = dayOff === 0;
+        const isFuture = dayOff > 0;
+        const isPast   = dayOff < 0;
+        const dateNum  = d.getDate();
+        const showMon  = dateNum === 1;
+
+        return (
+          <Pressable key={dayOff} onPress={() => onChange(dayOff)}>
+            <View style={[cal.cell, isActive && cal.cellActive, isPast && cal.cellPast]}>
+              {showMon ? (
+                <Text style={[cal.top, isActive && cal.topActive]}>{MON_ABBR[d.getMonth()]}</Text>
+              ) : (
+                <Text style={[cal.top, isActive && cal.topActive]}>
+                  {isToday ? "Today" : DAY_ABBR[d.getDay()]}
+                </Text>
+              )}
+              <Text style={[cal.num, isActive && cal.numActive, isPast && cal.numPast]}>{dateNum}</Text>
+              {isToday && liveToday > 0 ? (
+                <View style={cal.liveDot} />
+              ) : isFuture ? (
+                <View style={cal.futureDot} />
+              ) : (
+                <View style={cal.dot} />
+              )}
+            </View>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }
 
-const ds = StyleSheet.create({
-  container: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.cardBorder,
-    paddingVertical: 10, paddingHorizontal: 6, marginBottom: 8,
+const cal = StyleSheet.create({
+  strip: { marginBottom: 10 },
+  row:   { gap: CAL_CELL_GAP, paddingHorizontal: 4 },
+  cell: {
+    width: CAL_CELL_W, alignItems: "center", paddingVertical: 8,
+    borderRadius: 12, backgroundColor: C.card,
+    borderWidth: 1.5, borderColor: C.cardBorder, gap: 2,
   },
-  arrow: { paddingHorizontal: 8 },
-  dayBtn: { flex: 1, alignItems: "center", paddingVertical: 2 },
-  dayLabel: { color: C.textTertiary, fontSize: 13, fontWeight: "500" },
-  todayBtn: { flex: 1.3, alignItems: "center", paddingVertical: 4, flexDirection: "row", justifyContent: "center", gap: 5 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
-  todayLabel: { color: C.textSecondary, fontSize: 14, fontWeight: "700" },
-  todayLabelActive: { color: C.text, fontWeight: "800" },
+  cellActive: { borderColor: C.accent, backgroundColor: `${C.accent}18` },
+  cellPast:   { opacity: 0.7 },
+  top:        { fontSize: 10, fontWeight: "700", color: C.textTertiary, letterSpacing: 0.4 },
+  topActive:  { color: C.accent },
+  num:        { fontSize: 18, fontWeight: "800", color: C.textSecondary, fontFamily: "Inter_700Bold" },
+  numActive:  { color: C.text },
+  numPast:    { color: C.textTertiary },
+  liveDot:    { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
+  futureDot:  { width: 4, height: 4, borderRadius: 2, backgroundColor: `${C.accent}50` },
+  dot:        { width: 4, height: 4 },
 });
 
 // ─── Game importance pills ────────────────────────────────────────────────────
@@ -259,10 +315,13 @@ export default function LiveScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
+  const dateParam = offsetToYYYYMMDD(dateOffset);
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["live-games"],
-    queryFn: () => api.getGames(),
-    refetchInterval: 30000,
+    queryKey: ["live-games", dateParam ?? "today"],
+    queryFn: () => api.getGames(undefined, dateParam),
+    refetchInterval: dateOffset === 0 ? 30000 : false,
+    staleTime: dateOffset === 0 ? 20000 : 300_000,
   });
 
   const onRefresh = async () => {
@@ -300,7 +359,8 @@ export default function LiveScreen() {
     }))
     .filter(s => s.games.length > 0);
 
-  const isOffDay = dateOffset !== 0;
+  const isPastDay  = dateOffset < 0;
+  const isFutureDay = dateOffset > 0;
 
   return (
     <View style={styles.container}>
@@ -313,7 +373,12 @@ export default function LiveScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Scores</Text>
-            {!isOffDay && <LiveSummaryBar liveCount={totalLive} totalCount={all.length} />}
+            {dateOffset === 0
+              ? <LiveSummaryBar liveCount={totalLive} totalCount={all.length} />
+              : <Text style={styles.dateHeading}>
+                  {isPastDay ? "Final scores" : "Scheduled matchups"} · {offsetToDate(dateOffset).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                </Text>
+            }
           </View>
           <View style={styles.headerRight}>
             <Pressable
@@ -329,8 +394,8 @@ export default function LiveScreen() {
           </View>
         </View>
 
-        {/* Date strip */}
-        <DateStrip offset={dateOffset} onChange={setDateOffset} />
+        {/* Calendar date strip */}
+        <CalendarStrip offset={dateOffset} onChange={setDateOffset} liveToday={totalLive} />
 
         {/* League filter chips */}
         <ScrollView
@@ -374,24 +439,29 @@ export default function LiveScreen() {
         </ScrollView>
 
         {/* Content */}
-        {isOffDay ? (
-          <View style={styles.offDay}>
-            <Text style={styles.offDayEmoji}>📅</Text>
-            <Text style={styles.offDayTitle}>{getDateLabel(dateOffset)}</Text>
-            <Text style={styles.offDayText}>Live scores are only available for today</Text>
-            <Pressable style={styles.offDayBtn} onPress={() => setDateOffset(0)}>
-              <Text style={styles.offDayBtnText}>Back to Today</Text>
-            </Pressable>
-          </View>
-        ) : isLoading ? (
+        {isLoading ? (
           <View style={styles.list}>
             {[1, 2, 3].map(i => <GameCardSkeleton key={i} />)}
           </View>
         ) : leagueSections.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="tv-outline" size={52} color={C.textTertiary} />
-            <Text style={styles.emptyTitle}>No Games Today</Text>
-            <Text style={styles.emptyText}>Check back for live matchups</Text>
+            <Ionicons name={isFutureDay ? "calendar-outline" : "tv-outline"} size={52} color={C.textTertiary} />
+            <Text style={styles.emptyTitle}>
+              {isFutureDay ? "Nothing Scheduled" : isPastDay ? "No Games Played" : "No Games Today"}
+            </Text>
+            <Text style={styles.emptyText}>
+              {isFutureDay
+                ? "No events are scheduled for this day yet"
+                : isPastDay
+                  ? "No games were played on this day"
+                  : "Check back for live matchups"}
+            </Text>
+            {dateOffset !== 0 && (
+              <Pressable style={styles.backTodayBtn} onPress={() => setDateOffset(0)}>
+                <Ionicons name="today-outline" size={14} color="#fff" />
+                <Text style={styles.backTodayText}>Back to Today</Text>
+              </Pressable>
+            )}
           </View>
         ) : (
           <View style={styles.sections}>
@@ -421,6 +491,12 @@ export default function LiveScreen() {
                 </View>
               </View>
             ))}
+            {dateOffset !== 0 && (
+              <Pressable style={styles.backTodayBtn} onPress={() => setDateOffset(0)}>
+                <Ionicons name="today-outline" size={14} color="#fff" />
+                <Text style={styles.backTodayText}>Back to Today</Text>
+              </Pressable>
+            )}
           </View>
         )}
       </ScrollView>
@@ -482,10 +558,12 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: "800", color: C.textSecondary, fontFamily: "Inter_700Bold" },
   emptyText: { fontSize: 14, color: C.textTertiary },
 
-  offDay: { alignItems: "center", paddingVertical: 70, gap: 12 },
-  offDayEmoji: { fontSize: 48 },
-  offDayTitle: { fontSize: 22, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold" },
-  offDayText: { fontSize: 14, color: C.textTertiary, textAlign: "center" },
-  offDayBtn: { backgroundColor: C.accent, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, marginTop: 4 },
-  offDayBtnText: { color: "#fff", fontSize: 14, fontWeight: "800" },
+  dateHeading: { fontSize: 12, color: C.textTertiary, fontWeight: "600", marginTop: 2 },
+
+  backTodayBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: C.accent, paddingHorizontal: 18, paddingVertical: 10,
+    borderRadius: 12, marginTop: 8, alignSelf: "center",
+  },
+  backTodayText: { color: "#fff", fontSize: 13, fontWeight: "800" },
 });

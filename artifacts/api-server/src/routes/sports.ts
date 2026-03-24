@@ -308,24 +308,36 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   };
 }
 
-async function fetchLeagueGames(leagueKey: string): Promise<GameShape[]> {
-  const cacheKey = `scoreboard-${leagueKey}`;
+async function fetchLeagueGames(leagueKey: string, dateStr?: string): Promise<GameShape[]> {
+  const cacheKey = `scoreboard-${leagueKey}-${dateStr ?? "today"}`;
   const cached = getCached<GameShape[]>(cacheKey);
   if (cached) return cached;
   const cfg = LEAGUE_CONFIG[leagueKey];
-  const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard`;
+  const dateParam = dateStr ? `?dates=${dateStr}` : "";
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard${dateParam}`;
   try {
     const json = (await espnFetch(url)) as EspnScoreboard;
     const games = (json.events ?? [])
       .filter((ev) => ev.competitions?.length > 0)
       .map((ev) => mapEvent(ev, leagueKey));
     const hasLive = games.some((g) => g.status === "live");
-    setCached(cacheKey, games, hasLive ? 15_000 : 30_000);
+    // Cache today+live short, today no-live medium, past days long (they won't change), future medium
+    const isToday = !dateStr;
+    const isFuture = dateStr ? dateStr > todayYYYYMMDD() : false;
+    const ttl = isToday && hasLive ? 15_000
+              : isToday ? 60_000
+              : isFuture ? 120_000
+              : 300_000; // past days: cache 5 min
+    setCached(cacheKey, games, ttl);
     return games;
   } catch (err) {
     console.error(`ESPN scoreboard fetch error for ${leagueKey}:`, err);
     return [];
   }
+}
+
+function todayYYYYMMDD(): string {
+  return new Date().toISOString().slice(0, 10).replace(/-/g, "");
 }
 
 // ─── Per-player stat extraction from ESPN boxscore.players ────────────────────
@@ -587,7 +599,15 @@ function extractBoxscore(
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
 
 router.get("/sports/games", async (req, res) => {
-  const { league } = req.query as { league?: string };
+  const { league, date } = req.query as { league?: string; date?: string };
+
+  // date param: accept YYYYMMDD or YYYY-MM-DD, normalise to YYYYMMDD for ESPN
+  let espnDate: string | undefined;
+  if (date) {
+    const raw = date.replace(/-/g, "");
+    if (/^\d{8}$/.test(raw)) espnDate = raw;
+  }
+
   const leagues = league
     ? (league.toUpperCase() === "ALL"
         ? Object.keys(LEAGUE_CONFIG)
@@ -595,7 +615,7 @@ router.get("/sports/games", async (req, res) => {
     : ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING"];
 
   try {
-    const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l)));
+    const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l, espnDate)));
     const games = results.flat();
     games.sort((a, b) => {
       const pri: Record<string, number> = { live: 0, upcoming: 1, finished: 2 };
