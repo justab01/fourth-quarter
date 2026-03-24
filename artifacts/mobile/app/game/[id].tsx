@@ -111,7 +111,7 @@ export default function GameDetailScreen() {
     enabled: !!id,
     refetchInterval: (query) => {
       const status = (query.state.data as any)?.game?.status;
-      return status === "live" ? 20_000 : 60_000;
+      return status === "live" ? 8_000 : 60_000;
     },
   });
 
@@ -282,13 +282,16 @@ export default function GameDetailScreen() {
               <View style={s.tabSection}>
                 {data.keyPlays.length === 0 ? (
                   <Text style={s.empty}>No play data yet</Text>
-                ) : (
-                  <View style={s.playsCard}>
-                    {data.keyPlays.map((play, i) => (
-                      <PlayRow key={i} play={play} dc={dc} showDivider={i < data.keyPlays.length - 1} />
-                    ))}
-                  </View>
-                )}
+                ) : (() => {
+                  const reversed = [...data.keyPlays].reverse();
+                  return (
+                    <View style={s.playsCard}>
+                      {reversed.map((play: any, i: number) => (
+                        <PlayRow key={i} play={play} dc={dc} showDivider={i < reversed.length - 1} />
+                      ))}
+                    </View>
+                  );
+                })()}
               </View>
             )}
 
@@ -397,13 +400,16 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
       </View>
       {keyPlays.length === 0 ? (
         <Text style={s.empty}>No key plays yet{isLive ? " — check back soon" : ""}</Text>
-      ) : (
-        <View style={s.playsCard}>
-          {keyPlays.map((play: any, i: number) => (
-            <PlayRow key={i} play={play} dc={dc} showDivider={i < keyPlays.length - 1} />
-          ))}
-        </View>
-      )}
+      ) : (() => {
+        const reversed = [...keyPlays].reverse();
+        return (
+          <View style={s.playsCard}>
+            {reversed.map((play: any, i: number) => (
+              <PlayRow key={i} play={play} dc={dc} showDivider={i < reversed.length - 1} />
+            ))}
+          </View>
+        );
+      })()}
 
       {/* Quick team stats */}
       {Object.keys(data.homeStats ?? {}).length > 0 && (
