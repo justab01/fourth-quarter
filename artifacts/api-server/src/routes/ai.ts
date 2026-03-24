@@ -17,7 +17,7 @@ router.post("/ai/summarize", async (req, res) => {
       : `Give a quick 1-2 sentence summary of this game's current situation for a sports fan.\n\nDetails: ${content}`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       max_completion_tokens: 150,
       messages: [{ role: "user", content: prompt }],
     });
@@ -52,7 +52,7 @@ Provide:
 Format as JSON: { "summary": "...", "keyPlayer": "...", "whatItMeans": "..." }`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       max_completion_tokens: 300,
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
@@ -98,7 +98,7 @@ router.post("/ai/rewrite", async (req, res) => {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       max_completion_tokens: 200,
       messages: [
         { role: "system", content: systemPrompt },
