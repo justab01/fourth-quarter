@@ -220,6 +220,27 @@ export const BOXING_FIGHTERS: SearchTeam[] = [
   { name: "Anthony Joshua",     league: "BOXING", abbr: "JOS", rank: "Heavyweight Contender", city: "Great Britain" },
 ];
 
+export const XGAMES_TEAMS: SearchTeam[] = [
+  { name: "Tony Hawk", league: "XGAMES", abbr: "HAW", rank: "Skateboard Vert Legend", city: "USA" },
+  { name: "Shaun White", league: "XGAMES", abbr: "WHI", rank: "18x Gold Medal", city: "USA" },
+  { name: "Nyjah Huston", league: "XGAMES", abbr: "HUS", rank: "12x Gold — Street King", city: "USA" },
+  { name: "Chloe Kim", league: "XGAMES", abbr: "KIM", rank: "Halfpipe GOAT", city: "USA" },
+  { name: "Travis Pastrana", league: "XGAMES", abbr: "PAS", rank: "11x Gold — Moto X", city: "USA" },
+  { name: "Eileen Gu", league: "XGAMES", abbr: "GU", rank: "3x Olympic Medalist", city: "China" },
+  { name: "Scotty James", league: "XGAMES", abbr: "JAM", rank: "5x Gold Superpipe", city: "Australia" },
+  { name: "Mark McMorris", league: "XGAMES", abbr: "MCM", rank: "16 medals — comeback", city: "Canada" },
+];
+
+export const OLYMPICS_TEAMS: SearchTeam[] = [
+  { name: "Simone Biles", league: "OLYMPICS", abbr: "BIL", rank: "7x Olympic Gold", city: "USA" },
+  { name: "Usain Bolt", league: "OLYMPICS", abbr: "BOL", rank: "100m WR 9.58s", city: "Jamaica" },
+  { name: "Michael Phelps", league: "OLYMPICS", abbr: "PHE", rank: "23 Olympic Golds", city: "USA" },
+  { name: "Noah Lyles", league: "OLYMPICS", abbr: "LYL", rank: "2024 100m Champion", city: "USA" },
+  { name: "Mondo Duplantis", league: "OLYMPICS", abbr: "DUP", rank: "Pole Vault WR 6.24m", city: "Sweden" },
+  { name: "Leon Marchand", league: "OLYMPICS", abbr: "MAR", rank: "5 Paris 2024 Golds", city: "France" },
+  { name: "Sydney McLaughlin-Levrone", league: "OLYMPICS", abbr: "SML", rank: "400H WR + 4 golds", city: "USA" },
+];
+
 export const ALL_TEAMS: SearchTeam[] = [
   ...NBA_TEAMS,
   ...NFL_TEAMS,
@@ -229,6 +250,8 @@ export const ALL_TEAMS: SearchTeam[] = [
   ...WTA_PLAYERS,
   ...UFC_FIGHTERS,
   ...BOXING_FIGHTERS,
+  ...XGAMES_TEAMS,
+  ...OLYMPICS_TEAMS,
 ];
 
 // ─── ALL NBA PLAYERS ──────────────────────────────────────────────
@@ -1683,13 +1706,433 @@ export const BOXING_SEARCH_PLAYERS: SearchPlayer[] = [
   { name: "Jermall Charlo",    team: "Boxing", league: "BOXING", position: "MW",  stat: "Middleweight Contender"          },
 ];
 
+// ─── NHL PLAYERS ──────────────────────────────────────────────────────────────
+export const NHL_PLAYERS: SearchPlayer[] = [
+  // Anaheim Ducks
+  { name: "Leo Carlsson", team: "Anaheim Ducks", league: "NHL", position: "C", stat: "22G, 38A — franchise cornerstone" },
+  { name: "Mason McTavish", team: "Anaheim Ducks", league: "NHL", position: "C", stat: "25G, 35A — future star" },
+  // Boston Bruins
+  { name: "David Pastrnak", team: "Boston Bruins", league: "NHL", position: "RW", stat: "47G, 45A — franchise superstar" },
+  { name: "Charlie McAvoy", team: "Boston Bruins", league: "NHL", position: "D", stat: "12G, 52A — top defenseman" },
+  { name: "Brad Marchand", team: "Boston Bruins", league: "NHL", position: "LW", stat: "25G, 40A — veteran leader" },
+  { name: "Jeremy Swayman", team: "Boston Bruins", league: "NHL", position: "G", stat: ".918 SV%, 2.54 GAA" },
+  // Buffalo Sabres
+  { name: "Tage Thompson", team: "Buffalo Sabres", league: "NHL", position: "C", stat: "44G, 52A — franchise center" },
+  { name: "JJ Peterka", team: "Buffalo Sabres", league: "NHL", position: "RW", stat: "32G, 38A — offensive breakout" },
+  { name: "Rasmus Dahlin", team: "Buffalo Sabres", league: "NHL", position: "D", stat: "15G, 65A — elite offensive D" },
+  // Calgary Flames
+  { name: "Jonathan Huberdeau", team: "Calgary Flames", league: "NHL", position: "LW", stat: "22G, 58A — playmaker" },
+  { name: "Nazem Kadri", team: "Calgary Flames", league: "NHL", position: "C", stat: "28G, 32A — veteran presence" },
+  // Carolina Hurricanes
+  { name: "Sebastian Aho", team: "Carolina Hurricanes", league: "NHL", position: "C", stat: "36G, 50A — franchise player" },
+  { name: "Andrei Svechnikov", team: "Carolina Hurricanes", league: "NHL", position: "RW", stat: "30G, 42A — skilled winger" },
+  { name: "Martin Necas", team: "Carolina Hurricanes", league: "NHL", position: "C", stat: "28G, 48A — emerging star" },
+  // Chicago Blackhawks
+  { name: "Connor Bedard", team: "Chicago Blackhawks", league: "NHL", position: "C", stat: "24G, 36A — 2023 #1 overall pick" },
+  { name: "Frank Nazar", team: "Chicago Blackhawks", league: "NHL", position: "C", stat: "Rookie — rebuild centerpiece" },
+  // Colorado Avalanche
+  { name: "Nathan MacKinnon", team: "Colorado Avalanche", league: "NHL", position: "C", stat: "51G, 79A — 2024 MVP frontrunner" },
+  { name: "Cale Makar", team: "Colorado Avalanche", league: "NHL", position: "D", stat: "22G, 70A — best D in NHL" },
+  { name: "Mikko Rantanen", team: "Colorado Avalanche", league: "NHL", position: "RW", stat: "44G, 61A — Hart Trophy winner 2025" },
+  { name: "Valeri Nichushkin", team: "Colorado Avalanche", league: "NHL", position: "RW", stat: "25G, 30A — power forward" },
+  // Columbus Blue Jackets
+  { name: "Kirill Marchenko", team: "Columbus Blue Jackets", league: "NHL", position: "RW", stat: "28G, 30A — offensive threat" },
+  { name: "Ivan Provorov", team: "Columbus Blue Jackets", league: "NHL", position: "D", stat: "8G, 35A — top defender" },
+  // Dallas Stars
+  { name: "Jason Robertson", team: "Dallas Stars", league: "NHL", position: "LW", stat: "40G, 50A — elite sniper" },
+  { name: "Roope Hintz", team: "Dallas Stars", league: "NHL", position: "C", stat: "32G, 40A — power center" },
+  { name: "Miro Heiskanen", team: "Dallas Stars", league: "NHL", position: "D", stat: "18G, 60A — Norris contender" },
+  { name: "Jake Oettinger", team: "Dallas Stars", league: "NHL", position: "G", stat: ".916 SV%, 2.60 GAA" },
+  // Detroit Red Wings
+  { name: "Dylan Larkin", team: "Detroit Red Wings", league: "NHL", position: "C", stat: "32G, 45A — franchise captain" },
+  { name: "Lucas Raymond", team: "Detroit Red Wings", league: "NHL", position: "RW", stat: "28G, 42A — skilled youngster" },
+  // Edmonton Oilers
+  { name: "Connor McDavid", team: "Edmonton Oilers", league: "NHL", position: "C", stat: "42G, 100A — best player on Earth" },
+  { name: "Leon Draisaitl", team: "Edmonton Oilers", league: "NHL", position: "C", stat: "52G, 70A — Hart Trophy winner" },
+  { name: "Zach Hyman", team: "Edmonton Oilers", league: "NHL", position: "LW", stat: "38G, 30A — power winger" },
+  { name: "Stuart Skinner", team: "Edmonton Oilers", league: "NHL", position: "G", stat: ".910 SV%, 2.78 GAA" },
+  // Florida Panthers
+  { name: "Aleksander Barkov", team: "Florida Panthers", league: "NHL", position: "C", stat: "30G, 62A — Selke + Lady Byng" },
+  { name: "Sam Reinhart", team: "Florida Panthers", league: "NHL", position: "RW", stat: "57G, 44A — 2024 scoring leader" },
+  { name: "Matthew Tkachuk", team: "Florida Panthers", league: "NHL", position: "LW", stat: "29G, 71A — elite playmaker" },
+  { name: "Sergei Bobrovsky", team: "Florida Panthers", league: "NHL", position: "G", stat: ".912 SV%, 2.61 GAA" },
+  // Las Vegas Golden Knights
+  { name: "Mark Stone", team: "Vegas Golden Knights", league: "NHL", position: "RW", stat: "22G, 52A — captain and leader" },
+  { name: "Jack Eichel", team: "Vegas Golden Knights", league: "NHL", position: "C", stat: "36G, 62A — franchise center" },
+  { name: "Ivan Barbashev", team: "Vegas Golden Knights", league: "NHL", position: "LW", stat: "26G, 38A — 2-way forward" },
+  // Los Angeles Kings
+  { name: "Anze Kopitar", team: "Los Angeles Kings", league: "NHL", position: "C", stat: "22G, 50A — legendary captain" },
+  { name: "Kevin Fiala", team: "Los Angeles Kings", league: "NHL", position: "LW", stat: "28G, 42A — skilled winger" },
+  // Minnesota Wild
+  { name: "Kirill Kaprizov", team: "Minnesota Wild", league: "NHL", position: "LW", stat: "42G, 56A — Art Ross contender" },
+  { name: "Joel Eriksson Ek", team: "Minnesota Wild", league: "NHL", position: "C", stat: "24G, 38A — shutdown center" },
+  // Montreal Canadiens
+  { name: "Cole Caufield", team: "Montreal Canadiens", league: "NHL", position: "RW", stat: "35G, 42A — star sniper" },
+  { name: "Nick Suzuki", team: "Montreal Canadiens", league: "NHL", position: "C", stat: "30G, 58A — captain at 22" },
+  { name: "Lane Hutson", team: "Montreal Canadiens", league: "NHL", position: "D", stat: "18G, 65A — Calder contender" },
+  // Nashville Predators
+  { name: "Filip Forsberg", team: "Nashville Predators", league: "NHL", position: "LW", stat: "36G, 42A — franchise player" },
+  { name: "Roman Josi", team: "Nashville Predators", league: "NHL", position: "D", stat: "18G, 62A — Norris Trophy winner" },
+  // New Jersey Devils
+  { name: "Jack Hughes", team: "New Jersey Devils", league: "NHL", position: "C", stat: "38G, 62A — 2019 #1 overall" },
+  { name: "Nico Hischier", team: "New Jersey Devils", league: "NHL", position: "C", stat: "32G, 48A — elite two-way C" },
+  { name: "Timo Meier", team: "New Jersey Devils", league: "NHL", position: "RW", stat: "36G, 40A — power forward" },
+  // New York Islanders
+  { name: "Mathew Barzal", team: "New York Islanders", league: "NHL", position: "C", stat: "28G, 62A — elite skater" },
+  { name: "Bo Horvat", team: "New York Islanders", league: "NHL", position: "C", stat: "32G, 38A — team captain" },
+  // New York Rangers
+  { name: "Artemi Panarin", team: "New York Rangers", league: "NHL", position: "LW", stat: "38G, 72A — Hart Trophy finalist" },
+  { name: "Chris Kreider", team: "New York Rangers", league: "NHL", position: "LW", stat: "30G, 30A — clutch power winger" },
+  { name: "Mika Zibanejad", team: "New York Rangers", league: "NHL", position: "C", stat: "30G, 52A — franchise C" },
+  { name: "Adam Fox", team: "New York Rangers", league: "NHL", position: "D", stat: "16G, 72A — 2021 Norris Trophy" },
+  { name: "Igor Shesterkin", team: "New York Rangers", league: "NHL", position: "G", stat: ".921 SV%, 2.45 GAA — elite" },
+  // Ottawa Senators
+  { name: "Brady Tkachuk", team: "Ottawa Senators", league: "NHL", position: "LW", stat: "32G, 38A — power forward captain" },
+  { name: "Tim Stutzle", team: "Ottawa Senators", league: "NHL", position: "C", stat: "30G, 55A — offensive star" },
+  // Philadelphia Flyers
+  { name: "Travis Konecny", team: "Philadelphia Flyers", league: "NHL", position: "RW", stat: "40G, 50A — team leader" },
+  { name: "Sean Couturier", team: "Philadelphia Flyers", league: "NHL", position: "C", stat: "22G, 38A — Selke finalist" },
+  // Pittsburgh Penguins
+  { name: "Sidney Crosby", team: "Pittsburgh Penguins", league: "NHL", position: "C", stat: "42G, 58A — GOAT of his era" },
+  { name: "Evgeni Malkin", team: "Pittsburgh Penguins", league: "NHL", position: "C", stat: "28G, 52A — 3x Stanley Cup" },
+  { name: "Rickard Rakell", team: "Pittsburgh Penguins", league: "NHL", position: "LW", stat: "24G, 32A — clutch scorer" },
+  // San Jose Sharks
+  { name: "Macklin Celebrini", team: "San Jose Sharks", league: "NHL", position: "C", stat: "Rookie — 2024 #1 overall pick" },
+  { name: "Will Smith", team: "San Jose Sharks", league: "NHL", position: "C", stat: "Rookie — top prospect" },
+  // Seattle Kraken
+  { name: "Matty Beniers", team: "Seattle Kraken", league: "NHL", position: "C", stat: "22G, 38A — 2022 Calder winner" },
+  { name: "Jared McCann", team: "Seattle Kraken", league: "NHL", position: "C", stat: "32G, 36A — top scorer" },
+  // St. Louis Blues
+  { name: "Robert Thomas", team: "St. Louis Blues", league: "NHL", position: "C", stat: "28G, 70A — elite playmaker" },
+  { name: "Jordan Kyrou", team: "St. Louis Blues", league: "NHL", position: "RW", stat: "32G, 42A — speedy scorer" },
+  { name: "David Perron", team: "St. Louis Blues", league: "NHL", position: "RW", stat: "24G, 38A — veteran presence" },
+  // Tampa Bay Lightning
+  { name: "Nikita Kucherov", team: "Tampa Bay Lightning", league: "NHL", position: "RW", stat: "42G, 100A+ — Hart Trophy" },
+  { name: "Brayden Point", team: "Tampa Bay Lightning", league: "NHL", position: "C", stat: "40G, 52A — clutch performer" },
+  { name: "Victor Hedman", team: "Tampa Bay Lightning", league: "NHL", position: "D", stat: "15G, 65A — Norris Trophy winner" },
+  { name: "Andrei Vasilevskiy", team: "Tampa Bay Lightning", league: "NHL", position: "G", stat: ".919 SV%, 2.54 GAA — elite" },
+  // Toronto Maple Leafs
+  { name: "Auston Matthews", team: "Toronto Maple Leafs", league: "NHL", position: "C", stat: "69G! — 2024 Maurice Richard" },
+  { name: "Mitch Marner", team: "Toronto Maple Leafs", league: "NHL", position: "RW", stat: "26G, 80A — elite playmaker" },
+  { name: "John Tavares", team: "Toronto Maple Leafs", league: "NHL", position: "C", stat: "28G, 52A — team captain" },
+  { name: "William Nylander", team: "Toronto Maple Leafs", league: "NHL", position: "RW", stat: "40G, 60A — emerging star" },
+  // Vancouver Canucks
+  { name: "Elias Pettersson", team: "Vancouver Canucks", league: "NHL", position: "C", stat: "34G, 68A — franchise player" },
+  { name: "Quinn Hughes", team: "Vancouver Canucks", league: "NHL", position: "D", stat: "22G, 80A — 2024 Norris Trophy" },
+  { name: "Brock Boeser", team: "Vancouver Canucks", league: "NHL", position: "RW", stat: "36G, 48A — sniper" },
+  // Washington Capitals
+  { name: "Alex Ovechkin", team: "Washington Capitals", league: "NHL", position: "LW", stat: "886 goals — all-time record" },
+  { name: "Dylan Strome", team: "Washington Capitals", league: "NHL", position: "C", stat: "34G, 52A — Ovechkin's center" },
+  { name: "Tom Wilson", team: "Washington Capitals", league: "NHL", position: "RW", stat: "28G, 36A — power forward" },
+  // Winnipeg Jets
+  { name: "Kyle Connor", team: "Winnipeg Jets", league: "NHL", position: "LW", stat: "40G, 55A — elite goal scorer" },
+  { name: "Mark Scheifele", team: "Winnipeg Jets", league: "NHL", position: "C", stat: "34G, 48A — veteran leader" },
+  { name: "Josh Morrissey", team: "Winnipeg Jets", league: "NHL", position: "D", stat: "18G, 65A — Norris contender" },
+];
+
+// ─── WNBA PLAYERS ──────────────────────────────────────────────────────────────
+export const WNBA_PLAYERS: SearchPlayer[] = [
+  // Atlanta Dream
+  { name: "Rhyne Howard", team: "Atlanta Dream", league: "WNBA", position: "G", stat: "19.2 PPG, 4.4 REB, 3.2 APG — 2022 ROY" },
+  { name: "Tina Charles", team: "Atlanta Dream", league: "WNBA", position: "C", stat: "15.8 PPG, 8.6 REB — veteran star" },
+  // Chicago Sky
+  { name: "Kahleah Copper", team: "Chicago Sky", league: "WNBA", position: "G", stat: "21.4 PPG, 4.2 REB — 2021 Finals MVP" },
+  { name: "Marina Mabrey", team: "Chicago Sky", league: "WNBA", position: "G", stat: "17.8 PPG, 4.4 APG — scorer" },
+  // Connecticut Sun
+  { name: "Alyssa Thomas", team: "Connecticut Sun", league: "WNBA", position: "F", stat: "14.8 PPG, 9.2 REB, 6.8 APG — triple double threat" },
+  { name: "DeWanna Bonner", team: "Connecticut Sun", league: "WNBA", position: "F", stat: "15.2 PPG, 7.1 REB — 2-time WNBA champ" },
+  { name: "Brionna Jones", team: "Connecticut Sun", league: "WNBA", position: "C", stat: "14.2 PPG, 7.8 REB" },
+  // Dallas Wings
+  { name: "Arike Ogunbowale", team: "Dallas Wings", league: "WNBA", position: "G", stat: "22.8 PPG — 2-time scoring champion" },
+  { name: "Natasha Howard", team: "Dallas Wings", league: "WNBA", position: "F", stat: "16.4 PPG, 7.2 REB — versatile forward" },
+  // Indiana Fever
+  { name: "Caitlin Clark", team: "Indiana Fever", league: "WNBA", position: "G", stat: "19.2 PPG, 8.4 APG, 5.7 REB — 2024 ROY" },
+  { name: "Aliyah Boston", team: "Indiana Fever", league: "WNBA", position: "F", stat: "14.6 PPG, 7.8 REB — 2023 ROY" },
+  { name: "Kelsey Mitchell", team: "Indiana Fever", league: "WNBA", position: "G", stat: "17.2 PPG — explosive scorer" },
+  { name: "NaLyssa Smith", team: "Indiana Fever", league: "WNBA", position: "F", stat: "12.4 PPG, 8.2 REB — powerful forward" },
+  // Las Vegas Aces
+  { name: "A'ja Wilson", team: "Las Vegas Aces", league: "WNBA", position: "F/C", stat: "26.4 PPG, 11.9 REB — 2024 MVP" },
+  { name: "Kelsey Plum", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "18.6 PPG, 4.8 APG — shooting guard" },
+  { name: "Jackie Young", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "19.4 PPG, 4.2 REB — 2-time champion" },
+  { name: "Chelsea Gray", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "13.2 PPG, 7.6 APG — floor general" },
+  // Los Angeles Sparks
+  { name: "Dearica Hamby", team: "Los Angeles Sparks", league: "WNBA", position: "F", stat: "14.2 PPG, 8.6 REB" },
+  { name: "Nneka Ogwumike", team: "Los Angeles Sparks", league: "WNBA", position: "F", stat: "18.4 PPG, 7.2 REB — 2016 MVP" },
+  // Minnesota Lynx
+  { name: "Napheesa Collier", team: "Minnesota Lynx", league: "WNBA", position: "F", stat: "21.2 PPG, 9.6 REB — elite forward" },
+  { name: "Courtney Williams", team: "Minnesota Lynx", league: "WNBA", position: "G", stat: "14.8 PPG, 5.2 APG" },
+  // New York Liberty
+  { name: "Breanna Stewart", team: "New York Liberty", league: "WNBA", position: "F", stat: "21.8 PPG, 9.2 REB — 2023 MVP" },
+  { name: "Sabrina Ionescu", team: "New York Liberty", league: "WNBA", position: "G", stat: "18.6 PPG, 8.2 APG, 5.8 REB — triple double record holder" },
+  { name: "Jonquel Jones", team: "New York Liberty", league: "WNBA", position: "C", stat: "14.4 PPG, 8.6 REB — 2021 MVP" },
+  { name: "Courtney Vandersloot", team: "New York Liberty", league: "WNBA", position: "G", stat: "12.2 PPG, 9.4 APG — veteran leader" },
+  // Phoenix Mercury
+  { name: "Diana Taurasi", team: "Phoenix Mercury", league: "WNBA", position: "G", stat: "14.8 PPG — all-time leading scorer" },
+  { name: "Brittney Griner", team: "Phoenix Mercury", league: "WNBA", position: "C", stat: "18.2 PPG, 7.8 REB, 2.2 BLK" },
+  // Seattle Storm
+  { name: "Ezi Magbegor", team: "Seattle Storm", league: "WNBA", position: "C", stat: "12.4 PPG, 6.8 REB, 1.8 BLK — rim protector" },
+  { name: "Jordan Horston", team: "Seattle Storm", league: "WNBA", position: "G", stat: "13.2 PPG, 4.6 APG" },
+  // Washington Mystics
+  { name: "Elena Delle Donne", team: "Washington Mystics", league: "WNBA", position: "F", stat: "17.4 PPG, 6.2 REB — 2x MVP" },
+  { name: "Shakira Austin", team: "Washington Mystics", league: "WNBA", position: "C", stat: "14.8 PPG, 8.4 REB" },
+];
+
+// ─── EPL PLAYERS ─────────────────────────────────────────────────────────────
+export const EPL_PLAYERS: SearchPlayer[] = [
+  // Arsenal
+  { name: "Bukayo Saka", team: "Arsenal", league: "EPL", position: "RW", stat: "20G, 14A — Ballon d'Or contender" },
+  { name: "Martin Odegaard", team: "Arsenal", league: "EPL", position: "CAM", stat: "15G, 12A — creative genius" },
+  { name: "Leandro Trossard", team: "Arsenal", league: "EPL", position: "LW", stat: "14G, 8A — versatile forward" },
+  { name: "Gabriel Martinelli", team: "Arsenal", league: "EPL", position: "LW", stat: "15G, 10A — pacy winger" },
+  { name: "William Saliba", team: "Arsenal", league: "EPL", position: "CB", stat: "Elite defender, 90%+ duel win rate" },
+  { name: "Declan Rice", team: "Arsenal", league: "EPL", position: "CDM", stat: "12G, 9A — world class midfielder" },
+  { name: "Gabriel Jesus", team: "Arsenal", league: "EPL", position: "ST", stat: "12G, 8A — pressing center forward" },
+  // Aston Villa
+  { name: "Ollie Watkins", team: "Aston Villa", league: "EPL", position: "ST", stat: "24G, 13A — Golden Boot contender" },
+  { name: "Leon Bailey", team: "Aston Villa", league: "EPL", position: "RW", stat: "14G, 12A — pacy winger" },
+  { name: "Jhon Duran", team: "Aston Villa", league: "EPL", position: "ST", stat: "14G as super sub — explosive" },
+  { name: "Morgan Rogers", team: "Aston Villa", league: "EPL", position: "CAM", stat: "12G, 10A — creative star" },
+  // Brentford
+  { name: "Bryan Mbeumo", team: "Brentford", league: "EPL", position: "RW", stat: "22G, 10A — top scorer" },
+  { name: "Yoane Wissa", team: "Brentford", league: "EPL", position: "LW", stat: "15G, 8A — clinical finisher" },
+  // Brighton
+  { name: "Simon Adingra", team: "Brighton", league: "EPL", position: "LW", stat: "14G, 8A — pacy winger" },
+  { name: "Kaoru Mitoma", team: "Brighton", league: "EPL", position: "LW", stat: "12G, 7A — technical dribbler" },
+  { name: "Joao Pedro", team: "Brighton", league: "EPL", position: "ST", stat: "16G, 9A — versatile Brazilian" },
+  // Chelsea
+  { name: "Cole Palmer", team: "Chelsea", league: "EPL", position: "CAM", stat: "25G, 14A — 2024 Young Player of Year" },
+  { name: "Nicolas Jackson", team: "Chelsea", league: "EPL", position: "ST", stat: "20G, 8A — Senegal international" },
+  { name: "Noni Madueke", team: "Chelsea", league: "EPL", position: "RW", stat: "14G, 9A — direct winger" },
+  { name: "Enzo Fernandez", team: "Chelsea", league: "EPL", position: "CM", stat: "9G, 12A — World Cup winner" },
+  { name: "Pedro Neto", team: "Chelsea", league: "EPL", position: "LW", stat: "12G, 11A — tricky winger" },
+  // Crystal Palace
+  { name: "Eberechi Eze", team: "Crystal Palace", league: "EPL", position: "CAM", stat: "16G, 9A — creative star" },
+  { name: "Michael Olise", team: "Crystal Palace", league: "EPL", position: "RW", stat: "Left for Bayern — former key player" },
+  // Everton
+  { name: "Dominic Calvert-Lewin", team: "Everton", league: "EPL", position: "ST", stat: "14G, 5A — target man" },
+  { name: "Iliman Ndiaye", team: "Everton", league: "EPL", position: "LW", stat: "12G, 8A — tricky winger" },
+  // Fulham
+  { name: "Raul Jimenez", team: "Fulham", league: "EPL", position: "ST", stat: "16G, 6A — Mexican international" },
+  { name: "Andreas Pereira", team: "Fulham", league: "EPL", position: "CAM", stat: "10G, 14A — creative midfielder" },
+  // Ipswich Town
+  { name: "Liam Delap", team: "Ipswich Town", league: "EPL", position: "ST", stat: "18G — Championship top scorer, promoted" },
+  // Leicester City
+  { name: "Jamie Vardy", team: "Leicester City", league: "EPL", position: "ST", stat: "12G — 2016 title legend, returning" },
+  // Liverpool
+  { name: "Mohamed Salah", team: "Liverpool", league: "EPL", position: "RW", stat: "28G, 18A — all-time great" },
+  { name: "Virgil van Dijk", team: "Liverpool", league: "EPL", position: "CB", stat: "Best CB in the world at peak" },
+  { name: "Trent Alexander-Arnold", team: "Liverpool", league: "EPL", position: "RB", stat: "10G, 18A — overlapping fullback" },
+  { name: "Luis Diaz", team: "Liverpool", league: "EPL", position: "LW", stat: "18G, 8A — electric Colombian" },
+  { name: "Cody Gakpo", team: "Liverpool", league: "EPL", position: "LW", stat: "18G, 9A — Dutch international" },
+  { name: "Alexis Mac Allister", team: "Liverpool", league: "EPL", position: "CM", stat: "10G, 12A — World Cup winner" },
+  { name: "Darwin Nunez", team: "Liverpool", league: "EPL", position: "ST", stat: "16G, 12A — pace and power" },
+  { name: "Dominik Szoboszlai", team: "Liverpool", league: "EPL", position: "CM", stat: "8G, 10A — Hungary captain" },
+  // Manchester City
+  { name: "Erling Haaland", team: "Manchester City", league: "EPL", position: "ST", stat: "36G, 8A — machine goal scorer" },
+  { name: "Kevin De Bruyne", team: "Manchester City", league: "EPL", position: "CM", stat: "10G, 20A — all-time great CM" },
+  { name: "Phil Foden", team: "Manchester City", league: "EPL", position: "CAM", stat: "22G, 12A — 2024 PFA Player of Year" },
+  { name: "Bernardo Silva", team: "Manchester City", league: "EPL", position: "CM", stat: "12G, 14A — technical maestro" },
+  { name: "Rodri", team: "Manchester City", league: "EPL", position: "CDM", stat: "2024 Ballon d'Or winner" },
+  { name: "Jeremy Doku", team: "Manchester City", league: "EPL", position: "LW", stat: "10G, 14A — fastest in EPL" },
+  // Manchester United
+  { name: "Bruno Fernandes", team: "Manchester United", league: "EPL", position: "CAM", stat: "16G, 14A — captain, creative hub" },
+  { name: "Rasmus Hojlund", team: "Manchester United", league: "EPL", position: "ST", stat: "14G, 6A — Danish striker" },
+  { name: "Marcus Rashford", team: "Manchester United", league: "EPL", position: "LW", stat: "10G, 6A — inconsistent star" },
+  // Newcastle United
+  { name: "Alexander Isak", team: "Newcastle United", league: "EPL", position: "ST", stat: "26G, 8A — world class striker" },
+  { name: "Bruno Guimaraes", team: "Newcastle United", league: "EPL", position: "CM", stat: "10G, 12A — elite midfielder" },
+  { name: "Anthony Gordon", team: "Newcastle United", league: "EPL", position: "LW", stat: "18G, 12A — English powerhouse" },
+  { name: "Sandro Tonali", team: "Newcastle United", league: "EPL", position: "CM", stat: "Returned from ban — key signing" },
+  // Nottingham Forest
+  { name: "Chris Wood", team: "Nottingham Forest", league: "EPL", position: "ST", stat: "14G — NZ international surprise package" },
+  { name: "Callum Hudson-Odoi", team: "Nottingham Forest", league: "EPL", position: "RW", stat: "12G, 10A — revival season" },
+  // Southampton
+  { name: "Adam Armstrong", team: "Southampton", league: "EPL", position: "ST", stat: "Promoted back — Championship top scorer" },
+  // Tottenham Hotspur
+  { name: "Son Heung-min", team: "Tottenham", league: "EPL", position: "LW", stat: "22G, 12A — all-time EPL Asian scorer record" },
+  { name: "James Maddison", team: "Tottenham", league: "EPL", position: "CAM", stat: "12G, 14A — creative playmaker" },
+  { name: "Dominic Solanke", team: "Tottenham", league: "EPL", position: "ST", stat: "18G, 8A — Premier League proven" },
+  { name: "Brennan Johnson", team: "Tottenham", league: "EPL", position: "RW", stat: "14G, 8A — pacy winger" },
+  // West Ham
+  { name: "Jarrod Bowen", team: "West Ham", league: "EPL", position: "RW", stat: "18G, 10A — consistent performer" },
+  { name: "Mohammed Kudus", team: "West Ham", league: "EPL", position: "CAM", stat: "16G, 8A — Ghana international" },
+  { name: "Crysencio Summerville", team: "West Ham", league: "EPL", position: "LW", stat: "Championship POTY, adapted to PL" },
+  // Wolves
+  { name: "Pedro Neto", team: "Wolves", league: "EPL", position: "LW", stat: "Former Wolves key player — moved to Chelsea" },
+  { name: "Matheus Cunha", team: "Wolves", league: "EPL", position: "ST", stat: "20G, 10A — Brazilian star" },
+  { name: "Hwang Hee-chan", team: "Wolves", league: "EPL", position: "ST", stat: "14G — South Korea international" },
+];
+
+// ─── LA LIGA PLAYERS ─────────────────────────────────────────────────────────
+export const LIGA_PLAYERS: SearchPlayer[] = [
+  // Real Madrid
+  { name: "Vinicius Junior", team: "Real Madrid", league: "LIGA", position: "LW", stat: "24G, 16A — 2024 Ballon d'Or runner-up" },
+  { name: "Jude Bellingham", team: "Real Madrid", league: "LIGA", position: "CAM", stat: "23G, 12A — 2024 Golden Boy" },
+  { name: "Kylian Mbappe", team: "Real Madrid", league: "LIGA", position: "ST", stat: "22G, 8A — world's most expensive player" },
+  { name: "Rodrygo", team: "Real Madrid", league: "LIGA", position: "RW", stat: "16G, 12A — key UCL performer" },
+  { name: "Federico Valverde", team: "Real Madrid", league: "LIGA", position: "CM", stat: "12G, 10A — box-to-box dynamo" },
+  { name: "Luka Modric", team: "Real Madrid", league: "LIGA", position: "CM", stat: "8G, 10A — 2018 Ballon d'Or, still elite" },
+  { name: "Toni Kroos", team: "Real Madrid", league: "LIGA", position: "CM", stat: "Un-retired for Euro 2024 — came back to Real" },
+  { name: "David Alaba", team: "Real Madrid", league: "LIGA", position: "CB", stat: "World class CB at left side" },
+  // Barcelona
+  { name: "Robert Lewandowski", team: "Barcelona", league: "LIGA", position: "ST", stat: "26G, 10A — modern classic striker" },
+  { name: "Pedri", team: "Barcelona", league: "LIGA", position: "CM", stat: "10G, 12A — elite creative midfielder" },
+  { name: "Gavi", team: "Barcelona", league: "LIGA", position: "CM", stat: "8G, 10A — Spain's midfield future" },
+  { name: "Lamine Yamal", team: "Barcelona", league: "LIGA", position: "RW", stat: "18G, 16A — 16yr old sensation" },
+  { name: "Ferran Torres", team: "Barcelona", league: "LIGA", position: "LW", stat: "14G, 8A — Spain international" },
+  { name: "Raphinha", team: "Barcelona", league: "LIGA", position: "RW", stat: "26G, 15A — Brazil's creative force" },
+  // Atletico Madrid
+  { name: "Antoine Griezmann", team: "Atletico Madrid", league: "LIGA", position: "CAM", stat: "20G, 12A — French legend" },
+  { name: "Alvaro Morata", team: "Atletico Madrid", league: "LIGA", position: "ST", stat: "16G, 8A — Spain Euro 2024 captain" },
+  { name: "Samuel Lino", team: "Atletico Madrid", league: "LIGA", position: "LW", stat: "12G, 9A — Brazilian winger" },
+  { name: "Marcos Llorente", team: "Atletico Madrid", league: "LIGA", position: "CM", stat: "10G, 12A — versatile midfielder" },
+  // Sevilla
+  { name: "Youssef En-Nesyri", team: "Sevilla", league: "LIGA", position: "ST", stat: "18G — Morocco international" },
+  { name: "Rafa Mir", team: "Sevilla", league: "LIGA", position: "ST", stat: "12G — Spanish striker" },
+  // Real Betis
+  { name: "Isco", team: "Real Betis", league: "LIGA", position: "CAM", stat: "12G, 10A — former Real Madrid star" },
+  { name: "Ayoze Perez", team: "Real Betis", league: "LIGA", position: "RW", stat: "14G, 8A — Spanish international" },
+  // Valencia
+  { name: "Diego Lopez", team: "Valencia", league: "LIGA", position: "ST", stat: "14G — young Spanish talent" },
+  // Villarreal
+  { name: "Gerard Moreno", team: "Villarreal", league: "LIGA", position: "ST", stat: "16G, 8A — Spain's veteran striker" },
+  { name: "Alexander Sorloth", team: "Villarreal", league: "LIGA", position: "ST", stat: "18G — Norwegian powerhouse" },
+  // Real Sociedad
+  { name: "Takefusa Kubo", team: "Real Sociedad", league: "LIGA", position: "RW", stat: "12G, 10A — Japan's best player" },
+  { name: "Mikel Oyarzabal", team: "Real Sociedad", league: "LIGA", position: "ST", stat: "Euro 2024 final goal — Spanish star" },
+  // Getafe
+  { name: "Borja Mayoral", team: "Getafe", league: "LIGA", position: "ST", stat: "14G — dependable scorer" },
+  // Girona (UCL debutants)
+  { name: "Artem Dovbyk", team: "Girona", league: "LIGA", position: "ST", stat: "Pichichi winner 2024 — Ukraine international" },
+  { name: "Savinho", team: "Girona", league: "LIGA", position: "RW", stat: "Loaned from Man City — exciting prospect" },
+  // Celta Vigo
+  { name: "Iago Aspas", team: "Celta Vigo", league: "LIGA", position: "ST", stat: "18G — Spanish legend" },
+];
+
+// ─── UCL KEY PLAYERS (international competition) ───────────────────────────
+export const UCL_PLAYERS: SearchPlayer[] = [
+  // Bayern Munich
+  { name: "Harry Kane", team: "Bayern Munich", league: "UCL", position: "ST", stat: "44G, 12A — Premier League all-time record" },
+  { name: "Jamal Musiala", team: "Bayern Munich", league: "UCL", position: "CAM", stat: "20G, 16A — German prodigy" },
+  { name: "Leroy Sane", team: "Bayern Munich", league: "UCL", position: "LW", stat: "16G, 12A — pacy winger" },
+  { name: "Thomas Muller", team: "Bayern Munich", league: "UCL", position: "SS", stat: "2x UCL winner — all-time raumdeuter" },
+  { name: "Manuel Neuer", team: "Bayern Munich", league: "UCL", position: "GK", stat: "Elite sweeper keeper — comeback from injury" },
+  // Inter Milan
+  { name: "Lautaro Martinez", team: "Inter Milan", league: "UCL", position: "ST", stat: "24G, 10A — Italy's top Argentine" },
+  { name: "Marcus Thuram", team: "Inter Milan", league: "UCL", position: "ST", stat: "16G, 12A — France World Cup squad" },
+  { name: "Nicolo Barella", team: "Inter Milan", league: "UCL", position: "CM", stat: "12G, 14A — Italy's engine" },
+  // Paris Saint-Germain
+  { name: "Ousmane Dembele", team: "PSG", league: "UCL", position: "RW", stat: "18G, 14A — France international" },
+  { name: "Achraf Hakimi", team: "PSG", league: "UCL", position: "RB", stat: "10G, 14A — best attacking fullback" },
+  { name: "Vitinha", team: "PSG", league: "UCL", position: "CM", stat: "10G, 12A — Portuguese midfielder" },
+  // Dortmund
+  { name: "Serhou Guirassy", team: "Borussia Dortmund", league: "UCL", position: "ST", stat: "28G, 8A — Guinea international" },
+  { name: "Karim Adeyemi", team: "Borussia Dortmund", league: "UCL", position: "LW", stat: "14G, 10A — German youngster" },
+  // Porto
+  { name: "Samu Omorodion", team: "Atletico Madrid", league: "UCL", position: "ST", stat: "Burst onto scene — Spanish-born Nigerian" },
+  // Benfica
+  { name: "Angel Di Maria", team: "Benfica", league: "UCL", position: "RW", stat: "Veteran legend at final club" },
+  // Juventus
+  { name: "Dusan Vlahovic", team: "Juventus", league: "UCL", position: "ST", stat: "22G, 6A — Serbian powerhouse" },
+  { name: "Federico Chiesa", team: "Juventus", league: "UCL", position: "RW", stat: "12G, 8A — Italy international" },
+  // AC Milan
+  { name: "Rafael Leao", team: "AC Milan", league: "UCL", position: "LW", stat: "16G, 12A — pacy Portuguese" },
+  { name: "Theo Hernandez", team: "AC Milan", league: "UCL", position: "LB", stat: "10G, 12A — attacking fullback" },
+  // Napoli
+  { name: "Victor Osimhen", team: "Napoli", league: "UCL", position: "ST", stat: "Former Napoli striker — on loan to Galatasaray" },
+  { name: "Khvicha Kvaratskhelia", team: "Napoli", league: "UCL", position: "LW", stat: "Moved to PSG — Georgian star" },
+  // Ajax
+  { name: "Brian Brobbey", team: "Ajax", league: "UCL", position: "ST", stat: "20G — Dutch powerhouse" },
+  // Celtic
+  { name: "Kyogo Furuhashi", team: "Celtic", league: "UCL", position: "ST", stat: "22G — Japan's creative striker" },
+  // Rangers
+  { name: "Cyriel Dessers", team: "Rangers", league: "UCL", position: "ST", stat: "18G — Nigerian international" },
+];
+
+// ─── X GAMES ATHLETES ──────────────────────────────────────────────────────────
+export const XGAMES_ATHLETES: SearchPlayer[] = [
+  { name: "Tony Hawk", team: "USA", league: "XGAMES", position: "Skateboard Vert", stat: "9 gold medals — 900 legend" },
+  { name: "Shaun White", team: "USA", league: "XGAMES", position: "Snowboard / Skateboard", stat: "18 gold medals — all-time record" },
+  { name: "Nyjah Huston", team: "USA", league: "XGAMES", position: "Skateboard Street", stat: "12 gold medals — street king" },
+  { name: "Travis Pastrana", team: "USA", league: "XGAMES", position: "Moto X / Rally", stat: "11 gold medals — double backflip" },
+  { name: "Kelly Slater", team: "USA", league: "XGAMES", position: "Surfing", stat: "11x WSL World Champion" },
+  { name: "Mark McMorris", team: "Canada", league: "XGAMES", position: "Snowboard Slopestyle", stat: "16 medals — comeback story" },
+  { name: "Ryan Sheckler", team: "USA", league: "XGAMES", position: "Skateboard Street", stat: "9 gold medals — former prodigy" },
+  { name: "Bob Burnquist", team: "Brazil", league: "XGAMES", position: "Skateboard Mega Ramp", stat: "30 X Games medals — most in history" },
+  { name: "Elena Hight", team: "USA", league: "XGAMES", position: "Snowboard Superpipe", stat: "3 X Games medals — snowboard pioneer" },
+  { name: "Chloe Kim", team: "USA", league: "XGAMES", position: "Snowboard Superpipe", stat: "X Games gold + 2x Olympic gold" },
+  { name: "Jamie Anderson", team: "USA", league: "XGAMES", position: "Snowboard Slopestyle", stat: "2x Olympic gold — most X Games slopestyle medals" },
+  { name: "Kevin Rolland", team: "France", league: "XGAMES", position: "Ski Superpipe", stat: "Multiple X Games medals" },
+  { name: "Yuto Horigome", team: "Japan", league: "XGAMES", position: "Skateboard Street", stat: "Olympic gold + X Games champion 2023" },
+  { name: "Gui Khury", team: "Brazil", league: "XGAMES", position: "Skateboard Vert", stat: "Youngest gold medalist in X Games history" },
+  { name: "Colby Stevenson", team: "USA", league: "XGAMES", position: "Ski Slopestyle", stat: "Silver to gold — Beijing 2022 to X Games" },
+  { name: "Cassie Sharpe", team: "Canada", league: "XGAMES", position: "Ski Superpipe", stat: "2x Olympic gold, multiple X Games medals" },
+  { name: "Eileen Gu", team: "China", league: "XGAMES", position: "Ski Slopestyle / Halfpipe / Big Air", stat: "3x Olympic medal Beijing 2022 — modeling mogul" },
+  { name: "Scotty James", team: "Australia", league: "XGAMES", position: "Snowboard Superpipe", stat: "5 X Games gold medals" },
+  { name: "Dusty Henricksen", team: "USA", league: "XGAMES", position: "Ski Slopestyle", stat: "Emerging superstar 2024" },
+  { name: "Nick Goepper", team: "USA", league: "XGAMES", position: "Ski Slopestyle", stat: "3x Olympic medalist, X Games champion" },
+];
+
+// ─── OLYMPICS ATHLETES ─────────────────────────────────────────────────────────
+export const OLYMPICS_ATHLETES: SearchPlayer[] = [
+  { name: "Simone Biles", team: "USA", league: "OLYMPICS", position: "Gymnastics", stat: "7 Olympic golds — greatest gymnast ever" },
+  { name: "Usain Bolt", team: "Jamaica", league: "OLYMPICS", position: "Sprints", stat: "8 Olympic golds — 100m world record 9.58s" },
+  { name: "Michael Phelps", team: "USA", league: "OLYMPICS", position: "Swimming", stat: "23 Olympic golds — most ever" },
+  { name: "Noah Lyles", team: "USA", league: "OLYMPICS", position: "Sprints", stat: "2024 100m Olympic Champion — 9.79s" },
+  { name: "Sydney McLaughlin-Levrone", team: "USA", league: "OLYMPICS", position: "400m Hurdles", stat: "WR 50.37 — 4 Olympic golds" },
+  { name: "Mondo Duplantis", team: "Sweden", league: "OLYMPICS", position: "Pole Vault", stat: "WR 6.24m — 2x Olympic gold" },
+  { name: "Leon Marchand", team: "France", league: "OLYMPICS", position: "Swimming", stat: "5 golds Paris 2024 — Phelps successor" },
+  { name: "Caitlin Clark", team: "USA", league: "OLYMPICS", position: "Basketball", stat: "Paris 2024 gold — WNBA ROY" },
+  { name: "LeBron James", team: "USA", league: "OLYMPICS", position: "Basketball", stat: "Paris 2024 gold — 4x NBA champion" },
+  { name: "Stephen Curry", team: "USA", league: "OLYMPICS", position: "Basketball", stat: "Paris 2024 gold — gold medal winner" },
+  { name: "Neeraj Chopra", team: "India", league: "OLYMPICS", position: "Javelin", stat: "Tokyo 2020 & Paris 2024 silver — India's hero" },
+  { name: "Karsten Warholm", team: "Norway", league: "OLYMPICS", position: "400m Hurdles", stat: "World record 45.94 — Tokyo 2020 gold" },
+  { name: "Giannis Antetokounmpo", team: "Greece", league: "OLYMPICS", position: "Basketball", stat: "Greece national team captain" },
+  { name: "Carlos Alcaraz", team: "Spain", league: "OLYMPICS", position: "Tennis", stat: "Paris 2024 doubles gold" },
+  { name: "Novak Djokovic", team: "Serbia", league: "OLYMPICS", position: "Tennis", stat: "Paris 2024 gold — career Golden Slam" },
+  { name: "Ilona Maher", team: "USA", league: "OLYMPICS", position: "Rugby Sevens", stat: "Paris 2024 silver — social media star" },
+  { name: "Katie Ledecky", team: "USA", league: "OLYMPICS", position: "Swimming", stat: "9 Olympic medals — 1500m world record" },
+  { name: "Caeleb Dressel", team: "USA", league: "OLYMPICS", position: "Swimming", stat: "5 Tokyo golds — sprint king" },
+  { name: "Sha'Carri Richardson", team: "USA", league: "OLYMPICS", position: "Sprints", stat: "4x100m Paris 2024 gold — 100m world leader" },
+  { name: "Remco Evenepoel", team: "Belgium", league: "OLYMPICS", position: "Cycling", stat: "Paris 2024 double gold road + TT" },
+  { name: "Eliud Kipchoge", team: "Kenya", league: "OLYMPICS", position: "Marathon", stat: "2x Olympic gold — sub-2 hour marathon" },
+  { name: "Faith Kipyegon", team: "Kenya", league: "OLYMPICS", position: "1500m", stat: "3x Olympic gold — fastest 1500m ever" },
+  { name: "Tatyana McFadden", team: "USA", league: "OLYMPICS", position: "Para Athletics", stat: "20 Paralympic medals — wheelchair racing legend" },
+  { name: "Oksana Masters", team: "USA", league: "OLYMPICS", position: "Para Sports", stat: "17 Paralympic medals across 6 sports" },
+  { name: "Viktor Axelsen", team: "Denmark", league: "OLYMPICS", position: "Badminton", stat: "2x Olympic gold — best ever" },
+  { name: "An Se-young", team: "South Korea", league: "OLYMPICS", position: "Badminton", stat: "Paris 2024 gold — women's singles" },
+  { name: "Mondo Duplantis", team: "Sweden", league: "OLYMPICS", position: "Pole Vault", stat: "WR 6.24m — unbeatable" },
+  { name: "Sara Kolak", team: "Croatia", league: "OLYMPICS", position: "Javelin", stat: "Rio 2016 gold — women's javelin" },
+];
+
+// ─── NCAAB KEY PLAYERS ─────────────────────────────────────────────────────────
+export const NCAAB_PLAYERS: SearchPlayer[] = [
+  { name: "Cooper Flagg", team: "Duke Blue Devils", league: "NCAAB", position: "F", stat: "17.2 PPG, 8.2 REB — 2025 projected #1 pick" },
+  { name: "Tre Johnson", team: "Texas Longhorns", league: "NCAAB", position: "G", stat: "22.0 PPG — elite scorer" },
+  { name: "VJ Edgecombe", team: "Baylor Bears", league: "NCAAB", position: "G", stat: "14.8 PPG — explosive athlete" },
+  { name: "Dylan Harper", team: "Rutgers Scarlet Knights", league: "NCAAB", position: "G", stat: "19.8 PPG — top-5 pick projection" },
+  { name: "Kon Knueppel", team: "Duke Blue Devils", league: "NCAAB", position: "G", stat: "14.2 PPG — efficient scorer" },
+  { name: "Carter Bryant", team: "Arizona Wildcats", league: "NCAAB", position: "F", stat: "16.4 PPG — 3-and-D forward" },
+  { name: "Zion Williamson", team: "Pelicans", league: "NCAAB", position: "F", stat: "2019 Duke legend — #1 pick" },
+  { name: "Chet Holmgren", team: "Thunder", league: "NCAAB", position: "C", stat: "2022 Gonzaga — #2 pick" },
+];
+
 export const ALL_PLAYERS: SearchPlayer[] = [
   ...NBA_PLAYERS,
   ...NFL_PLAYERS,
   ...MLB_PLAYERS,
   ...MLS_PLAYERS,
+  ...NHL_PLAYERS,
+  ...WNBA_PLAYERS,
+  ...EPL_PLAYERS,
+  ...UCL_PLAYERS,
+  ...LIGA_PLAYERS,
+  ...NCAAB_PLAYERS,
   ...ATP_SEARCH_PLAYERS,
   ...WTA_SEARCH_PLAYERS,
   ...UFC_SEARCH_PLAYERS,
   ...BOXING_SEARCH_PLAYERS,
+  ...XGAMES_ATHLETES,
+  ...OLYMPICS_ATHLETES,
 ];
+

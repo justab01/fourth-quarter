@@ -16,6 +16,10 @@ import {
   isTennisLeague, isCombatLeague,
   getCountryFlag, getWeightClassLabel, extractRankingDisplay,
 } from "@/utils/sportArchetype";
+import {
+  getAthleteProfile, type TennisProfile, type CombatProfile,
+  type XGamesProfile, type OlympicsProfile,
+} from "@/constants/athleteProfiles";
 
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
@@ -648,48 +652,103 @@ const gl = StyleSheet.create({
 function TennisOverview({ player, team, fallbackPlayer }: {
   player: Player | null; team: TeamData | null; fallbackPlayer: SearchPlayer | null;
 }) {
-  const stat      = fallbackPlayer?.stat ?? "";
-  const natl      = fallbackPlayer?.team ?? team?.city ?? "—";
-  const flag      = getCountryFlag(natl);
-  const rankShort = extractRankingDisplay(stat);
-  const tour      = team?.league ?? "ATP";
-  const color     = tour === "WTA" ? C.wta : C.atp;
+  const tour  = team?.league ?? "ATP";
+  const color = tour === "WTA" ? C.wta : C.atp;
+  const pName = player?.name ?? fallbackPlayer?.name ?? "";
+  const profile = getAthleteProfile(pName) as TennisProfile | null;
+
+  const natl     = profile?.nationality ?? fallbackPlayer?.team ?? "—";
+  const flag     = getCountryFlag(natl);
+  const ranking  = profile?.currentRanking ?? extractRankingDisplay(fallbackPlayer?.stat ?? "");
+  const slams    = profile?.grandSlams ?? 0;
+  const titles   = profile?.tourTitles ?? 0;
+  const winRate  = profile ? `${Math.round((profile.careerWins / (profile.careerWins + profile.careerLosses)) * 100)}%` : "—";
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
       {/* Key stats row */}
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <StatBigCard value={rankShort} label="Ranking" color={color} />
-        <StatBigCard value={tour} label="Tour" color={color} />
-        <StatBigCard value={flag} label={natl} color={color} />
+        <StatBigCard value={ranking || "—"} label="Ranking" color={color} />
+        <StatBigCard value={String(slams)} label="Grand Slams" color={color} />
+        <StatBigCard value={String(titles)} label="Tour Titles" color={color} />
+        <StatBigCard value={winRate} label="Win Rate" color={color} />
       </View>
 
-      {/* Achievement summary */}
-      {stat && (
+      {/* Grand Slam breakdown */}
+      {profile?.grandSlams != null && profile.grandSlams > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>GRAND SLAM TITLES ({profile.grandSlams})</Text>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+            {[
+              { abbr: "AO", label: "Australian Open", wins: profile.grandSlamBreakdown.ao },
+              { abbr: "RG", label: "Roland Garros", wins: profile.grandSlamBreakdown.rg },
+              { abbr: "W", label: "Wimbledon", wins: profile.grandSlamBreakdown.wimbledon },
+              { abbr: "USO", label: "US Open", wins: profile.grandSlamBreakdown.uso },
+            ].map(gs => (
+              <View key={gs.abbr} style={[indS.gsBox, { borderColor: gs.wins > 0 ? color : "rgba(255,255,255,0.1)" }]}>
+                <Text style={[indS.gsCount, { color: gs.wins > 0 ? color : C.textTertiary }]}>{gs.wins}</Text>
+                <Text style={indS.gsLabel}>{gs.abbr}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Surface record */}
+      {profile?.surfaceRecord && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>SURFACE RECORD</Text>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            {[
+              { surface: "Hard", record: profile.surfaceRecord.hard, color: "#4A90D9" },
+              { surface: "Clay", record: profile.surfaceRecord.clay, color: "#C8660C" },
+              { surface: "Grass", record: profile.surfaceRecord.grass, color: "#4CAF50" },
+            ].filter(s => s.record).map(s => (
+              <View key={s.surface} style={[indS.surfBox, { borderColor: `${s.color}40`, backgroundColor: `${s.color}12` }]}>
+                <Text style={[indS.surfRecord, { color: s.color }]}>{s.record}</Text>
+                <Text style={indS.surfLabel}>{s.surface}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Career highlights */}
+      {profile?.careerHighlights && profile.careerHighlights.length > 0 && (
         <View style={indS.card}>
           <Text style={indS.cardTitle}>CAREER HIGHLIGHTS</Text>
-          <Text style={indS.cardBody}>{stat}</Text>
+          {profile.careerHighlights.map((h, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+              <Text style={{ color: color, fontSize: 12 }}>•</Text>
+              <Text style={[indS.cardBody, { flex: 1, marginTop: 0 }]}>{h}</Text>
+            </View>
+          ))}
         </View>
       )}
 
       {/* Bio */}
-      {player?.bio && (
+      {(profile?.bio || player?.bio) && (
         <View style={indS.card}>
-          <Text style={indS.cardTitle}>PLAYER BIO</Text>
-          <Text style={indS.cardBody}>{player.bio}</Text>
+          <Text style={indS.cardTitle}>BIO</Text>
+          <Text style={indS.cardBody}>{profile?.bio ?? player?.bio}</Text>
         </View>
       )}
 
-      {/* Info rows */}
+      {/* Player details */}
       <View style={indS.infoCard}>
         {[
           ["Nationality", `${flag} ${natl}`],
-          ["Tour", tour === "WTA" ? "WTA Women's Tennis" : "ATP Men's Tennis"],
-          ["Handedness", player?.position?.includes("L") ? "Left-handed" : "Right-handed"],
-        ].map(([label, value]) => (
-          <View key={label} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label}</Text>
-            <Text style={indS.infoValue}>{value}</Text>
+          ["Tour", tour === "WTA" ? "WTA Women's Tour" : "ATP Men's Tour"],
+          profile?.plays && ["Plays", profile.plays],
+          profile?.turnedPro && ["Turned Pro", String(profile.turnedPro)],
+          profile?.peakRanking && ["Career Peak", profile.peakRanking],
+          profile?.careerEarnings && ["Career Earnings", profile.careerEarnings],
+          profile && ["Career W-L", `${profile.careerWins}-${profile.careerLosses}`],
+          profile?.height && ["Height", profile.height],
+        ].filter(Boolean).map(([label, value]) => (
+          <View key={label as string} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label as string}</Text>
+            <Text style={indS.infoValue}>{value as string}</Text>
           </View>
         ))}
       </View>
@@ -701,49 +760,265 @@ function TennisOverview({ player, team, fallbackPlayer }: {
 function CombatOverview({ player, team, fallbackPlayer }: {
   player: Player | null; team: TeamData | null; fallbackPlayer: SearchPlayer | null;
 }) {
-  const stat      = fallbackPlayer?.stat ?? "";
-  const position  = fallbackPlayer?.position ?? player?.position ?? "";
-  const division  = getWeightClassLabel(position);
   const league    = team?.league ?? "UFC";
   const color     = league === "BOXING" ? C.boxing : C.ufc;
-  const emoji     = league === "BOXING" ? "🥊" : "🥋";
-  const sportName = league === "BOXING" ? "Boxing" : "UFC";
+  const sportName = league === "BOXING" ? "Boxing" : "UFC / MMA";
+  const pName     = player?.name ?? fallbackPlayer?.name ?? "";
+  const profile   = getAthleteProfile(pName) as CombatProfile | null;
+
+  const record    = profile?.record;
+  const wld       = record ? `${record.wins}-${record.losses}${record.draws ? `-${record.draws}` : ""}${record.nc ? ` (${record.nc}NC)` : ""}` : fallbackPlayer?.stat ?? "—";
+  const ko        = profile?.byKoTko ?? 0;
+  const sub       = profile?.bySubmission ?? 0;
+  const dec       = profile?.byDecision ?? 0;
+  const koRate    = record ? `${Math.round((ko / record.wins) * 100)}%` : "—";
+  const natl      = profile?.nationality ?? "—";
+  const flag      = getCountryFlag(natl);
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
-      {/* Key stats row */}
+      {/* Record big cards */}
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <StatBigCard value={emoji} label={sportName} color={color} />
-        <StatBigCard value={division.split(" ")[0]} label="Division" color={color} />
-        <StatBigCard value={position.toUpperCase() || "—"} label="Class" color={color} />
+        <StatBigCard value={wld} label="W-L Record" color={color} />
+        <StatBigCard value={koRate} label="Finish Rate" color={color} />
       </View>
 
-      {/* Title / Status */}
-      {stat && (
+      {/* Finish breakdown */}
+      {record && (
         <View style={indS.card}>
-          <Text style={indS.cardTitle}>STATUS</Text>
-          <Text style={indS.cardBody}>{stat}</Text>
+          <Text style={indS.cardTitle}>WINS BY METHOD</Text>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+            <View style={[indS.methodBox, { borderColor: `${color}60`, flex: 1 }]}>
+              <Text style={[indS.methodCount, { color }]}>{ko}</Text>
+              <Text style={indS.methodLabel}>KO / TKO</Text>
+            </View>
+            <View style={[indS.methodBox, { borderColor: "#9B59B660", flex: 1 }]}>
+              <Text style={[indS.methodCount, { color: "#9B59B6" }]}>{sub}</Text>
+              <Text style={indS.methodLabel}>Submission</Text>
+            </View>
+            <View style={[indS.methodBox, { borderColor: "rgba(255,255,255,0.2)", flex: 1 }]}>
+              <Text style={[indS.methodCount, { color: C.text }]}>{dec}</Text>
+              <Text style={indS.methodLabel}>Decision</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Current titles */}
+      {profile?.titles && profile.titles.length > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>TITLES</Text>
+          {profile.titles.map((t, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+              <Ionicons name="trophy" size={14} color="#FFD700" />
+              <Text style={[indS.cardBody, { flex: 1, marginTop: 0 }]}>{t}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Career highlights */}
+      {profile?.careerHighlights && profile.careerHighlights.length > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>CAREER HIGHLIGHTS</Text>
+          {profile.careerHighlights.map((h, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+              <Text style={{ color, fontSize: 12 }}>•</Text>
+              <Text style={[indS.cardBody, { flex: 1, marginTop: 0 }]}>{h}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Recent fights */}
+      {profile?.recentFights && profile.recentFights.length > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>RECENT FIGHTS</Text>
+          {profile.recentFights.map((f, i) => (
+            <View key={i} style={[indS.fightRow, i > 0 && { borderTopWidth: 1, borderTopColor: C.separator }]}>
+              <View style={[indS.fightResult, { backgroundColor: f.result === "W" ? "#1B4D2E" : f.result === "L" ? "#4D1B1B" : "#333" }]}>
+                <Text style={[indS.fightResultTxt, { color: f.result === "W" ? "#4CAF50" : f.result === "L" ? "#F44336" : "#aaa" }]}>{f.result}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text, fontSize: 13, fontWeight: "700" }}>{f.opponent}</Text>
+                <Text style={{ color: C.textTertiary, fontSize: 11 }}>{f.method}{f.round ? ` Rd ${f.round}` : ""} · {f.event ?? f.year}</Text>
+              </View>
+              <Text style={{ color: C.textTertiary, fontSize: 11 }}>{f.year}</Text>
+            </View>
+          ))}
         </View>
       )}
 
       {/* Bio */}
-      {player?.bio && (
+      {(profile?.bio || player?.bio) && (
         <View style={indS.card}>
           <Text style={indS.cardTitle}>FIGHTER BIO</Text>
-          <Text style={indS.cardBody}>{player.bio}</Text>
+          <Text style={indS.cardBody}>{profile?.bio ?? player?.bio}</Text>
         </View>
       )}
 
-      {/* Info rows */}
+      {/* Physical stats */}
       <View style={indS.infoCard}>
         {[
           ["Sport", sportName],
-          ["Weight Class", division],
-          ["Division Code", position.toUpperCase() || "—"],
-        ].map(([label, value]) => (
-          <View key={label} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label}</Text>
-            <Text style={indS.infoValue}>{value}</Text>
+          profile?.weightClass && ["Weight Class", profile.weightClass],
+          profile?.nationality && ["Nationality", `${flag} ${profile.nationality}`],
+          profile?.stance && ["Stance", profile.stance],
+          profile?.height && ["Height", profile.height],
+          profile?.weight && ["Weight", profile.weight],
+          profile?.reach && ["Reach", profile.reach],
+          profile?.titleDefenses != null && ["Title Defenses", String(profile.titleDefenses)],
+        ].filter(Boolean).map(([label, value]) => (
+          <View key={label as string} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label as string}</Text>
+            <Text style={indS.infoValue}>{value as string}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+// ─── X Games Overview ─────────────────────────────────────────────────────────
+function XGamesOverview({ player, team, fallbackPlayer }: {
+  player: Player | null; team: TeamData | null; fallbackPlayer: SearchPlayer | null;
+}) {
+  const color   = C.xgames;
+  const pName   = player?.name ?? fallbackPlayer?.name ?? "";
+  const profile = getAthleteProfile(pName) as XGamesProfile | null;
+  const natl    = profile?.nationality ?? fallbackPlayer?.team ?? "—";
+  const flag    = getCountryFlag(natl);
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <StatBigCard value={String(profile?.goldMedals ?? 0)} label="Gold" color="#FFD700" />
+        <StatBigCard value={String(profile?.silverMedals ?? 0)} label="Silver" color="#C0C0C0" />
+        <StatBigCard value={String(profile?.bronzeMedals ?? 0)} label="Bronze" color="#CD7F32" />
+        <StatBigCard value={String(profile?.totalMedals ?? 0)} label="Total" color={color} />
+      </View>
+
+      {profile?.disciplines && profile.disciplines.length > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>DISCIPLINES</Text>
+          {profile.disciplines.map((d, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+              <Ionicons name="bicycle" size={14} color={color} />
+              <Text style={[indS.cardBody, { flex: 1, marginTop: 0 }]}>{d}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {profile?.careerHighlights && profile.careerHighlights.length > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>CAREER HIGHLIGHTS</Text>
+          {profile.careerHighlights.map((h, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+              <Text style={{ color, fontSize: 12 }}>•</Text>
+              <Text style={[indS.cardBody, { flex: 1, marginTop: 0 }]}>{h}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {(profile?.bio || player?.bio) && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>BIO</Text>
+          <Text style={indS.cardBody}>{profile?.bio ?? player?.bio}</Text>
+        </View>
+      )}
+
+      <View style={indS.infoCard}>
+        {[
+          ["Nationality", `${flag} ${natl}`],
+          ["Sport", "X Games"],
+          profile?.born && ["Born", profile.born.slice(0, 4)],
+        ].filter(Boolean).map(([label, value]) => (
+          <View key={label as string} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label as string}</Text>
+            <Text style={indS.infoValue}>{value as string}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+// ─── Olympics Overview ────────────────────────────────────────────────────────
+function OlympicsOverview({ player, team, fallbackPlayer }: {
+  player: Player | null; team: TeamData | null; fallbackPlayer: SearchPlayer | null;
+}) {
+  const color   = C.olympics;
+  const pName   = player?.name ?? fallbackPlayer?.name ?? "";
+  const profile = getAthleteProfile(pName) as OlympicsProfile | null;
+  const natl    = profile?.nationality ?? fallbackPlayer?.team ?? "—";
+  const flag    = getCountryFlag(natl);
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <StatBigCard value={String(profile?.goldMedals ?? 0)} label="Gold" color="#FFD700" />
+        <StatBigCard value={String(profile?.silverMedals ?? 0)} label="Silver" color="#C0C0C0" />
+        <StatBigCard value={String(profile?.bronzeMedals ?? 0)} label="Bronze" color="#CD7F32" />
+        <StatBigCard value={String(profile?.totalMedals ?? 0)} label="Total" color={color} />
+      </View>
+
+      {profile?.discipline && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>DISCIPLINE</Text>
+          <Text style={[indS.cardBody, { color }]}>{profile.discipline}</Text>
+        </View>
+      )}
+
+      {/* Medal history */}
+      {profile?.medals && profile.medals.length > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>OLYMPIC MEDALS</Text>
+          {profile.medals.map((m, i) => (
+            <View key={i} style={[indS.fightRow, i > 0 && { borderTopWidth: 1, borderTopColor: C.separator }]}>
+              <View style={[indS.medalBadge, {
+                backgroundColor: m.color === "Gold" ? "#FFD70022" : m.color === "Silver" ? "#C0C0C022" : "#CD7F3222"
+              }]}>
+                <Text style={{ fontSize: 14 }}>{m.color === "Gold" ? "🥇" : m.color === "Silver" ? "🥈" : "🥉"}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.text, fontSize: 13, fontWeight: "700" }}>{m.event}</Text>
+                <Text style={{ color: C.textTertiary, fontSize: 11 }}>{m.city} {m.year}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {profile?.careerHighlights && profile.careerHighlights.length > 0 && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>CAREER HIGHLIGHTS</Text>
+          {profile.careerHighlights.map((h, i) => (
+            <View key={i} style={{ flexDirection: "row", gap: 8, marginTop: 6 }}>
+              <Text style={{ color, fontSize: 12 }}>•</Text>
+              <Text style={[indS.cardBody, { flex: 1, marginTop: 0 }]}>{h}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {(profile?.bio || player?.bio) && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>BIO</Text>
+          <Text style={indS.cardBody}>{profile?.bio ?? player?.bio}</Text>
+        </View>
+      )}
+
+      <View style={indS.infoCard}>
+        {[
+          ["Nationality", `${flag} ${natl}`],
+          ["Discipline", profile?.discipline ?? fallbackPlayer?.position ?? "—"],
+          profile?.born && ["Born", profile.born.slice(0, 4)],
+        ].filter(Boolean).map(([label, value]) => (
+          <View key={label as string} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label as string}</Text>
+            <Text style={indS.infoValue}>{value as string}</Text>
           </View>
         ))}
       </View>
@@ -772,6 +1047,33 @@ const indS = StyleSheet.create({
   },
   infoLabel: { color: C.textTertiary, fontSize: 12, fontWeight: "600" },
   infoValue: { color: C.text, fontSize: 12, fontWeight: "700" },
+  // Grand Slam boxes
+  gsBox: {
+    borderRadius: 12, borderWidth: 1.5, padding: 12,
+    alignItems: "center", minWidth: 60,
+  },
+  gsCount: { fontSize: 26, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  gsLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", marginTop: 2 },
+  // Surface boxes
+  surfBox: {
+    borderRadius: 10, borderWidth: 1, padding: 10,
+    alignItems: "center", flex: 1,
+  },
+  surfRecord: { fontSize: 15, fontWeight: "800" },
+  surfLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 },
+  // Combat method boxes
+  methodBox: {
+    backgroundColor: C.card, borderRadius: 12, borderWidth: 1, padding: 12,
+    alignItems: "center",
+  },
+  methodCount: { fontSize: 26, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  methodLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 },
+  // Fight rows
+  fightRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
+  fightResult: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  fightResultTxt: { fontSize: 12, fontWeight: "900" },
+  // Medal badge
+  medalBadge: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
 });
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -893,6 +1195,10 @@ export default function PlayerScreen() {
       return <TennisOverview player={player} team={team} fallbackPlayer={fallbackSearchPlayer ?? null} />;
     if (isCombatLeague(team.league))
       return <CombatOverview player={player} team={team} fallbackPlayer={fallbackSearchPlayer ?? null} />;
+    if (team.league === "XGAMES")
+      return <XGamesOverview player={player} team={team} fallbackPlayer={fallbackSearchPlayer ?? null} />;
+    if (team.league === "OLYMPICS")
+      return <OlympicsOverview player={player} team={team} fallbackPlayer={fallbackSearchPlayer ?? null} />;
     if (team.league === "NBA") return <NBAOverview player={player} team={team} liveStats={liveStats} />;
     if (team.league === "NFL") return <NFLOverview player={player} team={team} liveStats={liveStats} />;
     if (team.league === "MLB") return <MLBOverview player={player} team={team} liveStats={liveStats} />;

@@ -178,8 +178,15 @@ export function SearchModal() {
 
   const goTeam = (team: SearchTeam) => {
     handleClose();
-    const id = TEAM_NAME_TO_ID[team.name] ?? teamSlug(team);
-    router.push({ pathname: "/team/[id]", params: { id } } as any);
+    // Individual-sport athletes route to player page, not team page
+    const isIndividualAthlete = ["ATP", "WTA", "UFC", "BOXING", "XGAMES", "OLYMPICS"].includes(team.league);
+    if (isIndividualAthlete) {
+      const id = slugify(team.name);
+      router.push({ pathname: "/player/[id]", params: { id } } as any);
+    } else {
+      const id = TEAM_NAME_TO_ID[team.name] ?? teamSlug(team);
+      router.push({ pathname: "/team/[id]", params: { id } } as any);
+    }
   };
 
   const goPlayer = (player: SearchPlayer) => {
