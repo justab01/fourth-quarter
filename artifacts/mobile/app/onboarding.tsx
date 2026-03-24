@@ -15,7 +15,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
 
-const STEPS = ["welcome", "sports", "teams", "name"] as const;
+const STEPS = ["welcome", "sports", "teams", "name", "confirm"] as const;
 type Step = (typeof STEPS)[number];
 
 export default function OnboardingScreen() {
@@ -79,7 +79,7 @@ export default function OnboardingScreen() {
 
       {step !== "welcome" && (
         <View style={styles.progressBar}>
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4].map((i) => (
             <View key={i} style={[styles.progressDot, stepIndex >= i && styles.progressDotActive]} />
           ))}
         </View>
@@ -107,8 +107,16 @@ export default function OnboardingScreen() {
           <NameStep
             name={userName}
             onChange={setUserName}
-            onFinish={handleFinish}
+            onNext={() => advance("confirm")}
             botPad={botPad}
+          />
+        )}
+        {step === "confirm" && (
+          <ConfirmStep
+            name={userName}
+            sports={selectedSports}
+            teams={selectedTeams}
+            onFinish={handleFinish}
           />
         )}
       </Animated.View>
@@ -233,7 +241,7 @@ function TeamsStep({ teams, selected, onToggle, onNext }: {
   );
 }
 
-function NameStep({ name, onChange, onFinish, botPad }: { name: string; onChange: (v: string) => void; onFinish: () => void; botPad: number }) {
+function NameStep({ name, onChange, onNext, botPad }: { name: string; onChange: (v: string) => void; onNext: () => void; botPad: number }) {
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>What's your name?</Text>
@@ -246,8 +254,83 @@ function NameStep({ name, onChange, onFinish, botPad }: { name: string; onChange
         placeholderTextColor={C.textTertiary}
         autoFocus
         returnKeyType="done"
-        onSubmitEditing={onFinish}
+        onSubmitEditing={onNext}
       />
+      <Pressable style={styles.primaryBtn} onPress={onNext}>
+        <LinearGradient colors={[C.accent, "#FF6B35"]} style={styles.primaryBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+          <Text style={styles.primaryBtnText}>Continue</Text>
+          <Ionicons name="arrow-forward" size={20} color="#fff" />
+        </LinearGradient>
+      </Pressable>
+    </View>
+  );
+}
+
+function ConfirmStep({ name, sports, teams, onFinish }: {
+  name: string; sports: string[]; teams: string[]; onFinish: () => void;
+}) {
+  const SPORT_EMOJIS: Record<string, string> = {
+    NBA: "🏀", NFL: "🏈", MLB: "⚾", MLS: "⚽", NHL: "🏒",
+    EPL: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", UCL: "⭐", LIGA: "🇪🇸", NCAAB: "🎓", WNBA: "🏀", UFC: "🥋",
+  };
+  return (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Looks good, {name.trim() || "friend"}!</Text>
+      <Text style={styles.stepSubtitle}>Here's what your hub will look like</Text>
+
+      <View style={confirmS.card}>
+        {/* Name row */}
+        <View style={confirmS.row}>
+          <View style={confirmS.iconBox}>
+            <Ionicons name="person" size={16} color={C.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={confirmS.rowLabel}>Name</Text>
+            <Text style={confirmS.rowValue}>{name.trim() || "Sports Fan"}</Text>
+          </View>
+        </View>
+
+        <View style={confirmS.sep} />
+
+        {/* Sports row */}
+        <View style={confirmS.row}>
+          <View style={confirmS.iconBox}>
+            <Ionicons name="trophy" size={16} color={C.accentGold} />
+          </View>
+          <View style={{ flex: 1, gap: 8 }}>
+            <Text style={confirmS.rowLabel}>Sports ({sports.length})</Text>
+            <View style={confirmS.pillWrap}>
+              {sports.map(s => (
+                <View key={s} style={confirmS.pill}>
+                  <Text style={confirmS.pillEmoji}>{SPORT_EMOJIS[s] ?? "🏆"}</Text>
+                  <Text style={confirmS.pillText}>{s}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <View style={confirmS.sep} />
+
+        {/* Teams row */}
+        <View style={confirmS.row}>
+          <View style={confirmS.iconBox}>
+            <Ionicons name="star" size={16} color={C.accentGreen} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={confirmS.rowLabel}>Teams following</Text>
+            <Text style={confirmS.rowValue}>
+              {teams.length > 0 ? `${teams.length} team${teams.length !== 1 ? "s" : ""}` : "None selected"}
+            </Text>
+            {teams.length > 0 && (
+              <Text style={confirmS.teamNames} numberOfLines={2}>
+                {teams.slice(0, 4).join(", ")}{teams.length > 4 ? ` +${teams.length - 4} more` : ""}
+              </Text>
+            )}
+          </View>
+        </View>
+      </View>
+
       <Pressable style={styles.primaryBtn} onPress={onFinish}>
         <LinearGradient colors={[C.accent, "#FF6B35"]} style={styles.primaryBtnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
           <Text style={styles.primaryBtnText}>Enter My Hub</Text>
@@ -257,6 +340,40 @@ function NameStep({ name, onChange, onFinish, botPad }: { name: string; onChange
     </View>
   );
 }
+
+const confirmS = StyleSheet.create({
+  card: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    padding: 20,
+    gap: 16,
+  },
+  row: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
+  iconBox: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center", justifyContent: "center",
+    flexShrink: 0,
+  },
+  rowLabel: {
+    color: C.textTertiary, fontSize: 11, fontWeight: "700",
+    letterSpacing: 0.8, textTransform: "uppercase",
+  },
+  rowValue: { color: C.text, fontSize: 17, fontWeight: "700", marginTop: 2, fontFamily: "Inter_700Bold" },
+  teamNames: { color: C.textSecondary, fontSize: 12, marginTop: 2, fontFamily: "Inter_400Regular" },
+  sep: { height: 1, backgroundColor: "rgba(255,255,255,0.08)" },
+  pillWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 2 },
+  pill: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: `${C.accent}22`, borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: `${C.accent}44`,
+  },
+  pillEmoji: { fontSize: 12 },
+  pillText: { color: C.accent, fontSize: 12, fontWeight: "700" },
+});
 
 const styles = StyleSheet.create({
   container: {

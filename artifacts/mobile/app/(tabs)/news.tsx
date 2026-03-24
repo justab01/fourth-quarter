@@ -8,24 +8,74 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
-import { api } from "@/utils/api";
+import { api, type NewsArticle } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsCardSkeleton } from "@/components/LoadingSkeleton";
 
 const C = Colors.dark;
 
-const FILTERS = ["All", "My Teams", "NBA", "NFL", "MLB", "MLS"];
+const FILTERS = ["All", "My Teams", "NBA", "NFL", "MLB", "MLS", "NHL", "UCL", "EPL", "LIGA", "NCAAB", "WNBA"];
 
 const FILTER_COLORS: Record<string, string> = {
-  NBA: C.nba,
-  NFL: C.nfl,
-  MLB: C.mlb,
-  MLS: C.mls,
-  "My Teams": C.accent,
-  All: C.textTertiary,
+  NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls, NHL: C.nhl,
+  UCL: C.ucl, EPL: C.eplBright, LIGA: C.liga, NCAAB: C.ncaab, WNBA: C.wnba,
+  "My Teams": C.accent, All: C.textTertiary,
 };
 
+// ─── Narrative bucket classifier ──────────────────────────────────────────────
+type NarrativeBucket = "playoff" | "injury" | "trades" | "highlights" | "general";
+
+const BUCKET_META: Record<NarrativeBucket, { label: string; emoji: string; color: string }> = {
+  playoff:    { label: "Playoff Race",     emoji: "🏆", color: C.accentGreen },
+  injury:     { label: "Injury Report",    emoji: "🏥", color: "#E05C5C" },
+  trades:     { label: "Trades & Moves",   emoji: "📦", color: C.accentBlue },
+  highlights: { label: "Highlights",       emoji: "⚡", color: C.accentGold },
+  general:    { label: "Around the League",emoji: "📰", color: C.textSecondary },
+};
+
+function classifyArticle(article: NewsArticle): NarrativeBucket {
+  const text = `${article.title} ${article.summary}`.toLowerCase();
+  if (/playoff|postseason|clinch|eliminat|seeding|wild.?card|championship.race|title.race|standings/.test(text))
+    return "playoff";
+  if (/injur|injured|\bout\b|questionable|doubtful|surgery|day.to.day|\bIR\b|sidelined|miss.*game|torn|sprained|fractured/.test(text))
+    return "injury";
+  if (/\btrade\b|traded|signed|contract|draft|waived|released|acqui|extension|free.agent|deal/.test(text))
+    return "trades";
+  if (/record|milestone|career.high|historic|streak|\bdebut\b|first.time|all.time|clutch/.test(text))
+    return "highlights";
+  return "general";
+}
+
+function groupByNarrative(articles: NewsArticle[]): Array<{ bucket: NarrativeBucket; articles: NewsArticle[] }> {
+  const map: Record<NarrativeBucket, NewsArticle[]> = {
+    playoff: [], injury: [], trades: [], highlights: [], general: []
+  };
+  for (const a of articles) map[classifyArticle(a)].push(a);
+  const ORDER: NarrativeBucket[] = ["playoff", "injury", "trades", "highlights", "general"];
+  return ORDER.filter(k => map[k].length > 0).map(k => ({ bucket: k, articles: map[k] }));
+}
+
+// ─── Narrative section header ──────────────────────────────────────────────────
+function NarrativeHeader({ bucket }: { bucket: NarrativeBucket }) {
+  const { label, emoji, color } = BUCKET_META[bucket];
+  return (
+    <View style={nh.row}>
+      <View style={[nh.bar, { backgroundColor: color }]} />
+      <Text style={nh.emoji}>{emoji}</Text>
+      <Text style={[nh.label, { color }]}>{label}</Text>
+    </View>
+  );
+}
+
+const nh = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 6 },
+  bar: { width: 3, height: 18, borderRadius: 2 },
+  emoji: { fontSize: 15 },
+  label: { fontSize: 14, fontWeight: "800", fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
+});
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function NewsScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
@@ -48,6 +98,7 @@ export default function NewsScreen() {
   };
 
   const articles = data?.articles ?? [];
+
   const filtered = (() => {
     if (filter === "All") return articles;
     if (filter === "My Teams") {
@@ -60,8 +111,13 @@ export default function NewsScreen() {
     return articles.filter(a => a.leagues.includes(filter));
   })();
 
-  const heroArticle = filtered[0];
-  const restArticles = filtered.slice(1);
+  const showNarratives = filter === "All" || filter === "My Teams";
+  const narrativeGroups = showNarratives ? groupByNarrative(filtered) : [];
+  const heroArticle = !showNarratives ? filtered[0] : null;
+  const restArticles = !showNarratives ? filtered.slice(1) : [];
+
+  const goToArticle = (article: NewsArticle) =>
+    router.push({ pathname: "/article/[id]", params: { id: article.id, article: JSON.stringify(article) } } as any);
 
   return (
     <View style={styles.container}>
@@ -114,21 +170,43 @@ export default function NewsScreen() {
             <Text style={styles.emptyTitle}>No Stories</Text>
             <Text style={styles.emptyText}>Try switching your filter</Text>
           </View>
+        ) : showNarratives ? (
+          /* ── Narrative grouped layout ───────────────────────────────── */
+          <View style={styles.narrativeList}>
+            {narrativeGroups.map(({ bucket, articles: bucketArticles }) => (
+              <View key={bucket} style={styles.narrativeSection}>
+                <NarrativeHeader bucket={bucket} />
+                {/* First article in bucket as hero */}
+                {bucketArticles[0] && (
+                  <NewsCard
+                    article={bucketArticles[0]}
+                    hero
+                    onPress={() => goToArticle(bucketArticles[0])}
+                  />
+                )}
+                {/* Remaining articles */}
+                {bucketArticles.slice(1).map(article => (
+                  <NewsCard
+                    key={article.id}
+                    article={article}
+                    onPress={() => goToArticle(article)}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
         ) : (
+          /* ── League-filtered flat layout ───────────────────────────── */
           <View style={styles.list}>
             {heroArticle && (
-              <NewsCard
-                article={heroArticle}
-                hero
-                onPress={() => router.push({ pathname: "/article/[id]", params: { id: heroArticle.id, article: JSON.stringify(heroArticle) } } as any)}
-              />
+              <NewsCard article={heroArticle} hero onPress={() => goToArticle(heroArticle)} />
             )}
             <View style={styles.divider} />
             {restArticles.map(article => (
               <NewsCard
                 key={article.id}
                 article={article}
-                onPress={() => router.push({ pathname: "/article/[id]", params: { id: article.id, article: JSON.stringify(article) } } as any)}
+                onPress={() => goToArticle(article)}
               />
             ))}
           </View>
@@ -193,6 +271,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Inter_600SemiBold",
   },
+
+  narrativeList: { gap: 28, paddingVertical: 4 },
+  narrativeSection: { gap: 10 },
 
   list: { gap: 10, paddingVertical: 4 },
   divider: { height: 1, backgroundColor: C.separator, marginVertical: 4 },

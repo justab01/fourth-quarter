@@ -86,6 +86,43 @@ function getGameContext(game: Game, myTeams: string[]): string | null {
   return null;
 }
 
+// ─── Playoff implications ────────────────────────────────────────────────────
+const PLAYOFF_MONTHS: Record<string, number[]> = {
+  NBA: [2, 3, 4],       // March, April, May (0-indexed)
+  NHL: [2, 3, 4],
+  MLB: [7, 8, 9],       // August, September, October
+  NFL: [9, 10, 11, 12, 0], // Oct-Jan
+  MLS: [8, 9, 10],
+};
+
+function getPlayoffImplication(game: Game): string | null {
+  const now = new Date();
+  const month = now.getMonth();
+  const lg = game.league as string;
+  const months = PLAYOFF_MONTHS[lg];
+  if (!months || !months.includes(month)) return null;
+
+  const homeScore = game.homeScore ?? 0;
+  const awayScore = game.awayScore ?? 0;
+
+  const implLines: Record<string, string> = {
+    NBA: "🏆 Playoff seeding implications",
+    NHL: "🏒 Playoff race — every point counts",
+    MLB: "⚾ Wild card race implications",
+    NFL: "🏈 Playoff push — division stakes",
+    MLS: "⚽ Playoff positioning on the line",
+  };
+
+  const line = implLines[lg];
+  if (!line) return null;
+
+  if (game.status === "live") {
+    const diff = Math.abs(homeScore - awayScore);
+    if (diff <= 5) return `${line} · One-possession game`;
+  }
+  return line;
+}
+
 // ─── Section heading ──────────────────────────────────────────────────────────
 function SectionHeading({ label, accentColor, onSeeAll, badge }: {
   label: string; accentColor?: string; onSeeAll?: () => void; badge?: React.ReactNode;
@@ -743,13 +780,20 @@ export default function HubScreen() {
             >
               {heroGames.map(game => {
                 const ctx = getGameContext(game, myTeams);
+                const playoff = getPlayoffImplication(game);
                 return (
-                  <View key={game.id} style={{ width: SCREEN_W - 40 }}>
+                  <View key={game.id} style={{ width: SCREEN_W - 40, gap: 6 }}>
                     <GameCard game={game} variant="hero" onPress={() => handleGamePress(game)} />
                     {ctx && (
                       <View style={styles.heroContext}>
                         <Ionicons name="information-circle" size={12} color={C.accent} />
                         <Text style={styles.heroContextText}>{ctx}</Text>
+                      </View>
+                    )}
+                    {playoff && (
+                      <View style={[styles.heroContext, { borderColor: `${C.accentGold}40`, backgroundColor: `${C.accentGold}10` }]}>
+                        <Ionicons name="trophy" size={12} color={C.accentGold} />
+                        <Text style={[styles.heroContextText, { color: C.accentGold }]}>{playoff}</Text>
                       </View>
                     )}
                   </View>

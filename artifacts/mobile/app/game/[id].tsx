@@ -323,6 +323,74 @@ export default function GameDetailScreen() {
   );
 }
 
+// ─── Win probability bar ──────────────────────────────────────────────────────
+function computeWinProb(game: any): number {
+  const homeScore = game.homeScore ?? 0;
+  const awayScore = game.awayScore ?? 0;
+  const diff = homeScore - awayScore;
+  const period = (game.quarter ?? "").toLowerCase();
+
+  let urgency = 1;
+  if (period.includes("4") || period.includes("q4") || period.includes("3rd period") || period.includes("9th")) urgency = 2.5;
+  else if (period.includes("3") || period.includes("q3") || period.includes("2nd period") || period.includes("7th")) urgency = 1.6;
+  else if (period.includes("ot") || period.includes("overtime") || period.includes("extra")) urgency = 4;
+
+  const adjustedDiff = diff * urgency * 1.5;
+  return Math.min(0.97, Math.max(0.03, 1 / (1 + Math.exp(-adjustedDiff / 12))));
+}
+
+function WinProbBar({ game, dc }: { game: any; dc: string }) {
+  if (game.status !== "live" && game.status !== "finished") return null;
+  if ((game.homeScore ?? 0) === 0 && (game.awayScore ?? 0) === 0) return null;
+
+  const homeWinProb = computeWinProb(game);
+  const awayWinProb = 1 - homeWinProb;
+  const homeLeading = homeWinProb > 0.5;
+  const isToss = Math.abs(homeWinProb - 0.5) < 0.08;
+
+  const homeShort = game.homeTeam.split(" ").slice(-1)[0];
+  const awayShort = game.awayTeam.split(" ").slice(-1)[0];
+
+  return (
+    <View style={wpb.wrap}>
+      <View style={wpb.labelRow}>
+        <Text style={[wpb.teamLabel, { color: !homeLeading ? dc : C.textTertiary }]}>{awayShort}</Text>
+        <Text style={wpb.centerLabel}>
+          {isToss ? "Toss-up" : `${homeLeading ? homeShort : awayShort} favored`}
+        </Text>
+        <Text style={[wpb.teamLabel, { color: homeLeading ? dc : C.textTertiary, textAlign: "right" }]}>{homeShort}</Text>
+      </View>
+      <View style={wpb.track}>
+        <View style={[wpb.awayFill, { flex: awayWinProb, backgroundColor: homeLeading ? `${dc}40` : dc }]} />
+        <View style={wpb.divider} />
+        <View style={[wpb.homeFill, { flex: homeWinProb, backgroundColor: homeLeading ? dc : `${dc}40` }]} />
+      </View>
+      <View style={wpb.pctRow}>
+        <Text style={[wpb.pct, { color: !homeLeading ? dc : C.textTertiary }]}>{Math.round(awayWinProb * 100)}%</Text>
+        <Text style={wpb.pctLabel}>Win probability</Text>
+        <Text style={[wpb.pct, { color: homeLeading ? dc : C.textTertiary, textAlign: "right" }]}>{Math.round(homeWinProb * 100)}%</Text>
+      </View>
+    </View>
+  );
+}
+
+const wpb = StyleSheet.create({
+  wrap: {
+    backgroundColor: C.card, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: C.cardBorder, gap: 8,
+  },
+  labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  teamLabel: { fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold", minWidth: 60 },
+  centerLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
+  track: { flexDirection: "row", height: 8, borderRadius: 4, overflow: "hidden", backgroundColor: C.cardBorder },
+  awayFill: { height: "100%" },
+  divider: { width: 2, height: "100%", backgroundColor: C.background },
+  homeFill: { height: "100%" },
+  pctRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  pct: { fontSize: 16, fontWeight: "900", fontFamily: "Inter_700Bold", minWidth: 60 },
+  pctLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
+});
+
 // ─── Gamecast tab ──────────────────────────────────────────────────────────────
 function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
   const isLive = game.status === "live";
@@ -358,6 +426,9 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
       {(isLive || isFinished) && (
         <LiveTrackerPanel state={trackerState} accentColor={dc} game={game} />
       )}
+
+      {/* ── Win Probability ───────────────────────────────────────────────── */}
+      <WinProbBar game={game} dc={dc} />
 
       {/* ── Momentum Wave ─────────────────────────────────────────────────── */}
       {(isLive || isFinished) && keyPlays.length > 0 && (

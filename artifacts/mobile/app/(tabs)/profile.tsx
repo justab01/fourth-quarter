@@ -58,6 +58,75 @@ const statCard = StyleSheet.create({
   },
 });
 
+function FandomCommandCenter({ preferences, primaryColor }: { preferences: any; primaryColor: string }) {
+  const SPORT_ICONS: Record<string, string> = {
+    NBA: "🏀", NFL: "🏈", MLB: "⚾", MLS: "⚽", NHL: "🏒",
+    EPL: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", UCL: "⭐", LIGA: "🇪🇸", NCAAB: "🎓", WNBA: "🏀", UFC: "🥋",
+  };
+
+  const favLeague = preferences.favoriteLeagues[0] ?? null;
+  const teamsCount = preferences.favoriteTeams.length;
+  const leaguesCount = preferences.favoriteLeagues.length;
+
+  const fandomItems = [
+    { icon: "people", label: "Teams", value: teamsCount.toString(), color: primaryColor },
+    { icon: "trophy", label: "Sports", value: leaguesCount.toString(), color: C.accentGold },
+    { icon: "stats-chart", label: "Profile", value: teamsCount > 0 && leaguesCount > 0 ? "Complete" : "Set up", color: C.accentGreen },
+  ];
+
+  const insights: string[] = [];
+  if (favLeague) insights.push(`Your go-to league: ${SPORT_ICONS[favLeague] ?? "🏆"} ${favLeague}`);
+  if (teamsCount >= 3) insights.push(`Following ${teamsCount} teams across ${leaguesCount} sports`);
+  else if (teamsCount === 1) insights.push(`Following 1 team — add more for better recommendations`);
+  if (leaguesCount === 0) insights.push("Add your favorite sports to personalize the app");
+
+  return (
+    <View style={fanS.section}>
+      <Text style={fanS.heading}>My Fandom</Text>
+      <View style={fanS.statsRow}>
+        {fandomItems.map(item => (
+          <View key={item.label} style={fanS.statBox}>
+            <Text style={[fanS.statVal, { color: item.color }]}>{item.value}</Text>
+            <Text style={fanS.statLabel}>{item.label}</Text>
+          </View>
+        ))}
+      </View>
+      {insights.length > 0 && (
+        <View style={fanS.insightCard}>
+          {insights.map((ins, i) => (
+            <View key={i} style={fanS.insightRow}>
+              <Ionicons name="sparkles" size={12} color={primaryColor} />
+              <Text style={fanS.insightText}>{ins}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const fanS = StyleSheet.create({
+  section: { gap: 10, paddingVertical: 4 },
+  heading: {
+    fontSize: 18, fontWeight: "800", color: C.text,
+    fontFamily: "Inter_700Bold", letterSpacing: -0.2,
+  },
+  statsRow: { flexDirection: "row", gap: 10 },
+  statBox: {
+    flex: 1, backgroundColor: C.card, borderRadius: 16, padding: 16,
+    alignItems: "center", borderWidth: 1, borderColor: C.cardBorder, gap: 4,
+  },
+  statVal: { fontSize: 24, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  statLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
+  insightCard: {
+    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 14,
+    padding: 12, gap: 8,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+  },
+  insightRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  insightText: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+});
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { preferences, setPreferences, savePreferences } = usePreferences();
@@ -169,6 +238,9 @@ export default function ProfileScreen() {
             <StatCard value="100%" label="Ready" color={C.accentGreen} />
           </View>
         </View>
+
+        {/* FANDOM COMMAND CENTER */}
+        <FandomCommandCenter preferences={preferences} primaryColor={primaryColor} />
 
         {/* LEAGUES */}
         <View style={styles.section}>

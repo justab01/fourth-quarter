@@ -192,9 +192,75 @@ function groupRoster(roster: Player[]): Record<string, Player[]> {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+function getStreakInfo(games: TeamData["recentGames"]): { label: string; color: string } | null {
+  if (!games || games.length === 0) return null;
+  const recent = games.slice(-5);
+  let streak = 0; let streakType = recent[recent.length - 1]?.result ?? "W";
+  for (let i = recent.length - 1; i >= 0; i--) {
+    if (recent[i].result === streakType) streak++;
+    else break;
+  }
+  if (streak < 2) return null;
+  if (streakType === "W") return { label: `${streak}-game winning streak 🔥`, color: "#48ADA9" };
+  if (streakType === "L") return { label: `${streak}-game losing skid`, color: "#E06060" };
+  return null;
+}
+
+function WhatIsGoingOn({ team }: { team: TeamData }) {
+  const streak = getStreakInfo(team.recentGames);
+  const recentWins = team.recentGames.filter(g => g.result === "W").length;
+  const recentTotal = team.recentGames.length;
+  const form = team.recentGames.slice(-5).map(g => g.result).join("-");
+  const topStat = team.stats.find(s => s.value && s.label);
+
+  const lines: { icon: string; color: string; text: string }[] = [];
+
+  if (streak) lines.push({ icon: streak.color === "#48ADA9" ? "trending-up" : "trending-down", color: streak.color, text: streak.label });
+  if (team.standing && team.standing !== "—") lines.push({ icon: "trophy-outline", color: "#E6A817", text: `Standing: ${team.standing} in ${team.division}` });
+  if (recentTotal > 0) lines.push({ icon: "stats-chart", color: "#4A90D9", text: `Recent form: ${form} (${recentWins}W-${recentTotal - recentWins}L in last ${recentTotal})` });
+  if (topStat) lines.push({ icon: "bar-chart", color: team.color, text: `${topStat.label}: ${topStat.value} ${topStat.rank ? `(${topStat.rank})` : ""}` });
+
+  if (lines.length === 0) return null;
+
+  return (
+    <View style={wig.card}>
+      <Text style={wig.heading}>What's going on</Text>
+      {lines.map((l, i) => (
+        <View key={i} style={wig.row}>
+          <Ionicons name={l.icon as any} size={14} color={l.color} />
+          <Text style={wig.text}>{l.text}</Text>
+        </View>
+      ))}
+      <Pressable style={wig.standingsLink} onPress={() => router.push("/(tabs)/standings" as any)}>
+        <Text style={wig.standingsLinkText}>Full standings</Text>
+        <Ionicons name="arrow-forward" size={12} color={C.accent} />
+      </Pressable>
+    </View>
+  );
+}
+
+const wig = StyleSheet.create({
+  card: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    padding: 16, gap: 10,
+  },
+  heading: {
+    color: C.textTertiary, fontSize: 10, fontWeight: "900",
+    letterSpacing: 1.2, textTransform: "uppercase",
+  },
+  row: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  text: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", flex: 1, lineHeight: 20 },
+  standingsLink: {
+    flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4, alignSelf: "flex-end",
+  },
+  standingsLinkText: { color: C.accent, fontSize: 12, fontWeight: "700" },
+});
+
 function ScoresTab({ team }: { team: TeamData }) {
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 10 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+      <WhatIsGoingOn team={team} />
       <Text style={sec.title}>Recent Results</Text>
       {team.recentGames.map((g, i) => {
         const isWin = g.result === "W";

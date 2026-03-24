@@ -71,6 +71,45 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function getReadingTime(text: string): string {
+  const words = text.trim().split(/\s+/).length;
+  const mins = Math.max(1, Math.ceil(words / 200));
+  return `${mins} min read`;
+}
+
+function getWhyItMatters(article: NewsArticle): string | null {
+  const text = `${article.title} ${article.summary}`.toLowerCase();
+  const team = article.teams[0] ?? null;
+  const league = article.leagues[0] ?? null;
+
+  if (/playoff|postseason|clinch|eliminat|seeding|championship.race/.test(text)) {
+    return team
+      ? `${team} playoff picture is directly affected by this.`
+      : league
+      ? `This has direct implications for the ${league} playoff race.`
+      : "Playoff implications hang in the balance.";
+  }
+  if (/injur|injured|\bout\b|questionable|doubtful|surgery|sidelined/.test(text)) {
+    return team
+      ? `${team} fans need to know this before the next game.`
+      : "Injury news that can change how teams game-plan this week.";
+  }
+  if (/\btrade\b|traded|signed|contract|extension|free.agent/.test(text)) {
+    return team
+      ? `This move reshapes ${team}'s roster going forward.`
+      : league
+      ? `A deal that shifts the balance of power in the ${league}.`
+      : "A roster move with ripple effects across the league.";
+  }
+  if (/record|milestone|career.high|historic|all.time/.test(text)) {
+    return "A moment worth remembering in sports history.";
+  }
+  if (team && league) {
+    return `${team} and the ${league} standings could shift because of this.`;
+  }
+  return null;
+}
+
 // ─── Cross-Sport bottom sheet ─────────────────────────────────────────────────
 function SportPickerModal({ visible, onClose, onSelect, leagueColor }: {
   visible: boolean; onClose: () => void;
@@ -139,7 +178,6 @@ export default function ArticleScreen() {
     : rawColor === "#1A1A2E" ? "#4CAF50"
     : rawColor;
 
-  // Cache key: mode + optional cross-sport target
   const cacheKey = activeMode === "cross-sport" ? `cross-sport:${crossSport}` : activeMode;
   const originalBody = article.content || article.summary;
   const bodyText = activeMode === "original"
@@ -147,6 +185,8 @@ export default function ArticleScreen() {
     : (rewriteCache[cacheKey] ?? originalBody);
 
   const activeSportInfo = CROSS_SPORTS.find(s => s.id === crossSport);
+  const readingTime = getReadingTime(originalBody);
+  const whyItMatters = getWhyItMatters(article);
 
   function doFade() {
     Animated.sequence([
@@ -228,6 +268,7 @@ export default function ArticleScreen() {
 
         <Text style={s.title}>{article.title}</Text>
 
+        {/* ── Meta row: source + time + reading time ───────────────────── */}
         <View style={s.meta}>
           <View style={s.sourceRow}>
             <View style={s.sourceIcon}>
@@ -235,10 +276,28 @@ export default function ArticleScreen() {
             </View>
             <Text style={s.sourceName}>{article.source}</Text>
           </View>
-          <Text style={s.time}>{timeAgo(article.publishedAt)}</Text>
+          <View style={s.metaRight}>
+            <Text style={s.time}>{timeAgo(article.publishedAt)}</Text>
+            <View style={s.dot} />
+            <View style={s.readTimeRow}>
+              <Ionicons name="time-outline" size={11} color={C.textTertiary} />
+              <Text style={s.readTime}>{readingTime}</Text>
+            </View>
+          </View>
         </View>
 
-        {/* ── Reading Modes ───────────────────────────────────────────────── */}
+        {/* ── Why it matters ───────────────────────────────────────────── */}
+        {whyItMatters && (
+          <View style={[s.whyCard, { borderLeftColor: leagueColor }]}>
+            <View style={s.whyHeader}>
+              <Ionicons name="bulb-outline" size={13} color={leagueColor} />
+              <Text style={[s.whyLabel, { color: leagueColor }]}>Why it matters</Text>
+            </View>
+            <Text style={s.whyText}>{whyItMatters}</Text>
+          </View>
+        )}
+
+        {/* ── Reading Modes ───────────────────────────────────────────── */}
         <View style={s.modesSection}>
           <Text style={s.modesLabel}>Reading Modes</Text>
           <View style={s.pillsRow}>
@@ -260,14 +319,12 @@ export default function ArticleScreen() {
             })}
           </View>
 
-          {/* Active mode description */}
           <View style={s.modeDescRow}>
             <Text style={s.modeDesc}>
               {MODES.find(m => m.id === activeMode)?.description ?? ""}
             </Text>
           </View>
 
-          {/* Cross-Sport target chip */}
           {activeMode === "cross-sport" && (
             <Pressable
               style={[s.sportChip, { borderColor: leagueColor + "55" }]}
@@ -282,7 +339,7 @@ export default function ArticleScreen() {
           )}
         </View>
 
-        {/* ── Body ────────────────────────────────────────────────────────── */}
+        {/* ── Body ────────────────────────────────────────────────────── */}
         {loading ? (
           <View style={s.loadingRow}>
             <ActivityIndicator size="small" color={leagueColor} />
@@ -294,6 +351,26 @@ export default function ArticleScreen() {
           <Animated.Text style={[s.body, { opacity: fadeAnim }]}>
             {bodyText}
           </Animated.Text>
+        )}
+
+        {/* ── Related tags ─────────────────────────────────────────────── */}
+        {article.tags.length > 0 && (
+          <View style={s.relatedSection}>
+            <Text style={s.relatedLabel}>Related</Text>
+            <View style={s.relatedTags}>
+              {article.tags.map(tag => (
+                <View key={tag} style={[s.relatedTag, { borderColor: leagueColor + "33" }]}>
+                  <Text style={[s.relatedTagText, { color: leagueColor }]}>{tag}</Text>
+                </View>
+              ))}
+              {article.teams.map(team => (
+                <View key={team} style={s.relatedTagNeutral}>
+                  <Ionicons name="people-outline" size={10} color={C.textTertiary} />
+                  <Text style={s.relatedTagNeutralText}>{team}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         )}
 
         <Pressable
@@ -339,7 +416,22 @@ const s = StyleSheet.create({
   },
   sourceIconText: { color: C.text, fontSize: 11, fontWeight: "700" },
   sourceName: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium" },
-  time: { color: C.textTertiary, fontSize: 13 },
+  metaRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+  time: { color: C.textTertiary, fontSize: 12 },
+  dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: C.textTertiary },
+  readTimeRow: { flexDirection: "row", alignItems: "center", gap: 3 },
+  readTime: { color: C.textTertiary, fontSize: 12 },
+
+  // Why it matters
+  whyCard: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12, borderLeftWidth: 3,
+    paddingHorizontal: 14, paddingVertical: 12,
+    gap: 5,
+  },
+  whyHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
+  whyLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
+  whyText: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
 
   // Reading Modes section
   modesSection: { gap: 10 },
@@ -375,6 +467,28 @@ const s = StyleSheet.create({
 
   body: { color: C.text, fontSize: 16, lineHeight: 26, fontFamily: "Inter_400Regular" },
 
+  // Related
+  relatedSection: { gap: 8 },
+  relatedLabel: {
+    color: C.textTertiary, fontSize: 10, fontWeight: "900",
+    letterSpacing: 1.2, textTransform: "uppercase",
+  },
+  relatedTags: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  relatedTag: {
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 20, borderWidth: 1,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  relatedTagText: { fontSize: 12, fontWeight: "700" },
+  relatedTagNeutral: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 20, borderWidth: 1,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  relatedTagNeutralText: { color: C.textTertiary, fontSize: 12 },
+
   readMoreBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 8, backgroundColor: "rgba(255,255,255,0.05)",
@@ -407,5 +521,5 @@ const pick = StyleSheet.create({
     borderRadius: 14, backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, gap: 6,
   },
   btnEmoji: { fontSize: 28 },
-  btnLabel: { color: "#fff", fontSize: 14, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  btnLabel: { color: "#fff", fontSize: 13, fontWeight: "700" },
 });

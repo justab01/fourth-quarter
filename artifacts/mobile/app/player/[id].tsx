@@ -59,6 +59,106 @@ const card = StyleSheet.create({
   lbl: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
 });
 
+// ─── Role badge ───────────────────────────────────────────────────────────────
+function getRoleInfo(position: string, league: string, group: string): { label: string; color: string; icon: string } {
+  const pos = position.toUpperCase();
+  const lg = league.toUpperCase();
+
+  if (lg === "NBA" || lg === "WNBA" || lg === "NCAAB") {
+    if (["PG", "SG", "SF", "PF", "C"].includes(pos)) return { label: "Starter", color: "#48ADA9", icon: "star" };
+    return { label: group, color: "#4A90D9", icon: "person" };
+  }
+  if (lg === "NFL" || lg === "NCAAF") {
+    if (["QB"].includes(pos)) return { label: "Franchise QB", color: "#E6A817", icon: "star" };
+    if (["K", "P", "LS"].includes(pos)) return { label: "Special Teams", color: "#687C88", icon: "football" };
+    if (["QB", "RB", "WR", "TE", "LT", "RT", "OT"].includes(pos)) return { label: "Offense", color: "#48ADA9", icon: "trending-up" };
+    return { label: "Defense", color: "#E06060", icon: "shield" };
+  }
+  if (lg === "MLB") {
+    if (pos === "SP") return { label: "Starting Pitcher", color: "#E6A817", icon: "star" };
+    if (pos === "CL") return { label: "Closer", color: "#E8503A", icon: "trophy" };
+    if (pos === "RP") return { label: "Reliever", color: "#4A90D9", icon: "refresh" };
+    return { label: "Lineup", color: "#48ADA9", icon: "person" };
+  }
+  if (["MLS", "EPL", "UCL", "LIGA"].includes(lg)) {
+    if (pos === "GK") return { label: "Goalkeeper", color: "#FFD700", icon: "shield" };
+    if (["ST", "CF", "LW", "RW", "FW"].includes(pos)) return { label: "Forward", color: "#E8503A", icon: "trending-up" };
+    if (["CM", "CDM", "CAM", "AM", "MF"].includes(pos)) return { label: "Midfielder", color: "#4A90D9", icon: "swap-horizontal" };
+    return { label: "Defender", color: "#48ADA9", icon: "shield-outline" };
+  }
+  return { label: group || pos, color: "#888", icon: "person" };
+}
+
+function RoleBadge({ position, league, group, color }: { position: string; league: string; group: string; color: string }) {
+  const info = getRoleInfo(position, league, group);
+  return (
+    <View style={[roleBadgeS.pill, { borderColor: `${info.color}55`, backgroundColor: `${info.color}18` }]}>
+      <Ionicons name={info.icon as any} size={11} color={info.color} />
+      <Text style={[roleBadgeS.label, { color: info.color }]}>{info.label.toUpperCase()}</Text>
+    </View>
+  );
+}
+
+const roleBadgeS = StyleSheet.create({
+  pill: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 20, borderWidth: 1,
+  },
+  label: { fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
+});
+
+// ─── Milestone tracker ────────────────────────────────────────────────────────
+function MilestoneCard({ player, liveStats, teamColor }: { player: Player; liveStats: LiveStats | null; teamColor: string }) {
+  const ppg = parseFloat(liveStats?.avgPoints ?? player.stats?.PPG ?? "0");
+  const gamesEst = 50; // rough season average games
+  const seasonal = ppg * gamesEst;
+
+  let milestone: { label: string; current: number; target: number } | null = null;
+
+  if (ppg > 5) {
+    const targets = [500, 1000, 2500, 5000, 10000, 15000, 20000, 25000];
+    const target = targets.find(t => t > seasonal) ?? 25000;
+    const current = Math.round(seasonal * 0.62);
+    milestone = { label: "Career Points", current, target };
+  }
+
+  if (!milestone) return null;
+
+  const pct = Math.min(1, milestone.current / milestone.target);
+  const remaining = milestone.target - milestone.current;
+
+  return (
+    <View style={ms.card}>
+      <Text style={ms.heading}>Career Milestone</Text>
+      <Text style={ms.stat}>{milestone.label}</Text>
+      <View style={ms.barBg}>
+        <View style={[ms.barFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: teamColor }]} />
+      </View>
+      <View style={ms.row}>
+        <Text style={ms.current}>{milestone.current.toLocaleString()}</Text>
+        <Text style={ms.remaining}>{remaining.toLocaleString()} to go</Text>
+        <Text style={ms.target}>{milestone.target.toLocaleString()}</Text>
+      </View>
+    </View>
+  );
+}
+
+const ms = StyleSheet.create({
+  card: {
+    backgroundColor: C.card, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: C.cardBorder, gap: 8,
+  },
+  heading: { color: C.textTertiary, fontSize: 10, fontWeight: "900", letterSpacing: 1, textTransform: "uppercase" },
+  stat: { color: C.text, fontSize: 15, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  barBg: { height: 6, backgroundColor: C.cardBorder, borderRadius: 3, overflow: "hidden" },
+  barFill: { height: "100%", borderRadius: 3 },
+  row: { flexDirection: "row", justifyContent: "space-between" },
+  current: { color: C.textSecondary, fontSize: 12, fontFamily: "Inter_500Medium" },
+  remaining: { color: C.textTertiary, fontSize: 11 },
+  target: { color: C.textTertiary, fontSize: 12 },
+});
+
 // ─── NBA Overview ─────────────────────────────────────────────────────────────
 function NBAOverview({ player, team, liveStats }: { player: Player; team: TeamData; liveStats: LiveStats | null }) {
   const s = player.stats ?? {};
@@ -98,6 +198,7 @@ function NBAOverview({ player, team, liveStats }: { player: Player; team: TeamDa
         <StatBigCard value={apg} label="APG" color={C.accentBlue} />
         <StatBigCard value={fg} label="FG%" color={C.accentGold} />
       </View>
+      <MilestoneCard player={player} liveStats={liveStats} teamColor={team.color} />
       {player.bio && <View style={bio.card}><Text style={bio.text}>{player.bio}</Text></View>}
       <View style={table.card}>
         <Text style={table.title}>{liveStats ? "2025-26 Live Season Averages" : "2025-26 Regular Season"}</Text>
@@ -741,6 +842,9 @@ export default function PlayerScreen() {
               {player.college && (
                 <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.college}</Text></View>
               )}
+            </View>
+            <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
+              <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
             </View>
           </View>
         </View>

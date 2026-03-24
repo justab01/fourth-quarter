@@ -16,7 +16,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 
 const C = Colors.dark;
 
-const LEAGUES = ["All", "NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"] as const;
+const LEAGUES = ["All", "My Teams", "NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"] as const;
 type League = typeof LEAGUES[number];
 
 const LEAGUE_META: Record<string, { color: string; emoji: string; fullName: string }> = {
@@ -266,13 +266,20 @@ export default function LiveScreen() {
   const totalLive = all.filter(g => g.status === "live").length;
 
   const ALL_LEAGUES = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"] as string[];
-  const leagueList = activeLeague === "All" ? ALL_LEAGUES : [activeLeague as string];
-  const filteredAll = activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
+
+  const isMyTeams = activeLeague === "My Teams";
+  const filteredBase = isMyTeams
+    ? all.filter(g => isFav(g))
+    : activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
+
+  const leagueList = (isMyTeams || activeLeague === "All")
+    ? ALL_LEAGUES
+    : [activeLeague as string];
 
   const leagueSections = leagueList
     .map(league => ({
       league,
-      games: filteredAll
+      games: filteredBase
         .filter(g => g.league === league)
         .sort((a, b) => {
           const aFav = isFav(a) ? -5 : 0;
@@ -321,18 +328,23 @@ export default function LiveScreen() {
         >
           {LEAGUES.map(league => {
             const active = activeLeague === league;
-            const meta   = LEAGUE_META[league as string] ?? { color: C.accent };
-            const color  = meta?.color ?? C.accent;
-            const count  = league === "All" ? all.length : all.filter(g => g.league === league).length;
+            const isMyTeamsChip = league === "My Teams";
+            const color  = isMyTeamsChip ? C.accent : (LEAGUE_META[league as string]?.color ?? C.accent);
+            const count  = league === "All" ? all.length
+              : isMyTeamsChip ? all.filter(g => isFav(g)).length
+              : all.filter(g => g.league === league).length;
             const liveCount = league === "All"
               ? all.filter(g => g.status === "live").length
+              : isMyTeamsChip ? all.filter(g => isFav(g) && g.status === "live").length
               : all.filter(g => g.league === league && g.status === "live").length;
             return (
               <Pressable key={league} onPress={() => setActiveLeague(league)}>
                 <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}1A` }]}>
-                  {league !== "All" && LEAGUE_META[league] && (
+                  {isMyTeamsChip ? (
+                    <Ionicons name="star" size={11} color={active ? color : C.textTertiary} />
+                  ) : league !== "All" && LEAGUE_META[league] ? (
                     <Text style={styles.chipEmoji}>{LEAGUE_META[league].emoji}</Text>
-                  )}
+                  ) : null}
                   <Text style={[styles.chipText, active && { color }]}>{league}</Text>
                   {liveCount > 0 ? (
                     <View style={[styles.chipLive, active && { backgroundColor: `${color}40` }]}>
