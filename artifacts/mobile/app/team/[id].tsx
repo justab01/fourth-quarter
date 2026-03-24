@@ -519,6 +519,7 @@ export default function TeamScreen() {
           ...staticTeam,
           color: espnConverted.color !== "#333333" ? espnConverted.color : staticTeam.color,
           colorSecondary: espnConverted.colorSecondary !== "#666666" ? espnConverted.colorSecondary : staticTeam.colorSecondary,
+          logoUrl: espnConverted.logoUrl ?? staticTeam.logoUrl ?? null,
           coach: espnConverted.coach !== "—" ? espnConverted.coach : staticTeam.coach,
           stadium: espnConverted.stadium !== "—" ? espnConverted.stadium : staticTeam.stadium,
           roster: espnConverted.roster, // ← always use full ESPN roster

@@ -17,6 +17,8 @@ import { GameCard, TeamLogo } from "@/components/GameCard";
 import { NewsCard } from "@/components/NewsCard";
 import { RecapCard } from "@/components/RecapCard";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
+import { goToTeam } from "@/utils/navHelpers";
+import { ALL_TEAMS } from "@/constants/allPlayers";
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -152,8 +154,8 @@ const secStyles = StyleSheet.create({
 });
 
 // ─── My Teams tiles ───────────────────────────────────────────────────────────
-function MyTeamsTiles({ myTeams, allGames, onTeamPress }: {
-  myTeams: string[]; allGames: Game[]; onTeamPress: (team: string, league: string) => void;
+function MyTeamsTiles({ myTeams, allGames }: {
+  myTeams: string[]; allGames: Game[];
 }) {
   if (myTeams.length === 0) return null;
   return (
@@ -164,7 +166,7 @@ function MyTeamsTiles({ myTeams, allGames, onTeamPress }: {
         const next = teamGames.find(g => g.status === "upcoming");
         const last = teamGames.find(g => g.status === "finished");
         const featured = live ?? next ?? last;
-        const league = featured?.league ?? "NBA";
+        const league = featured?.league ?? ALL_TEAMS.find(t => t.name === team)?.league ?? "NBA";
         const color = getLeagueColor(league);
         const abbr = team.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
         let statusLine = "";
@@ -186,7 +188,7 @@ function MyTeamsTiles({ myTeams, allGames, onTeamPress }: {
               ?? allGames.find(g => g.awayTeam === team)?.awayTeamLogo
               ?? null;
         return (
-          <Pressable key={team} onPress={() => onTeamPress(team, league)} style={tileStyles.tile}>
+          <Pressable key={team} onPress={() => goToTeam(team, league)} style={tileStyles.tile}>
             <TeamLogo uri={logoUri} name={team} size={60} borderColor={`${color}55`} />
             <Text style={tileStyles.teamShort} numberOfLines={1}>{abbr}</Text>
             {statusLine ? (
@@ -826,8 +828,7 @@ export default function HubScreen() {
         {myTeams.length > 0 && (
           <View style={styles.section}>
             <SectionHeading label="My Teams" accentColor={C.accent} />
-            <MyTeamsTiles myTeams={myTeams} allGames={allGames}
-              onTeamPress={(team, league) => router.push({ pathname: "/team/[name]", params: { name: team, league } } as any)} />
+            <MyTeamsTiles myTeams={myTeams} allGames={allGames} />
           </View>
         )}
 
