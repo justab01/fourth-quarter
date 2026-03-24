@@ -1,12 +1,15 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Platform, View, StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import Colors from "@/constants/colors";
+import { useSearch } from "@/context/SearchContext";
 
 const C = Colors.dark;
 
 export default function TabLayout() {
+  const { openSearch } = useSearch();
+
   return (
     <Tabs
       screenOptions={{
@@ -28,15 +31,17 @@ export default function TabLayout() {
         },
       }}
     >
+      {/* ── Visible tabs ─────────────────────────────────────────────────── */}
       <Tabs.Screen
         name="index"
         options={{
-          title: "My Hub",
+          title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "home" : "home-outline"} size={22} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
         name="live"
         options={{
@@ -46,24 +51,33 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
-        name="news"
+        name="sports"
         options={{
-          title: "News",
+          title: "Sports",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "newspaper" : "newspaper-outline"} size={21} color={color} />
+            <Ionicons name={focused ? "grid" : "grid-outline"} size={21} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
-        name="standings"
+        name="search"
         options={{
-          title: "Standings",
+          title: "Search",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "bar-chart" : "bar-chart-outline"} size={21} color={color} />
+            <Ionicons name={focused ? "search" : "search-outline"} size={22} color={color} />
           ),
         }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            openSearch();
+          },
+        }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
@@ -71,6 +85,21 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
           ),
+        }}
+      />
+
+      {/* ── Hidden tabs (accessible via router.push but not in tab bar) ── */}
+      <Tabs.Screen
+        name="news"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="standings"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
