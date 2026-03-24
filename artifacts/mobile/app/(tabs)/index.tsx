@@ -179,7 +179,12 @@ function MyTeamsTiles({ myTeams, allGames, onTeamPress }: {
           const won = (my ?? 0) > (opp ?? 0);
           statusLine = `${won ? "W" : "L"} ${my}–${opp}`;
         }
-        const logoUri = featured ? (featured.homeTeam === team ? featured.homeTeamLogo : featured.awayTeamLogo) : null;
+        const logoUri =
+          featured
+            ? (featured.homeTeam === team ? featured.homeTeamLogo : featured.awayTeamLogo)
+            : allGames.find(g => g.homeTeam === team)?.homeTeamLogo
+              ?? allGames.find(g => g.awayTeam === team)?.awayTeamLogo
+              ?? null;
         return (
           <Pressable key={team} onPress={() => onTeamPress(team, league)} style={tileStyles.tile}>
             <TeamLogo uri={logoUri} name={team} size={60} borderColor={`${color}55`} />

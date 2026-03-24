@@ -27,6 +27,7 @@ export type TeamData = {
   division: string;
   color: string;
   colorSecondary: string;
+  logoUrl?: string | null;
   record: string;
   standing: string;
   coach: string;

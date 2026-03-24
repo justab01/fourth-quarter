@@ -14,6 +14,7 @@ import { getTeamById, teamColor, type TeamData, type Player } from "@/constants/
 import { ALL_TEAMS, ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { usePreferences } from "@/context/PreferencesContext";
 import { api, type EspnTeamInfo } from "@/utils/api";
+import { TeamLogo } from "@/components/GameCard";
 
 function slugify(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "-");
@@ -76,6 +77,7 @@ function buildFallbackTeam(id: string): TeamData | null {
     division: searchTeam.rank,
     color: primary,
     colorSecondary: secondary,
+    logoUrl: null,
     record: "2025-26",
     standing: searchTeam.rank,
     coach: "—",
@@ -138,6 +140,7 @@ function espnTeamToTeamData(info: EspnTeamInfo): TeamData {
     division: "—",
     color: info.color,
     colorSecondary: info.altColor,
+    logoUrl: info.logo ?? null,
     record: "—",
     standing: "—",
     coach: info.coach ?? "—",
@@ -604,9 +607,13 @@ export default function TeamScreen() {
 
         {/* Team identity */}
         <View style={styles.teamIdentity}>
-          <View style={[styles.logoCircle, { borderColor: `${team.colorSecondary}55` }]}>
-            <Text style={styles.logoText}>{team.abbr}</Text>
-          </View>
+          <TeamLogo
+            uri={team.logoUrl ?? null}
+            name={team.abbr}
+            size={88}
+            borderColor={`${team.colorSecondary}70`}
+            fontSize={22}
+          />
           <View style={{ flex: 1 }}>
             <Text style={styles.teamCity}>{team.city}</Text>
             <Text style={styles.teamName}>{team.shortName}</Text>
@@ -668,13 +675,6 @@ const styles = StyleSheet.create({
   backBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.25)" },
   iconBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.25)" },
   teamIdentity: { flexDirection: "row", alignItems: "center", gap: 16 },
-  logoCircle: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.2)",
-  },
-  logoText: { color: "#fff", fontSize: 18, fontWeight: "900", letterSpacing: 1, fontFamily: "Inter_700Bold" },
   teamCity: { color: "rgba(255,255,255,0.7)", fontSize: 13, fontFamily: "Inter_400Regular" },
   teamName: { color: "#fff", fontSize: 28, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 32 },
   badge: {
