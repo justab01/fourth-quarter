@@ -10,8 +10,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { getPlayerById, type Player, type TeamData } from "@/constants/teamData";
-import { ALL_PLAYERS } from "@/constants/allPlayers";
+import { ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { getEspnGamelogUrl, getEspnHeadshotUrl, getEspnStatsUrl } from "@/constants/espnAthleteIds";
+import {
+  isTennisLeague, isCombatLeague,
+  getCountryFlag, getWeightClassLabel, extractRankingDisplay,
+} from "@/utils/sportArchetype";
 
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
@@ -640,6 +644,136 @@ const gl = StyleSheet.create({
   },
 });
 
+// ─── Tennis Athlete Overview ──────────────────────────────────────────────────
+function TennisOverview({ player, team, fallbackPlayer }: {
+  player: Player | null; team: TeamData | null; fallbackPlayer: SearchPlayer | null;
+}) {
+  const stat      = fallbackPlayer?.stat ?? "";
+  const natl      = fallbackPlayer?.team ?? team?.city ?? "—";
+  const flag      = getCountryFlag(natl);
+  const rankShort = extractRankingDisplay(stat);
+  const tour      = team?.league ?? "ATP";
+  const color     = tour === "WTA" ? C.wta : C.atp;
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
+      {/* Key stats row */}
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <StatBigCard value={rankShort} label="Ranking" color={color} />
+        <StatBigCard value={tour} label="Tour" color={color} />
+        <StatBigCard value={flag} label={natl} color={color} />
+      </View>
+
+      {/* Achievement summary */}
+      {stat && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>CAREER HIGHLIGHTS</Text>
+          <Text style={indS.cardBody}>{stat}</Text>
+        </View>
+      )}
+
+      {/* Bio */}
+      {player?.bio && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>PLAYER BIO</Text>
+          <Text style={indS.cardBody}>{player.bio}</Text>
+        </View>
+      )}
+
+      {/* Info rows */}
+      <View style={indS.infoCard}>
+        {[
+          ["Nationality", `${flag} ${natl}`],
+          ["Tour", tour === "WTA" ? "WTA Women's Tennis" : "ATP Men's Tennis"],
+          ["Handedness", player?.position?.includes("L") ? "Left-handed" : "Right-handed"],
+        ].map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+// ─── Combat Athlete Overview ──────────────────────────────────────────────────
+function CombatOverview({ player, team, fallbackPlayer }: {
+  player: Player | null; team: TeamData | null; fallbackPlayer: SearchPlayer | null;
+}) {
+  const stat      = fallbackPlayer?.stat ?? "";
+  const position  = fallbackPlayer?.position ?? player?.position ?? "";
+  const division  = getWeightClassLabel(position);
+  const league    = team?.league ?? "UFC";
+  const color     = league === "BOXING" ? C.boxing : C.ufc;
+  const emoji     = league === "BOXING" ? "🥊" : "🥋";
+  const sportName = league === "BOXING" ? "Boxing" : "UFC";
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
+      {/* Key stats row */}
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <StatBigCard value={emoji} label={sportName} color={color} />
+        <StatBigCard value={division.split(" ")[0]} label="Division" color={color} />
+        <StatBigCard value={position.toUpperCase() || "—"} label="Class" color={color} />
+      </View>
+
+      {/* Title / Status */}
+      {stat && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>STATUS</Text>
+          <Text style={indS.cardBody}>{stat}</Text>
+        </View>
+      )}
+
+      {/* Bio */}
+      {player?.bio && (
+        <View style={indS.card}>
+          <Text style={indS.cardTitle}>FIGHTER BIO</Text>
+          <Text style={indS.cardBody}>{player.bio}</Text>
+        </View>
+      )}
+
+      {/* Info rows */}
+      <View style={indS.infoCard}>
+        {[
+          ["Sport", sportName],
+          ["Weight Class", division],
+          ["Division Code", position.toUpperCase() || "—"],
+        ].map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+const indS = StyleSheet.create({
+  card: {
+    backgroundColor: C.card, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: C.cardBorder, gap: 8,
+  },
+  cardTitle: {
+    color: C.textTertiary, fontSize: 10, fontWeight: "900",
+    letterSpacing: 1.2, textTransform: "uppercase",
+  },
+  cardBody: { color: C.text, fontSize: 14, fontWeight: "500", lineHeight: 22 },
+  infoCard: {
+    backgroundColor: C.card, borderRadius: 16,
+    borderWidth: 1, borderColor: C.cardBorder, overflow: "hidden",
+  },
+  infoRow: {
+    flexDirection: "row", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: C.separator,
+  },
+  infoLabel: { color: C.textTertiary, fontSize: 12, fontWeight: "600" },
+  infoValue: { color: C.text, fontSize: 12, fontWeight: "700" },
+});
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function PlayerScreen() {
   const { id, athleteId: paramAthleteId, league: paramLeague } = useLocalSearchParams<{ id: string; athleteId?: string; league?: string }>();
@@ -684,7 +818,13 @@ export default function PlayerScreen() {
     weight: "—",
     group: "Guards" as const,
     stats: {},
-    bio: `${fallbackSearchPlayer.name} plays ${fallbackSearchPlayer.position} for the ${fallbackSearchPlayer.team}. 2025-26 season: ${fallbackSearchPlayer.stat}`,
+    bio: (fallbackSearchPlayer.league === "ATP" || fallbackSearchPlayer.league === "WTA")
+      ? `${fallbackSearchPlayer.name} is a professional tennis player competing on the ${fallbackSearchPlayer.league} Tour. ${fallbackSearchPlayer.stat}.`
+      : (fallbackSearchPlayer.league === "UFC")
+      ? `${fallbackSearchPlayer.name} is a professional MMA fighter competing in the UFC. ${fallbackSearchPlayer.stat}.`
+      : (fallbackSearchPlayer.league === "BOXING")
+      ? `${fallbackSearchPlayer.name} is a professional boxer. ${fallbackSearchPlayer.stat}.`
+      : `${fallbackSearchPlayer.name} plays ${fallbackSearchPlayer.position} for the ${fallbackSearchPlayer.team}. 2025-26 season: ${fallbackSearchPlayer.stat}`,
   } : null as any);
 
   const team: TeamData = result?.team ?? (fallbackSearchPlayer ? {
@@ -739,6 +879,8 @@ export default function PlayerScreen() {
     NBA: "nba", NFL: "nfl", MLB: "mlb", MLS: "soccer",
     NHL: "nhl", WNBA: "wnba", NCAAB: "mens-college-basketball",
     NCAAF: "college-football", EPL: "soccer", UCL: "soccer", LIGA: "soccer",
+    ATP: "tennis", WTA: "tennis",
+    UFC: "mma", BOXING: "boxing",
   };
   const directAthleteId = paramAthleteId || player.athleteId;
   const headshotLeague = (paramLeague || team.league).toUpperCase();
@@ -747,6 +889,10 @@ export default function PlayerScreen() {
     : getEspnHeadshotUrl(player.name, team.league);
 
   const renderOverview = () => {
+    if (isTennisLeague(team.league))
+      return <TennisOverview player={player} team={team} fallbackPlayer={fallbackSearchPlayer ?? null} />;
+    if (isCombatLeague(team.league))
+      return <CombatOverview player={player} team={team} fallbackPlayer={fallbackSearchPlayer ?? null} />;
     if (team.league === "NBA") return <NBAOverview player={player} team={team} liveStats={liveStats} />;
     if (team.league === "NFL") return <NFLOverview player={player} team={team} liveStats={liveStats} />;
     if (team.league === "MLB") return <MLBOverview player={player} team={team} liveStats={liveStats} />;

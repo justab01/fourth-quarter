@@ -1,0 +1,874 @@
+Yeah, that response is not enough.
+That’s more like “we added labels and configs” than “we truly built all-sports infrastructure.”
+
+What you actually need is a real cross-sport expansion spec so Replit cannot half-do it.
+
+Paste this to them:
+
+⸻
+
+FOURTH QUARTER — FULL ALL-SPORTS EXPANSION SPEC
+
+What you added is a start, but it is not finished. I need this system flushed out fully so the app is truly built for all sports, not just NBA/NFL/MLB with a few extra configs.
+
+CORE GOAL
+
+Fourth Quarter must be built as a universal sports operating system.
+That means the app cannot feel like:
+	•	basketball-first with a few side sports attached
+	•	hardcoded league handling
+	•	placeholder support for future events
+
+It needs to feel like:
+	•	every sport belongs here naturally
+	•	every sport has real live support, standings if applicable, schedules, teams/athletes, news, profile imagery, theming, and routing
+	•	Olympics, combat sports, tennis, extreme sports, motorsports, college sports, and future event-based competitions can all plug in cleanly
+
+⸻
+
+PART 1 — WHAT IS NOT ENOUGH RIGHT NOW
+
+The current response sounds like this was done:
+	•	added configs
+	•	added colors
+	•	added some searchable names
+	•	added onboarding suggestions
+	•	added routing slugs
+
+That is not full implementation.
+
+I need confirmation and actual implementation of all of the following:
+
+For every sport/league added:
+	•	live scoreboard support
+	•	schedule support
+	•	event detail page support
+	•	athlete profile support
+	•	search support
+	•	favorites/following support
+	•	news support
+	•	proper branding support
+	•	proper icon/logo support
+	•	no letter placeholders
+	•	consistent routing
+	•	proper empty states
+	•	fallback logic
+	•	backend normalization
+	•	frontend rendering
+	•	profile/settings integration
+
+If any one of those is missing, it is not fully supported.
+
+⸻
+
+PART 2 — SPORTS I WANT PROPERLY SUPPORTED
+
+Build the app architecture so these can live inside the same system cleanly.
+
+Current major sports
+	•	NBA
+	•	WNBA
+	•	NFL
+	•	College Football
+	•	MLB
+	•	NHL
+	•	MLS
+	•	Premier League
+	•	Champions League
+	•	La Liga
+	•	NCAA Basketball
+	•	UFC
+	•	Boxing
+	•	ATP
+	•	WTA
+
+Future / expansion-ready sports
+	•	Olympics
+	•	Paralympics
+	•	X Games
+	•	MMA beyond UFC if available
+	•	Wrestling / WWE-style content bucket if ever added later
+	•	Formula 1 / Motorsports structure-ready
+	•	Golf
+	•	Tennis grand slams/events
+	•	Track & Field
+	•	Swimming
+	•	Gymnastics
+	•	Skateboarding
+	•	Snowboarding
+	•	Surfing
+	•	Combat events generally
+	•	international tournaments and one-off event structures
+
+I do not need every one of these turned on immediately, but I need the architecture to be built so they fit naturally later.
+
+⸻
+
+PART 3 — UNIVERSAL SPORTS DATA MODEL
+
+Stop building league-by-league hacks.
+Build a universal model.
+
+Every sport/league/event must normalize into this structure:
+
+Sport
+	•	id
+	•	name
+	•	slug
+	•	icon
+	•	primary color
+	•	secondary color
+	•	category
+	•	supports_teams
+	•	supports_individual_athletes
+	•	supports_standings
+	•	supports_live_events
+	•	supports_rankings
+	•	supports_seasons
+	•	supports_tournaments
+	•	supports_weight_classes_or_divisions
+	•	supports_medal_table
+	•	supports_heat_bracket_round_format
+
+League / Competition
+	•	id
+	•	sport_id
+	•	name
+	•	slug
+	•	season_label
+	•	gender / class / division if relevant
+	•	logo
+	•	color
+	•	event_type
+	•	standings_type
+	•	ranking_type
+	•	routing_type
+
+Event / Match / Competition
+	•	id
+	•	sport_id
+	•	league_id
+	•	title
+	•	start_time
+	•	status
+	•	phase
+	•	venue
+	•	competitors
+	•	score/result
+	•	round / set / inning / period / heat / bout / race stage
+	•	winner
+	•	detail payload normalized for sport
+
+Team / Competitor
+	•	id
+	•	sport_id
+	•	league_id
+	•	name
+	•	short_name
+	•	nickname
+	•	city/country if relevant
+	•	logo
+	•	badge
+	•	primary_color
+	•	secondary_color
+	•	type: team / athlete / pair / relay squad / fighter / driver / nation
+
+Athlete
+	•	id
+	•	full_name
+	•	slug
+	•	headshot
+	•	nationality
+	•	sport
+	•	league
+	•	team if applicable
+	•	weight class if applicable
+	•	ranking if applicable
+	•	handedness if relevant
+	•	age / height / weight if available
+
+This needs to sit behind everything.
+
+⸻
+
+PART 4 — DIFFERENT SPORT TYPES MUST BE HANDLED CORRECTLY
+
+Not every sport behaves like basketball. Build sport archetypes.
+
+A. Team score sports
+
+Examples:
+	•	NBA
+	•	NFL
+	•	MLB
+	•	NHL
+	•	Soccer
+	•	NCAA
+
+Need:
+	•	teams
+	•	logos
+	•	scores
+	•	periods/quarters/innings
+	•	standings
+	•	schedules
+	•	team pages
+	•	player pages
+
+B. Individual match sports
+
+Examples:
+	•	ATP
+	•	WTA
+	•	Boxing
+	•	UFC
+
+Need:
+	•	athlete vs athlete
+	•	rankings
+	•	event cards
+	•	fight cards / match rounds / set scores
+	•	athlete profile pages
+	•	recent results
+	•	upcoming bouts/matches
+
+C. Tournament / bracket sports
+
+Examples:
+	•	tennis slams
+	•	boxing cards
+	•	NCAA tournaments
+	•	Olympics knockout sports
+	•	combat event cards
+
+Need:
+	•	round structure
+	•	brackets or progression
+	•	stage labels
+	•	event grouping
+	•	winners progression
+
+D. Multi-event competition systems
+
+Examples:
+	•	Olympics
+	•	X Games
+	•	world championships
+	•	track meets
+
+Need:
+	•	event schedule by day
+	•	medal table / points table
+	•	country view
+	•	athlete event participation
+	•	finals / heats / qualification labels
+	•	discipline buckets
+
+If this is not baked into architecture, the future support will always be fake.
+
+⸻
+
+PART 5 — TENNIS MUST FEEL LIKE A REAL SPORT INSIDE THE APP
+
+Do not just add ATP/WTA to search.
+
+Tennis needs:
+	•	ATP and WTA as separate competition layers under Tennis
+	•	live match scorecards with:
+	•	player names
+	•	headshots if available
+	•	set-by-set scoring
+	•	current set score
+	•	serving indicator
+	•	match status
+	•	court/tournament name
+	•	tournament pages:
+	•	Indian Wells
+	•	Miami Open
+	•	Wimbledon
+	•	US Open
+	•	French Open
+	•	Australian Open
+	•	ATP Finals
+	•	WTA Finals
+	•	player profile pages with:
+	•	headshot
+	•	nationality flag
+	•	ranking
+	•	handedness if available
+	•	age/height
+	•	recent match log
+	•	tournament history
+	•	ranking view if available
+	•	favorites support
+	•	news support
+	•	schedule by tournament/day
+	•	“live now” surfacing on Hub and Live
+
+Tennis-specific UI
+	•	set tables instead of generic score boxes
+	•	serving indicator dot/icon
+	•	tournament round labels:
+	•	R128, R64, R32, R16, QF, SF, Final
+	•	proper colors and badges for ATP vs WTA
+	•	not just green/pink chips slapped on top
+
+⸻
+
+PART 6 — UFC + BOXING MUST BE REAL EVENT SYSTEMS
+
+Do not treat combat sports like normal team sports.
+
+UFC needs:
+	•	fighter pages
+	•	rankings by division
+	•	event pages
+	•	fight card pages
+	•	prelim / main card structure
+	•	result method:
+	•	KO/TKO
+	•	submission
+	•	decision
+	•	round finished
+	•	time finished
+	•	weight class
+	•	records
+	•	last 5 fights
+	•	opponent history
+	•	upcoming fights
+	•	follow fighter support
+	•	follow division support if possible
+
+Boxing needs:
+	•	boxer pages
+	•	event cards
+	•	title fights
+	•	sanctioning info if available
+	•	division / weight class
+	•	records
+	•	decision/method outcome
+	•	rankings if available
+	•	recent results
+	•	future bouts
+	•	follow boxer support
+
+Combat card UI
+	•	show red/blue corner style matchup layout
+	•	show records
+	•	show division
+	•	show result method
+	•	show rounds
+	•	show event poster/banner if available
+	•	event should open like a fight night card, not like a team matchup page
+
+⸻
+
+PART 7 — OLYMPICS MUST BE BUILT LIKE A SPECIAL MODE, NOT JUST A TOGGLE
+
+Saying “we can toggle Olympics later” is not enough.
+
+Olympics is not just another league.
+It is a multi-sport world event layer.
+
+Need Olympics architecture now:
+	•	nations as entities
+	•	athletes as entities
+	•	sports within Olympics as sub-buckets
+	•	events by sport
+	•	medal results
+	•	medal table
+	•	schedule by day
+	•	finals / heats / semifinals / qualification tags
+	•	country pages
+	•	athlete pages linked to nation
+	•	country flag support
+	•	medal badges:
+	•	gold
+	•	silver
+	•	bronze
+	•	sport filters within Olympics
+	•	Summer and Winter structure support
+	•	routing like:
+	•	/olympics
+	•	/olympics/schedule
+	•	/olympics/medals
+	•	/olympics/sport/track-and-field
+	•	/olympics/athlete/…
+	•	/olympics/country/usa
+
+Hub behavior during Olympics
+
+When Olympics is active:
+	•	dedicated Olympics module on hub
+	•	medal race section
+	•	live finals now
+	•	favorite country section
+	•	favorite athlete updates
+	•	biggest moment today
+
+Standings replacement
+
+Olympics should not use normal standings.
+It needs:
+	•	medal table
+	•	maybe points table if available
+	•	event progress
+
+⸻
+
+PART 8 — X GAMES / EXTREME SPORTS NEED EVENT-BASED SUPPORT
+
+Again, not a fake config.
+
+X Games structure needs:
+	•	discipline categories
+	•	skateboarding
+	•	BMX
+	•	snowboarding
+	•	skiing
+	•	motocross
+	•	etc.
+	•	athlete profiles
+	•	event result pages
+	•	scoring/judging display if available
+	•	finals/qualifying labels
+	•	medal/podium style result display
+	•	event schedule
+	•	highlight/news support
+	•	favorite athletes
+
+This should reuse Olympics/event-mode logic where possible.
+
+⸻
+
+PART 9 — LOGOS, HEADSHOTS, DECALS, BRANDING EVERYWHERE
+
+This is one of the biggest visual upgrades and it needs to be done globally.
+
+No more letter placeholders unless truly no image exists.
+
+Across the whole app, use:
+	•	official team logos
+	•	official competition logos
+	•	athlete headshots
+	•	fighter portraits
+	•	tennis player headshots
+	•	country flags where relevant
+	•	nation badges for Olympics
+	•	event logos for major tournaments/cards when available
+
+Team pages
+	•	full logo in header
+	•	brand gradient
+	•	no fake letter badge if real logo exists
+
+Player pages
+	•	larger headshot hero
+	•	not trapped in a tiny circle
+	•	image should fill the top card/header like ESPN
+	•	crop should be smart
+	•	fallback only if no headshot exists
+
+Game cards
+	•	official team logos on both sides
+	•	no letter circles
+	•	mini logos in lists
+	•	consistent size rules
+
+Standings
+	•	every team row gets logo
+	•	no initials unless fallback state
+
+Search
+	•	show real logos and headshots
+	•	distinguish teams vs athletes vs events vs countries
+
+News cards
+	•	use team logos / athlete headshots / event badges when relevant
+	•	not generic placeholders
+
+⸻
+
+PART 10 — SEARCH MUST ACTUALLY SUPPORT ALL SPORTS
+
+Do not just add a few names manually.
+
+Search must support:
+	•	teams
+	•	athletes
+	•	fighters
+	•	boxers
+	•	tennis players
+	•	countries
+	•	Olympic events
+	•	major tournaments
+	•	fight cards
+	•	teams across all supported leagues
+
+Search result objects need:
+	•	image
+	•	name
+	•	type
+	•	sport
+	•	league
+	•	small metadata
+	•	route destination
+
+Example:
+	•	Jannik Sinner — ATP Tennis — Player
+	•	Israel Adesanya — UFC Middleweight — Fighter
+	•	USA — Olympics — Country
+	•	Wimbledon — Tennis — Tournament
+	•	UFC 315 — MMA — Event
+	•	Los Angeles Lakers — NBA — Team
+
+Search ranking logic
+
+Priority by:
+	•	exact match
+	•	favorites relevance
+	•	popularity
+	•	current live relevance
+	•	recent search history
+
+⸻
+
+PART 11 — ONBOARDING MUST INCLUDE NEW SPORTS PROPERLY
+
+Do not just “suggest” them.
+
+Onboarding needs:
+
+Sport selection
+	•	Tennis
+	•	Combat
+	•	Olympics
+	•	Extreme Sports
+	•	Motorsport-ready bucket if planned
+
+Follow suggestions
+	•	ATP stars
+	•	WTA stars
+	•	UFC champions/contenders
+	•	boxing stars
+	•	Olympic country choice
+	•	favorite country option
+	•	favorite athlete option for individual sports
+
+Houston/local logic
+
+Keep Houston presets for the user where relevant, but do not let the system become city-only for non-team sports.
+
+Need mixed onboarding logic:
+	•	favorite teams
+	•	favorite athletes
+	•	favorite countries
+	•	favorite sports/events
+
+⸻
+
+PART 12 — LIVE TAB NEEDS TO HANDLE ALL SPORTS TYPES CORRECTLY
+
+The Live page cannot assume all cards are team vs team.
+
+Team sports card
+	•	logos
+	•	score
+	•	status
+	•	clock/period
+	•	venue
+
+Tennis card
+	•	player vs player
+	•	flags/headshots
+	•	set score
+	•	serving indicator
+	•	match round
+
+UFC/Boxing card
+	•	fighter vs fighter
+	•	records
+	•	division
+	•	bout status
+	•	result method if complete
+
+Olympics/X Games event card
+	•	event title
+	•	discipline
+	•	athlete/country entries
+	•	final/heat label
+	•	medal icon if completed
+	•	live/judged/timed state
+
+Need a renderer switch by sport archetype, not one generic card.
+
+⸻
+
+PART 13 — HUB NEEDS TO KNOW ABOUT THESE SPORTS
+
+Hub must surface them intelligently.
+
+Examples:
+	•	“Sinner in action now”
+	•	“Sabalenka advances to quarterfinal”
+	•	“UFC main event starts in 45 min”
+	•	“USA wins two golds tonight”
+	•	“Shaun White trend piece” if X Games active
+	•	“Favorite fighter announced for next card”
+
+Hub modules should support:
+	•	my teams
+	•	my athletes
+	•	my countries
+	•	my live events
+	•	combat schedule
+	•	tournament progress
+	•	medal race
+
+⸻
+
+PART 14 — PROFILE / FAVORITES SYSTEM MUST EXPAND
+
+Profile cannot just handle teams and leagues.
+
+Need favorites support for:
+	•	teams
+	•	athletes
+	•	fighters
+	•	boxers
+	•	tennis players
+	•	countries
+	•	sports
+	•	events/tournaments
+
+Profile should show:
+	•	favorite teams
+	•	favorite athletes
+	•	favorite sports
+	•	favorite countries
+	•	notification settings by entity type
+
+⸻
+
+PART 15 — NOTIFICATIONS NEED TO BE SPORT-AWARE
+
+Do not just send generic score alerts.
+
+Team sports alerts
+	•	game start
+	•	close game
+	•	final
+	•	comeback
+	•	upset
+
+Tennis alerts
+	•	match start
+	•	player wins set
+	•	match point
+	•	final result
+	•	upset
+
+Combat alerts
+	•	fight announced
+	•	card starting
+	•	main event starting
+	•	result
+	•	title change
+
+Olympics/X Games alerts
+	•	favorite athlete competing soon
+	•	medal won
+	•	final starting
+	•	country medal update
+
+⸻
+
+PART 16 — NEWS SYSTEM MUST TAG ALL SPORTS PROPERLY
+
+Every sport added must be able to flow into:
+	•	news feed
+	•	story clusters
+	•	AI reading modes
+	•	related athlete/team/event links
+
+Need news tagging for:
+	•	ATP
+	•	WTA
+	•	UFC
+	•	Boxing
+	•	Olympics
+	•	X Games
+
+Related linking
+
+Every article should connect to:
+	•	athlete page
+	•	event page
+	•	tournament page
+	•	country page if relevant
+
+⸻
+
+PART 17 — STANDINGS / RANKINGS / MEDAL TABLES / DIVISIONS
+
+Not every sport uses standings.
+
+Build multiple competition views:
+
+Standings
+	•	NBA/NFL/MLB/NHL/Soccer/NCAA
+
+Rankings
+	•	ATP
+	•	WTA
+	•	UFC if available
+	•	Boxing if available
+	•	golf if later
+	•	track if later
+
+Medal Table
+	•	Olympics
+	•	multi-sport games
+
+Division View
+	•	UFC/Boxing weight classes
+	•	conference/division in team sports
+
+Need the UI and backend to support all 4 structures.
+
+⸻
+
+PART 18 — BACKEND REQUIREMENTS
+
+I need this audited and confirmed:
+
+Confirm these are built:
+	•	normalized sport registry
+	•	normalized competition registry
+	•	sport-specific adapters
+	•	event archetype rendering system
+	•	image/logo/headshot ingestion pipeline
+	•	search indexing for all entity types
+	•	routing for all entity types
+	•	favorites support for all entity types
+	•	notification entity model
+	•	fallback logic when ESPN data is incomplete
+
+Confirm there is no hardcoded “major sport only” logic left in:
+	•	search
+	•	favorites
+	•	onboarding
+	•	live page
+	•	hub modules
+	•	news filters
+	•	profile
+	•	standings
+
+⸻
+
+PART 19 — FALLBACKS
+
+I do not want ugly broken states.
+
+If data is missing:
+	•	use event badge
+	•	use silhouette for athlete only if no headshot exists
+	•	use official abbreviation only as last resort
+	•	do not show random first-letter circles when logo exists somewhere else
+	•	do not break the layout
+
+Need global fallback hierarchy:
+	1.	official logo/headshot
+	2.	alternate CDN/logo source
+	3.	league badge
+	4.	clean fallback silhouette/abbreviation
+
+⸻
+
+PART 20 — WHAT I WANT CHANGED RIGHT NOW
+
+Immediate priority list
+	1.	Make tennis fully real, not just searchable names
+	2.	Make UFC and boxing event structures real
+	3.	Build Olympics as a true multi-sport event system
+	4.	Build X Games/extreme sports using event-mode architecture
+	5.	Replace all letter placeholders with real logos/headshots across the app
+	6.	Expand search/favorites/profile to support all sport entity types
+	7.	Make Live and Hub understand team sports vs individual sports vs tournament sports
+	8.	Add standings/rankings/medal-table/division support
+	9.	Make onboarding support athletes/countries/combat favorites
+	10.	Audit every screen for hardcoded team-sport assumptions
+
+⸻
+
+PART 21 — VISUAL REQUIREMENTS
+
+I want this to feel premium, not hacked together.
+
+Visual rules
+	•	official logos everywhere possible
+	•	large player/fighter headshots on profile pages
+	•	sport-specific iconography
+	•	country flags for Olympics/international
+	•	tournament/event branding on major cards
+	•	no placeholder letters if image exists
+	•	no stretched/cropped ugly assets
+	•	consistent sizing system for all imagery
+	•	rich visual cards for live events beyond team sports
+
+⸻
+
+PART 22 — FINAL DELIVERABLE I WANT BACK
+
+Do not just tell me “it’s added.”
+
+I want a full audit response with:
+
+A. What is fully implemented
+
+Screen by screen, sport by sport
+
+B. What is partially implemented
+
+Exactly what is still missing
+
+C. What assumptions were removed
+
+Any hardcoded team-sport logic cleaned up
+
+D. What new entity types now exist
+
+Team / athlete / fighter / country / event / tournament / division / ranking / medal table
+
+E. What routes now exist
+
+All route patterns for new sports and entities
+
+F. What image sources are being used
+
+For logos, headshots, flags, event badges
+
+G. What fallback logic exists
+
+When image/data is missing
+
+H. What is ready for Olympics/X Games
+
+Not just config — actual usable infrastructure
+
+⸻
+
+SHORT VERSION
+
+Do not treat tennis, combat sports, Olympics, and X Games as cosmetic add-ons.
+Rebuild the app so all sports are first-class citizens with the right data model, UI model, entity model, search model, favorites model, and live-event model.
+And replace all letter placeholders with real logos/headshots across the entire app.
+
+⸻
+
+If you want, I can turn this into an even tighter Replit-ready engineering ticket doc with:
+	•	exact database/entity schema
+	•	route list
+	•	component list
+	•	screen list
+	•	and acceptance criteria.

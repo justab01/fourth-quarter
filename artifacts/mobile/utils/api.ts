@@ -57,10 +57,13 @@ export const api = {
     apiFetch<EspnTeamInfo>(`/sports/team?name=${encodeURIComponent(name)}&league=${encodeURIComponent(league)}`),
 };
 
+export type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
+
 export interface Game {
   id: string;
   sport: string;
   league: string;
+  sportArchetype?: SportArchetype;
   homeTeam: string;
   awayTeam: string;
   homeScore: number | null;
@@ -72,6 +75,7 @@ export interface Game {
   venue: string | null;
   homeTeamLogo: string | null;
   awayTeamLogo: string | null;
+  eventTitle?: string | null;
 }
 
 export interface PlayerStatLine {

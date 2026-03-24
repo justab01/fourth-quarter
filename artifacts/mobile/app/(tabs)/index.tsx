@@ -19,6 +19,7 @@ import { RecapCard } from "@/components/RecapCard";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { goToTeam } from "@/utils/navHelpers";
 import { ALL_TEAMS } from "@/constants/allPlayers";
+import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -60,6 +61,57 @@ function getGameContext(game: Game, myTeams: string[]): string | null {
   const period = game.quarter ?? "";
   const time = game.timeRemaining ?? "";
 
+  const awayShort = shortAthleteName(game.awayTeam);
+  const homeShort = shortAthleteName(game.homeTeam);
+
+  // ── Tennis context ─────────────────────────────────────────────────────────
+  if (isTennisLeague(game.league)) {
+    if (game.status === "live") {
+      const setsLeader = homeScore > awayScore ? homeShort : awayScore > homeScore ? awayShort : null;
+      if (time) return `🎾 ${awayShort} vs ${homeShort} — ${time} (${period})`;
+      if (setsLeader) return `🎾 ${setsLeader} leads ${homeScore}–${awayScore} sets`;
+      return `🎾 On serve — ${period}`;
+    }
+    if (game.status === "upcoming") {
+      const d = new Date(game.startTime);
+      const t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      const now = new Date();
+      const minsUntil = Math.floor((d.getTime() - now.getTime()) / 60000);
+      if (minsUntil > 0 && minsUntil <= 60) return `🎾 Starting in ${minsUntil}m`;
+      return `🎾 ${t}`;
+    }
+    if (game.status === "finished") {
+      const winner = homeScore > awayScore ? homeShort : awayShort;
+      return `🎾 ${winner} wins ${homeScore > awayScore ? homeScore : awayScore}–${homeScore > awayScore ? awayScore : homeScore} sets`;
+    }
+    return null;
+  }
+
+  // ── Combat context ─────────────────────────────────────────────────────────
+  if (isCombatLeague(game.league)) {
+    const emoji = game.league === "BOXING" ? "🥊" : "🥋";
+    if (game.status === "live") {
+      if (period) return `${emoji} ${period}${time ? ` — ${time}` : ""} · ${awayShort} vs ${homeShort}`;
+      return `${emoji} Fight in progress`;
+    }
+    if (game.status === "upcoming") {
+      const d = new Date(game.startTime);
+      const t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      const now = new Date();
+      const minsUntil = Math.floor((d.getTime() - now.getTime()) / 60000);
+      if (minsUntil > 0 && minsUntil <= 60) return `${emoji} Card starts in ${minsUntil}m`;
+      return `${emoji} Main event at ${t}`;
+    }
+    if (game.status === "finished") {
+      const winner = homeScore > awayScore ? homeShort : homeScore < awayScore ? awayShort : null;
+      const method = period && period !== "Final" ? ` by ${period}` : "";
+      if (winner) return `${emoji} ${winner} wins${method}`;
+      return `${emoji} Decision`;
+    }
+    return null;
+  }
+
+  // ── Team sports context ────────────────────────────────────────────────────
   if (game.status === "live") {
     const leader = homeScore > awayScore ? game.homeTeam : game.awayTeam;
     const leaderShort = leader.split(" ").slice(-1)[0];

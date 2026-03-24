@@ -43,8 +43,9 @@ interface EspnTeam {
 }
 
 interface EspnCompetitor {
-  homeAway: "home" | "away";
-  team: EspnTeam;
+  homeAway?: "home" | "away";
+  team?: EspnTeam;
+  athlete?: { id?: string; displayName?: string; logo?: string };
   score?: string;
 }
 
@@ -151,10 +152,19 @@ interface PlayerStatLine {
   stats: Record<string, string>;
 }
 
+type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
+function getArchetype(league: string): SportArchetype {
+  if (league === "ATP" || league === "WTA") return "tennis";
+  if (league === "UFC" || league === "BOXING") return "combat";
+  if (league === "OLYMPICS" || league === "XGAMES") return "multi_event";
+  return "team";
+}
+
 interface GameShape {
   id: string;
   sport: string;
   league: string;
+  sportArchetype: SportArchetype;
   homeTeam: string;
   awayTeam: string;
   homeTeamId?: string;
@@ -168,6 +178,7 @@ interface GameShape {
   venue: string | null;
   homeTeamLogo: string | null;
   awayTeamLogo: string | null;
+  eventTitle?: string | null;
 }
 
 interface GameDetailShape {
@@ -213,9 +224,26 @@ function mapStatus(state: string): "live" | "finished" | "upcoming" {
   return "upcoming";
 }
 
-function parseDetail(detail: string | undefined, state: string): { quarter: string | null; timeRemaining: string | null } {
+function parseDetail(detail: string | undefined, state: string, leagueKey?: string): { quarter: string | null; timeRemaining: string | null } {
   if (state === "post") return { quarter: "Final", timeRemaining: null };
   if (state !== "in" || !detail) return { quarter: null, timeRemaining: null };
+
+  // Tennis: ESPN returns "40-30, 3rd Set" → quarter: "3rd Set", timeRemaining: "40-30"
+  if (leagueKey === "ATP" || leagueKey === "WTA") {
+    const m = detail.match(/^(.+?),\s*(.+)$/);
+    if (m) return { timeRemaining: m[1].trim(), quarter: m[2].trim() };
+    return { quarter: detail, timeRemaining: null };
+  }
+
+  // Combat: ESPN returns "Round 1 - 2:30" → quarter: "Round 1", timeRemaining: "2:30"
+  // (reversed vs default team sports)
+  if (leagueKey === "UFC" || leagueKey === "BOXING") {
+    const m = detail.match(/^(.+?)\s+-\s+(.+)$/);
+    if (m) return { quarter: m[1].trim(), timeRemaining: m[2].trim() };
+    return { quarter: detail, timeRemaining: null };
+  }
+
+  // Default team sports: "5:42 - 3rd Quarter" → timeRemaining: "5:42", quarter: "3rd Quarter"
   const m = detail.match(/^(.+?)\s+-\s+(.+)$/);
   if (m) return { timeRemaining: m[1].trim(), quarter: m[2].trim() };
   return { quarter: detail, timeRemaining: null };
@@ -235,23 +263,38 @@ function normalizeTeamName(name: string): string {
 
 function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   const comp = ev.competitions[0];
-  const home = comp.competitors.find((c) => c.homeAway === "home");
-  const away = comp.competitors.find((c) => c.homeAway === "away");
+  const competitors = comp?.competitors ?? [];
+  // Tennis events use "competitor" array with no homeAway — treat first as "away", second as "home"
+  const home = competitors.find((c) => c.homeAway === "home") ?? competitors[1];
+  const away = competitors.find((c) => c.homeAway === "away") ?? competitors[0];
   const cfg = LEAGUE_CONFIG[leagueKey];
   const statusType = ev.status?.type ?? comp.status?.type;
   const state: string = statusType?.state ?? "pre";
   const status = mapStatus(state);
-  const { quarter, timeRemaining } = parseDetail(statusType?.detail ?? statusType?.shortDetail, state);
+  const { quarter, timeRemaining } = parseDetail(statusType?.detail ?? statusType?.shortDetail, state, leagueKey);
+  const archetype = getArchetype(leagueKey);
+
+  // For individual sports, scores = sets won (tennis) or bout result (combat)
+  // Null out scores for upcoming individual sport events
   const homeScore = home?.score != null && home.score !== "" ? parseInt(home.score) : null;
   const awayScore = away?.score != null && away.score !== "" ? parseInt(away.score) : null;
+
+  // Helper: ESPN uses team.displayName for teams, athlete.displayName for individual sports (UFC/Tennis)
+  // Some UFC competitor objects also expose displayName directly
+  const getDisplayName = (c: typeof home) =>
+    c?.team?.displayName ?? c?.athlete?.displayName ?? (c as any)?.displayName ?? "Unknown";
+  const getEntityId = (c: typeof home) =>
+    c?.team?.id ?? c?.athlete?.id;
+
   return {
     id: `${leagueKey.toLowerCase()}-${ev.id}`,
     sport: cfg.displaySport,
     league: leagueKey,
-    homeTeam: normalizeTeamName(home?.team.displayName ?? "Home"),
-    awayTeam: normalizeTeamName(away?.team.displayName ?? "Away"),
-    homeTeamId: home?.team.id,
-    awayTeamId: away?.team.id,
+    sportArchetype: archetype,
+    homeTeam: normalizeTeamName(getDisplayName(home)),
+    awayTeam: normalizeTeamName(getDisplayName(away)),
+    homeTeamId: getEntityId(home),
+    awayTeamId: getEntityId(away),
     homeScore: status === "upcoming" ? null : homeScore,
     awayScore: status === "upcoming" ? null : awayScore,
     status,
@@ -259,8 +302,9 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     quarter,
     timeRemaining,
     venue: comp.venue?.fullName ?? null,
-    homeTeamLogo: home?.team.logo ?? null,
-    awayTeamLogo: away?.team.logo ?? null,
+    homeTeamLogo: archetype === "team" ? (home?.team?.logo ?? null) : null,
+    awayTeamLogo: archetype === "team" ? (away?.team?.logo ?? null) : null,
+    eventTitle: archetype !== "team" ? ev.name : null,
   };
 }
 
@@ -272,7 +316,9 @@ async function fetchLeagueGames(leagueKey: string): Promise<GameShape[]> {
   const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard`;
   try {
     const json = (await espnFetch(url)) as EspnScoreboard;
-    const games = json.events.map((ev) => mapEvent(ev, leagueKey));
+    const games = (json.events ?? [])
+      .filter((ev) => ev.competitions?.length > 0)
+      .map((ev) => mapEvent(ev, leagueKey));
     const hasLive = games.some((g) => g.status === "live");
     setCached(cacheKey, games, hasLive ? 15_000 : 30_000);
     return games;
