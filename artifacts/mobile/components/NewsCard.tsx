@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { View, Text, StyleSheet, Pressable, Animated } from "react-native";
+import { View, Text, StyleSheet, Pressable, Animated, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
@@ -54,6 +54,7 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
 
   const accentColor = getLeagueColor(article.leagues);
   const emoji = SPORT_EMOJI[article.leagues[0]] ?? "📰";
+  const hasImage = !!article.imageUrl;
 
   if (hero) {
     return (
@@ -61,13 +62,21 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
           <View style={heroS.card}>
             <View style={heroS.imagePlaceholder}>
-              <LinearGradient
-                colors={[`${accentColor}40`, `${accentColor}18`, "#0F0F0F00"]}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              />
-              <Text style={heroS.emoji}>{emoji}</Text>
+              {hasImage ? (
+                <Image
+                  source={{ uri: article.imageUrl! }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                />
+              ) : (
+                <LinearGradient
+                  colors={[`${accentColor}40`, `${accentColor}18`, "#0F0F0F00"]}
+                  style={StyleSheet.absoluteFill}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+              )}
+              {!hasImage && <Text style={heroS.emoji}>{emoji}</Text>}
             </View>
             <LinearGradient
               colors={["transparent", "rgba(15,15,15,0.94)", "#0F0F0F"]}
@@ -97,7 +106,7 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
     );
   }
 
-  // Default — left-edge league stripe, text-forward dark card
+  // Default — compact card with optional thumbnail on the right
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
@@ -113,7 +122,7 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
               <Text style={card.time}>{timeAgo(article.publishedAt)}</Text>
             </View>
             <Text style={card.title} numberOfLines={2}>{article.title}</Text>
-            <Text style={card.summary} numberOfLines={2}>{article.summary}</Text>
+            <Text style={card.summary} numberOfLines={hasImage ? 1 : 2}>{article.summary}</Text>
             <View style={card.footer}>
               <View style={card.sourceRow}>
                 <View style={card.sourceAvatar}>
@@ -124,6 +133,13 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
               <Ionicons name="chevron-forward" size={16} color={C.textTertiary} />
             </View>
           </View>
+          {hasImage && (
+            <Image
+              source={{ uri: article.imageUrl! }}
+              style={card.thumbnail}
+              resizeMode="cover"
+            />
+          )}
         </View>
       </Pressable>
     </Animated.View>
@@ -258,4 +274,10 @@ const card = StyleSheet.create({
   },
   sourceAvatarLetter: { color: C.text, fontSize: 9, fontWeight: "700" },
   sourceText: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
+  thumbnail: {
+    width: 80, alignSelf: "stretch",
+    borderTopRightRadius: 13,
+    borderBottomRightRadius: 13,
+    marginLeft: 8,
+  },
 });

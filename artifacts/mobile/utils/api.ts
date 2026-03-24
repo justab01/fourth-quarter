@@ -35,10 +35,10 @@ export const api = {
       body: JSON.stringify({ type, content, title }),
     }),
 
-  rewriteArticle: (content: string, title: string, mode: "simple" | "toddler") =>
+  rewriteArticle: (content: string, title: string, mode: "simple" | "toddler" | "translate", targetSport?: string) =>
     apiFetch<{ rewritten: string }>("/ai/rewrite", {
       method: "POST",
-      body: JSON.stringify({ content, title, mode }),
+      body: JSON.stringify({ content, title, mode, targetSport }),
     }),
 
   generateRecap: (data: RecapRequest) =>
@@ -146,7 +146,7 @@ export interface EspnTeamInfo {
   venue: string | null;
   coach: string | null;
   league: string;
-  roster: { name: string; jersey: string; position: string }[];
+  roster: { name: string; jersey: string; position: string; athleteId: string }[];
 }
 
 export interface UserPreferencesPayload {

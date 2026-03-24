@@ -117,8 +117,8 @@ function espnTeamToTeamData(info: EspnTeamInfo): TeamData {
     }
     return "Guards";
   }
-  const roster: Player[] = info.roster.map((p, i) => ({
-    id: `${i}`,
+  const roster: Player[] = info.roster.map((p) => ({
+    id: slugify(p.name),
     name: p.name,
     number: p.jersey,
     position: p.position,
@@ -127,6 +127,7 @@ function espnTeamToTeamData(info: EspnTeamInfo): TeamData {
     weight: "—",
     group: posToGroup(p.position, info.league),
     stats: {},
+    athleteId: p.athleteId || undefined,
   }));
   return {
     id: `${info.league.toLowerCase()}-${slugify(info.name)}`,
@@ -232,6 +233,39 @@ function StatsTab({ team }: { team: TeamData }) {
   );
 }
 
+const HEADSHOT_SPORT: Record<string, string> = {
+  NBA: "nba", NFL: "nfl", MLB: "mlb", MLS: "soccer",
+  NHL: "nhl", WNBA: "wnba", NCAAB: "mens-college-basketball",
+  NCAAF: "college-football", EPL: "soccer", UCL: "soccer", LIGA: "soccer",
+};
+
+function espnHeadshotUrl(athleteId: string, league: string): string | null {
+  if (!athleteId) return null;
+  const sport = HEADSHOT_SPORT[league.toUpperCase()];
+  if (!sport) return null;
+  return `https://a.espncdn.com/combiner/i?img=/i/headshots/${sport}/players/full/${athleteId}.png&w=80&h=80&cb=1`;
+}
+
+function PlayerAvatar({ player, teamColor, league }: { player: Player; teamColor: string; league: string }) {
+  const [imgError, setImgError] = React.useState(false);
+  const url = player.athleteId ? espnHeadshotUrl(player.athleteId, league) : null;
+  if (url && !imgError) {
+    return (
+      <Image
+        source={{ uri: url }}
+        style={roster.avatar}
+        resizeMode="cover"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+  return (
+    <View style={[roster.avatar, { backgroundColor: `${teamColor}28` }]}>
+      <Text style={[roster.avatarNum, { color: teamColor }]}>{player.number}</Text>
+    </View>
+  );
+}
+
 function RosterTab({ team, teamColor, isLoading }: { team: TeamData; teamColor: string; isLoading?: boolean }) {
   const groups = groupRoster(team.roster);
   return (
@@ -259,7 +293,10 @@ function RosterTab({ team, teamColor, isLoading }: { team: TeamData; teamColor: 
               key={player.id}
               onPress={() => {
                 Haptics.selectionAsync();
-                router.push({ pathname: "/player/[id]", params: { id: player.id } } as any);
+                router.push({
+                  pathname: "/player/[id]",
+                  params: { id: player.id, athleteId: player.athleteId ?? "", league: team.league },
+                } as any);
               }}
               style={({ pressed }) => [
                 roster.playerRow,
@@ -267,15 +304,13 @@ function RosterTab({ team, teamColor, isLoading }: { team: TeamData; teamColor: 
               ]}
             >
               <View style={{ flex: 2.8, flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <View style={[roster.avatar, { backgroundColor: `${teamColor}28` }]}>
-                  <Text style={[roster.avatarNum, { color: teamColor }]}>{player.number}</Text>
-                </View>
+                <PlayerAvatar player={player} teamColor={teamColor} league={team.league} />
                 <Text style={roster.playerName} numberOfLines={1}>{player.name}</Text>
               </View>
               <Text style={[roster.cell, { width: 38 }]}>{player.position}</Text>
-              <Text style={[roster.cell, { width: 34 }]}>{player.age}</Text>
-              <Text style={[roster.cell, { width: 52 }]}>{player.height}</Text>
-              <Text style={[roster.cell, { width: 64 }]}>{player.weight}</Text>
+              <Text style={[roster.cell, { width: 34 }]}>{player.age || "—"}</Text>
+              <Text style={[roster.cell, { width: 52 }]}>{player.height || "—"}</Text>
+              <Text style={[roster.cell, { width: 64 }]}>{player.weight || "—"}</Text>
             </Pressable>
           ))}
         </View>

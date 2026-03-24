@@ -15,6 +15,7 @@ export type Player = {
   group: "Offense" | "Defense" | "Special Teams" | "Pitching" | "Hitting" | "Bullpen" | "Forwards" | "Defensemen" | "Goalies" | "Midfielders" | "Defenders" | "Goalkeepers" | "Guards" | "Forwards/Centers" | "Bigs";
   stats?: Record<string, string | number>;
   bio?: string;
+  athleteId?: string;
 };
 
 export type TeamData = {

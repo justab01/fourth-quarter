@@ -736,8 +736,10 @@ interface EspnTeamsResponse {
 }
 
 interface EspnRosterGroup {
+  id?: string;
   position?: { abbreviation: string };
   items?: {
+    id?: string;
     displayName: string;
     jersey?: string;
     position?: { abbreviation: string };
@@ -809,9 +811,9 @@ router.get("/sports/team", async (req, res) => {
     const coach = coachData ? `${coachData.firstName ?? ""} ${coachData.lastName ?? ""}`.trim() : null;
 
     // 4. Build roster list — two ESPN formats:
-    //    • Grouped: athletes = [{ position, items: [{ displayName, jersey, position }] }]
-    //    • Flat:    athletes = [{ displayName, jersey, position }]
-    const roster: { name: string; jersey: string; position: string }[] = [];
+    //    • Grouped: athletes = [{ position, items: [{ id, displayName, jersey, position }] }]
+    //    • Flat:    athletes = [{ id, displayName, jersey, position }]
+    const roster: { name: string; jersey: string; position: string; athleteId: string }[] = [];
     const rawAthletes = rosterJson?.athletes ?? [];
     const isGrouped = rawAthletes[0]?.items !== undefined;
     if (isGrouped) {
@@ -821,6 +823,7 @@ router.get("/sports/team", async (req, res) => {
             name: athlete.displayName,
             jersey: athlete.jersey ?? "—",
             position: athlete.position?.abbreviation ?? group.position?.abbreviation ?? "—",
+            athleteId: athlete.id ?? "",
           });
         }
       }
@@ -832,6 +835,7 @@ router.get("/sports/team", async (req, res) => {
             name: athlete.displayName,
             jersey: athlete.jersey ?? "—",
             position: athlete.position?.abbreviation ?? "—",
+            athleteId: athlete.id ?? "",
           });
         }
       }

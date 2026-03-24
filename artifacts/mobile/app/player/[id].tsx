@@ -541,7 +541,7 @@ const gl = StyleSheet.create({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function PlayerScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, athleteId: paramAthleteId, league: paramLeague } = useLocalSearchParams<{ id: string; athleteId?: string; league?: string }>();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<PlayerTab>("Overview");
   const [followed, setFollowed] = useState(false);
@@ -631,7 +631,16 @@ export default function PlayerScreen() {
     );
   }
 
-  const headshotUrl = getEspnHeadshotUrl(player.name, team.league);
+  const HEADSHOT_SPORT_MAP: Record<string, string> = {
+    NBA: "nba", NFL: "nfl", MLB: "mlb", MLS: "soccer",
+    NHL: "nhl", WNBA: "wnba", NCAAB: "mens-college-basketball",
+    NCAAF: "college-football", EPL: "soccer", UCL: "soccer", LIGA: "soccer",
+  };
+  const directAthleteId = paramAthleteId || player.athleteId;
+  const headshotLeague = (paramLeague || team.league).toUpperCase();
+  const headshotUrl = directAthleteId
+    ? `https://a.espncdn.com/combiner/i?img=/i/headshots/${HEADSHOT_SPORT_MAP[headshotLeague] ?? headshotLeague.toLowerCase()}/players/full/${directAthleteId}.png&w=200&h=200&cb=1`
+    : getEspnHeadshotUrl(player.name, team.league);
 
   const renderOverview = () => {
     if (team.league === "NBA") return <NBAOverview player={player} team={team} liveStats={liveStats} />;

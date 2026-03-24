@@ -81,15 +81,25 @@ const REWRITE_PROMPTS: Record<string, string> = {
   toddler: `Rewrite this sports news summary as if you are explaining it to a 4-year-old child. Use the simplest possible words, make it playful and silly, use funny comparisons (like comparing the teams to animals or snacks or cartoon characters). Keep it to 2-3 short sentences. Make it fun!`,
 };
 
+const SPORT_TRANSLATE_SYSTEM = (targetSport: string) =>
+  `You are a sports translator. Rewrite the following sports news story using the language, terminology, and culture of ${targetSport}. Map the key concepts from the original sport into equivalent ${targetSport} concepts (e.g., if it's about basketball and the target is football: a dunk → a touchdown, a three-pointer → a field goal, points → yards, etc.). The goal is to help a ${targetSport} fan fully understand the significance and excitement of what happened. Keep it 2-3 sentences. Be specific with the analogies.`;
+
 router.post("/ai/rewrite", async (req, res) => {
-  const { content, title, mode } = req.body as { content: string; title: string; mode: "simple" | "toddler" };
-  const systemPrompt = REWRITE_PROMPTS[mode];
-  if (!systemPrompt) return res.status(400).json({ error: "Invalid mode" });
+  const { content, title, mode, targetSport } = req.body as { content: string; title: string; mode: "simple" | "toddler" | "translate"; targetSport?: string };
+
+  let systemPrompt: string;
+  if (mode === "translate") {
+    if (!targetSport) return res.status(400).json({ error: "targetSport required for translate mode" });
+    systemPrompt = SPORT_TRANSLATE_SYSTEM(targetSport);
+  } else {
+    systemPrompt = REWRITE_PROMPTS[mode];
+    if (!systemPrompt) return res.status(400).json({ error: "Invalid mode" });
+  }
 
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
-      max_completion_tokens: 180,
+      max_completion_tokens: 200,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `Title: ${title || ""}\n\n${content}` },
