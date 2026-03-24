@@ -13,25 +13,54 @@ import { LEAGUE_COLORS } from "@/constants/sports";
 
 const C = Colors.dark;
 
-type ReadingMode = "pro" | "simple" | "toddler" | "translate";
+type ReadingMode = "original" | "easy" | "quick" | "cross-sport";
 
-const MODES: { id: ReadingMode; emoji: string; label: string }[] = [
-  { id: "pro",       emoji: "📰", label: "Pro"       },
-  { id: "simple",    emoji: "💬", label: "Simple"    },
-  { id: "toddler",   emoji: "🐣", label: "Toddler"   },
-  { id: "translate", emoji: "🏟️", label: "Translate" },
+const MODES: { id: ReadingMode; emoji: string; label: string; description: string }[] = [
+  {
+    id: "original",
+    emoji: "📄",
+    label: "Original",
+    description: "The article exactly as published by the source.",
+  },
+  {
+    id: "easy",
+    emoji: "☀️",
+    label: "Easy",
+    description: "A clearer version written in simple, everyday language.",
+  },
+  {
+    id: "quick",
+    emoji: "⚡",
+    label: "Quick",
+    description: "A short version with just the key takeaway.",
+  },
+  {
+    id: "cross-sport",
+    emoji: "🔄",
+    label: "Cross-Sport",
+    description: "The story explained through the language of another sport.",
+  },
 ];
 
-const TRANSLATE_SPORTS = [
-  { id: "NFL Football",   label: "NFL",    emoji: "🏈" },
-  { id: "NBA Basketball", label: "NBA",    emoji: "🏀" },
-  { id: "MLB Baseball",   label: "MLB",    emoji: "⚾" },
-  { id: "NHL Hockey",     label: "NHL",    emoji: "🏒" },
-  { id: "MLS Soccer",     label: "Soccer", emoji: "⚽" },
-  { id: "Tennis",         label: "Tennis", emoji: "🎾" },
-  { id: "Golf",           label: "Golf",   emoji: "⛳" },
-  { id: "Boxing",         label: "Boxing", emoji: "🥊" },
+const CROSS_SPORTS = [
+  { id: "Football",   label: "Football",   emoji: "🏈" },
+  { id: "Basketball", label: "Basketball", emoji: "🏀" },
+  { id: "Baseball",   label: "Baseball",   emoji: "⚾" },
+  { id: "Hockey",     label: "Hockey",     emoji: "🏒" },
+  { id: "Soccer",     label: "Soccer",     emoji: "⚽" },
+  { id: "Tennis",     label: "Tennis",     emoji: "🎾" },
+  { id: "Golf",       label: "Golf",       emoji: "⛳" },
+  { id: "Boxing",     label: "Boxing",     emoji: "🥊" },
 ];
+
+function getLoadingText(mode: ReadingMode, targetSport?: string): string {
+  switch (mode) {
+    case "easy":        return "Making it easier to follow…";
+    case "quick":       return "Pulling out the key point…";
+    case "cross-sport": return `Reframing for a ${targetSport ?? "sport"} fan…`;
+    default:            return "Loading…";
+  }
+}
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -42,6 +71,7 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// ─── Cross-Sport bottom sheet ─────────────────────────────────────────────────
 function SportPickerModal({ visible, onClose, onSelect, leagueColor }: {
   visible: boolean; onClose: () => void;
   onSelect: (sport: string) => void; leagueColor: string;
@@ -52,10 +82,10 @@ function SportPickerModal({ visible, onClose, onSelect, leagueColor }: {
       <Pressable style={pick.backdrop} onPress={onClose} />
       <View style={[pick.sheet, { paddingBottom: insets.bottom + 24 }]}>
         <View style={pick.handle} />
-        <Text style={pick.title}>Translate into…</Text>
-        <Text style={pick.sub}>Pick a sport to reframe this story</Text>
+        <Text style={pick.title}>Explain through another sport</Text>
+        <Text style={pick.sub}>See this story the way a fan of another sport would understand it.</Text>
         <View style={pick.grid}>
-          {TRANSLATE_SPORTS.map(s => (
+          {CROSS_SPORTS.map(s => (
             <Pressable
               key={s.id}
               style={({ pressed }) => [pick.btn, { opacity: pressed ? 0.7 : 1, borderColor: leagueColor + "55" }]}
@@ -71,16 +101,17 @@ function SportPickerModal({ visible, onClose, onSelect, leagueColor }: {
   );
 }
 
+// ─── Article screen ───────────────────────────────────────────────────────────
 export default function ArticleScreen() {
   const { article: articleStr } = useLocalSearchParams<{ article: string }>();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const [activeMode, setActiveMode] = useState<ReadingMode>("pro");
+  const [activeMode, setActiveMode] = useState<ReadingMode>("original");
   const [rewriteCache, setRewriteCache] = useState<Partial<Record<string, string>>>({});
   const [loading, setLoading] = useState(false);
-  const [translateSport, setTranslateSport] = useState("NFL Football");
+  const [crossSport, setCrossSport] = useState("Football");
   const [showSportPicker, setShowSportPicker] = useState(false);
   const [imageError, setImageError] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -103,17 +134,19 @@ export default function ArticleScreen() {
 
   const primaryLeague = article.leagues[0];
   const rawColor = primaryLeague ? (LEAGUE_COLORS[primaryLeague] ?? C.accent) : C.accent;
-  const leagueColor = rawColor === "#013087" || rawColor === "#002D72" ? "#4A90D9"
-    : rawColor === "#1A1A2E" ? "#4CAF50" : rawColor;
+  const leagueColor =
+    rawColor === "#013087" || rawColor === "#002D72" ? "#4A90D9"
+    : rawColor === "#1A1A2E" ? "#4CAF50"
+    : rawColor;
 
-  const cacheKey = activeMode === "translate" ? `translate:${translateSport}` : activeMode;
+  // Cache key: mode + optional cross-sport target
+  const cacheKey = activeMode === "cross-sport" ? `cross-sport:${crossSport}` : activeMode;
   const originalBody = article.content || article.summary;
-  // What to show in the body: rewrite if non-pro and cached, else original
-  const bodyText = activeMode === "pro"
+  const bodyText = activeMode === "original"
     ? originalBody
     : (rewriteCache[cacheKey] ?? originalBody);
 
-  const activeSport = TRANSLATE_SPORTS.find(s => s.id === translateSport);
+  const activeSportInfo = CROSS_SPORTS.find(s => s.id === crossSport);
 
   function doFade() {
     Animated.sequence([
@@ -123,13 +156,13 @@ export default function ArticleScreen() {
   }
 
   async function fetchRewrite(mode: ReadingMode, sport?: string) {
-    const key = mode === "translate" ? `translate:${sport ?? translateSport}` : mode;
+    const key = mode === "cross-sport" ? `cross-sport:${sport ?? crossSport}` : mode;
     if (rewriteCache[key]) { doFade(); return; }
     setLoading(true);
     try {
-      const res = mode === "translate"
-        ? await api.rewriteArticle(article!.summary, article!.title, "translate", sport ?? translateSport)
-        : await api.rewriteArticle(article!.summary, article!.title, mode as "simple" | "toddler");
+      const res = mode === "cross-sport"
+        ? await api.rewriteArticle(article!.summary, article!.title, "cross-sport", sport ?? crossSport)
+        : await api.rewriteArticle(article!.summary, article!.title, mode as "easy" | "quick");
       setRewriteCache(prev => ({ ...prev, [key]: res.rewritten }));
     } catch {
       setRewriteCache(prev => ({ ...prev, [key]: originalBody }));
@@ -141,21 +174,21 @@ export default function ArticleScreen() {
 
   async function tapMode(mode: ReadingMode) {
     Haptics.selectionAsync();
-    if (mode === "translate") {
-      setActiveMode("translate");
+    if (mode === "cross-sport") {
+      setActiveMode("cross-sport");
       setShowSportPicker(true);
       return;
     }
     if (mode === activeMode) return;
     setActiveMode(mode);
-    if (mode === "pro" || rewriteCache[mode]) { doFade(); return; }
+    if (mode === "original" || rewriteCache[mode]) { doFade(); return; }
     await fetchRewrite(mode);
   }
 
   async function pickSport(sport: string) {
-    setTranslateSport(sport);
-    setActiveMode("translate");
-    await fetchRewrite("translate", sport);
+    setCrossSport(sport);
+    setActiveMode("cross-sport");
+    await fetchRewrite("cross-sport", sport);
   }
 
   const hasImage = !!article.imageUrl && !imageError;
@@ -205,8 +238,9 @@ export default function ArticleScreen() {
           <Text style={s.time}>{timeAgo(article.publishedAt)}</Text>
         </View>
 
-        {/* Mode pills */}
-        <View style={s.pillsWrap}>
+        {/* ── Reading Modes ───────────────────────────────────────────────── */}
+        <View style={s.modesSection}>
+          <Text style={s.modesLabel}>Reading Modes</Text>
           <View style={s.pillsRow}>
             {MODES.map(m => {
               const isActive = activeMode === m.id;
@@ -214,7 +248,10 @@ export default function ArticleScreen() {
                 <Pressable
                   key={m.id}
                   onPress={() => tapMode(m.id)}
-                  style={[s.pill, isActive && { backgroundColor: leagueColor + "28", borderColor: leagueColor + "88" }]}
+                  style={[
+                    s.pill,
+                    isActive && { backgroundColor: leagueColor + "22", borderColor: leagueColor + "88" },
+                  ]}
                 >
                   <Text style={s.pillEmoji}>{m.emoji}</Text>
                   <Text style={[s.pillLabel, isActive && { color: leagueColor }]}>{m.label}</Text>
@@ -223,27 +260,34 @@ export default function ArticleScreen() {
             })}
           </View>
 
-          {/* Translate sport chip */}
-          {activeMode === "translate" && (
+          {/* Active mode description */}
+          <View style={s.modeDescRow}>
+            <Text style={s.modeDesc}>
+              {MODES.find(m => m.id === activeMode)?.description ?? ""}
+            </Text>
+          </View>
+
+          {/* Cross-Sport target chip */}
+          {activeMode === "cross-sport" && (
             <Pressable
               style={[s.sportChip, { borderColor: leagueColor + "55" }]}
               onPress={() => setShowSportPicker(true)}
             >
-              <Text style={s.sportChipEmoji}>{activeSport?.emoji ?? "🏟️"}</Text>
-              <Text style={[s.sportChipLabel, { color: leagueColor }]}>{activeSport?.label ?? "Sport"}</Text>
+              <Text style={s.sportChipEmoji}>{activeSportInfo?.emoji ?? "🔄"}</Text>
+              <Text style={[s.sportChipLabel, { color: leagueColor }]}>
+                {activeSportInfo?.label ?? "Pick a sport"}
+              </Text>
               <Ionicons name="chevron-down" size={12} color={leagueColor} />
             </Pressable>
           )}
         </View>
 
-        {/* Body — words change based on mode */}
+        {/* ── Body ────────────────────────────────────────────────────────── */}
         {loading ? (
           <View style={s.loadingRow}>
             <ActivityIndicator size="small" color={leagueColor} />
             <Text style={[s.loadingText, { color: leagueColor }]}>
-              {activeMode === "toddler" ? "Making it silly…"
-                : activeMode === "translate" ? `Translating to ${activeSport?.label ?? "sport"}…`
-                : "Simplifying…"}
+              {getLoadingText(activeMode, activeSportInfo?.label)}
             </Text>
           </View>
         ) : (
@@ -297,17 +341,25 @@ const s = StyleSheet.create({
   sourceName: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium" },
   time: { color: C.textTertiary, fontSize: 13 },
 
-  pillsWrap: { gap: 10 },
+  // Reading Modes section
+  modesSection: { gap: 10 },
+  modesLabel: {
+    color: C.textTertiary, fontSize: 10, fontWeight: "900",
+    letterSpacing: 1.2, textTransform: "uppercase",
+  },
   pillsRow: { flexDirection: "row", gap: 6 },
   pill: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 5, paddingVertical: 8, paddingHorizontal: 6,
+    gap: 4, paddingVertical: 8, paddingHorizontal: 4,
     borderRadius: 20, borderWidth: 1.5,
     backgroundColor: "rgba(255,255,255,0.04)",
     borderColor: "rgba(255,255,255,0.1)",
   },
-  pillEmoji: { fontSize: 13 },
-  pillLabel: { color: C.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+  pillEmoji: { fontSize: 12 },
+  pillLabel: { color: C.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
+
+  modeDescRow: { paddingHorizontal: 2 },
+  modeDesc: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
 
   sportChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -348,7 +400,7 @@ const pick = StyleSheet.create({
     alignSelf: "center", marginBottom: 18,
   },
   title: { color: "#fff", fontSize: 20, fontWeight: "800", fontFamily: "Inter_700Bold", textAlign: "center" },
-  sub: { color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 20 },
+  sub: { color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 20, lineHeight: 19 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
   btn: {
     width: "44%", alignItems: "center", paddingVertical: 16,

@@ -1,0 +1,458 @@
+Yeah, this is the right instinct. The feature is good. The framing is what’s off.
+
+Right now:
+	•	Pro is fine
+	•	Simple is close
+	•	Toddler makes the whole thing feel gimmicky
+	•	Translate is cool, but the wording can be sharper and the behavior needs guardrails
+
+What you want is not “haha funny AI mode.”
+You want:
+
+different ways to understand the same sports story depending on the kind of fan you are
+
+That’s a much stronger product idea.
+
+The real fix
+
+Stop presenting these as random AI tricks.
+Present them as Reading Modes.
+
+That makes the feature feel intentional, premium, and useful.
+
+⸻
+
+New naming system
+
+Best set overall
+	•	Original
+	•	Easy
+	•	Quick
+	•	Cross-Sport
+
+This is the cleanest set for product quality.
+
+What each means
+	•	Original = source version, untouched
+	•	Easy = simplified, beginner-friendly
+	•	Quick = shorter, clearer, more digestible version
+	•	Cross-Sport = explained through another sport’s language
+
+This is way better than “Toddler.”
+
+Because “Toddler” sounds like a joke.
+“Quick” or “Plain” or “Lite” sounds like a real product choice.
+
+⸻
+
+My strongest recommendation
+
+Use this final set:
+
+Final pill labels
+	•	Original
+	•	Easy
+	•	Quick
+	•	Cross-Sport
+
+That’s the version I’d ship.
+
+Why this works:
+	•	Original feels more polished than Pro
+	•	Easy feels welcoming without sounding dumb
+	•	Quick feels useful instead of childish
+	•	Cross-Sport explains itself instantly better than Translate
+
+⸻
+
+Alternate naming sets if you want more personality
+
+Set B — premium/editorial
+	•	Original
+	•	Simplified
+	•	Brief
+	•	Cross-Sport
+
+Set C — modern/app-like
+	•	Source
+	•	Easy Read
+	•	Fast Read
+	•	Cross-Sport
+
+Set D — slightly more fun
+	•	Full Story
+	•	Easy Mode
+	•	Quick Hit
+	•	Sports Swap
+
+Out of all of these, I still think:
+
+Original / Easy / Quick / Cross-Sport
+
+is your best lineup.
+
+⸻
+
+The product framing you should use
+
+Section title
+
+Instead of making it feel like “AI tools,” call the section:
+	•	Reading Modes
+or
+	•	How do you want this explained?
+
+Best choice:
+
+Reading Modes
+
+Simple. Premium. Clear.
+
+⸻
+
+The new explanation for each mode
+
+1. Original
+
+Label: Original
+Description: The story exactly as published by the source.
+
+This replaces “Pro.”
+
+Backend behavior
+
+No AI call.
+Just render the source article as-is.
+
+UI helper text
+
+Read the original version from the publisher.
+
+⸻
+
+2. Easy
+
+Label: Easy
+Description: A clearer version for casual fans or anyone new to the sport.
+
+This replaces Simple.
+
+Better prompt
+
+Rewrite this sports news story in clear, natural, everyday language for a casual fan. Avoid unnecessary jargon, front-office terms, and advanced analytics language. If a sports term must be used, explain it briefly in plain English. Keep the meaning accurate. Write in 2–4 sentences. Sound confident, modern, and easy to follow — not childish.
+
+Why this is better
+
+Your current “Simple” prompt is decent, but a little too soft and a little too “for beginners only.”
+This version feels broader and more natural.
+
+⸻
+
+3. Quick
+
+Label: Quick
+Description: The same story, shortened to the main point fast.
+
+This replaces Toddler.
+
+This is the big correction.
+
+You do not want a 4-year-old mode.
+You want:
+	•	shorter
+	•	cleaner
+	•	instantly scannable
+	•	still smart
+
+Better prompt
+
+Rewrite this sports news story into a short, clean, highly readable version that captures only the most important takeaway. Keep it to 1–3 sentences. Make it easy to scan and understand quickly, while preserving the key facts and tone of the story. Do not sound childish, goofy, or overly casual.
+
+Why this wins
+
+Because a lot of users do not actually want “funny silly mode.”
+They want:
+
+“bro just tell me what happened fast”
+
+That is a real use case.
+
+⸻
+
+4. Cross-Sport
+
+Label: Cross-Sport
+Description: Explains the story through the language of another sport.
+
+This replaces Translate.
+
+Better prompt
+
+Rewrite this sports story so a fan of [target sport] can immediately understand its significance. Use the language, concepts, pacing, and cultural logic of [target sport] to explain what happened. Map key actions and stakes into equivalent ideas when appropriate, but keep the meaning accurate. The analogy should help understanding, not become a joke. Keep it to 2–4 sentences.
+
+Why this is better
+
+Your current prompt risks becoming too gimmicky or too literal.
+This version tells the model:
+	•	help understanding
+	•	stay accurate
+	•	do not become parody
+
+That matters a lot.
+
+⸻
+
+The biggest strategic change
+
+Remove “funny toddler mode” entirely
+
+Unless your whole brand is intentionally playful, that mode weakens the product.
+
+Because once people see “Toddler,” they think:
+	•	gimmick
+	•	joke feature
+	•	unserious AI
+	•	novelty, not utility
+
+You want the opposite.
+
+You want users to think:
+	•	smart
+	•	useful
+	•	flexible
+	•	fast
+	•	tailored
+
+So yes — kill Toddler. Replace it.
+
+⸻
+
+Best full rewritten product copy
+
+Here’s the version I’d use in the app.
+
+Reading Modes
+
+Choose how you want to read the story.
+
+Original
+
+The article exactly as published by the source.
+
+Easy
+
+A clearer version written in simple, everyday language.
+
+Quick
+
+A short version with just the key takeaway.
+
+Cross-Sport
+
+The story explained through the language of another sport.
+
+That’s clean. That’s real. That sounds like a product.
+
+⸻
+
+Better loading states
+
+Your current “Making it silly…” has to go.
+
+Use these:
+
+Original
+
+No loader needed
+
+Easy
+	•	Simplifying the story…
+	•	Making it easier to follow…
+
+Quick
+	•	Pulling out the key point…
+	•	Shortening the story…
+
+Cross-Sport
+	•	Translating into sports language…
+	•	Reframing for a [target sport] fan…
+
+These feel much more premium.
+
+⸻
+
+Better UX behavior
+
+This part matters just as much as the naming.
+
+On article open
+
+Top area should show:
+	•	headline
+	•	source
+	•	time
+	•	image
+	•	Reading Modes pill row
+
+Pill row order
+	•	Original
+	•	Easy
+	•	Quick
+	•	Cross-Sport
+
+That order makes sense because it moves from:
+source → clearer → shorter → more specialized
+
+⸻
+
+Mode switching rules
+
+Original
+
+Instant. No API.
+
+Easy
+
+First fetch, then cache.
+
+Quick
+
+First fetch, then cache.
+
+Cross-Sport
+
+First fetch for each target sport, then cache per sport.
+
+Cache key format
+
+Use something like:
+
+${articleId}:${mode}:${targetSport || "none"}
+
+That prevents collisions and keeps switching instant.
+
+⸻
+
+Cross-Sport bottom sheet copy
+
+Current concept is good, but the wording can be tighter.
+
+Title
+
+Explain through another sport
+
+Subtitle
+
+See this story the way a fan of another sport would understand it.
+
+Options
+	•	Football
+	•	Basketball
+	•	Baseball
+	•	Hockey
+	•	Soccer
+	•	Tennis
+	•	Golf
+	•	Boxing
+
+You can keep league names if you want, but sport names feel cleaner for this use case.
+
+⸻
+
+Important guardrails for output quality
+
+This is probably part of why it “doesn’t sound right.”
+
+You need these rules in the system prompt for all AI modes:
+	•	preserve core facts
+	•	do not invent stats or context
+	•	do not exaggerate
+	•	do not turn the story into a joke
+	•	keep names, teams, and outcomes accurate
+	•	do not overwrite uncertainty with fake certainty
+	•	respect injuries, trades, suspensions, legal matters, and sensitive topics with a serious tone
+
+That last one matters a lot.
+You do not want playful output on serious stories.
+
+⸻
+
+Add tone control by story type
+
+This is a hidden quality upgrade.
+
+For certain article categories, the rewrite should stay more serious:
+	•	injuries
+	•	arrests
+	•	deaths
+	•	abuse allegations
+	•	suspensions
+	•	legal disputes
+	•	firings
+	•	medical news
+
+For these, even Easy or Quick should stay respectful and straight.
+
+So your backend should detect article type or keywords and apply a stricter rewrite tone.
+
+⸻
+
+The actual product philosophy
+
+This feature should not be sold as:
+
+AI rewrites sports news in funny ways
+
+It should be sold as:
+
+The same story, explained in the way you want to understand it
+
+That is way stronger.
+
+⸻
+
+Best final version to hand to your dev/build system
+
+Here’s the clean product rewrite:
+
+Reading Modes
+
+Fourth Quarter lets users switch between multiple ways of reading the same sports story, depending on how much detail or context they want.
+
+Original
+
+Shows the article exactly as published by the source. No AI rewrite is used.
+
+Easy
+
+Rewrites the story in clear, natural language for casual fans, removing unnecessary jargon while preserving the key facts.
+
+Quick
+
+Condenses the story into a short, highly readable summary focused on the main takeaway.
+
+Cross-Sport
+
+Reframes the story using the language and logic of another sport, helping fans from different sports backgrounds understand why the story matters.
+
+All AI-generated modes are cached by article and mode. Cross-Sport is additionally cached by target sport. Switching back to a previously loaded mode should feel instant. The article body itself should change in place — not through a pop-up or separate summary box.
+
+⸻
+
+Final recommendation
+
+Ship this:
+	•	Original
+	•	Easy
+	•	Quick
+	•	Cross-Sport
+
+And kill:
+	•	Pro
+	•	Toddler
+	•	Translate
+
+Because the feature idea is strong.
+The current naming is making it sound weaker than it is.
+
+Next, I can write you the exact backend prompt set + frontend UI copy + state logic for this feature so you can paste it straight into Replit.

@@ -10,6 +10,44 @@ const groq = new OpenAI({
 
 const MODEL = "llama-3.1-8b-instant";
 
+// ─── Sensitive topic detector ─────────────────────────────────────────────────
+// When a story involves injuries, legal matters, deaths, etc., we append a
+// stricter tone clause to every rewrite prompt.
+const SENSITIVE_KEYWORDS = [
+  "injur", "died", "death", "passed away", "surgery", "hospital",
+  "arrest", "charged", "indicted", "suspended", "banned", "abuse",
+  "allegation", "fired", "released", "cut", "cancer", "medical",
+  "lawsuit", "settlement", "assault", "drug", "domestic",
+];
+
+function isSensitive(text: string): boolean {
+  const lower = text.toLowerCase();
+  return SENSITIVE_KEYWORDS.some(kw => lower.includes(kw));
+}
+
+const GUARDRAILS = `
+Rules you must follow:
+- Preserve all core facts: names, teams, scores, outcomes.
+- Do not invent statistics, context, or quotes.
+- Do not exaggerate or downplay outcomes.
+- Do not turn the story into a joke or parody.
+- Keep all names, teams, and results accurate.
+- Do not replace uncertainty with false certainty.
+- Respect injuries, legal matters, medical news, and sensitive topics with a measured, serious tone.`;
+
+const SENSITIVE_ADDENDUM = `
+This story involves a sensitive topic (injury, legal matter, suspension, or similar). Maintain a respectful, straightforward tone throughout. Do not make light of the situation.`;
+
+// ─── Rewrite prompts ──────────────────────────────────────────────────────────
+const REWRITE_PROMPTS: Record<string, string> = {
+  easy: `You are a sports writer helping casual fans understand a sports news story. Rewrite the story in clear, natural, everyday language. Avoid unnecessary jargon, front-office terms, and advanced analytics language. If a sports term must be used, explain it briefly in plain English. Keep the meaning fully accurate. Write in 2–4 sentences. Sound confident, modern, and easy to follow — not childish.`,
+  quick: `You are a sports editor. Condense this sports news story into a short, clean, highly readable version that captures only the most important takeaway. Keep it to 1–3 sentences. Make it easy to scan and understand immediately. Preserve the key facts and tone of the original. Do not sound childish, goofy, or overly casual.`,
+};
+
+const CROSS_SPORT_SYSTEM = (targetSport: string) =>
+  `You are a sports writer helping a ${targetSport} fan understand a story from a different sport. Rewrite this sports story so a ${targetSport} fan can immediately grasp its significance. Use the language, concepts, pacing, and cultural logic of ${targetSport} to explain what happened. Map key actions and stakes into equivalent ideas where it genuinely aids understanding. Keep analogies accurate and purposeful — they should clarify, not become a joke or a stretch. Keep it to 2–4 sentences.`;
+
+// ─── POST /ai/summarize ───────────────────────────────────────────────────────
 router.post("/ai/summarize", async (req, res) => {
   const { type, content, title } = req.body;
 
@@ -35,12 +73,13 @@ router.post("/ai/summarize", async (req, res) => {
   }
 });
 
+// ─── POST /ai/recap ───────────────────────────────────────────────────────────
 router.post("/ai/recap", async (req, res) => {
   const { homeTeam, awayTeam, homeScore, awayScore, keyPlays, league } = req.body;
 
   const winner = homeScore > awayScore ? homeTeam : awayTeam;
-  const loser = homeScore > awayScore ? awayTeam : homeTeam;
-  const winScore = Math.max(homeScore, awayScore);
+  const loser  = homeScore > awayScore ? awayTeam : homeTeam;
+  const winScore  = Math.max(homeScore, awayScore);
   const loseScore = Math.min(homeScore, awayScore);
 
   try {
@@ -67,47 +106,45 @@ Respond with JSON only: { "summary": "...", "keyPlayer": "...", "whatItMeans": "
       response_format: { type: "json_object" },
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const raw    = completion.choices[0]?.message?.content ?? "{}";
     const parsed = JSON.parse(raw);
 
     res.json({
-      summary: parsed.summary ?? `${winner} defeated ${loser} ${winScore}-${loseScore} in a hard-fought ${league} contest.`,
-      keyPlayer: parsed.keyPlayer ?? "Team effort",
+      summary:     parsed.summary     ?? `${winner} defeated ${loser} ${winScore}-${loseScore} in a hard-fought ${league} contest.`,
+      keyPlayer:   parsed.keyPlayer   ?? "Team effort",
       whatItMeans: parsed.whatItMeans ?? "The win has significant playoff implications.",
     });
   } catch (err) {
     console.error("AI recap error:", err);
     res.json({
-      summary: `${winner} defeated ${loser} ${winScore}-${loseScore} in tonight's ${league} matchup.`,
-      keyPlayer: "Team effort",
+      summary:     `${winner} defeated ${loser} ${winScore}-${loseScore} in tonight's ${league} matchup.`,
+      keyPlayer:   "Team effort",
       whatItMeans: "The result impacts playoff standings.",
     });
   }
 });
 
-const REWRITE_PROMPTS: Record<string, string> = {
-  simple: `Rewrite this sports news summary in plain, friendly language for someone who is new to sports or a casual fan. Avoid all technical jargon and sports-specific terms. If you must mention a rule or concept, briefly explain it in everyday words. Keep it to 2-3 sentences. Be warm and approachable.`,
-  toddler: `Rewrite this sports news summary as if you are explaining it to a 4-year-old child. Use the simplest possible words, make it playful and silly, use funny comparisons (like comparing the teams to animals or snacks or cartoon characters). Keep it to 2-3 short sentences. Make it fun!`,
-};
-
-const SPORT_TRANSLATE_SYSTEM = (targetSport: string) =>
-  `You are a sports translator. Rewrite the following sports news story using the language, terminology, and culture of ${targetSport}. Map the key concepts from the original sport into equivalent ${targetSport} concepts (e.g., if it's about basketball and the target is football: a dunk → a touchdown, a three-pointer → a field goal, points → yards, etc.). The goal is to help a ${targetSport} fan fully understand the significance and excitement of what happened. Keep it 2-3 sentences. Be specific with the analogies.`;
-
+// ─── POST /ai/rewrite ─────────────────────────────────────────────────────────
 router.post("/ai/rewrite", async (req, res) => {
   const { content, title, mode, targetSport } = req.body as {
     content: string;
     title: string;
-    mode: "simple" | "toddler" | "translate";
+    mode: "easy" | "quick" | "cross-sport";
     targetSport?: string;
   };
 
+  const fullText = `${title || ""} ${content}`;
+  const sensitive = isSensitive(fullText);
+  const sensitiveClause = sensitive ? SENSITIVE_ADDENDUM : "";
+
   let systemPrompt: string;
-  if (mode === "translate") {
-    if (!targetSport) return res.status(400).json({ error: "targetSport required for translate mode" });
-    systemPrompt = SPORT_TRANSLATE_SYSTEM(targetSport);
+  if (mode === "cross-sport") {
+    if (!targetSport) return res.status(400).json({ error: "targetSport required for cross-sport mode" });
+    systemPrompt = CROSS_SPORT_SYSTEM(targetSport) + GUARDRAILS + sensitiveClause;
   } else {
-    systemPrompt = REWRITE_PROMPTS[mode];
-    if (!systemPrompt) return res.status(400).json({ error: "Invalid mode" });
+    const base = REWRITE_PROMPTS[mode];
+    if (!base) return res.status(400).json({ error: "Invalid mode" });
+    systemPrompt = base + GUARDRAILS + sensitiveClause;
   }
 
   try {

@@ -35,7 +35,7 @@ export const api = {
       body: JSON.stringify({ type, content, title }),
     }),
 
-  rewriteArticle: (content: string, title: string, mode: "simple" | "toddler" | "translate", targetSport?: string) =>
+  rewriteArticle: (content: string, title: string, mode: "easy" | "quick" | "cross-sport", targetSport?: string) =>
     apiFetch<{ rewritten: string }>("/ai/rewrite", {
       method: "POST",
       body: JSON.stringify({ content, title, mode, targetSport }),
