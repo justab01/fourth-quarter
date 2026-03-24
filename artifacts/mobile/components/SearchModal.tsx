@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View, Text, StyleSheet, Modal, TextInput, Pressable,
-  ScrollView, Platform, Animated, Keyboard
+  ScrollView, Platform, Animated, Keyboard, ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -102,12 +102,27 @@ export function SearchModal() {
   const { preferences } = usePreferences();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const inputRef = useRef<TextInput>(null);
   const slideAnim = useRef(new Animated.Value(-50)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   const { data: gamesData } = useQuery({ queryKey: ["games"], queryFn: () => api.getGames(), enabled: isOpen });
   const { data: newsData } = useQuery({ queryKey: ["news-all"], queryFn: () => api.getNews(), enabled: isOpen });
+
+  // ── Live ESPN athlete search ───────────────────────────────────────────────
+  const { data: liveAthletes, isFetching: liveSearching } = useQuery({
+    queryKey: ["athlete-search", debouncedQ],
+    queryFn: () => api.searchAthletes(debouncedQ, undefined, 10),
+    enabled: isOpen && debouncedQ.length >= 2,
+    staleTime: 60_000,
+  });
+
+  // Debounce search query to avoid hammering the API on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(query.trim()), 400);
+    return () => clearTimeout(t);
+  }, [query]);
 
   useEffect(() => {
     if (isOpen) {
@@ -195,6 +210,12 @@ export function SearchModal() {
     router.push({ pathname: "/player/[id]", params: { id } } as any);
   };
 
+  const goLiveAthlete = (athlete: import("@/utils/api").AthleteSearchResult) => {
+    handleClose();
+    const id = `${athlete.league.toUpperCase()}-${athlete.espnId}`;
+    router.push({ pathname: "/player/[id]", params: { id } } as any);
+  };
+
   const goGame = (gameId: string) => {
     handleClose();
     router.push({ pathname: "/game/[id]", params: { id: gameId } } as any);
@@ -279,9 +300,33 @@ export function SearchModal() {
             </>
           )}
 
-          {matchedPlayers.length > 0 && (
+          {/* Live ESPN Athlete Search Results — shown when query is 2+ chars */}
+          {q.length >= 2 && (liveSearching || (liveAthletes?.athletes ?? []).length > 0) && (
             <>
-              <SectionHeader title={q.length === 0 ? "My Team Players" : `Players (${matchedPlayers.length})`} />
+              <SectionHeader title={liveSearching ? "Athletes (searching…)" : `Athletes — ESPN (${liveAthletes!.athletes.length})`} />
+              {liveSearching && (
+                <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+                  <ActivityIndicator size="small" color={C.accent} />
+                </View>
+              )}
+              {(liveAthletes?.athletes ?? []).map(athlete => (
+                <ResultRow
+                  key={`live-${athlete.espnId}-${athlete.league}`}
+                  icon="person-circle"
+                  label={athlete.name}
+                  sublabel={`${athlete.position || "—"} · ${athlete.team || athlete.league}`}
+                  badge={athlete.league.toUpperCase()}
+                  color={LEAGUE_COLORS[athlete.league.toUpperCase()] ?? C.accent}
+                  onPress={() => goLiveAthlete(athlete)}
+                />
+              ))}
+            </>
+          )}
+
+          {/* Static player list — shown for "my team players" when no query, or as supplement */}
+          {matchedPlayers.length > 0 && q.length < 2 && (
+            <>
+              <SectionHeader title="My Team Players" />
               {matchedPlayers.map(player => (
                 <ResultRow
                   key={player.name + player.team}
@@ -334,7 +379,7 @@ export function SearchModal() {
             </>
           )}
 
-          {q.length >= 2 && sortedTeams.length === 0 && matchedPlayers.length === 0 && matchedGames.length === 0 && matchedNews.length === 0 && (
+          {q.length >= 2 && sortedTeams.length === 0 && matchedPlayers.length === 0 && matchedGames.length === 0 && matchedNews.length === 0 && (liveAthletes?.athletes ?? []).length === 0 && !liveSearching && (
             <View style={styles.noResults}>
               <Ionicons name="search-outline" size={44} color={C.textTertiary} />
               <Text style={styles.noResultsTitle}>No results for "{query}"</Text>

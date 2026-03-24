@@ -7,6 +7,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { getPlayerById, type Player, type TeamData } from "@/constants/teamData";
@@ -20,6 +21,15 @@ import {
   getAthleteProfile, type TennisProfile, type CombatProfile,
   type XGamesProfile, type OlympicsProfile,
 } from "@/constants/athleteProfiles";
+import { api, type AthleteProfile as LiveProfile, type AthleteGameLog } from "@/utils/api";
+
+// ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
+const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|EPL|UCL|LIGA|ATP|WTA|UFC|BOXING|OLYMPICS|XGAMES)-(\d+)$/i;
+function parseLiveId(id: string): { league: string; athleteId: string } | null {
+  const m = id.match(LIVE_ID_RE);
+  if (!m) return null;
+  return { league: m[1].toUpperCase(), athleteId: m[2] };
+}
 
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
@@ -118,7 +128,7 @@ const roleBadgeS = StyleSheet.create({
 
 // ─── Milestone tracker ────────────────────────────────────────────────────────
 function MilestoneCard({ player, liveStats, teamColor }: { player: Player; liveStats: LiveStats | null; teamColor: string }) {
-  const ppg = parseFloat(liveStats?.avgPoints ?? player.stats?.PPG ?? "0");
+  const ppg = parseFloat(String(liveStats?.avgPoints ?? player.stats?.PPG ?? "0"));
   const gamesEst = 50; // rough season average games
   const seasonal = ppg * gamesEst;
 
@@ -361,13 +371,151 @@ function GenericOverview({ player, team, liveStats }: { player: Player; team: Te
   );
 }
 
-function PlaceholderTab({ label }: { label: string }) {
+// ─── Career Stats Tab — shows season-by-season data from ESPN ────────────────
+function CareerStatsTab({ liveProfile, league, teamColor }: {
+  liveProfile: LiveProfile | null; league: string; teamColor: string;
+}) {
+  const seasons = liveProfile?.seasons ?? [];
+  const careerStats = liveProfile?.careerStats ?? {};
+
+  if (!liveProfile) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+        <ActivityIndicator color={teamColor} size="large" />
+        <Text style={{ color: "#AEAEB2", fontSize: 13, textAlign: "center" }}>Loading career stats…</Text>
+      </View>
+    );
+  }
+
+  if (seasons.length === 0 && Object.keys(careerStats).length === 0) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+        <Ionicons name="stats-chart-outline" size={44} color={C.textTertiary} />
+        <Text style={{ color: "#AEAEB2", fontSize: 14, textAlign: "center" }}>No career stats available for this athlete</Text>
+      </View>
+    );
+  }
+
+  // Pick top stat keys (max 6) from the most recent season
+  const topKeys = Object.keys(seasons[0]?.stats ?? careerStats).slice(0, 8);
+
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
-      <Ionicons name="stats-chart-outline" size={44} color={C.textTertiary} />
-      <Text style={{ color: C.textSecondary, fontSize: 16, fontFamily: "Inter_600SemiBold" }}>{label}</Text>
-      <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>Detailed {label.toLowerCase()} coming soon</Text>
-    </View>
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+      {/* Career totals / averages card */}
+      {Object.keys(careerStats).length > 0 && (
+        <View style={table.card}>
+          <Text style={table.title}>Career Totals</Text>
+          <View style={table.header}>
+            {["STAT", "VALUE"].map(h => (
+              <Text key={h} style={[table.headerCell, h === "STAT" ? { flex: 1 } : { width: 100, textAlign: "right" }]}>{h}</Text>
+            ))}
+          </View>
+          {Object.entries(careerStats).slice(0, 12).map(([k, v], i) => (
+            <View key={k} style={[table.row, { backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.025)" }]}>
+              <Text style={[table.cell, { flex: 1 }]}>{k}</Text>
+              <Text style={[table.cell, { width: 100, textAlign: "right", color: C.text, fontWeight: "700" }]}>{v}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Season-by-season table */}
+      {seasons.length > 0 && (
+        <View style={table.card}>
+          <Text style={table.title}>Season by Season</Text>
+          {/* Header row */}
+          <View style={[table.header, { paddingBottom: 8 }]}>
+            <Text style={[table.headerCell, { width: 50 }]}>YEAR</Text>
+            {topKeys.map(k => (
+              <Text key={k} style={[table.headerCell, { flex: 1, textAlign: "right" }]}>{k}</Text>
+            ))}
+          </View>
+          {seasons.slice(0, 10).map((s, i) => (
+            <View key={s.year} style={[table.row, {
+              backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.025)",
+              borderLeftWidth: i === 0 ? 2 : 0,
+              borderLeftColor: teamColor,
+            }]}>
+              <Text style={[table.cell, { width: 50, color: i === 0 ? teamColor : C.textSecondary, fontWeight: "700" }]}>{s.year}</Text>
+              {topKeys.map(k => (
+                <Text key={k} style={[table.cell, { flex: 1, textAlign: "right" }]}>{s.stats[k] ?? "—"}</Text>
+              ))}
+            </View>
+          ))}
+        </View>
+      )}
+    </ScrollView>
+  );
+}
+
+// ─── Live Game Log Tab — uses ESPN via our API ────────────────────────────────
+function LiveGameLogTab({ league, athleteId, teamColor }: {
+  league: string; athleteId: string; teamColor: string;
+}) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["gamelog", league, athleteId],
+    queryFn: () => api.getAthleteGameLog(league, athleteId),
+    staleTime: 900_000,
+  });
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+        <ActivityIndicator color={teamColor} size="large" />
+        <Text style={{ color: "#AEAEB2", fontSize: 13 }}>Loading game log…</Text>
+      </View>
+    );
+  }
+
+  if (isError || !data || data.gameLogs.length === 0) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+        <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
+        <Text style={{ color: "#AEAEB2", fontSize: 14, textAlign: "center" }}>
+          No game log available{isError ? " — ESPN API unavailable" : ""}
+        </Text>
+      </View>
+    );
+  }
+
+  const logs = data.gameLogs;
+  // Show top 6 stat keys from the first game that has stats
+  const allKeys = [...new Set(logs.flatMap(l => Object.keys(l.stats)))];
+  const shownKeys = allKeys.slice(0, 6);
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 0 }}>
+      <View style={table.card}>
+        <Text style={[table.title, { marginBottom: 4 }]}>Last {logs.length} Games</Text>
+        <View style={table.header}>
+          <Text style={[table.headerCell, { width: 70 }]}>DATE</Text>
+          <Text style={[table.headerCell, { flex: 1 }]}>OPP</Text>
+          <Text style={[table.headerCell, { width: 32 }]}>RES</Text>
+          {shownKeys.map(k => (
+            <Text key={k} style={[table.headerCell, { width: 44, textAlign: "right" }]}>{k}</Text>
+          ))}
+        </View>
+        {logs.map((log, i) => {
+          const dateStr = log.date ? new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
+          const isWin = log.result?.toUpperCase().startsWith("W");
+          const isLoss = log.result?.toUpperCase().startsWith("L");
+          return (
+            <View key={i} style={[table.row, { backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.025)" }]}>
+              <Text style={[table.cell, { width: 70, color: C.textSecondary, fontSize: 11 }]}>{dateStr}</Text>
+              <Text style={[table.cell, { flex: 1, fontSize: 12 }]} numberOfLines={1}>
+                {log.homeAway === "away" ? "@" : "vs"} {log.opponent || "—"}
+              </Text>
+              <Text style={[table.cell, { width: 32, fontWeight: "800", color: isWin ? "#4CAF50" : isLoss ? "#F44336" : C.textSecondary }]}>
+                {log.result || "—"}
+              </Text>
+              {shownKeys.map(k => (
+                <Text key={k} style={[table.cell, { width: 44, textAlign: "right", color: C.text }]}>{log.stats[k] ?? "—"}</Text>
+              ))}
+            </View>
+          );
+        })}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -1088,6 +1236,18 @@ export default function PlayerScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
+  // ── New-format URL: "{LEAGUE}-{espnId}" → fetch live profile from our API ──
+  const liveIdParsed = parseLiveId(id ?? "");
+  const liveLeague = liveIdParsed?.league ?? paramLeague?.toUpperCase() ?? null;
+  const liveAthleteId = liveIdParsed?.athleteId ?? paramAthleteId ?? null;
+
+  const { data: liveProfile, isLoading: liveLoading } = useQuery({
+    queryKey: ["athlete-profile", liveLeague, liveAthleteId],
+    queryFn: () => api.getAthleteProfile(liveLeague!, liveAthleteId!),
+    enabled: !!(liveLeague && liveAthleteId),
+    staleTime: 1_800_000,
+  });
+
   const result = getPlayerById(id ?? "");
 
   const fallbackSearchPlayer = result
@@ -1110,7 +1270,27 @@ export default function PlayerScreen() {
     OLYMPICS: C.olympics, XGAMES: C.xgames,
   };
 
-  const player: Player = result?.player ?? (fallbackSearchPlayer ? {
+  // ── Merge live profile data with static data ──────────────────────────────
+  // Live profile (from ESPN via API) takes priority; static is fallback
+  const effectiveLeague = (liveProfile?.league ?? liveLeague ?? fallbackSearchPlayer?.league ?? result?.team?.league ?? "").toUpperCase();
+  const effectiveLeagueColor = LEAGUE_COLOR[effectiveLeague] ?? C.accent;
+
+  // Build player shape from live profile (preferred) or static lookup
+  const player: Player = liveProfile ? {
+    id: liveProfile.espnId,
+    name: liveProfile.name,
+    number: liveProfile.jersey ?? "—",
+    position: liveProfile.positionAbbr ?? liveProfile.position ?? "—",
+    age: liveProfile.age ?? 0,
+    height: liveProfile.height ?? "—",
+    weight: liveProfile.weight ?? "—",
+    group: "Guards" as const,
+    bio: "",
+    college: liveProfile.college ?? undefined,
+    birthdate: liveProfile.birthDate?.slice(0, 10) ?? undefined,
+    athleteId: liveProfile.espnId,
+    stats: liveProfile.currentStats,
+  } : result?.player ?? (fallbackSearchPlayer ? {
     id: id ?? "",
     name: fallbackSearchPlayer.name,
     number: fallbackSearchPlayer.number ?? "—",
@@ -1120,16 +1300,22 @@ export default function PlayerScreen() {
     weight: "—",
     group: "Guards" as const,
     stats: {},
-    bio: (fallbackSearchPlayer.league === "ATP" || fallbackSearchPlayer.league === "WTA")
-      ? `${fallbackSearchPlayer.name} is a professional tennis player competing on the ${fallbackSearchPlayer.league} Tour. ${fallbackSearchPlayer.stat}.`
-      : (fallbackSearchPlayer.league === "UFC")
-      ? `${fallbackSearchPlayer.name} is a professional MMA fighter competing in the UFC. ${fallbackSearchPlayer.stat}.`
-      : (fallbackSearchPlayer.league === "BOXING")
-      ? `${fallbackSearchPlayer.name} is a professional boxer. ${fallbackSearchPlayer.stat}.`
-      : `${fallbackSearchPlayer.name} plays ${fallbackSearchPlayer.position} for the ${fallbackSearchPlayer.team}. 2025-26 season: ${fallbackSearchPlayer.stat}`,
+    bio: `${fallbackSearchPlayer.name} · ${fallbackSearchPlayer.league} · ${fallbackSearchPlayer.stat}`,
   } : null as any);
 
-  const team: TeamData = result?.team ?? (fallbackSearchPlayer ? {
+  // Build team shape from live profile or static lookup
+  const team: TeamData = result?.team ?? (liveProfile ? {
+    id: `${effectiveLeague.toLowerCase()}-${liveProfile.espnId}`,
+    name: liveProfile.team ?? effectiveLeague,
+    shortName: liveProfile.teamAbbr ?? liveProfile.team?.split(" ").pop() ?? effectiveLeague,
+    abbr: liveProfile.teamAbbr ?? effectiveLeague,
+    league: effectiveLeague as any,
+    division: effectiveLeague,
+    color: effectiveLeagueColor,
+    colorSecondary: C.accentBlue,
+    record: "—", standing: "—", coach: "—", stadium: "—", city: "—", founded: 0,
+    roster: [], recentGames: [], stats: [],
+  } : fallbackSearchPlayer ? {
     id: `${fallbackSearchPlayer.league.toLowerCase()}-fallback`,
     name: fallbackSearchPlayer.team,
     shortName: fallbackSearchPlayer.team.split(" ").pop() ?? fallbackSearchPlayer.team,
@@ -1138,20 +1324,18 @@ export default function PlayerScreen() {
     division: fallbackSearchPlayer.league,
     color: LEAGUE_COLOR[fallbackSearchPlayer.league] ?? C.accent,
     colorSecondary: C.accentBlue,
-    record: "—",
-    standing: "—",
-    coach: "—",
-    stadium: "—",
-    city: "—",
-    founded: 0,
-    roster: [],
-    recentGames: [],
-    stats: [],
+    record: "—", standing: "—", coach: "—", stadium: "—", city: "—", founded: 0,
+    roster: [], recentGames: [], stats: [],
   } : null as any);
 
-  // Fetch live ESPN stats when player page opens
+  // Fetch live ESPN stats when player page opens (for overview stat cards)
   useEffect(() => {
     if (!player || !team) return;
+    // If we have live profile with currentStats, use those directly
+    if (liveProfile && Object.keys(liveProfile.currentStats).length > 0) {
+      setLiveStats(liveProfile.currentStats as LiveStats);
+      return;
+    }
     setLiveStats(null);
     const url = getEspnStatsUrl(player.name, team.league);
     if (!url) return;
@@ -1161,8 +1345,18 @@ export default function PlayerScreen() {
         const parsed = parseEspnStats(data);
         if (Object.keys(parsed).length > 0) setLiveStats(parsed);
       })
-      .catch(() => {}); // silent fallback to static stats
-  }, [player?.name, team?.league]);
+      .catch(() => {});
+  }, [player?.name, team?.league, liveProfile?.espnId]);
+
+  // Show loading state only when fetching a live-format ID and nothing loaded yet
+  if (liveIdParsed && liveLoading && !player) {
+    return (
+      <View style={[styles.container, { paddingTop: topPad, alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator color={C.accent} size="large" />
+        <Text style={{ color: "#AEAEB2", fontSize: 14, marginTop: 12 }}>Loading athlete…</Text>
+      </View>
+    );
+  }
 
   if (!player || !team) {
     return (
@@ -1171,7 +1365,10 @@ export default function PlayerScreen() {
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: C.textSecondary, fontSize: 16 }}>Player not found</Text>
+          <Text style={{ color: "#AEAEB2", fontSize: 16 }}>Athlete not found</Text>
+          <Text style={{ color: C.textTertiary, fontSize: 12, marginTop: 6, textAlign: "center", paddingHorizontal: 32 }}>
+            Search for them by name using the search icon at the top of the app.
+          </Text>
         </View>
       </View>
     );
@@ -1184,8 +1381,9 @@ export default function PlayerScreen() {
     ATP: "tennis", WTA: "tennis",
     UFC: "mma", BOXING: "boxing",
   };
-  const directAthleteId = paramAthleteId || player.athleteId;
-  const headshotLeague = (paramLeague || team.league).toUpperCase();
+  // Prefer: live ESPN ID → paramAthleteId → static player.athleteId → name-based lookup
+  const directAthleteId = liveProfile?.espnId ?? liveAthleteId ?? paramAthleteId ?? player.athleteId;
+  const headshotLeague = (liveLeague ?? paramLeague ?? team.league).toUpperCase();
   const headshotUrl = directAthleteId
     ? `https://a.espncdn.com/combiner/i?img=/i/headshots/${HEADSHOT_SPORT_MAP[headshotLeague] ?? headshotLeague.toLowerCase()}/players/full/${directAthleteId}.png&w=200&h=200&cb=1`
     : getEspnHeadshotUrl(player.name, team.league);
@@ -1208,30 +1406,80 @@ export default function PlayerScreen() {
   const renderTab = () => {
     switch (activeTab) {
       case "Overview": return renderOverview();
-      case "News": return <PlaceholderTab label="News" />;
-      case "Stats": return <PlaceholderTab label="Stats" />;
+      case "News": return (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+          <Ionicons name="newspaper-outline" size={44} color={C.textTertiary} />
+          <Text style={{ color: "#AEAEB2", fontSize: 16, fontFamily: "Inter_600SemiBold" }}>News</Text>
+          <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>
+            Athlete-specific news is coming soon. Check the News tab in the Home screen for latest headlines.
+          </Text>
+        </View>
+      );
+      case "Stats": return (
+        <CareerStatsTab
+          liveProfile={liveProfile ?? null}
+          league={team.league}
+          teamColor={team.color}
+        />
+      );
       case "Bio": return (
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
           <Text style={bioTab.name}>{player.name}</Text>
-          {[
-            ["Team", team.name],
-            ["Position", player.position],
-            ["Jersey", `#${player.number}`],
-            ["Height", player.height],
-            ["Weight", player.weight],
-            player.birthdate && ["Birthday", player.birthdate],
-            player.college && ["College", player.college],
-          ].filter(Boolean).map((row) => { const [label, value] = row as [string, string]; return (
-            <View key={label as string} style={bioTab.row}>
-              <Text style={bioTab.label}>{label as string}</Text>
-              <Text style={bioTab.value}>{value as string}</Text>
-            </View>
-          ); })}
-          {player.bio && <Text style={bioTab.bioText}>{player.bio}</Text>}
+          {/* Physical / roster info */}
+          {(() => {
+            const birthPlace = [liveProfile?.birthCity, liveProfile?.birthState, liveProfile?.birthCountry].filter(Boolean).join(", ");
+            const draftStr = liveProfile?.draft?.year
+              ? `${liveProfile.draft.year} · Rd ${liveProfile.draft.round ?? "?"} Pick ${liveProfile.draft.pick ?? "?"} · ${liveProfile.draft.team ?? ""}`
+              : null;
+            return [
+              ["League", team.league],
+              ["Team", team.name],
+              liveProfile?.fullName && liveProfile.fullName !== player.name && ["Full Name", liveProfile.fullName],
+              ["Position", liveProfile?.position ?? player.position],
+              player.number !== "—" && ["Jersey", `#${player.number}`],
+              player.height !== "—" && ["Height", player.height],
+              player.weight !== "—" && ["Weight", player.weight],
+              liveProfile?.age && ["Age", String(liveProfile.age)],
+              liveProfile?.birthDate && ["Date of Birth", liveProfile.birthDate.slice(0, 10)],
+              birthPlace && ["Birthplace", birthPlace],
+              liveProfile?.nationality && ["Nationality", liveProfile.nationality],
+              (liveProfile?.college ?? player.college) && ["College", liveProfile?.college ?? player.college],
+              liveProfile?.yearsExperience != null && ["Experience", `${liveProfile.yearsExperience} yr${liveProfile.yearsExperience !== 1 ? "s" : ""}`],
+              liveProfile?.hand && ["Handedness", liveProfile.hand],
+              draftStr && ["Draft", draftStr],
+              liveProfile?.active !== undefined && ["Status", liveProfile.active ? "✓ Active" : "Inactive"],
+            ].filter(Boolean);
+          })().map((rowData) => {
+            const [label, value] = rowData as [string, string];
+            return (
+              <View key={label} style={bioTab.row}>
+                <Text style={bioTab.label}>{label}</Text>
+                <Text style={bioTab.value}>{value}</Text>
+              </View>
+            );
+          })}
+          {/* Static bio text as fallback */}
+          {player.bio && (
+            <Text style={bioTab.bioText}>{player.bio}</Text>
+          )}
         </ScrollView>
       );
-      case "Splits": return <PlaceholderTab label="Splits" />;
-      case "Game Log": return (
+      case "Splits": return (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+          <Ionicons name="pie-chart-outline" size={44} color={C.textTertiary} />
+          <Text style={{ color: "#AEAEB2", fontSize: 16, fontFamily: "Inter_600SemiBold" }}>Splits</Text>
+          <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>
+            Home/away, monthly, and situational splits coming soon
+          </Text>
+        </View>
+      );
+      case "Game Log": return liveAthleteId && liveLeague ? (
+        <LiveGameLogTab
+          league={liveLeague}
+          athleteId={liveAthleteId}
+          teamColor={team.color}
+        />
+      ) : (
         <GameLogTab
           playerName={player.name}
           league={team.league}

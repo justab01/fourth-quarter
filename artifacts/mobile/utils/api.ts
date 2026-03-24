@@ -60,6 +60,18 @@ export const api = {
 
   getTeamInfo: (name: string, league: string) =>
     apiFetch<EspnTeamInfo>(`/sports/team?name=${encodeURIComponent(name)}&league=${encodeURIComponent(league)}`),
+
+  getAthleteProfile: (league: string, athleteId: string) =>
+    apiFetch<AthleteProfile>(`/sports/athlete/${encodeURIComponent(league)}/${encodeURIComponent(athleteId)}`),
+
+  getAthleteGameLog: (league: string, athleteId: string) =>
+    apiFetch<AthleteGameLog>(`/sports/athlete/${encodeURIComponent(league)}/${encodeURIComponent(athleteId)}/gamelog`),
+
+  searchAthletes: (q: string, league?: string, limit = 15) => {
+    const params = new URLSearchParams({ q, limit: String(limit) });
+    if (league) params.set("league", league);
+    return apiFetch<{ athletes: AthleteSearchResult[] }>(`/sports/athlete/search?${params}`);
+  },
 };
 
 export type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
@@ -168,4 +180,73 @@ export interface UserPreferencesPayload {
   rivals: string[];
   darkMode: boolean;
   notifications: boolean;
+}
+
+export interface AthleteProfile {
+  id: string;
+  espnId: string;
+  league: string;
+  name: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  headshot: string | null;
+  jersey: string | null;
+  position: string | null;
+  positionAbbr: string | null;
+  team: string | null;
+  teamAbbr: string | null;
+  teamLogo: string | null;
+  active: boolean;
+  status: string;
+  height: string | null;
+  heightRaw: number | null;
+  weight: string | null;
+  weightRaw: number | null;
+  age: number | null;
+  birthDate: string | null;
+  birthCity: string | null;
+  birthState: string | null;
+  birthCountry: string | null;
+  yearsExperience: number | null;
+  college: string | null;
+  nationality: string | null;
+  hand: string | null;
+  draft: {
+    year: number | null;
+    round: number | null;
+    pick: number | null;
+    team: string | null;
+  } | null;
+  currentStats: Record<string, string>;
+  seasons: { year: string; stats: Record<string, string> }[];
+  careerStats: Record<string, string>;
+}
+
+export interface AthleteGameLog {
+  leagueKey: string;
+  athleteId: string;
+  statLabels: string[];
+  gameLogs: {
+    date: string;
+    opponent: string;
+    homeAway: "home" | "away";
+    result: string;
+    score: string;
+    stats: Record<string, string>;
+  }[];
+}
+
+export interface AthleteSearchResult {
+  id: string;
+  espnId: string;
+  league: string;
+  name: string;
+  headshot: string | null;
+  jersey: string | null;
+  position: string | null;
+  positionFull: string | null;
+  team: string | null;
+  teamAbbr: string | null;
+  teamLogo: string | null;
 }

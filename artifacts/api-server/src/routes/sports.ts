@@ -217,6 +217,15 @@ const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
   XGAMES:   { espnPath: "action-sports/xgames",              displaySport: "X Games"    },
 };
 
+// Web API v3 sport/league paths for gamelog (format: "sport/league")
+const GAMELOG_PATH: Record<string, string> = {
+  NBA: "basketball/nba", NFL: "football/nfl", MLB: "baseball/mlb", NHL: "hockey/nhl",
+  MLS: "soccer/usa.1", WNBA: "basketball/wnba",
+  NCAAB: "basketball/mens-college-basketball", NCAAF: "football/college-football",
+  EPL: "soccer/eng.1", UCL: "soccer/uefa.champions", LIGA: "soccer/esp.1",
+  ATP: "tennis/atp", WTA: "tennis/wta", UFC: "mma/ufc",
+};
+
 // ─── ESPN helpers ─────────────────────────────────────────────────────────────
 function mapStatus(state: string): "live" | "finished" | "upcoming" {
   if (state === "in") return "live";
@@ -1174,6 +1183,398 @@ router.get("/sports/standings", async (req, res) => {
   const league = ((req.query.league as string) ?? "NBA").toUpperCase();
   const standings = await fetchLeagueStandings(league);
   res.json({ standings });
+});
+
+// ─── ATHLETE ENDPOINTS ────────────────────────────────────────────────────────
+// ESPN public APIs for individual athlete data (profile, stats, game log, search)
+
+interface EspnAthleteProfile {
+  id: string;
+  displayName: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  jersey?: string;
+  shortName?: string;
+  headshot?: { href: string };
+  birthDate?: string;
+  birthPlace?: { city?: string; state?: string; country?: string };
+  height?: number;   // inches
+  weight?: number;   // lbs
+  age?: number;
+  position?: { name?: string; abbreviation?: string };
+  team?: { displayName?: string; abbreviation?: string; logos?: { href: string }[] };
+  experience?: { years?: number };
+  college?: { name?: string };
+  status?: { name?: string };
+  active?: boolean;
+  nationality?: string;
+  hand?: { type?: string; abbreviation?: string };  // tennis
+  debutYear?: number;
+  draft?: { year?: number; round?: { number?: number }; selection?: { number?: number }; team?: { displayName?: string } };
+}
+
+interface EspnAthleteStatsEntry {
+  season?: { year?: number; displayName?: string };
+  stats?: string[];
+}
+
+interface EspnAthleteStatCategory {
+  name?: string;
+  displayName?: string;
+  shortDisplayName?: string;
+  abbreviation?: string;
+  names?: string[];
+  labels?: string[];
+  descriptions?: string[];
+  statistics?: EspnAthleteStatsEntry[];
+  totals?: EspnAthleteStatsEntry;
+}
+
+interface EspnAthleteStatsResponse {
+  athlete?: Partial<EspnAthleteProfile>;
+  categories?: EspnAthleteStatCategory[];
+}
+
+interface EspnAthleteGameLogEntry {
+  awayTeam?: { displayName?: string; abbreviation?: string };
+  homeTeam?: { displayName?: string; abbreviation?: string };
+  athlete?: { id?: string; displayName?: string };
+  stats?: string[];
+  game?: { date?: string; id?: string };
+  result?: string;
+  homeScore?: number;
+  awayScore?: number;
+  gameDate?: string;
+  [key: string]: unknown;
+}
+
+interface EspnAthleteGameLogResponse {
+  athlete?: Partial<EspnAthleteProfile>;
+  categories?: EspnAthleteStatCategory[];
+  labelsMap?: Record<string, string[]>;
+  seasonTypes?: {
+    id?: string;
+    type?: number;
+    name?: string;
+    abbreviation?: string;
+    categories?: (EspnAthleteStatCategory & { events?: EspnAthleteGameLogEntry[] })[];
+  }[];
+}
+
+interface EspnAthleteSearchItem {
+  id?: string;
+  displayName?: string;
+  headshot?: { href?: string };
+  jersey?: string;
+  position?: { name?: string; abbreviation?: string };
+  team?: { displayName?: string; abbreviation?: string; logos?: { href?: string }[] };
+  active?: boolean;
+}
+
+interface EspnAthleteSearchResponse {
+  items?: EspnAthleteSearchItem[];
+  athletes?: EspnAthleteSearchItem[];
+  count?: number;
+}
+
+function inchesToFeetIn(inches: number): string {
+  const ft = Math.floor(inches / 12);
+  const inn = inches % 12;
+  return `${ft}'${inn}"`;
+}
+
+// Helper: build core API base path from espnPath e.g. "basketball/nba" → "sports/basketball/leagues/nba"
+function coreApiBase(espnPath: string): string {
+  const parts = espnPath.split("/");
+  const sport = parts[0];
+  const leagueParts = parts.slice(1).join("/");
+  return `https://sports.core.api.espn.com/v2/sports/${sport}/leagues/${leagueParts}`;
+}
+
+// ESPN search league code → our league key
+const ESPN_LEAGUE_MAP: Record<string, string> = {
+  nba: "NBA", nfl: "NFL", mlb: "MLB", nhl: "NHL", wnba: "WNBA",
+  "usa.1": "MLS", "eng.1": "EPL", "uefa.champions": "UCL", "esp.1": "LIGA",
+  "mens-college-basketball": "NCAAB", "college-football": "NCAAF",
+  atp: "ATP", wta: "WTA", ufc: "UFC", boxing: "BOXING",
+};
+
+// ESPN search description/display name → our league key fallback
+const ESPN_DISPLAY_MAP: Record<string, string> = {
+  "NBA": "NBA", "NFL": "NFL", "MLB": "MLB", "NHL": "NHL", "WNBA": "WNBA",
+  "MLS": "MLS", "EPL": "EPL", "UCL": "UCL", "LIGA": "LIGA",
+  "Men's College Basketball": "NCAAB", "College Football": "NCAAF",
+  "ATP": "ATP", "WTA": "WTA", "UFC": "UFC", "Boxing": "BOXING",
+  "Tennis": "ATP",
+};
+
+async function fetchAthleteProfile(leagueKey: string, athleteId: string) {
+  const cacheKey = `athlete-profile-${leagueKey}-${athleteId}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) return cached;
+
+  const cfg = LEAGUE_CONFIG[leagueKey];
+  if (!cfg) return null;
+
+  const base = coreApiBase(cfg.espnPath);
+
+  // Fetch profile + career stats in parallel from ESPN core API
+  const [profileJson, statsJson] = await Promise.all([
+    espnFetch(`${base}/athletes/${athleteId}?lang=en&region=us`)
+      .catch(() => null) as Promise<any>,
+    espnFetch(`${base}/athletes/${athleteId}/statistics?lang=en&region=us`)
+      .catch(() => null) as Promise<any>,
+  ]);
+
+  const a = profileJson as any;
+  if (!a?.id && !a?.displayName && !a?.fullName) return null;
+
+  // Parse career stats from core API statistics endpoint
+  // splits.categories[n].stats = [{ abbreviation, displayValue }]
+  const careerStats: Record<string, string> = {};
+  const statsCategories: any[] = statsJson?.splits?.categories ?? [];
+  for (const cat of statsCategories) {
+    for (const stat of cat.stats ?? []) {
+      const abbr: string = stat.abbreviation ?? "";
+      const val: string = String(stat.displayValue ?? "");
+      // Skip stats with no abbreviation, unusually long "abbreviations" (full names), or zero values
+      if (!abbr || abbr.length > 12 || !val || val === "0" || val === "0.0" || val === "0.00") continue;
+      careerStats[abbr] = val;
+    }
+  }
+
+  // For "current stats" display, use the same career totals for now
+  // (season-by-season requires N extra calls, we skip for performance)
+  const currentStats = careerStats;
+  const seasons: { year: string; stats: Record<string, string> }[] = [];
+
+  // Resolve team from $ref if needed (it's usually a ref in core API)
+  // Core API refs use http://, convert to https:// to avoid fetch issues
+  const rawTeamRef: string | null = a.team?.["$ref"] ?? null;
+  const teamRef = rawTeamRef?.replace(/^http:\/\//, "https://") ?? null;
+  let teamName: string | null = null;
+  let teamAbbr: string | null = null;
+  if (teamRef) {
+    try {
+      const refUrl = teamRef.includes("?") ? teamRef : teamRef + "?lang=en&region=us";
+      const teamData = await espnFetch(refUrl) as any;
+      teamName = teamData.displayName ?? teamData.name ?? null;
+      teamAbbr = teamData.abbreviation ?? null;
+    } catch { /* ignore */ }
+  }
+
+  // Parse draft info
+  let draftInfo: { year: number | null; round: number | null; pick: number | null; team: string | null } | null = null;
+  if (a.draft) {
+    draftInfo = {
+      year: a.draft.year ?? null,
+      round: a.draft.round ?? null,
+      pick: a.draft.selection ?? null,
+      team: null, // team ref needs extra call, skip
+    };
+  }
+
+  const result = {
+    id: a.id ?? athleteId,
+    espnId: a.id ?? athleteId,
+    league: leagueKey,
+    name: a.displayName ?? a.fullName ?? "",
+    fullName: a.fullName ?? a.displayName ?? "",
+    firstName: a.firstName ?? "",
+    lastName: a.lastName ?? "",
+    headshot: a.headshot?.href ?? `https://a.espncdn.com/i/headshots/${cfg.espnPath.split('/').pop()}/players/full/${athleteId}.png`,
+    jersey: a.jersey ?? null,
+    position: a.position?.displayName ?? a.position?.name ?? null,
+    positionAbbr: a.position?.abbreviation ?? null,
+    team: teamName,
+    teamAbbr: teamAbbr,
+    teamLogo: null,
+    active: a.active ?? true,
+    status: a.status?.name ?? (a.active ? "Active" : "Inactive"),
+    height: a.displayHeight ?? (a.height ? inchesToFeetIn(a.height) : null),
+    heightRaw: a.height ?? null,
+    weight: a.displayWeight ?? (a.weight ? `${a.weight} lbs` : null),
+    weightRaw: a.weight ?? null,
+    age: a.age ?? null,
+    birthDate: a.dateOfBirth ?? a.birthDate ?? null,
+    birthCity: a.birthPlace?.city ?? null,
+    birthState: a.birthPlace?.state ?? null,
+    birthCountry: a.birthPlace?.country ?? null,
+    yearsExperience: a.experience?.years ?? null,
+    college: a.college?.name ?? null,
+    nationality: a.nationality ?? null,
+    hand: a.hand?.abbreviation ?? null,
+    draft: draftInfo,
+    currentStats,
+    seasons,
+    careerStats,
+  };
+
+  setCached(cacheKey, result, 1_800_000); // 30 min
+  return result;
+}
+
+// GET /api/sports/athlete/search
+// Uses ESPN's global search API which returns athletes from all sports
+router.get("/sports/athlete/search", async (req, res) => {
+  const { q, league, limit: limitStr } = req.query as { q?: string; league?: string; limit?: string };
+  if (!q || q.trim().length < 2) { res.json({ athletes: [] }); return; }
+
+  const limit = Math.min(Number(limitStr ? parseInt(limitStr) : 10), 25);
+  const filterLeague = league?.toUpperCase();
+
+  const cacheKey = `athlete-search-v2-${q.toLowerCase()}-${filterLeague ?? "all"}-${limit}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    // ESPN's unified search API returns players from all sports in one call
+    const searchUrl = `https://site.api.espn.com/apis/search/v2?query=${encodeURIComponent(q)}&lang=en&region=us&limit=${limit * 2}`;
+    const searchJson = await espnFetch(searchUrl) as any;
+
+    // Results array contains type="player" entries
+    const results: any[] = searchJson.results ?? [];
+    const playerSection = results.find((r: any) => r.type === "player");
+    const contents: any[] = playerSection?.contents ?? [];
+
+    const athletes = contents
+      .map((item: any) => {
+        // UID format: "s:40~l:46~a:1966" — extract athlete ID
+        const uid: string = item.uid ?? "";
+        const athleteMatch = uid.match(/~a:(\d+)/);
+        const athleteId = athleteMatch?.[1] ?? item.id?.replace(/\D/g, "") ?? "";
+        if (!athleteId) return null;
+
+        // Determine league from defaultLeagueSlug or description
+        const leagueSlug: string = item.defaultLeagueSlug ?? "";
+        const description: string = item.description ?? "";
+        const mappedLeague =
+          ESPN_LEAGUE_MAP[leagueSlug] ??
+          ESPN_DISPLAY_MAP[description] ??
+          null;
+        if (!mappedLeague) return null;
+        if (filterLeague && mappedLeague !== filterLeague) return null;
+
+        return {
+          id: athleteId,
+          espnId: athleteId,
+          league: mappedLeague,
+          name: item.displayName ?? item.title ?? "",
+          headshot: item.image?.default ?? null,
+          jersey: null,
+          position: null,
+          positionFull: null,
+          team: item.subtitle ?? null,
+          teamAbbr: null,
+          teamLogo: null,
+        };
+      })
+      .filter(Boolean)
+      .slice(0, limit);
+
+    const response = { athletes };
+    setCached(cacheKey, response, 60_000); // 1 min
+    res.json(response);
+  } catch (err) {
+    console.error("Athlete search error:", err);
+    res.json({ athletes: [] });
+  }
+});
+
+// GET /api/sports/athlete/:league/:athleteId
+router.get("/sports/athlete/:league/:athleteId", async (req, res) => {
+  const { league, athleteId } = req.params;
+  const leagueKey = league.toUpperCase();
+  if (!LEAGUE_CONFIG[leagueKey]) { res.status(400).json({ error: `Unknown league: ${league}` }); return; }
+
+  try {
+    const profile = await fetchAthleteProfile(leagueKey, athleteId);
+    if (!profile) { res.status(404).json({ error: "Athlete not found" }); return; }
+    res.json(profile);
+  } catch (err) {
+    console.error("Athlete profile error:", err);
+    res.status(500).json({ error: "Failed to fetch athlete" });
+  }
+});
+
+// GET /api/sports/athlete/:league/:athleteId/gamelog
+router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
+  const { league, athleteId } = req.params;
+  const leagueKey = league.toUpperCase();
+  const cfg = LEAGUE_CONFIG[leagueKey];
+  if (!cfg) { res.status(400).json({ error: `Unknown league: ${league}` }); return; }
+
+  const cacheKey = `athlete-gamelog-${leagueKey}-${athleteId}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    const glPath = GAMELOG_PATH[leagueKey] ?? cfg.espnPath;
+    const season = new Date().getFullYear() + (new Date().getMonth() >= 7 ? 1 : 0);
+    const url = `https://site.web.api.espn.com/apis/common/v3/sports/${glPath}/athletes/${athleteId}/gamelog?season=${season}&lang=en`;
+    const json = await espnFetch(url) as any;
+
+    // Labels are top-level arrays
+    const labels: string[] = json.labels ?? [];
+    // Events object is keyed by event ID
+    const eventsMap: Record<string, any> = json.events ?? {};
+    // Season types → categories → events with stats arrays
+    const seasonTypes: any[] = json.seasonTypes ?? [];
+
+    const gameLogs: {
+      date: string;
+      opponent: string;
+      homeAway: "home" | "away";
+      result: string;
+      score: string;
+      stats: Record<string, string>;
+    }[] = [];
+
+    for (const seasonType of seasonTypes) {
+      for (const cat of seasonType.categories ?? []) {
+        for (const evEntry of cat.events ?? []) {
+          const evId = evEntry.eventId ?? "";
+          const meta = eventsMap[evId];
+          if (!meta) continue;
+
+          const statsArr: string[] = evEntry.stats ?? [];
+          const statsMap: Record<string, string> = {};
+          labels.forEach((label, i) => {
+            if (statsArr[i] !== undefined) statsMap[label] = statsArr[i];
+          });
+
+          const opponent = meta.opponent?.abbreviation ?? meta.opponent?.displayName ?? "";
+          const teamId = meta.team?.id ?? "";
+          const homeAway: "home" | "away" = meta.homeTeamId === teamId ? "home" : "away";
+          const homeScore = meta.homeTeamScore ?? "";
+          const awayScore = meta.awayTeamScore ?? "";
+          const score = homeScore !== "" && awayScore !== ""
+            ? `${awayScore}-${homeScore}`
+            : "";
+          const result = meta.gameResult ?? "";
+          const date = meta.gameDate ?? "";
+
+          if (opponent && (Object.keys(statsMap).length > 0 || result)) {
+            gameLogs.push({ date, opponent, homeAway, result, score, stats: statsMap });
+          }
+        }
+      }
+    }
+
+    const response = {
+      leagueKey,
+      athleteId,
+      statLabels: labels,
+      gameLogs: gameLogs.slice(0, 30),
+    };
+
+    setCached(cacheKey, response, 900_000); // 15 min
+    res.json(response);
+  } catch (err) {
+    console.error("Game log error:", err);
+    res.status(500).json({ error: "Failed to fetch game log" });
+  }
 });
 
 export default router;
