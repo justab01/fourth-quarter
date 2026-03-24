@@ -20,10 +20,21 @@ import { api } from "@/utils/api";
 import type { Game, NewsArticle } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
 import { NewsCard } from "@/components/NewsCard";
+import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
 import { goToTeam } from "@/utils/navHelpers";
 import { useSearch } from "@/context/SearchContext";
+
+// Sports without real-time ESPN game data — explain to user why board may be empty
+const SPORT_DATA_NOTE: Record<string, string> = {
+  golf:        "Live leaderboards appear during PGA Tour & LIV events. Tap Search to find golfers.",
+  motorsports: "Race results appear during F1 and NASCAR race weekends. Tap Search to find drivers.",
+  esports:     "Esports coverage coming soon. Tap Search to explore players.",
+  track:       "Results appear during Diamond League and Olympic events. Tap Search to find athletes.",
+  xgames:      "X Games coverage appears during live events. Tap Search to explore athletes.",
+  college:     "College scores appear during the regular season. Tap Search to find players.",
+};
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -228,9 +239,7 @@ export default function SportBoardScreen() {
               </View>
             )}
           </View>
-          <Pressable onPress={() => openSearch()} style={styles.searchBtnSmall} hitSlop={8}>
-            <Ionicons name="search" size={19} color={C.textPrimary} />
-          </Pressable>
+          <SearchButton />
         </View>
 
         {/* ── League filter chips ────────────────────────────────────── */}
@@ -290,9 +299,10 @@ export default function SportBoardScreen() {
           ) : filteredGames.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
-              <Text style={styles.emptyCardTitle}>No games right now</Text>
+              <Text style={styles.emptyCardTitle}>No games scheduled today</Text>
               <Text style={styles.emptyCardSub}>
-                {sport.leagues.map((l) => l.label).join(" · ")} games will appear here
+                {SPORT_DATA_NOTE[sport.id] ??
+                  `${sport.leagues.map((l) => l.label).join(" · ")} games will appear here when scheduled.`}
               </Text>
             </View>
           ) : (
@@ -470,15 +480,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     color: C.live,
   },
-  searchBtnSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: C.card,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
   // League chips
   chipScroll: {
     marginBottom: 0,
@@ -654,14 +655,15 @@ const styles = StyleSheet.create({
   },
   emptyCardTitle: {
     fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-    color: C.textPrimary,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
   },
   emptyCardSub: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
-    color: C.textSecondary,
+    color: "#AEAEB2",
     textAlign: "center",
+    lineHeight: 19,
   },
   emptyCenter: {
     flex: 1,

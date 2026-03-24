@@ -13,6 +13,7 @@ import type { Game } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
 import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { usePreferences } from "@/context/PreferencesContext";
+import { SearchButton } from "@/components/SearchButton";
 
 const C = Colors.dark;
 
@@ -391,6 +392,7 @@ export default function LiveScreen() {
                 {richMode ? "Rich" : "Compact"}
               </Text>
             </Pressable>
+            <SearchButton />
           </View>
         </View>
 

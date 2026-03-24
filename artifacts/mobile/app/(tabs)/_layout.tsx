@@ -3,13 +3,10 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Platform, StyleSheet } from "react-native";
 import Colors from "@/constants/colors";
-import { useSearch } from "@/context/SearchContext";
 
 const C = Colors.dark;
 
 export default function TabLayout() {
-  const { openSearch } = useSearch();
-
   return (
     <Tabs
       screenOptions={{
@@ -31,7 +28,7 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* ── Visible tabs ─────────────────────────────────────────────────── */}
+      {/* Tab 1 — Home / Hub */}
       <Tabs.Screen
         name="index"
         options={{
@@ -42,16 +39,18 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Tab 2 — Scores (live + scheduled games with calendar) */}
       <Tabs.Screen
         name="live"
         options={{
-          title: "Live",
+          title: "Scores",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "play-circle" : "play-circle-outline"} size={23} color={color} />
+            <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={21} color={color} />
           ),
         }}
       />
 
+      {/* Tab 3 — Sports directory */}
       <Tabs.Screen
         name="sports"
         options={{
@@ -62,22 +61,18 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Tab 4 — Standings */}
       <Tabs.Screen
-        name="search"
+        name="standings"
         options={{
-          title: "Search",
+          title: "Standings",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "search" : "search-outline"} size={22} color={color} />
+            <Ionicons name={focused ? "podium" : "podium-outline"} size={22} color={color} />
           ),
-        }}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            openSearch();
-          },
         }}
       />
 
+      {/* Tab 5 — Profile */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -88,20 +83,9 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ── Hidden tabs (accessible via router.push but not in tab bar) ── */}
-      <Tabs.Screen
-        name="news"
-        options={{
-          href: null,
-        }}
-      />
-
-      <Tabs.Screen
-        name="standings"
-        options={{
-          href: null,
-        }}
-      />
+      {/* Hidden tabs — accessible via router.push, not in bar */}
+      <Tabs.Screen name="news"   options={{ href: null }} />
+      <Tabs.Screen name="search" options={{ href: null }} />
     </Tabs>
   );
 }

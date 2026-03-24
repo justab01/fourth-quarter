@@ -12,6 +12,7 @@ import { api, StandingEntry } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
 import { TeamLogo } from "@/components/GameCard";
+import { SearchButton } from "@/components/SearchButton";
 
 const C = Colors.dark;
 
@@ -243,11 +244,11 @@ export default function StandingsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.title}>Standings</Text>
             <Text style={styles.subtitle}>{leagueMeta.label} · {new Date().getFullYear()}</Text>
           </View>
-          <View style={[styles.leagueDot, { backgroundColor: leagueMeta.color }]} />
+          <SearchButton />
         </View>
 
         {/* League tabs */}

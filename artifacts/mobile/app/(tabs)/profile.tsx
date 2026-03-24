@@ -11,6 +11,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { usePreferences } from "@/context/PreferencesContext";
 import { TEAMS_BY_LEAGUE, SPORTS } from "@/constants/sports";
+import { SearchButton } from "@/components/SearchButton";
 
 const C = Colors.dark;
 
@@ -182,6 +183,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
+          <SearchButton />
         </View>
 
         {/* AVATAR + NAME CARD */}
@@ -385,7 +387,13 @@ const settingRowS = StyleSheet.create({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   scroll: { paddingHorizontal: 20, gap: 4 },
-  header: { paddingTop: 16, paddingBottom: 4 },
+  header: {
+    paddingTop: 16,
+    paddingBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   title: {
     fontSize: 34,
     fontWeight: "900",
@@ -514,14 +522,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   teamAvatarText: {
-    color: C.textSecondary,
+    color: C.text,
     fontSize: 12,
     fontWeight: "800",
     fontFamily: "Inter_700Bold",
   },
   teamText: {
     flex: 1,
-    color: C.textSecondary,
+    color: C.text,
     fontSize: 15,
     fontFamily: "Inter_500Medium",
   },
