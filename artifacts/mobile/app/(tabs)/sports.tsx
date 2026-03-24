@@ -112,7 +112,7 @@ export default function SportsScreen() {
           <Text style={styles.headerTitle}>Sports</Text>
         </View>
         <Pressable onPress={() => openSearch()} style={styles.searchBtn} hitSlop={8}>
-          <Ionicons name="search" size={20} color={C.textPrimary} />
+          <Ionicons name="search" size={20} color={C.text} />
         </Pressable>
       </View>
 
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 26,
     fontFamily: "Inter_700Bold",
-    color: C.textPrimary,
+    color: C.text,
     letterSpacing: -0.5,
   },
   searchBtn: {
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   quickChipText: {
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
-    color: C.textPrimary,
+    color: C.text,
   },
 
   // Section header
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: "Inter_700Bold",
-    color: C.textPrimary,
+    color: C.text,
   },
   sectionSub: {
     fontSize: 13,

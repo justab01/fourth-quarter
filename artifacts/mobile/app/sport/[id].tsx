@@ -205,7 +205,7 @@ export default function SportBoardScreen() {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color={C.textPrimary} />
+          <Ionicons name="chevron-back" size={22} color={C.text} />
         </Pressable>
         <View style={styles.emptyCenter}>
           <Text style={styles.emptyText}>Sport not found</Text>
@@ -227,7 +227,7 @@ export default function SportBoardScreen() {
       >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-            <Ionicons name="chevron-back" size={22} color={C.textPrimary} />
+            <Ionicons name="chevron-back" size={22} color={C.text} />
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={styles.heroEmoji}>{sport.emoji}</Text>
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 22,
     fontFamily: "Inter_700Bold",
-    color: C.textPrimary,
+    color: C.text,
   },
   liveTag: {
     flexDirection: "row",
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: "Inter_700Bold",
-    color: C.textPrimary,
+    color: C.text,
   },
   seeAllBtn: {},
   seeAllText: {
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
   athleteName: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    color: C.textPrimary,
+    color: C.text,
     textAlign: "center",
   },
   athletePos: {
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
-    color: C.textPrimary,
+    color: C.text,
   },
 
   // News rows
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    color: C.textPrimary,
+    color: C.text,
     lineHeight: 20,
   },
 
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
   standingsCardTitle: {
     fontSize: 15,
     fontFamily: "Inter_700Bold",
-    color: C.textPrimary,
+    color: C.text,
   },
   standingsCardSub: {
     fontSize: 12,
