@@ -95,6 +95,7 @@ export interface GameDetail {
 export interface StandingEntry {
   rank: number;
   teamName: string;
+  logoUrl: string | null;
   wins: number;
   losses: number;
   winPct: number;

@@ -868,6 +868,7 @@ router.get("/sports/team", async (req, res) => {
 interface StandingEntry {
   rank: number;
   teamName: string;
+  logoUrl: string | null;
   wins: number;
   losses: number;
   winPct: number;
@@ -885,7 +886,7 @@ interface EspnStatEntry {
 }
 
 interface EspnStandingsEntry {
-  team: { displayName: string };
+  team: { displayName: string; logos?: { href: string }[] };
   stats: EspnStatEntry[];
 }
 
@@ -929,7 +930,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
         const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
         const streak = getStat(stats, "streak")?.displayValue ?? null;
-        return { rank: i + 1, teamName: e.team.displayName, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const logoUrl = e.team.logos?.[0]?.href ?? null;
+        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
       });
 
     } else if (league === "NFL") {
@@ -945,7 +947,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const gbVal = getStat(stats, "gamesBehind")?.value;
         const gamesBack = gbVal != null ? Number(gbVal) : null;
         const streak = getStat(stats, "streak")?.displayValue ?? null;
-        return { teamName: e.team.displayName, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const logoUrl = e.team.logos?.[0]?.href ?? null;
+        return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
       });
       raw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
       entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
@@ -963,7 +966,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
           const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
           const streak = getStat(stats, "streak")?.displayValue ?? null;
-          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack, streak, conference: child.name ?? null, division: null, rankChange: null });
+          const logoUrl = e.team.logos?.[0]?.href ?? null;
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: child.name ?? null, division: null, rankChange: null });
         }
       }
       allRaw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
@@ -981,7 +985,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
         const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
         const streak = getStat(stats, "streak")?.displayValue ?? null;
-        return { rank: i + 1, teamName: e.team.displayName, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const logoUrl = e.team.logos?.[0]?.href ?? null;
+        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
       });
 
     } else if (league === "WNBA") {
@@ -996,7 +1001,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
         const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
         const streak = getStat(stats, "streak")?.displayValue ?? null;
-        return { rank: i + 1, teamName: e.team.displayName, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const logoUrl = e.team.logos?.[0]?.href ?? null;
+        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
       });
 
     } else if (league === "NCAAB") {
@@ -1009,7 +1015,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const wins   = Number(getStat(stats, "wins")?.value ?? 0);
         const losses = Number(getStat(stats, "losses")?.value ?? 0);
         const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
-        return { teamName: e.team.displayName, wins, losses, winPct, gamesBack: null as number | null, streak: null as string | null, conference: null as string | null, division: null as string | null, rankChange: null as number | null };
+        const logoUrl = e.team.logos?.[0]?.href ?? null;
+        return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null as number | null, streak: null as string | null, conference: null as string | null, division: null as string | null, rankChange: null as number | null };
       });
       raw.sort((a, b) => b.winPct - a.winPct);
       entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
@@ -1028,7 +1035,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const gamesPlayed = Number(getStat(stats, "gamesPlayed")?.value ?? 0);
           const points = Number(getStat(stats, "points")?.value ?? 0);
           const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
-          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
+          const logoUrl = e.team.logos?.[0]?.href ?? null;
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
         }
       }
       if (allRaw.length === 0) {
@@ -1039,7 +1047,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const points = Number(getStat(stats, "points")?.value ?? 0);
           const gamesPlayed = Number(getStat(stats, "gamesPlayed")?.value ?? 0);
           const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
-          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
+          const logoUrl = e.team.logos?.[0]?.href ?? null;
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
         }
       }
       allRaw.sort((a, b) => b.points - a.points);
@@ -1062,7 +1071,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
           // MLS has no gamesBehind/streak in ESPN data; will compute pointsBack below
           const streakStat = getStat(stats, "streak")?.displayValue ?? null;
-          allRaw.push({ teamName: e.team.displayName, wins, losses, winPct, gamesBack: null, streak: streakStat, conference: child.name ?? null, division: null, rankChange, points });
+          const logoUrl = e.team.logos?.[0]?.href ?? null;
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: streakStat, conference: child.name ?? null, division: null, rankChange, points });
         }
       }
       allRaw.sort((a, b) => b.points - a.points);

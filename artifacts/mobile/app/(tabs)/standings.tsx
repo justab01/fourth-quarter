@@ -11,6 +11,7 @@ import Colors from "@/constants/colors";
 import { api, StandingEntry } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
+import { TeamLogo } from "@/components/GameCard";
 
 const C = Colors.dark;
 
@@ -351,13 +352,12 @@ export default function StandingsScreen() {
 
                       {/* Team */}
                       <View style={styles.tdTeam}>
-                        <View style={[styles.teamCircle,
-                          { backgroundColor: isMyTeam ? `${leagueMeta.color}22` : zone && zone.color !== "transparent" ? `${zone.color}12` : "rgba(255,255,255,0.06)" }
-                        ]}>
-                          <Text style={[styles.teamCircleLetter, isMyTeam && { color: leagueMeta.color }]}>
-                            {entry.teamName.charAt(0)}
-                          </Text>
-                        </View>
+                        <TeamLogo
+                          uri={entry.logoUrl}
+                          name={entry.teamName}
+                          size={30}
+                          borderColor={isMyTeam ? `${leagueMeta.color}55` : "rgba(255,255,255,0.08)"}
+                        />
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.teamText, isMyTeam && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
                             {entry.teamName}
@@ -493,11 +493,6 @@ const styles = StyleSheet.create({
   rankNum: { color: C.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold", minWidth: 20 },
 
   tdTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 9 },
-  teamCircle: {
-    width: 30, height: 30, borderRadius: 15,
-    alignItems: "center", justifyContent: "center", flexShrink: 0,
-  },
-  teamCircleLetter: { color: C.text, fontSize: 12, fontWeight: "800", fontFamily: "Inter_700Bold" },
   teamText: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium", flex: 1 },
   conferenceText: { color: C.textTertiary, fontSize: 10 },
 
