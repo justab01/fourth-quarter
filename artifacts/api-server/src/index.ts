@@ -3,7 +3,11 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { createWsServer, broadcastGames, broadcastGameState } from "./lib/wsServer";
 
-process.on("uncaughtException", (err) => {
+process.on("uncaughtException", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    logger.error({ err }, "Port already in use — exiting so the restart loop can retry");
+    process.exit(1);
+  }
   logger.error({ err }, "Uncaught exception — keeping server alive");
 });
 
