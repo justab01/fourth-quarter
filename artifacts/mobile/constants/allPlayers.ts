@@ -156,11 +156,79 @@ export const MLS_TEAMS: SearchTeam[] = [
   { name: "Vancouver Whitecaps", league: "MLS", abbr: "VAN", rank: "Western Conference" },
 ];
 
+// ─── ATP TOP PLAYERS (treated as "teams" for match following) ─────────────────
+export const ATP_PLAYERS: SearchTeam[] = [
+  { name: "Jannik Sinner",     league: "ATP", abbr: "SIN", rank: "#1 ATP",  city: "Italy"     },
+  { name: "Carlos Alcaraz",    league: "ATP", abbr: "ALC", rank: "#2 ATP",  city: "Spain"     },
+  { name: "Novak Djokovic",    league: "ATP", abbr: "DJO", rank: "#3 ATP",  city: "Serbia"    },
+  { name: "Daniil Medvedev",   league: "ATP", abbr: "MED", rank: "#4 ATP",  city: "Russia"    },
+  { name: "Alexander Zverev",  league: "ATP", abbr: "ZVE", rank: "#5 ATP",  city: "Germany"   },
+  { name: "Casper Ruud",       league: "ATP", abbr: "RUD", rank: "#6 ATP",  city: "Norway"    },
+  { name: "Andrey Rublev",     league: "ATP", abbr: "RUB", rank: "#7 ATP",  city: "Russia"    },
+  { name: "Hubert Hurkacz",    league: "ATP", abbr: "HUR", rank: "#8 ATP",  city: "Poland"    },
+  { name: "Taylor Fritz",      league: "ATP", abbr: "FRI", rank: "#9 ATP",  city: "USA"       },
+  { name: "Grigor Dimitrov",   league: "ATP", abbr: "DIM", rank: "#10 ATP", city: "Bulgaria"  },
+  { name: "Ben Shelton",       league: "ATP", abbr: "SHE", rank: "#14 ATP", city: "USA"       },
+  { name: "Tommy Paul",        league: "ATP", abbr: "PAU", rank: "#15 ATP", city: "USA"       },
+  { name: "Jack Draper",       league: "ATP", abbr: "DRA", rank: "#16 ATP", city: "Great Britain" },
+  { name: "Sebastian Korda",   league: "ATP", abbr: "KOR", rank: "#17 ATP", city: "USA"       },
+];
+
+// ─── WTA TOP PLAYERS ──────────────────────────────────────────────────────────
+export const WTA_PLAYERS: SearchTeam[] = [
+  { name: "Aryna Sabalenka",   league: "WTA", abbr: "SAB", rank: "#1 WTA",  city: "Belarus"   },
+  { name: "Iga Swiatek",       league: "WTA", abbr: "SWI", rank: "#2 WTA",  city: "Poland"    },
+  { name: "Coco Gauff",        league: "WTA", abbr: "GAU", rank: "#3 WTA",  city: "USA"       },
+  { name: "Jessica Pegula",    league: "WTA", abbr: "PEG", rank: "#4 WTA",  city: "USA"       },
+  { name: "Elena Rybakina",    league: "WTA", abbr: "RYB", rank: "#5 WTA",  city: "Kazakhstan"},
+  { name: "Madison Keys",      league: "WTA", abbr: "KEY", rank: "#6 WTA",  city: "USA"       },
+  { name: "Barbora Krejcikova",league: "WTA", abbr: "KRE", rank: "#7 WTA",  city: "Czechia"   },
+  { name: "Mirra Andreeva",    league: "WTA", abbr: "AND", rank: "#8 WTA",  city: "Russia"    },
+  { name: "Jasmine Paolini",   league: "WTA", abbr: "PAO", rank: "#9 WTA",  city: "Italy"     },
+  { name: "Daria Kasatkina",   league: "WTA", abbr: "KAS", rank: "#10 WTA", city: "Russia"    },
+  { name: "Emma Navarro",      league: "WTA", abbr: "NAV", rank: "#11 WTA", city: "USA"       },
+  { name: "Paula Badosa",      league: "WTA", abbr: "BAD", rank: "#12 WTA", city: "Spain"     },
+];
+
+// ─── UFC / MMA FIGHTERS ───────────────────────────────────────────────────────
+export const UFC_FIGHTERS: SearchTeam[] = [
+  { name: "Jon Jones",           league: "UFC", abbr: "JON", rank: "Heavyweight Champ",     city: "USA"       },
+  { name: "Islam Makhachev",     league: "UFC", abbr: "MAK", rank: "Lightweight Champ",     city: "Russia"    },
+  { name: "Alex Pereira",        league: "UFC", abbr: "PER", rank: "Light Heavyweight Champ",city: "Brazil"   },
+  { name: "Ilia Topuria",        league: "UFC", abbr: "TOP", rank: "Featherweight Champ",   city: "Georgia"   },
+  { name: "Leon Edwards",        league: "UFC", abbr: "EDW", rank: "Welterweight Champ",    city: "Great Britain" },
+  { name: "Dricus Du Plessis",   league: "UFC", abbr: "DUP", rank: "Middleweight Champ",   city: "S. Africa" },
+  { name: "Merab Dvalishvili",   league: "UFC", abbr: "DVA", rank: "Bantamweight Champ",   city: "Georgia"   },
+  { name: "Alexandre Pantoja",   league: "UFC", abbr: "PAN", rank: "Flyweight Champ",       city: "Brazil"    },
+  { name: "Tom Aspinall",        league: "UFC", abbr: "ASP", rank: "Int. Heavyweight Champ",city: "Great Britain" },
+  { name: "Sean O'Malley",       league: "UFC", abbr: "OMA", rank: "Former Bantamweight",   city: "USA"       },
+  { name: "Conor McGregor",      league: "UFC", abbr: "MCG", rank: "Former Champ",          city: "Ireland"   },
+  { name: "Khamzat Chimaev",     league: "UFC", abbr: "CHI", rank: "Top 5 Welterweight",    city: "Sweden"    },
+];
+
+// ─── BOXING CHAMPIONS ─────────────────────────────────────────────────────────
+export const BOXING_FIGHTERS: SearchTeam[] = [
+  { name: "Canelo Alvarez",     league: "BOXING", abbr: "CAN", rank: "Super Middleweight",    city: "Mexico"  },
+  { name: "Oleksandr Usyk",     league: "BOXING", abbr: "USY", rank: "Undisputed Heavyweight", city: "Ukraine"},
+  { name: "Tyson Fury",         league: "BOXING", abbr: "FUR", rank: "Former Heavyweight",    city: "Great Britain" },
+  { name: "Dmitry Bivol",       league: "BOXING", abbr: "BIV", rank: "Light Heavyweight",     city: "Russia"  },
+  { name: "Naoya Inoue",        league: "BOXING", abbr: "INO", rank: "Super Bantamweight",    city: "Japan"   },
+  { name: "Terence Crawford",   league: "BOXING", abbr: "CRA", rank: "Super Welterweight",    city: "USA"     },
+  { name: "David Benavidez",    league: "BOXING", abbr: "BEN", rank: "Super Middleweight",    city: "USA"     },
+  { name: "Gervonta Davis",     league: "BOXING", abbr: "DAV", rank: "Super Lightweight",     city: "USA"     },
+  { name: "Deontay Wilder",     league: "BOXING", abbr: "WIL", rank: "Former Heavyweight",    city: "USA"     },
+  { name: "Anthony Joshua",     league: "BOXING", abbr: "JOS", rank: "Heavyweight Contender", city: "Great Britain" },
+];
+
 export const ALL_TEAMS: SearchTeam[] = [
   ...NBA_TEAMS,
   ...NFL_TEAMS,
   ...MLB_TEAMS,
   ...MLS_TEAMS,
+  ...ATP_PLAYERS,
+  ...WTA_PLAYERS,
+  ...UFC_FIGHTERS,
+  ...BOXING_FIGHTERS,
 ];
 
 // ─── ALL NBA PLAYERS ──────────────────────────────────────────────
@@ -1549,9 +1617,79 @@ export const MLS_PLAYERS: SearchPlayer[] = [
 
 ];
 
+// ─── ATP PLAYER SEARCH ENTRIES ────────────────────────────────────────────────
+export const ATP_SEARCH_PLAYERS: SearchPlayer[] = [
+  { name: "Jannik Sinner",     team: "Italy",     league: "ATP", position: "Pro", stat: "#1 ATP — 2024 US Open & AO Champ"   },
+  { name: "Carlos Alcaraz",    team: "Spain",     league: "ATP", position: "Pro", stat: "#2 ATP — 2x Wimbledon, 2x RG Champ" },
+  { name: "Novak Djokovic",    team: "Serbia",    league: "ATP", position: "Pro", stat: "#3 ATP — 24x Grand Slam Champ"      },
+  { name: "Daniil Medvedev",   team: "Russia",    league: "ATP", position: "Pro", stat: "#4 ATP — 2021 US Open Champ"       },
+  { name: "Alexander Zverev",  team: "Germany",   league: "ATP", position: "Pro", stat: "#5 ATP — 2024 French Open Champ"   },
+  { name: "Casper Ruud",       team: "Norway",    league: "ATP", position: "Pro", stat: "#6 ATP"                            },
+  { name: "Andrey Rublev",     team: "Russia",    league: "ATP", position: "Pro", stat: "#7 ATP"                            },
+  { name: "Hubert Hurkacz",    team: "Poland",    league: "ATP", position: "Pro", stat: "#8 ATP"                            },
+  { name: "Taylor Fritz",      team: "USA",       league: "ATP", position: "Pro", stat: "#9 ATP — 2024 US Open finalist"    },
+  { name: "Grigor Dimitrov",   team: "Bulgaria",  league: "ATP", position: "Pro", stat: "#10 ATP"                           },
+  { name: "Ben Shelton",       team: "USA",       league: "ATP", position: "Pro", stat: "Rising star"                       },
+  { name: "Tommy Paul",        team: "USA",       league: "ATP", position: "Pro", stat: "Top 15 ATP"                        },
+  { name: "Jack Draper",       team: "Great Britain", league: "ATP", position: "Pro", stat: "Top 20 ATP"                   },
+];
+
+// ─── WTA PLAYER SEARCH ENTRIES ────────────────────────────────────────────────
+export const WTA_SEARCH_PLAYERS: SearchPlayer[] = [
+  { name: "Aryna Sabalenka",    team: "Belarus",    league: "WTA", position: "Pro", stat: "#1 WTA — 3x Grand Slam Champ"       },
+  { name: "Iga Swiatek",        team: "Poland",     league: "WTA", position: "Pro", stat: "#2 WTA — 5x Grand Slam Champ"       },
+  { name: "Coco Gauff",         team: "USA",        league: "WTA", position: "Pro", stat: "#3 WTA — 2023 US Open Champ"        },
+  { name: "Jessica Pegula",     team: "USA",        league: "WTA", position: "Pro", stat: "#4 WTA"                             },
+  { name: "Elena Rybakina",     team: "Kazakhstan", league: "WTA", position: "Pro", stat: "#5 WTA — 2022 Wimbledon Champ"      },
+  { name: "Madison Keys",       team: "USA",        league: "WTA", position: "Pro", stat: "#6 WTA — 2025 AO Champ"             },
+  { name: "Barbora Krejcikova", team: "Czechia",    league: "WTA", position: "Pro", stat: "#7 WTA — 2024 Wimbledon Champ"      },
+  { name: "Mirra Andreeva",     team: "Russia",     league: "WTA", position: "Pro", stat: "#8 WTA — 17yr old phenom"           },
+  { name: "Jasmine Paolini",    team: "Italy",      league: "WTA", position: "Pro", stat: "#9 WTA"                             },
+  { name: "Daria Kasatkina",    team: "Russia",     league: "WTA", position: "Pro", stat: "#10 WTA"                            },
+  { name: "Emma Navarro",       team: "USA",        league: "WTA", position: "Pro", stat: "#11 WTA"                            },
+  { name: "Paula Badosa",       team: "Spain",      league: "WTA", position: "Pro", stat: "#12 WTA"                            },
+];
+
+// ─── UFC / MMA FIGHTER SEARCH ENTRIES ────────────────────────────────────────
+export const UFC_SEARCH_PLAYERS: SearchPlayer[] = [
+  { name: "Jon Jones",          team: "UFC",  league: "UFC", position: "HW",  stat: "Heavyweight Champion"              },
+  { name: "Islam Makhachev",    team: "UFC",  league: "UFC", position: "LW",  stat: "Lightweight Champion"              },
+  { name: "Alex Pereira",       team: "UFC",  league: "UFC", position: "LHW", stat: "Light Heavyweight Champion"        },
+  { name: "Ilia Topuria",       team: "UFC",  league: "UFC", position: "FW",  stat: "Featherweight Champion"            },
+  { name: "Leon Edwards",       team: "UFC",  league: "UFC", position: "WW",  stat: "Welterweight Champion"             },
+  { name: "Dricus Du Plessis",  team: "UFC",  league: "UFC", position: "MW",  stat: "Middleweight Champion"             },
+  { name: "Merab Dvalishvili",  team: "UFC",  league: "UFC", position: "BW",  stat: "Bantamweight Champion"             },
+  { name: "Alexandre Pantoja",  team: "UFC",  league: "UFC", position: "FLW", stat: "Flyweight Champion"                },
+  { name: "Tom Aspinall",       team: "UFC",  league: "UFC", position: "HW",  stat: "Interim Heavyweight Champion"      },
+  { name: "Sean O'Malley",      team: "UFC",  league: "UFC", position: "BW",  stat: "Former Bantamweight Champion"      },
+  { name: "Conor McGregor",     team: "UFC",  league: "UFC", position: "FW",  stat: "Former Two-Division Champion"      },
+  { name: "Khamzat Chimaev",    team: "UFC",  league: "UFC", position: "WW",  stat: "Top 5 Welterweight Contender"      },
+  { name: "Paddy Pimblett",     team: "UFC",  league: "UFC", position: "LW",  stat: "Liverpool fan favorite"            },
+  { name: "Bo Nickal",          team: "UFC",  league: "UFC", position: "MW",  stat: "Undefeated prospect"               },
+];
+
+// ─── BOXING FIGHTER SEARCH ENTRIES ───────────────────────────────────────────
+export const BOXING_SEARCH_PLAYERS: SearchPlayer[] = [
+  { name: "Canelo Alvarez",    team: "Boxing", league: "BOXING", position: "SMW", stat: "Super Middleweight Champion"     },
+  { name: "Oleksandr Usyk",    team: "Boxing", league: "BOXING", position: "HW",  stat: "Undisputed Heavyweight Champion" },
+  { name: "Tyson Fury",        team: "Boxing", league: "BOXING", position: "HW",  stat: "Former Heavyweight Champion"     },
+  { name: "Dmitry Bivol",      team: "Boxing", league: "BOXING", position: "LHW", stat: "Light Heavyweight Champion"      },
+  { name: "Naoya Inoue",       team: "Boxing", league: "BOXING", position: "SBW", stat: "Undisputed Super Bantamweight"   },
+  { name: "Terence Crawford",  team: "Boxing", league: "BOXING", position: "SWW", stat: "Super Welterweight Contender"    },
+  { name: "David Benavidez",   team: "Boxing", league: "BOXING", position: "SMW", stat: "Super Middleweight Contender"    },
+  { name: "Gervonta Davis",    team: "Boxing", league: "BOXING", position: "SLW", stat: "Super Lightweight Champion"      },
+  { name: "Deontay Wilder",    team: "Boxing", league: "BOXING", position: "HW",  stat: "Former Heavyweight Champion"     },
+  { name: "Anthony Joshua",    team: "Boxing", league: "BOXING", position: "HW",  stat: "Heavyweight Contender"           },
+  { name: "Jermall Charlo",    team: "Boxing", league: "BOXING", position: "MW",  stat: "Middleweight Contender"          },
+];
+
 export const ALL_PLAYERS: SearchPlayer[] = [
   ...NBA_PLAYERS,
   ...NFL_PLAYERS,
   ...MLB_PLAYERS,
   ...MLS_PLAYERS,
+  ...ATP_SEARCH_PLAYERS,
+  ...WTA_SEARCH_PLAYERS,
+  ...UFC_SEARCH_PLAYERS,
+  ...BOXING_SEARCH_PLAYERS,
 ];

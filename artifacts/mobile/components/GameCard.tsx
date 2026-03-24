@@ -25,18 +25,24 @@ function formatTime(iso: string) {
 
 function getLeagueColor(league: string): string {
   const map: Record<string, string> = {
-    NBA:   C.nba,
-    NFL:   C.nfl,
-    MLB:   C.mlb,
-    MLS:   C.mls,
-    NHL:   C.nhl,
-    WNBA:  C.wnba,
-    NCAAB: C.ncaab,
-    NCAAF: C.ncaaf,
-    EPL:   C.eplBright,
-    UCL:   C.ucl,
-    LIGA:  C.liga,
-    NCAA:  C.accentGold,
+    NBA:      C.nba,
+    NFL:      C.nfl,
+    MLB:      C.mlb,
+    MLS:      C.mls,
+    NHL:      C.nhl,
+    WNBA:     C.wnba,
+    NCAAB:    C.ncaab,
+    NCAAF:    C.ncaaf,
+    EPL:      C.eplBright,
+    UCL:      C.ucl,
+    LIGA:     C.liga,
+    NCAA:     C.accentGold,
+    UFC:      C.ufc,
+    BOXING:   C.boxing,
+    ATP:      C.atp,
+    WTA:      C.wta,
+    OLYMPICS: C.olympics,
+    XGAMES:   C.xgames,
   };
   return map[league] ?? C.accent;
 }

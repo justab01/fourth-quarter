@@ -67,5 +67,12 @@ export default {
     liga:  "#EF4444",   // La Liga red
     ufc:   "#EF7828",   // Orange — UFC
     ncaa:  "#D4A843",   // Gold — NCAA
+    // ── New sports ─────────────────────────────────────────────────────────
+    tennis:   "#A3E635",   // Lime green — Tennis (ATP)
+    atp:      "#A3E635",   // Lime green — ATP Men's
+    wta:      "#EC4899",   // Pink — WTA Women's
+    boxing:   "#B91C1C",   // Deep crimson — Boxing
+    olympics: "#D4A843",   // Gold — Olympics
+    xgames:   "#3B82F6",   // Electric blue — X Games / Extreme
   },
 };

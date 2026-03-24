@@ -12,11 +12,15 @@ import type { NewsArticle } from "@/utils/api";
 const C = Colors.dark;
 
 const LEAGUE_COLORS: Record<string, string> = {
-  NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls,
-  NHL: C.accentBlue, NCAA: C.accentGold,
+  NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls, NHL: C.accentBlue,
+  WNBA: C.wnba, NCAAB: C.ncaab, EPL: C.eplBright, UCL: C.ucl, LIGA: C.liga,
+  NCAA: C.accentGold, UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
+  OLYMPICS: C.olympics, XGAMES: C.xgames,
 };
 const SPORT_EMOJI: Record<string, string> = {
   NBA: "🏀", NFL: "🏈", MLB: "⚾", MLS: "⚽", NHL: "🏒",
+  UFC: "🥋", BOXING: "🥊", ATP: "🎾", WTA: "🎾",
+  OLYMPICS: "🏅", XGAMES: "🏂", WNBA: "🏀",
 };
 
 function timeAgo(iso: string): string {

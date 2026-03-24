@@ -185,17 +185,25 @@ interface GameDetailShape {
 // ─── League config ────────────────────────────────────────────────────────────
 interface LeagueConfig { espnPath: string; displaySport: string }
 const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
-  NBA:   { espnPath: "basketball/nba",                    displaySport: "Basketball" },
-  MLB:   { espnPath: "baseball/mlb",                      displaySport: "Baseball"   },
-  NFL:   { espnPath: "football/nfl",                      displaySport: "Football"   },
-  MLS:   { espnPath: "soccer/usa.1",                      displaySport: "Soccer"     },
-  NHL:   { espnPath: "hockey/nhl",                        displaySport: "Hockey"     },
-  WNBA:  { espnPath: "basketball/wnba",                   displaySport: "Basketball" },
-  NCAAB: { espnPath: "basketball/mens-college-basketball", displaySport: "Basketball" },
-  NCAAF: { espnPath: "football/college-football",         displaySport: "Football"   },
-  EPL:   { espnPath: "soccer/eng.1",                      displaySport: "Soccer"     },
-  UCL:   { espnPath: "soccer/uefa.champions",             displaySport: "Soccer"     },
-  LIGA:  { espnPath: "soccer/esp.1",                      displaySport: "Soccer"     },
+  NBA:      { espnPath: "basketball/nba",                     displaySport: "Basketball" },
+  MLB:      { espnPath: "baseball/mlb",                       displaySport: "Baseball"   },
+  NFL:      { espnPath: "football/nfl",                       displaySport: "Football"   },
+  MLS:      { espnPath: "soccer/usa.1",                       displaySport: "Soccer"     },
+  NHL:      { espnPath: "hockey/nhl",                         displaySport: "Hockey"     },
+  WNBA:     { espnPath: "basketball/wnba",                    displaySport: "Basketball" },
+  NCAAB:    { espnPath: "basketball/mens-college-basketball",  displaySport: "Basketball" },
+  NCAAF:    { espnPath: "football/college-football",          displaySport: "Football"   },
+  EPL:      { espnPath: "soccer/eng.1",                       displaySport: "Soccer"     },
+  UCL:      { espnPath: "soccer/uefa.champions",              displaySport: "Soccer"     },
+  LIGA:     { espnPath: "soccer/esp.1",                       displaySport: "Soccer"     },
+  // ── Individual / combat sports ─────────────────────────────────────────────
+  ATP:      { espnPath: "tennis/atp",                         displaySport: "Tennis"     },
+  WTA:      { espnPath: "tennis/wta",                         displaySport: "Tennis"     },
+  UFC:      { espnPath: "mma/ufc",                            displaySport: "MMA"        },
+  BOXING:   { espnPath: "boxing",                             displaySport: "Boxing"     },
+  // ── Multi-sport events (toggle ON when active) ────────────────────────────
+  OLYMPICS: { espnPath: "olympics",                           displaySport: "Olympics"   },
+  XGAMES:   { espnPath: "action-sports/xgames",              displaySport: "X Games"    },
 };
 
 // ─── ESPN helpers ─────────────────────────────────────────────────────────────
@@ -538,7 +546,7 @@ router.get("/sports/games", async (req, res) => {
     ? (league.toUpperCase() === "ALL"
         ? Object.keys(LEAGUE_CONFIG)
         : league.toUpperCase().split(",").filter((l) => l in LEAGUE_CONFIG))
-    : ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA"];
+    : ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING"];
 
   try {
     const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l)));

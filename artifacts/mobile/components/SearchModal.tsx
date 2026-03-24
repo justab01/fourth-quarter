@@ -17,7 +17,11 @@ import { ALL_TEAMS, ALL_PLAYERS, type SearchTeam, type SearchPlayer } from "@/co
 const C = Colors.dark;
 
 const LEAGUE_COLORS: Record<string, string> = {
-  NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls, NCAA: C.ncaa,
+  NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls, NHL: C.nhl,
+  WNBA: C.wnba, NCAAB: C.ncaab, NCAAF: C.ncaaf,
+  EPL: C.eplBright, UCL: C.ucl, LIGA: C.liga, NCAA: C.accentGold,
+  UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
+  OLYMPICS: C.olympics, XGAMES: C.xgames,
 };
 
 function slugify(name: string): string {

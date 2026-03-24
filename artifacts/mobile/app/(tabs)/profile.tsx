@@ -15,12 +15,10 @@ import { TEAMS_BY_LEAGUE, SPORTS } from "@/constants/sports";
 const C = Colors.dark;
 
 const LEAGUE_COLORS: Record<string, string> = {
-  NBA: C.nba,
-  NFL: C.nfl,
-  MLB: C.mlb,
-  MLS: C.mls,
-  NHL: C.nhl,
-  UFC: C.ufc,
+  NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls, NHL: C.nhl,
+  WNBA: C.wnba, NCAAB: C.ncaab, EPL: C.eplBright, UCL: C.ucl, LIGA: C.liga,
+  UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
+  OLYMPICS: C.olympics, XGAMES: C.xgames,
 };
 
 function StatCard({ value, label, color }: { value: string | number; label: string; color?: string }) {
@@ -61,7 +59,9 @@ const statCard = StyleSheet.create({
 function FandomCommandCenter({ preferences, primaryColor }: { preferences: any; primaryColor: string }) {
   const SPORT_ICONS: Record<string, string> = {
     NBA: "🏀", NFL: "🏈", MLB: "⚾", MLS: "⚽", NHL: "🏒",
-    EPL: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", UCL: "⭐", LIGA: "🇪🇸", NCAAB: "🎓", WNBA: "🏀", UFC: "🥋",
+    EPL: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", UCL: "⭐", LIGA: "🇪🇸", NCAAB: "🎓", WNBA: "🏀",
+    UFC: "🥋", BOXING: "🥊", ATP: "🎾", WTA: "🎾",
+    OLYMPICS: "🏅", XGAMES: "🏂",
   };
 
   const favLeague = preferences.favoriteLeagues[0] ?? null;

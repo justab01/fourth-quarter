@@ -53,7 +53,7 @@ function searchPlayerToPlayer(sp: SearchPlayer): Player {
   };
 }
 
-const ALL_LEAGUE_PREFIXES = "nba|nfl|mlb|mls|nhl|wnba|ncaab|ncaaf|epl|ucl|liga";
+const ALL_LEAGUE_PREFIXES = "nba|nfl|mlb|mls|nhl|wnba|ncaab|ncaaf|epl|ucl|liga|atp|wta|ufc|boxing|olympics|xgames";
 const LEAGUE_PREFIX_RE = new RegExp(`^(${ALL_LEAGUE_PREFIXES})-`);
 
 function buildFallbackTeam(id: string): TeamData | null {

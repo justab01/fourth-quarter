@@ -668,7 +668,10 @@ export default function PlayerScreen() {
       });
 
   const LEAGUE_COLOR: Record<string, string> = {
-    NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls,
+    NBA: C.nba, NFL: C.nfl, MLB: C.mlb, MLS: C.mls, NHL: C.nhl,
+    WNBA: C.wnba, NCAAB: C.ncaab, EPL: C.eplBright, UCL: C.ucl, LIGA: C.liga,
+    UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
+    OLYMPICS: C.olympics, XGAMES: C.xgames,
   };
 
   const player: Player = result?.player ?? (fallbackSearchPlayer ? {
