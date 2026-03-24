@@ -12,7 +12,7 @@ export type Player = {
   weight: string;
   college?: string;
   birthdate?: string;
-  group: "Offense" | "Defense" | "Special Teams" | "Pitching" | "Hitting" | "Bullpen" | "Forwards" | "Midfielders" | "Defenders" | "Goalkeepers" | "Guards" | "Forwards/Centers" | "Bigs";
+  group: "Offense" | "Defense" | "Special Teams" | "Pitching" | "Hitting" | "Bullpen" | "Forwards" | "Defensemen" | "Goalies" | "Midfielders" | "Defenders" | "Goalkeepers" | "Guards" | "Forwards/Centers" | "Bigs";
   stats?: Record<string, string | number>;
   bio?: string;
 };

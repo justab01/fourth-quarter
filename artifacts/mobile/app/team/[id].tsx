@@ -110,7 +110,11 @@ function espnTeamToTeamData(info: EspnTeamInfo): TeamData {
       if (["CB","LB","RB","LWB","RWB","DF"].includes(p)) return "Defenders";
       return "Goalkeepers";
     }
-    if (league === "NHL") return "Forwards";
+    if (league === "NHL") {
+      if (["C","LW","RW","F"].includes(p)) return "Forwards";
+      if (["D","LD","RD"].includes(p)) return "Defensemen";
+      return "Goalies";
+    }
     return "Guards";
   }
   const roster: Player[] = info.roster.map((p, i) => ({
@@ -152,13 +156,38 @@ const TABS = ["Scores", "News", "Standings", "Stats", "Roster", "Depth Chart"] a
 type Tab = (typeof TABS)[number];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const GROUP_ORDER: string[] = [
+  // NBA/WNBA/NCAAB
+  "Guards", "Forwards/Centers", "Bigs",
+  // NFL/NCAAF
+  "Offense", "Defense", "Special Teams",
+  // MLB
+  "Pitching", "Hitting", "Bullpen",
+  // Soccer (Goalkeepers first, Forwards last — shared with NHL)
+  "Goalkeepers", "Defenders", "Midfielders",
+  // NHL + Soccer shared
+  "Forwards", "Defensemen", "Goalies",
+];
+
 function groupRoster(roster: Player[]): Record<string, Player[]> {
   const groups: Record<string, Player[]> = {};
   for (const p of roster) {
     if (!groups[p.group]) groups[p.group] = [];
     groups[p.group].push(p);
   }
-  return groups;
+  // Sort groups by canonical order
+  const sorted: Record<string, Player[]> = {};
+  const keys = Object.keys(groups);
+  const ordered = [...keys].sort((a, b) => {
+    const ai = GROUP_ORDER.indexOf(a);
+    const bi = GROUP_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+  for (const k of ordered) sorted[k] = groups[k];
+  return sorted;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -203,10 +232,16 @@ function StatsTab({ team }: { team: TeamData }) {
   );
 }
 
-function RosterTab({ team, teamColor }: { team: TeamData; teamColor: string }) {
+function RosterTab({ team, teamColor, isLoading }: { team: TeamData; teamColor: string; isLoading?: boolean }) {
   const groups = groupRoster(team.roster);
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
+      {isLoading && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 10 }}>
+          <ActivityIndicator size="small" color={teamColor} />
+          <Text style={{ color: "#666", fontSize: 12 }}>Loading full roster…</Text>
+        </View>
+      )}
       {Object.entries(groups).map(([group, players]) => (
         <View key={group}>
           <View style={roster.groupHeader}>
@@ -329,24 +364,47 @@ export default function TeamScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  // Try static registry first
+  // Try static registry first (used for instant metadata + color)
   const staticTeam = getTeamById(id ?? "") ?? buildFallbackTeam(id ?? "");
 
-  // Parse league + name from the slug for ESPN live fallback
+  // Parse league + name from the slug for ESPN live fetch
   const leagueMatch = (id ?? "").match(new RegExp(`^(${ALL_LEAGUE_PREFIXES})`));
   const parsedLeague = leagueMatch?.[0]?.toUpperCase() ?? "";
   const parsedName = (id ?? "").replace(LEAGUE_PREFIX_RE, "").replace(/-/g, " ");
 
-  // Only call ESPN when static data is missing
+  // Always call ESPN — it has the full roster (18–69 players vs ~10 in static data)
   const { data: espnData, isLoading: espnLoading } = useQuery({
     queryKey: ["team-info", id],
     queryFn: () => api.getTeamInfo(parsedName, parsedLeague),
-    enabled: !staticTeam && !!parsedLeague && !!parsedName,
+    enabled: !!parsedLeague && !!parsedName,
     retry: 1,
     staleTime: 3_600_000,
   });
 
-  const team: TeamData | null = staticTeam ?? (espnData ? espnTeamToTeamData(espnData) : null);
+  // Merge: use static metadata (color, record, stats) + ESPN roster (full)
+  // If ESPN loads, upgrade roster to full. Static data renders instantly as placeholder.
+  const team: TeamData | null = (() => {
+    if (!staticTeam && !espnData) return null;
+    if (espnData) {
+      const espnConverted = espnTeamToTeamData(espnData);
+      // Prefer static metadata if available (richer: record, division, stats)
+      // but always use the full ESPN roster
+      if (staticTeam) {
+        return {
+          ...staticTeam,
+          color: espnConverted.color !== "#333333" ? espnConverted.color : staticTeam.color,
+          colorSecondary: espnConverted.colorSecondary !== "#666666" ? espnConverted.colorSecondary : staticTeam.colorSecondary,
+          coach: espnConverted.coach !== "—" ? espnConverted.coach : staticTeam.coach,
+          stadium: espnConverted.stadium !== "—" ? espnConverted.stadium : staticTeam.stadium,
+          roster: espnConverted.roster, // ← always use full ESPN roster
+        };
+      }
+      return espnConverted;
+    }
+    return staticTeam;
+  })();
+
+  const rosterIsLoading = espnLoading && (team?.roster.length ?? 0) <= 15;
 
   const isFav = team ? preferences.favoriteTeams.includes(team.name) : false;
 
@@ -359,7 +417,7 @@ export default function TeamScreen() {
     savePreferences({ ...preferences, favoriteTeams: next });
   };
 
-  // Show loading while ESPN fetch is in progress
+  // Show loading only when no data at all (no static + ESPN still loading)
   if (!staticTeam && espnLoading) {
     return (
       <View style={[styles.container, { paddingTop: topPad }]}>
@@ -393,7 +451,7 @@ export default function TeamScreen() {
       case "News": return <NewsTabPlaceholder team={team} />;
       case "Standings": return <StandingsTabPlaceholder team={team} />;
       case "Stats": return <StatsTab team={team} />;
-      case "Roster": return <RosterTab team={team} teamColor={team.color} />;
+      case "Roster": return <RosterTab team={team} teamColor={team.color} isLoading={rosterIsLoading} />;
       case "Depth Chart": return <DepthChartTab team={team} teamColor={team.color} />;
     }
   };
