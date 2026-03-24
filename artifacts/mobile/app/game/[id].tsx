@@ -17,6 +17,7 @@ import { TeamLogo } from "@/components/GameCard";
 import { ArenaRenderer } from "@/components/ArenaRenderer";
 import { MomentumGraph } from "@/components/MomentumGraph";
 import { useGameSocket } from "@/hooks/useGameSocket";
+import { LiveTrackerPanel, computeTrackerState } from "@/components/LiveTrackerPanel";
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -325,10 +326,16 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
   const isFinished = game.status === "finished";
   const keyPlays = data.keyPlays ?? [];
 
+  // Compute canonical tracker state from play-by-play
+  const trackerState = React.useMemo(
+    () => computeTrackerState(keyPlays, game),
+    [keyPlays, game],
+  );
+
   return (
     <View style={s.tabSection}>
 
-      {/* ── Arena (sport-specific SVG + inline score row) ─────────────────── */}
+      {/* ── Arena (sport-specific SVG + live overlays) ────────────────────── */}
       <ArenaRenderer
         league={game.league}
         width={SCREEN_W - 32}
@@ -338,9 +345,18 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
         homeTeam={game.homeTeam}
         awayTeam={game.awayTeam}
         status={game.status}
+        shotTrail={trackerState.shotTrail}
+        possession={trackerState.possession}
+        runnersOnBase={trackerState.runnersOnBase}
+        fieldPosition={trackerState.fieldPosition}
       />
 
-      {/* ── Momentum Wave + Win Probability ───────────────────────────────── */}
+      {/* ── Live Tracker Panel (situation · scoring run · why it matters) ─── */}
+      {(isLive || isFinished) && (
+        <LiveTrackerPanel state={trackerState} accentColor={dc} game={game} />
+      )}
+
+      {/* ── Momentum Wave ─────────────────────────────────────────────────── */}
       {(isLive || isFinished) && keyPlays.length > 0 && (
         <MomentumGraph
           plays={keyPlays}

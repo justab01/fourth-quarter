@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Rect, Circle, Line, Path, G, Defs, ClipPath } from "react-native-svg";
+import type { ShotMarker } from "./LiveTrackerPanel";
 
 // ─── Arena Renderer ───────────────────────────────────────────────────────────
 // Sport-specific venue SVGs for the Gamecast tab.
@@ -17,6 +18,11 @@ interface ArenaProps {
   status?: string;
   eventX?: number;
   eventY?: number;
+  // Live overlay props
+  shotTrail?: ShotMarker[];
+  possession?: "home" | "away" | null;
+  runnersOnBase?: [boolean, boolean, boolean];
+  fieldPosition?: number | null;     // 0–100, yards from own goal line
 }
 
 // Shared palette
@@ -32,6 +38,7 @@ export function ArenaRenderer({
   league, width, accentColor,
   homeScore, awayScore, homeTeam, awayTeam, status,
   eventX, eventY,
+  shotTrail = [], possession, runnersOnBase, fieldPosition,
 }: ArenaProps) {
   const H = Math.round(width * 0.54);
   const sport = (league ?? "").toUpperCase();
@@ -43,11 +50,16 @@ export function ArenaRenderer({
     : null;
 
   const renderArena = () => {
-    if (["NBA", "WNBA", "NCAAB"].includes(sport))      return <BasketballCourt w={width} h={H} ac={accentColor} dot={dot} />;
-    if (["NFL", "NCAAF"].includes(sport))               return <FootballField   w={width} h={H} ac={accentColor} dot={dot} />;
-    if (["MLS", "EPL", "UCL", "LIGA"].includes(sport))  return <SoccerPitch     w={width} h={H} ac={accentColor} dot={dot} />;
-    if (sport === "NHL")                                 return <HockeyRink      w={width} h={H} ac={accentColor} dot={dot} />;
-    if (sport === "MLB")                                 return <BaseballDiamond w={width} h={H} ac={accentColor} dot={dot} />;
+    if (["NBA", "WNBA", "NCAAB"].includes(sport))
+      return <BasketballCourt w={width} h={H} ac={accentColor} dot={dot} shotTrail={shotTrail} possession={possession} />;
+    if (["NFL", "NCAAF"].includes(sport))
+      return <FootballField w={width} h={H} ac={accentColor} dot={dot} fieldPosition={fieldPosition} />;
+    if (["MLS", "EPL", "UCL", "LIGA"].includes(sport))
+      return <SoccerPitch w={width} h={H} ac={accentColor} dot={dot} possession={possession} />;
+    if (sport === "NHL")
+      return <HockeyRink w={width} h={H} ac={accentColor} dot={dot} />;
+    if (sport === "MLB")
+      return <BaseballDiamond w={width} h={H} ac={accentColor} dot={dot} runnersOnBase={runnersOnBase} />;
     return <GenericArena w={width} h={H} ac={accentColor} />;
   };
 
@@ -89,7 +101,10 @@ export function ArenaRenderer({
 }
 
 // ─── Basketball half-court ────────────────────────────────────────────────────
-function BasketballCourt({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
+function BasketballCourt({ w, h, ac, dot, shotTrail = [], possession }: {
+  w: number; h: number; ac: string; dot: { cx: number; cy: number } | null;
+  shotTrail?: ShotMarker[]; possession?: "home" | "away" | null;
+}) {
   const pad = 10;
   const cx = w / 2;
   // Court fills the full card
@@ -177,13 +192,61 @@ function BasketballCourt({ w, h, ac, dot }: { w: number; h: number; ac: string; 
       {/* Center (bottom) circle indicator */}
       <Line x1={tx} y1={ty + ch} x2={tx + cw} y2={ty + ch} stroke={MARK} strokeWidth={1} />
 
+      {/* Shot trail markers — oldest first (most faded), newest last (brightest) */}
+      {shotTrail.slice().reverse().map((shot, i) => {
+        const sx = pad + shot.x * cw;
+        const sy = pad + shot.y * ch;
+        const maxAge = shotTrail.length;
+        const ageRatio = 1 - (shot.age / maxAge);
+        const opacity = 0.25 + ageRatio * 0.75;
+        const color = shot.made ? "#30D158" : "#E8162B";
+        const r = shot.isThree ? 7 : 5.5;
+        return (
+          <G key={i}>
+            {/* Glow ring */}
+            <Circle cx={sx} cy={sy} r={r + 4} fill={`${color}${Math.round(opacity * 0.18 * 255).toString(16).padStart(2, "0")}`} />
+            {/* Fill */}
+            <Circle cx={sx} cy={sy} r={r} fill={shot.made ? `${color}${Math.round(opacity * 200).toString(16).padStart(2, "0")}` : "none"} />
+            {/* Border */}
+            <Circle cx={sx} cy={sy} r={r} fill="none" stroke={color}
+              strokeWidth={shot.made ? 0 : 1.5}
+              opacity={opacity}
+            />
+            {/* X for miss */}
+            {!shot.made && (
+              <G opacity={opacity}>
+                <Line x1={sx - 3} y1={sy - 3} x2={sx + 3} y2={sy + 3} stroke={color} strokeWidth={1.5} />
+                <Line x1={sx + 3} y1={sy - 3} x2={sx - 3} y2={sy + 3} stroke={color} strokeWidth={1.5} />
+              </G>
+            )}
+          </G>
+        );
+      })}
+
+      {/* Possession arrow — bottom of court, pointing toward basket */}
+      {possession && (() => {
+        const isHome = possession === "home";
+        const arrowX = isHome ? cx + cw * 0.3 : cx - cw * 0.3;
+        const arrowY = ty + ch * 0.86;
+        const arrowColor = ac;
+        return (
+          <G>
+            <Circle cx={arrowX} cy={arrowY} r={11} fill={`${arrowColor}22`} />
+            <Circle cx={arrowX} cy={arrowY} r={5} fill={arrowColor} opacity={0.9} />
+          </G>
+        );
+      })()}
+
       {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
   );
 }
 
 // ─── Football field ───────────────────────────────────────────────────────────
-function FootballField({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
+function FootballField({ w, h, ac, dot, fieldPosition }: {
+  w: number; h: number; ac: string; dot: { cx: number; cy: number } | null;
+  fieldPosition?: number | null;
+}) {
   const pad = 8;
   const ezPct = 0.09;      // end zone as fraction of total width
   const ezW = w * ezPct;
@@ -233,13 +296,29 @@ function FootballField({ w, h, ac, dot }: { w: number; h: number; ac: string; do
       {/* Field border */}
       <Rect x={fx} y={fy} width={fw} height={fh} fill="none" stroke={MARK2} strokeWidth={1} rx={4} />
 
+      {/* Field position line — line of scrimmage */}
+      {fieldPosition != null && (() => {
+        const pos = fieldPosition / 100;
+        const scrimmX = playX + pos * playW;
+        return (
+          <G>
+            <Line x1={scrimmX} y1={fy} x2={scrimmX} y2={fy + fh}
+              stroke={ac} strokeWidth={2} strokeDasharray="4,3" opacity={0.7} />
+            <Circle cx={scrimmX} cy={fy + fh / 2} r={5} fill={ac} opacity={0.8} />
+          </G>
+        );
+      })()}
+
       {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
   );
 }
 
 // ─── Soccer pitch ─────────────────────────────────────────────────────────────
-function SoccerPitch({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
+function SoccerPitch({ w, h, ac, dot, possession }: {
+  w: number; h: number; ac: string; dot: { cx: number; cy: number } | null;
+  possession?: "home" | "away" | null;
+}) {
   const pad = 10;
   const pw = w - pad * 2;
   const ph = h - pad * 2;
@@ -316,6 +395,17 @@ function SoccerPitch({ w, h, ac, dot }: { w: number; h: number; ac: string; dot:
 
       {/* Pitch border */}
       <Rect x={L} y={T} width={pw} height={ph} fill="none" stroke="#1A3D20" strokeWidth={1.5} rx={4} />
+
+      {/* Possession indicator — glowing dot in the attacking half */}
+      {possession && (() => {
+        const posX = possession === "home" ? R - pw * 0.25 : L + pw * 0.25;
+        return (
+          <G>
+            <Circle cx={posX} cy={cy} r={10} fill={`${ac}20`} />
+            <Circle cx={posX} cy={cy} r={5} fill={ac} opacity={0.8} />
+          </G>
+        );
+      })()}
 
       {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>
@@ -395,7 +485,10 @@ function HockeyRink({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: 
 }
 
 // ─── Baseball diamond ─────────────────────────────────────────────────────────
-function BaseballDiamond({ w, h, ac, dot }: { w: number; h: number; ac: string; dot: { cx: number; cy: number } | null }) {
+function BaseballDiamond({ w, h, ac, dot, runnersOnBase }: {
+  w: number; h: number; ac: string; dot: { cx: number; cy: number } | null;
+  runnersOnBase?: [boolean, boolean, boolean];
+}) {
   const cx = w / 2;
 
   // Fixed diamond coordinates — guaranteed to fit
@@ -454,20 +547,29 @@ function BaseballDiamond({ w, h, ac, dot }: { w: number; h: number; ac: string; 
       <Line x1={cx} y1={homeY} x2={arcRightX + 10} y2={arcTopY - 10}
         stroke="#1A3D20" strokeWidth={1} strokeDasharray="5,4" />
 
-      {/* Bases — rotated squares */}
+      {/* Bases — rotated squares, with runner glow when occupied */}
       {[
-        { bx: cx,     by: homeY,  fill: ac,        isHome: true  },
-        { bx: firstX, by: firstY, fill: "#DDDDDD", isHome: false },
-        { bx: cx,     by: secondY,fill: "#DDDDDD", isHome: false },
-        { bx: thirdX, by: thirdY, fill: "#DDDDDD", isHome: false },
-      ].map(({ bx, by, fill }, i) => (
-        <Rect key={i}
-          x={bx - baseS / 2} y={by - baseS / 2}
-          width={baseS} height={baseS}
-          fill={fill} stroke="#555" strokeWidth={0.5}
-          transform={`rotate(45, ${bx}, ${by})`}
-        />
-      ))}
+        { bx: cx,     by: homeY,  isHome: true,  runnerIdx: -1 },
+        { bx: firstX, by: firstY, isHome: false, runnerIdx: 0  },  // 1st
+        { bx: cx,     by: secondY,isHome: false, runnerIdx: 1  },  // 2nd
+        { bx: thirdX, by: thirdY, isHome: false, runnerIdx: 2  },  // 3rd
+      ].map(({ bx, by, isHome, runnerIdx }, i) => {
+        const hasRunner = runnerIdx >= 0 && runnersOnBase ? runnersOnBase[runnerIdx] : false;
+        const fill = isHome ? ac : hasRunner ? "#FFD700" : "#CCCCCC";
+        return (
+          <G key={i}>
+            {hasRunner && (
+              <Circle cx={bx} cy={by} r={baseS + 5} fill="#FFD70030" />
+            )}
+            <Rect
+              x={bx - baseS / 2} y={by - baseS / 2}
+              width={baseS} height={baseS}
+              fill={fill} stroke={hasRunner ? "#FFD700" : "#555"} strokeWidth={hasRunner ? 1 : 0.5}
+              transform={`rotate(45, ${bx}, ${by})`}
+            />
+          </G>
+        );
+      })}
 
       {dot && <EventDot cx={dot.cx} cy={dot.cy} ac={ac} />}
     </G>

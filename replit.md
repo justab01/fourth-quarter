@@ -139,7 +139,23 @@ Per the "sports operating system" blueprint, the PostgreSQL DB now has:
 
 ### Mobile Gamecast Engine (Layer 3)
 
-- **`components/ArenaRenderer.tsx`** — sport-specific SVG courts/fields: NBA half court (paint, 3-point arc, basket), NFL field (yard lines, hash marks, end zones, numbers), Soccer pitch (penalty areas, goal boxes, center circle, corner arcs), Hockey rink (blue lines, face-off circles, goal creases), Baseball diamond (infield, bases, outfield arc, foul lines). Falls back to generic circle for unrecognized leagues
+- **`components/ArenaRenderer.tsx`** — sport-specific SVG courts/fields with live overlays:
+  - NBA/WNBA/NCAAB half court: paint, 3-point arc, basket + **shot trail dots** (green=made/red X=miss, fade by age) + **possession indicator dot**
+  - NFL/NCAAF field: yard lines, hash marks, end zones, numbers + **line of scrimmage marker** at derived field position
+  - Soccer pitch: penalty areas, goal boxes, center circle, corner arcs + **possession indicator** (glowing dot in attacking third)
+  - Hockey rink: blue lines, face-off circles, goal creases (no extra overlay needed — goal/power-play is tracked in panel)
+  - Baseball diamond: infield, bases, outfield arc, foul lines + **runner glow** — occupied bases turn gold with halo
+  - Falls back to generic circle for unrecognized leagues
+- **`components/LiveTrackerPanel.tsx`** — universal canonical live event engine; derives `TrackerState` from play-by-play descriptions:
+  - `computeTrackerState()` — parses plays to extract sport/possession/scoring-run/whyItMatters/situation/shotTrail/runners/outs/count/fieldPosition/pressureLevel
+  - **SituationCard** — sport-aware live context (basketball: "Q4 · 2:14 · Knicks ball"; football: "3rd & 7"; baseball: "2 outs · 2-1 · 1st, 2nd")
+  - **PressureBar** — 4-segment intensity meter (critical/high/medium/low) keyed to game state
+  - **ScoringRunChip** — detects consecutive scoring runs (≥6 pts NBA, ≥10 pts NFL, ≥2 goals soccer/hockey) with flame icon
+  - **WhyItMatters** — narrative intelligence strip: "Tied game in overtime", "Rockets on a 12-0 run", "One-possession game — 4th quarter", "Playoff race — every win counts"
+  - **BaseballCountBar** — outs indicators + ball-strike count for MLB
+  - **FootballSituation** — down & distance display with RED ZONE alert
+  - **ShotTrailLegend** — FG% + 3-point count from recent shot trail
+  - Sport detection: NBA/WNBA/NCAAB → basketball; NFL/NCAAF → football; MLB → baseball; MLS/EPL/UCL/LIGA → soccer; NHL → hockey
 - **`components/MomentumGraph.tsx`** — analytics momentum wave graph. Computes from play-by-play with decay weighting, renders as SVG bezier wave + win probability bar. Shows team-labeled fills, live momentum badge, period markers
 - **`hooks/useGameSocket.ts`** — WebSocket client hook; connects to `/ws`, subscribes to `game:<id>`, auto-reconnects; triggers React Query cache invalidation on push update
 
