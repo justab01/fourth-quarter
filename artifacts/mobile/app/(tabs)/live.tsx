@@ -16,21 +16,25 @@ import { usePreferences } from "@/context/PreferencesContext";
 
 const C = Colors.dark;
 
-const LEAGUES = ["All", "My Teams", "NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"] as const;
+const LEAGUES = ["All", "My Teams", "NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA", "UFC", "BOXING", "ATP", "WTA"] as const;
 type League = typeof LEAGUES[number];
 
 const LEAGUE_META: Record<string, { color: string; emoji: string; fullName: string }> = {
-  NBA:   { color: C.nba,       emoji: "🏀", fullName: "NBA" },
-  NFL:   { color: C.nfl,       emoji: "🏈", fullName: "NFL" },
-  MLB:   { color: C.mlb,       emoji: "⚾", fullName: "MLB" },
-  MLS:   { color: C.mls,       emoji: "⚽", fullName: "MLS" },
-  NHL:   { color: C.nhl,       emoji: "🏒", fullName: "NHL" },
-  WNBA:  { color: C.wnba,      emoji: "🏀", fullName: "WNBA" },
-  NCAAB: { color: C.ncaab,     emoji: "🎓", fullName: "NCAA Basketball" },
-  NCAAF: { color: C.ncaaf,     emoji: "🏈", fullName: "NCAA Football" },
-  EPL:   { color: C.eplBright, emoji: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", fullName: "Premier League" },
-  UCL:   { color: C.ucl,       emoji: "⭐", fullName: "Champions League" },
-  LIGA:  { color: C.liga,      emoji: "🇪🇸", fullName: "La Liga" },
+  NBA:    { color: C.nba,       emoji: "🏀", fullName: "NBA" },
+  NFL:    { color: C.nfl,       emoji: "🏈", fullName: "NFL" },
+  MLB:    { color: C.mlb,       emoji: "⚾", fullName: "MLB" },
+  MLS:    { color: C.mls,       emoji: "⚽", fullName: "MLS" },
+  NHL:    { color: C.nhl,       emoji: "🏒", fullName: "NHL" },
+  WNBA:   { color: C.wnba,      emoji: "🏀", fullName: "WNBA" },
+  NCAAB:  { color: C.ncaab,     emoji: "🎓", fullName: "NCAA Basketball" },
+  NCAAF:  { color: C.ncaaf,     emoji: "🏈", fullName: "NCAA Football" },
+  EPL:    { color: C.eplBright, emoji: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", fullName: "Premier League" },
+  UCL:    { color: C.ucl,       emoji: "⭐", fullName: "Champions League" },
+  LIGA:   { color: C.liga,      emoji: "🇪🇸", fullName: "La Liga" },
+  UFC:    { color: C.ufc,       emoji: "🥋", fullName: "UFC" },
+  BOXING: { color: C.boxing,    emoji: "🥊", fullName: "Boxing" },
+  ATP:    { color: C.atp,       emoji: "🎾", fullName: "ATP Tennis" },
+  WTA:    { color: C.wta,       emoji: "🎾", fullName: "WTA Tennis" },
 };
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
@@ -175,9 +179,16 @@ const importStyles = StyleSheet.create({
 });
 
 // ─── League section header ────────────────────────────────────────────────────
+function leagueEventWord(league: string, count: number): string {
+  if (league === "UFC" || league === "BOXING") return count === 1 ? "bout" : "bouts";
+  if (league === "ATP" || league === "WTA") return count === 1 ? "match" : "matches";
+  return count === 1 ? "game" : "games";
+}
+
 function LeagueSectionHeader({ league, games }: { league: string; games: Game[] }) {
   const meta  = LEAGUE_META[league] ?? { color: C.accent, emoji: "🏆", fullName: league };
   const liveN = games.filter(g => g.status === "live").length;
+  const word  = leagueEventWord(league, games.length);
 
   return (
     <View style={secH.row}>
@@ -191,7 +202,7 @@ function LeagueSectionHeader({ league, games }: { league: string; games: Game[] 
         </View>
       )}
       <View style={{ flex: 1 }} />
-      <Text style={secH.gameCount}>{games.length} game{games.length !== 1 ? "s" : ""}</Text>
+      <Text style={secH.gameCount}>{games.length} {word}</Text>
     </View>
   );
 }
@@ -222,7 +233,7 @@ function LiveSummaryBar({ liveCount, totalCount }: { liveCount: number; totalCou
         </View>
       )}
       <Text style={sumBar.sep}>·</Text>
-      <Text style={sumBar.totalText}>{totalCount} total games</Text>
+      <Text style={sumBar.totalText}>{totalCount} events today</Text>
     </View>
   );
 }
@@ -265,7 +276,7 @@ export default function LiveScreen() {
   const isFav = (g: Game) => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam);
   const totalLive = all.filter(g => g.status === "live").length;
 
-  const ALL_LEAGUES = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"] as string[];
+  const ALL_LEAGUES = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA", "UFC", "BOXING", "ATP", "WTA"] as string[];
 
   const isMyTeams = activeLeague === "My Teams";
   const filteredBase = isMyTeams
