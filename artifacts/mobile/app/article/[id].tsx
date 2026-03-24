@@ -15,29 +15,22 @@ const C = Colors.dark;
 
 type ReadingMode = "pro" | "simple" | "toddler" | "translate";
 
-const MODES: { id: ReadingMode; label: string; emoji: string }[] = [
-  { id: "pro",       label: "Pro",       emoji: "📰" },
-  { id: "simple",    label: "Simple",    emoji: "💬" },
-  { id: "toddler",   label: "Toddler",   emoji: "🐣" },
-  { id: "translate", label: "Translate", emoji: "🏟️" },
+const MODES: { id: ReadingMode; emoji: string; label: string }[] = [
+  { id: "pro",       emoji: "📰", label: "Pro"       },
+  { id: "simple",    emoji: "💬", label: "Simple"    },
+  { id: "toddler",   emoji: "🐣", label: "Toddler"   },
+  { id: "translate", emoji: "🏟️", label: "Translate" },
 ];
 
-const MODE_DESCRIPTIONS: Record<ReadingMode, string> = {
-  pro:       "Standard sports coverage",
-  simple:    "Plain English — no jargon",
-  toddler:   "Explained like you're 5",
-  translate: "Re-told in your sport's language",
-};
-
 const TRANSLATE_SPORTS: { id: string; label: string; emoji: string }[] = [
-  { id: "NFL Football",      label: "NFL",      emoji: "🏈" },
-  { id: "NBA Basketball",    label: "NBA",      emoji: "🏀" },
-  { id: "MLB Baseball",      label: "MLB",      emoji: "⚾" },
-  { id: "NHL Hockey",        label: "NHL",      emoji: "🏒" },
-  { id: "MLS Soccer",        label: "Soccer",   emoji: "⚽" },
-  { id: "Tennis",            label: "Tennis",   emoji: "🎾" },
-  { id: "Golf",              label: "Golf",     emoji: "⛳" },
-  { id: "Boxing",            label: "Boxing",   emoji: "🥊" },
+  { id: "NFL Football",   label: "NFL",    emoji: "🏈" },
+  { id: "NBA Basketball", label: "NBA",    emoji: "🏀" },
+  { id: "MLB Baseball",   label: "MLB",    emoji: "⚾" },
+  { id: "NHL Hockey",     label: "NHL",    emoji: "🏒" },
+  { id: "MLS Soccer",     label: "Soccer", emoji: "⚽" },
+  { id: "Tennis",         label: "Tennis", emoji: "🎾" },
+  { id: "Golf",           label: "Golf",   emoji: "⛳" },
+  { id: "Boxing",         label: "Boxing", emoji: "🥊" },
 ];
 
 function timeAgo(iso: string): string {
@@ -59,12 +52,7 @@ function SportPickerModal({
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={picker.backdrop} onPress={onClose} />
       <View style={[picker.sheet, { paddingBottom: insets.bottom + 24 }]}>
         <View style={picker.handle} />
@@ -74,7 +62,7 @@ function SportPickerModal({
           {TRANSLATE_SPORTS.map(s => (
             <Pressable
               key={s.id}
-              style={({ pressed }) => [picker.sportBtn, { opacity: pressed ? 0.7 : 1, borderColor: leagueColor + "44" }]}
+              style={({ pressed }) => [picker.sportBtn, { opacity: pressed ? 0.7 : 1, borderColor: leagueColor + "55" }]}
               onPress={() => { onSelect(s.id); onClose(); }}
             >
               <Text style={picker.sportEmoji}>{s.emoji}</Text>
@@ -96,7 +84,7 @@ export default function ArticleScreen() {
   const [activeMode, setActiveMode] = useState<ReadingMode>("pro");
   const [rewriteCache, setRewriteCache] = useState<Partial<Record<string, string>>>({});
   const [loading, setLoading] = useState(false);
-  const [translateSport, setTranslateSport] = useState<string>("NFL Football");
+  const [translateSport, setTranslateSport] = useState("NFL Football");
   const [showSportPicker, setShowSportPicker] = useState(false);
   const [imageError, setImageError] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -104,18 +92,18 @@ export default function ArticleScreen() {
   let article: NewsArticle | null = null;
   try {
     if (articleStr) article = JSON.parse(articleStr as string);
-  } catch (e) {}
+  } catch {}
 
   if (!article) {
     return (
-      <View style={[styles.container, { paddingTop: topPad }]}>
-        <View style={styles.navBar}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[s.container, { paddingTop: topPad }]}>
+        <View style={s.navBar}>
+          <Pressable onPress={() => router.back()} style={s.backBtn}>
             <Ionicons name="chevron-back" size={22} color={C.text} />
           </Pressable>
         </View>
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Article not found</Text>
+        <View style={s.empty}>
+          <Text style={s.emptyText}>Article not found</Text>
         </View>
       </View>
     );
@@ -126,94 +114,77 @@ export default function ArticleScreen() {
   const leagueColor = rawColor === "#013087" || rawColor === "#002D72" ? "#4A90D9"
     : rawColor === "#1A1A2E" ? "#4CAF50" : rawColor;
 
-  // Cache key for translate includes the sport
   const cacheKey = activeMode === "translate" ? `translate:${translateSport}` : activeMode;
-  const displayText = rewriteCache[cacheKey] ?? (activeMode === "pro" ? article.summary : null);
+  const aiText = activeMode !== "pro" ? (rewriteCache[cacheKey] ?? null) : null;
+  const hasImage = !!article.imageUrl && !imageError;
 
-  const loadingLabel: Record<ReadingMode, string> = {
-    pro:       "",
-    simple:    "Simplifying…",
-    toddler:   "Making it silly…",
-    translate: `Translating to ${TRANSLATE_SPORTS.find(s => s.id === translateSport)?.label ?? "sport"}…`,
-  };
-
-  function fadeSwap(fn: () => void) {
+  function doFade(fn?: () => void) {
     Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start();
-    fn();
+    fn?.();
   }
 
   async function fetchRewrite(mode: ReadingMode, sport?: string) {
     const key = mode === "translate" ? `translate:${sport ?? translateSport}` : mode;
-    if (rewriteCache[key]) {
-      fadeSwap(() => {});
-      return;
-    }
+    if (rewriteCache[key]) { doFade(); return; }
     setLoading(true);
     try {
-      const result = mode === "translate"
+      const res = mode === "translate"
         ? await api.rewriteArticle(article!.summary, article!.title, "translate", sport ?? translateSport)
         : await api.rewriteArticle(article!.summary, article!.title, mode as "simple" | "toddler");
-      setRewriteCache(prev => ({ ...prev, [key]: result.rewritten }));
+      setRewriteCache(prev => ({ ...prev, [key]: res.rewritten }));
     } catch {
       setRewriteCache(prev => ({ ...prev, [key]: article!.summary }));
     } finally {
       setLoading(false);
-      fadeSwap(() => {});
+      doFade();
     }
   }
 
-  async function switchMode(mode: ReadingMode) {
-    if (mode === activeMode && mode !== "translate") return;
+  async function tapMode(mode: ReadingMode) {
     Haptics.selectionAsync();
-
     if (mode === "translate") {
-      if (activeMode !== "translate") {
-        setActiveMode("translate");
-      }
+      setActiveMode("translate");
       setShowSportPicker(true);
       return;
     }
-
-    if (mode === "pro" || rewriteCache[mode]) {
-      fadeSwap(() => setActiveMode(mode));
-      return;
-    }
-
+    if (mode === activeMode) return;
     setActiveMode(mode);
+    if (mode === "pro" || rewriteCache[mode]) { doFade(); return; }
     await fetchRewrite(mode);
   }
 
-  async function selectTranslateSport(sport: string) {
+  async function pickSport(sport: string) {
     setTranslateSport(sport);
     setActiveMode("translate");
     await fetchRewrite("translate", sport);
   }
 
-  const hasImage = !!article.imageUrl && !imageError;
+  const activeSportLabel = TRANSLATE_SPORTS.find(s => s.id === translateSport);
 
   return (
-    <View style={[styles.container, { paddingTop: topPad }]}>
-      <View style={styles.navBar}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+    <View style={[s.container, { paddingTop: topPad }]}>
+      {/* Nav */}
+      <View style={s.navBar}>
+        <Pressable onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="chevron-back" size={22} color={C.text} />
         </Pressable>
-        <Text style={styles.navSource}>{article.source}</Text>
+        <Text style={s.navSource}>{article.source}</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: botPad + 24 }]}
+        contentContainerStyle={[s.scroll, { paddingBottom: botPad + 24 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero image */}
         {hasImage && (
-          <View style={styles.heroImageWrap}>
+          <View style={s.heroWrap}>
             <Image
               source={{ uri: article.imageUrl! }}
-              style={styles.heroImage}
+              style={s.hero}
               resizeMode="cover"
               onError={() => setImageError(true)}
             />
@@ -221,113 +192,95 @@ export default function ArticleScreen() {
         )}
 
         {/* Tags */}
-        <View style={styles.tagsRow}>
+        <View style={s.tagsRow}>
           {article.tags.slice(0, 3).map(tag => (
-            <View key={tag} style={[styles.tag, { backgroundColor: leagueColor + "22" }]}>
-              <Text style={[styles.tagText, { color: leagueColor }]}>{tag}</Text>
+            <View key={tag} style={[s.tag, { backgroundColor: leagueColor + "22" }]}>
+              <Text style={[s.tagText, { color: leagueColor }]}>{tag}</Text>
             </View>
           ))}
         </View>
 
-        <Text style={styles.title}>{article.title}</Text>
+        {/* Title */}
+        <Text style={s.title}>{article.title}</Text>
 
-        <View style={styles.meta}>
-          <View style={styles.sourceRow}>
-            <View style={styles.sourceIcon}>
-              <Text style={styles.sourceIconText}>{article.source.charAt(0)}</Text>
+        {/* Meta */}
+        <View style={s.meta}>
+          <View style={s.sourceRow}>
+            <View style={s.sourceIcon}>
+              <Text style={s.sourceIconText}>{article.source.charAt(0)}</Text>
             </View>
-            <Text style={styles.sourceName}>{article.source}</Text>
+            <Text style={s.sourceName}>{article.source}</Text>
           </View>
-          <Text style={styles.time}>{timeAgo(article.publishedAt)}</Text>
+          <Text style={s.time}>{timeAgo(article.publishedAt)}</Text>
         </View>
 
-        {/* ── Reading Mode Banner ── */}
-        <View style={[styles.summaryBanner, { borderColor: leagueColor + "44" }]}>
-          <View style={styles.bannerHeader}>
-            <View style={styles.bannerTitleRow}>
-              <Ionicons name="sparkles" size={13} color={leagueColor} />
-              <Text style={[styles.bannerLabel, { color: leagueColor }]}>AI Summary</Text>
-            </View>
-            <Text style={styles.modeDesc}>
-              {activeMode === "translate"
-                ? `Told through the lens of ${TRANSLATE_SPORTS.find(s => s.id === translateSport)?.label ?? translateSport}`
-                : MODE_DESCRIPTIONS[activeMode]}
-            </Text>
-          </View>
-
-          {/* Mode pills */}
-          <View style={styles.modeRow}>
+        {/* ── AI Reading Mode pills ── */}
+        <View style={s.pillsWrap}>
+          <View style={s.pillsRow}>
             {MODES.map(m => {
               const isActive = activeMode === m.id;
               return (
                 <Pressable
                   key={m.id}
-                  onPress={() => switchMode(m.id)}
-                  style={[
-                    styles.modePill,
-                    isActive && { backgroundColor: leagueColor + "22", borderColor: leagueColor + "66" },
-                  ]}
+                  onPress={() => tapMode(m.id)}
+                  style={[s.pill, isActive && { backgroundColor: leagueColor + "28", borderColor: leagueColor + "88" }]}
                 >
-                  <Text style={styles.modeEmoji}>{m.emoji}</Text>
-                  <Text style={[styles.modeLabel, isActive && { color: leagueColor }]}>{m.label}</Text>
+                  <Text style={s.pillEmoji}>{m.emoji}</Text>
+                  <Text style={[s.pillLabel, isActive && { color: leagueColor }]}>{m.label}</Text>
                 </Pressable>
               );
             })}
           </View>
 
-          {/* Translate sport selector row */}
+          {/* Translate sport selector */}
           {activeMode === "translate" && (
             <Pressable
-              style={[styles.sportSelector, { borderColor: leagueColor + "44" }]}
+              style={[s.sportChip, { borderColor: leagueColor + "55" }]}
               onPress={() => setShowSportPicker(true)}
             >
-              <Text style={styles.sportSelectorEmoji}>
-                {TRANSLATE_SPORTS.find(s => s.id === translateSport)?.emoji ?? "🏟️"}
+              <Text style={s.sportChipEmoji}>{activeSportLabel?.emoji ?? "🏟️"}</Text>
+              <Text style={[s.sportChipLabel, { color: leagueColor }]}>
+                {activeSportLabel?.label ?? "Sport"}
               </Text>
-              <Text style={[styles.sportSelectorLabel, { color: leagueColor }]}>
-                {TRANSLATE_SPORTS.find(s => s.id === translateSport)?.label ?? translateSport}
-              </Text>
-              <Ionicons name="chevron-down" size={14} color={leagueColor} />
+              <Ionicons name="chevron-down" size={12} color={leagueColor} />
             </Pressable>
           )}
 
-          {/* Content area */}
-          <View style={styles.summaryContent}>
-            {loading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color={leagueColor} />
-                <Text style={[styles.loadingText, { color: leagueColor }]}>
-                  {loadingLabel[activeMode]}
-                </Text>
+          {/* AI bubble — only shows when a non-pro mode is active */}
+          {activeMode !== "pro" && (
+            <View style={[s.aiBubble, { borderColor: leagueColor + "44" }]}>
+              <View style={s.aiBubbleHeader}>
+                <Ionicons name="sparkles" size={11} color={leagueColor} />
+                <Text style={[s.aiBubbleTitle, { color: leagueColor }]}>AI Take</Text>
               </View>
-            ) : (
-              <Animated.Text style={[styles.summaryText, { opacity: fadeAnim }]}>
-                {displayText ?? article.summary}
-              </Animated.Text>
-            )}
-          </View>
-
-          {activeMode === "toddler" && !loading && (
-            <View style={styles.toddlerBadge}>
-              <Text style={styles.toddlerBadgeText}>🧸 Baby Mode</Text>
+              {loading ? (
+                <View style={s.loadingRow}>
+                  <ActivityIndicator size="small" color={leagueColor} />
+                  <Text style={[s.loadingText, { color: leagueColor }]}>
+                    {activeMode === "toddler" ? "Making it silly…"
+                      : activeMode === "translate" ? `Translating to ${activeSportLabel?.label ?? "sport"}…`
+                      : "Simplifying…"}
+                  </Text>
+                </View>
+              ) : (
+                <Animated.Text style={[s.aiText, { opacity: fadeAnim }]}>
+                  {aiText ?? article.summary}
+                </Animated.Text>
+              )}
             </View>
           )}
         </View>
 
-        {/* Full article content */}
-        {article.content ? (
-          <Text style={styles.content}>{article.content}</Text>
-        ) : (
-          <Text style={styles.contentPlaceholder}>
-            Full article available at {article.source}. Tap below to read more.
-          </Text>
-        )}
+        {/* ── Article body — ALWAYS the original, never changes ── */}
+        <Text style={s.body}>
+          {article.content || article.summary}
+        </Text>
 
         <Pressable
-          style={[styles.readMoreBtn, { borderColor: leagueColor + "44" }]}
+          style={[s.readMoreBtn, { borderColor: leagueColor + "44" }]}
           onPress={() => Linking.openURL(article!.sourceUrl).catch(() => {})}
         >
-          <Text style={[styles.readMoreText, { color: leagueColor }]}>Read Full Article</Text>
+          <Text style={[s.readMoreText, { color: leagueColor }]}>Read Full Article</Text>
           <Ionicons name="open-outline" size={16} color={leagueColor} />
         </Pressable>
       </ScrollView>
@@ -335,14 +288,14 @@ export default function ArticleScreen() {
       <SportPickerModal
         visible={showSportPicker}
         onClose={() => setShowSportPicker(false)}
-        onSelect={selectTranslateSport}
+        onSelect={pickSport}
         leagueColor={leagueColor}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   navBar: {
     flexDirection: "row", alignItems: "center",
@@ -353,110 +306,91 @@ const styles = StyleSheet.create({
     flex: 1, textAlign: "center", color: C.textTertiary,
     fontSize: 14, fontFamily: "Inter_500Medium",
   },
-  scroll: { paddingHorizontal: 20, gap: 16 },
+  scroll: { paddingHorizontal: 20, gap: 14 },
 
-  heroImageWrap: {
-    marginHorizontal: -20,
-    height: 200,
-    overflow: "hidden",
-    borderRadius: 0,
-  },
-  heroImage: { width: "100%", height: "100%" },
+  heroWrap: { marginHorizontal: -20, height: 200, overflow: "hidden" },
+  hero: { width: "100%", height: "100%" },
 
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   tagText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.5 },
 
   title: {
-    fontSize: 26, fontWeight: "800", color: C.text,
-    fontFamily: "Inter_700Bold", lineHeight: 34,
+    fontSize: 24, fontWeight: "800", color: C.text,
+    fontFamily: "Inter_700Bold", lineHeight: 32,
   },
   meta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sourceRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   sourceIcon: {
-    width: 26, height: 26, borderRadius: 13,
+    width: 24, height: 24, borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center", justifyContent: "center",
   },
-  sourceIconText: { color: C.text, fontSize: 12, fontWeight: "700" },
+  sourceIconText: { color: C.text, fontSize: 11, fontWeight: "700" },
   sourceName: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium" },
-  time: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  time: { color: C.textTertiary, fontSize: 13 },
 
-  summaryBanner: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 18, padding: 16,
-    borderWidth: 1, gap: 14,
-  },
-  bannerHeader: { gap: 3 },
-  bannerTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  bannerLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 0.8 },
-  modeDesc: { color: C.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular", marginLeft: 19 },
-
-  modeRow: { flexDirection: "row", gap: 6 },
-  modePill: {
+  // ── Pills ──
+  pillsWrap: { gap: 10 },
+  pillsRow: { flexDirection: "row", gap: 6 },
+  pill: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 4, paddingVertical: 8, paddingHorizontal: 6,
-    borderRadius: 12, borderWidth: 1.5,
+    gap: 5, paddingVertical: 8, paddingHorizontal: 6,
+    borderRadius: 20, borderWidth: 1.5,
     backgroundColor: "rgba(255,255,255,0.04)",
     borderColor: "rgba(255,255,255,0.1)",
   },
-  modeEmoji: { fontSize: 13 },
-  modeLabel: {
+  pillEmoji: { fontSize: 13 },
+  pillLabel: {
     color: C.textSecondary, fontSize: 11,
-    fontWeight: "700", fontFamily: "Inter_600SemiBold",
+    fontWeight: "700", letterSpacing: 0.3,
   },
 
-  sportSelector: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingVertical: 9, paddingHorizontal: 14,
-    borderRadius: 10, borderWidth: 1,
+  sportChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    alignSelf: "flex-start",
+    paddingVertical: 7, paddingHorizontal: 13,
+    borderRadius: 20, borderWidth: 1,
     backgroundColor: "rgba(255,255,255,0.05)",
-    alignSelf: "flex-start",
   },
-  sportSelectorEmoji: { fontSize: 16 },
-  sportSelectorLabel: { fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  sportChipEmoji: { fontSize: 15 },
+  sportChipLabel: { fontSize: 13, fontWeight: "700" },
 
-  summaryContent: { minHeight: 60 },
-  loadingRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
-  loadingText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_500Medium" },
-  summaryText: {
-    color: C.textSecondary, fontSize: 15,
-    lineHeight: 23, fontFamily: "Inter_400Regular",
+  // ── AI bubble ──
+  aiBubble: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 14, padding: 14,
+    borderWidth: 1, gap: 8,
+  },
+  aiBubbleHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
+  aiBubbleTitle: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
+  loadingRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  loadingText: { fontSize: 13, fontWeight: "600" },
+  aiText: {
+    color: C.textSecondary, fontSize: 14,
+    lineHeight: 21, fontFamily: "Inter_400Regular",
   },
 
-  toddlerBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,200,50,0.12)",
-    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
-    borderWidth: 1, borderColor: "rgba(255,200,50,0.25)",
-  },
-  toddlerBadgeText: { color: "#FFD060", fontSize: 11, fontWeight: "700" },
-
-  content: {
+  // ── Article body — always the original ──
+  body: {
     color: C.text, fontSize: 16,
     lineHeight: 26, fontFamily: "Inter_400Regular",
   },
-  contentPlaceholder: {
-    color: C.textSecondary, fontSize: 15,
-    lineHeight: 24, fontFamily: "Inter_400Regular",
-  },
+
   readMoreBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 8, backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 14, paddingVertical: 14,
-    borderWidth: 1, marginTop: 8,
+    borderWidth: 1, marginTop: 4,
   },
   readMoreText: { fontSize: 15, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
-  emptyText: { color: C.textTertiary, fontSize: 16, fontFamily: "Inter_400Regular" },
+  emptyText: { color: C.textTertiary, fontSize: 16 },
 });
 
 const picker = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
+  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
   sheet: {
     backgroundColor: "#1C1C1E",
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
@@ -466,14 +400,14 @@ const picker = StyleSheet.create({
   handle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: "rgba(255,255,255,0.2)",
-    alignSelf: "center", marginBottom: 20,
+    alignSelf: "center", marginBottom: 18,
   },
   title: {
     color: "#fff", fontSize: 20, fontWeight: "800",
     fontFamily: "Inter_700Bold", textAlign: "center",
   },
   subtitle: {
-    color: "rgba(255,255,255,0.45)", fontSize: 13,
+    color: "rgba(255,255,255,0.4)", fontSize: 13,
     textAlign: "center", marginTop: 4, marginBottom: 20,
     fontFamily: "Inter_400Regular",
   },
@@ -486,8 +420,7 @@ const picker = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: 1,
-    gap: 6,
+    borderWidth: 1, gap: 6,
   },
   sportEmoji: { fontSize: 28 },
   sportLabel: {
