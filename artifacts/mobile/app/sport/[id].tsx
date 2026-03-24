@@ -17,9 +17,8 @@ import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { getSportById, type SportCategory } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
-import type { Game, NewsArticle } from "@/utils/api";
+import type { Game, SportNewsArticle, UpcomingEvent } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
-import { NewsCard } from "@/components/NewsCard";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
@@ -83,24 +82,6 @@ function AthleteChip({
   );
 }
 
-// ─── News mini card ───────────────────────────────────────────────────────────
-function NewsRow({ article }: { article: NewsArticle }) {
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.newsRow, { opacity: pressed ? 0.75 : 1 }]}
-      onPress={() =>
-        router.push({ pathname: "/article/[id]", params: { id: article.id } } as any)
-      }
-    >
-      <View style={styles.newsRowDot} />
-      <Text style={styles.newsRowText} numberOfLines={2}>
-        {article.title}
-      </Text>
-      <Ionicons name="chevron-forward" size={14} color={C.textSecondary} />
-    </Pressable>
-  );
-}
-
 // ─── League chip ──────────────────────────────────────────────────────────────
 function LeagueChip({
   label,
@@ -142,24 +123,34 @@ export default function SportBoardScreen() {
   const sport = getSportById(id ?? "");
   const [activeLeague, setActiveLeague] = useState<string>("all");
 
-  const { data: gamesData, isLoading: gamesLoading, refetch } = useQuery({
+  const sportId = sport?.id ?? id ?? "";
+
+  const { data: gamesData, isLoading: gamesLoading, refetch: refetchGames } = useQuery({
     queryKey: ["games"],
     queryFn: () => api.getGames(),
     staleTime: 60_000,
   });
 
-  const { data: newsData, isLoading: newsLoading } = useQuery({
-    queryKey: ["news"],
-    queryFn: () => api.getNews(),
+  const { data: sportNewsData, isLoading: newsLoading, refetch: refetchNews } = useQuery({
+    queryKey: ["sport-news", sportId],
+    queryFn: () => api.getSportNews(sportId, 12),
     staleTime: 120_000,
+    enabled: !!sportId,
+  });
+
+  const { data: upcomingData, refetch: refetchUpcoming } = useQuery({
+    queryKey: ["upcoming", sportId],
+    queryFn: () => api.getUpcomingEvents(sportId),
+    staleTime: 120_000,
+    enabled: !!sportId,
   });
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming()]);
     setRefreshing(false);
-  }, [refetch]);
+  }, [refetchGames, refetchNews, refetchUpcoming]);
 
   const sportLeagueKeys = useMemo(
     () => new Set(sport?.leagues.map((l) => l.key) ?? []),
@@ -177,18 +168,8 @@ export default function SportBoardScreen() {
       .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
   }, [gamesData, sportLeagueKeys, activeLeague]);
 
-  const filteredNews = useMemo(() => {
-    const articles: NewsArticle[] = (newsData as any)?.articles ?? [];
-    return articles.filter((a) => {
-      const articleLeagues: string[] = (a as any).leagues ?? [];
-      const hasMatch = articleLeagues.some((l) => sportLeagueKeys.has(l));
-      if (!hasMatch) return false;
-      if (activeLeague !== "all") {
-        return articleLeagues.includes(activeLeague);
-      }
-      return true;
-    }).slice(0, 6);
-  }, [newsData, sportLeagueKeys, activeLeague]);
+  const sportNews: SportNewsArticle[] = sportNewsData?.articles ?? [];
+  const upcomingEvents: UpcomingEvent[] = upcomingData?.events ?? [];
 
   const topAthletes = useMemo(() => {
     const leagueFilter =
@@ -369,16 +350,43 @@ export default function SportBoardScreen() {
           </View>
         )}
 
+        {/* ── Upcoming Events ────────────────────────────────────────── */}
+        {upcomingEvents.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Upcoming & Recent</Text>
+            </View>
+            {upcomingEvents.slice(0, 8).map((ev) => (
+              <View key={ev.id} style={styles.eventRow}>
+                <View style={[styles.eventTypeBadge, {
+                  backgroundColor: ev.type === "live" ? "#E53935" : ev.type === "result" ? C.textTertiary + "33" : accentColor + "33",
+                }]}>
+                  <Text style={[styles.eventTypeText, {
+                    color: ev.type === "live" ? "#fff" : ev.type === "result" ? C.textSecondary : accentColor,
+                  }]}>{ev.type === "live" ? "LIVE" : ev.type === "result" ? "FINAL" : "UPCOMING"}</Text>
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.eventName} numberOfLines={2}>{ev.name}</Text>
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+                    <Text style={styles.eventMeta}>
+                      {ev.date ? new Date(ev.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                    </Text>
+                    {ev.venue && <Text style={styles.eventMeta} numberOfLines={1}>📍 {ev.venue}</Text>}
+                    <Text style={[styles.eventMeta, { color: accentColor }]}>{ev.league}</Text>
+                  </View>
+                </View>
+                {ev.homeScore != null && ev.awayScore != null && (
+                  <Text style={styles.eventScore}>{ev.homeScore}-{ev.awayScore}</Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* ── Latest News ────────────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Latest News</Text>
-            <Pressable
-              onPress={() => router.push("/(tabs)/news" as any)}
-              style={styles.seeAllBtn}
-            >
-              <Text style={[styles.seeAllText, { color: accentColor }]}>See all →</Text>
-            </Pressable>
           </View>
 
           {newsLoading ? (
@@ -386,13 +394,24 @@ export default function SportBoardScreen() {
               <NewsCardSkeleton />
               <NewsCardSkeleton />
             </>
-          ) : filteredNews.length === 0 ? (
+          ) : sportNews.length === 0 ? (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyCardSub}>No news right now — check back soon</Text>
             </View>
           ) : (
-            filteredNews.map((article) => (
-              <NewsRow key={article.id} article={article} />
+            sportNews.map((article) => (
+              <Pressable
+                key={article.id}
+                style={({ pressed }) => [styles.newsRow, { opacity: pressed ? 0.75 : 1 }]}
+              >
+                <View style={styles.newsRowDot} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.newsRowText} numberOfLines={2}>{article.title}</Text>
+                  <Text style={styles.newsRowMeta} numberOfLines={1}>
+                    {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""} · {article.leagues?.join(", ")}
+                  </Text>
+                </View>
+              </Pressable>
             ))
           )}
         </View>
@@ -674,5 +693,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Inter_400Regular",
     color: C.textSecondary,
+  },
+
+  eventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.separator,
+  },
+  eventTypeBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    minWidth: 52,
+    alignItems: "center",
+  },
+  eventTypeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
+  },
+  eventName: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    lineHeight: 19,
+  },
+  eventMeta: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+  },
+  eventScore: {
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    marginLeft: 8,
+  },
+  newsRowMeta: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    marginTop: 2,
   },
 });

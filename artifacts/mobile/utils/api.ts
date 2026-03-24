@@ -72,6 +72,12 @@ export const api = {
     if (league) params.set("league", league);
     return apiFetch<{ athletes: AthleteSearchResult[] }>(`/sports/athlete/search?${params}`);
   },
+
+  getSportNews: (sport: string, limit = 10) =>
+    apiFetch<{ articles: SportNewsArticle[] }>(`/sports/news/${encodeURIComponent(sport)}?limit=${limit}`),
+
+  getUpcomingEvents: (sport: string) =>
+    apiFetch<{ events: UpcomingEvent[] }>(`/sports/upcoming/${encodeURIComponent(sport)}`),
 };
 
 export type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
@@ -139,6 +145,32 @@ export interface NewsArticle {
   tags: string[];
   teams: string[];
   leagues: string[];
+}
+
+export interface SportNewsArticle {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  imageUrl: string | null;
+  publishedAt: string;
+  leagues: string[];
+}
+
+export interface UpcomingEvent {
+  id: string;
+  type: "live" | "upcoming" | "result";
+  name: string;
+  league: string;
+  date: string;
+  time: string | null;
+  venue: string | null;
+  source: string;
+  status?: string | null;
+  homeTeam?: string | null;
+  awayTeam?: string | null;
+  homeScore?: string | null;
+  awayScore?: string | null;
 }
 
 export interface RecapRequest {

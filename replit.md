@@ -124,6 +124,8 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 - `GET /api/sports/game/:id` — **live ESPN** game detail with key plays, stats, lineups; 15s/30s cache; **fire-and-forget DB ingestion** to `sport_game_events` + `sport_game_states`
 - `GET /api/sports/standings?league=` — **live ESPN** standings for NBA/NFL/MLB/MLS/NHL/WNBA/NCAAB/EPL/UCL/LIGA; 5-minute cache
 - `GET /api/news?teams=&leagues=` — **live ESPN** news, filterable by team/league; 2-minute cache
+- `GET /api/sports/news/:sport` — **live ESPN** sport-specific news (basketball, football, baseball, hockey, soccer, tennis, combat, golf, motorsports, college, womens, track, xgames, esports); 2-minute cache
+- `GET /api/sports/upcoming/:sport` — **live TheSportsDB + ESPN** upcoming/recent events per sport; 5-minute cache
 - `POST /api/ai/summarize` — OpenAI gpt-4o-mini article/game summary
 - `POST /api/ai/recap` — OpenAI gpt-4o-mini postgame recap (JSON format)
 - `GET /api/user/preferences?userId=` — fetch from Postgres

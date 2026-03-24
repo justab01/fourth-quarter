@@ -126,11 +126,22 @@ async function fetchStory(rawId: string): Promise<string | null> {
 
 // ─── League mapping ───────────────────────────────────────────────────────────
 const LEAGUE_EXACT: Record<string, string> = {
-  NBA: "NBA", NFL: "NFL", MLB: "MLB", MLS: "MLS",
+  NBA: "NBA", NFL: "NFL", MLB: "MLB", MLS: "MLS", NHL: "NHL",
   BASEBALL: "MLB", "MAJOR LEAGUE BASEBALL": "MLB",
   "MAJOR LEAGUE SOCCER": "MLS",
-  NCAAB: "NCAA", NCAAF: "NCAA",
-  "COLLEGE FOOTBALL": "NCAA", "COLLEGE BASKETBALL": "NCAA",
+  "NATIONAL HOCKEY LEAGUE": "NHL", HOCKEY: "NHL",
+  NCAAB: "NCAAB", NCAAF: "NCAAF", NCAA: "NCAAB",
+  "COLLEGE FOOTBALL": "NCAAF", "COLLEGE BASKETBALL": "NCAAB",
+  ATP: "ATP", WTA: "WTA", TENNIS: "ATP",
+  UFC: "UFC", MMA: "UFC", "MIXED MARTIAL ARTS": "UFC",
+  BOXING: "BOXING",
+  PGA: "PGA", "PGA TOUR": "PGA", GOLF: "PGA",
+  F1: "F1", "FORMULA 1": "F1", "FORMULA ONE": "F1",
+  NASCAR: "NASCAR",
+  EPL: "EPL", "ENGLISH PREMIER LEAGUE": "EPL", "PREMIER LEAGUE": "EPL",
+  UCL: "UCL", "UEFA CHAMPIONS LEAGUE": "UCL", "CHAMPIONS LEAGUE": "UCL",
+  LIGA: "LIGA", "LA LIGA": "LIGA", "SPANISH PRIMERA DIVISION": "LIGA",
+  WNBA: "WNBA",
 };
 
 function normalizeLeague(desc: string): string | null {
@@ -141,7 +152,16 @@ const LEAGUE_NEWS_URLS: Record<string, string> = {
   NBA: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=15",
   NFL: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=15",
   MLB: "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/news?limit=15",
+  NHL: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=12",
   MLS: "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/news?limit=10",
+  EPL: "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/news?limit=10",
+  NCAAB: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/news?limit=10",
+  NCAAF: "https://site.api.espn.com/apis/site/v2/sports/football/college-football/news?limit=10",
+  ATP: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/news?limit=10",
+  UFC: "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/news?limit=10",
+  PGA: "https://site.api.espn.com/apis/site/v2/sports/golf/pga/news?limit=10",
+  F1: "https://site.api.espn.com/apis/site/v2/sports/racing/f1/news?limit=10",
+  WNBA: "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/news?limit=8",
 };
 
 // ─── Article mapping ──────────────────────────────────────────────────────────

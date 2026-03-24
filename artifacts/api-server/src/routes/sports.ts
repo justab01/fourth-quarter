@@ -212,6 +212,11 @@ const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
   WTA:      { espnPath: "tennis/wta",                         displaySport: "Tennis"     },
   UFC:      { espnPath: "mma/ufc",                            displaySport: "MMA"        },
   BOXING:   { espnPath: "boxing",                             displaySport: "Boxing"     },
+  // ── Golf, Racing ──────────────────────────────────────────────────────────
+  PGA:      { espnPath: "golf/pga",                           displaySport: "Golf"       },
+  LIV:      { espnPath: "golf/liv",                           displaySport: "Golf"       },
+  F1:       { espnPath: "racing/f1",                          displaySport: "Racing"     },
+  NASCAR:   { espnPath: "racing/nascar",                      displaySport: "Racing"     },
   // ── Multi-sport events (toggle ON when active) ────────────────────────────
   OLYMPICS: { espnPath: "olympics",                           displaySport: "Olympics"   },
   XGAMES:   { espnPath: "action-sports/xgames",              displaySport: "X Games"    },
@@ -621,7 +626,7 @@ router.get("/sports/games", async (req, res) => {
     ? (league.toUpperCase() === "ALL"
         ? Object.keys(LEAGUE_CONFIG)
         : league.toUpperCase().split(",").filter((l) => l in LEAGUE_CONFIG))
-    : ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING"];
+    : ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING", "PGA", "F1", "NASCAR"];
 
   try {
     const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l, espnDate)));
@@ -1574,6 +1579,233 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
   } catch (err) {
     console.error("Game log error:", err);
     res.status(500).json({ error: "Failed to fetch game log" });
+  }
+});
+
+// ─── Sport-specific news endpoint ─────────────────────────────────────────────
+// Maps sport category → ESPN news URLs
+const SPORT_NEWS_MAP: Record<string, { path: string; league: string }[]> = {
+  basketball: [
+    { path: "basketball/nba", league: "NBA" },
+    { path: "basketball/wnba", league: "WNBA" },
+    { path: "basketball/mens-college-basketball", league: "NCAAB" },
+  ],
+  football: [
+    { path: "football/nfl", league: "NFL" },
+    { path: "football/college-football", league: "NCAAF" },
+  ],
+  baseball: [{ path: "baseball/mlb", league: "MLB" }],
+  hockey: [{ path: "hockey/nhl", league: "NHL" }],
+  soccer: [
+    { path: "soccer/eng.1", league: "EPL" },
+    { path: "soccer/usa.1", league: "MLS" },
+  ],
+  tennis: [
+    { path: "tennis/atp", league: "ATP" },
+    { path: "tennis/wta", league: "WTA" },
+  ],
+  combat: [
+    { path: "mma/ufc", league: "UFC" },
+  ],
+  golf: [{ path: "golf/pga", league: "PGA" }],
+  motorsports: [
+    { path: "racing/f1", league: "F1" },
+  ],
+  college: [
+    { path: "basketball/mens-college-basketball", league: "NCAAB" },
+    { path: "football/college-football", league: "NCAAF" },
+  ],
+  womens: [
+    { path: "basketball/wnba", league: "WNBA" },
+    { path: "tennis/wta", league: "WTA" },
+  ],
+  track: [],
+  xgames: [],
+  esports: [],
+};
+
+router.get("/sports/news/:sport", async (req, res) => {
+  const sport = req.params.sport.toLowerCase();
+  const limit = Math.min(Number(req.query.limit ?? 10), 30);
+  const sources = SPORT_NEWS_MAP[sport];
+  if (!sources || sources.length === 0) {
+    res.json({ articles: [] });
+    return;
+  }
+
+  const cacheKey = `sport-news-${sport}-${limit}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    const results = await Promise.allSettled(
+      sources.map(async (s) => {
+        const url = `https://site.api.espn.com/apis/site/v2/sports/${s.path}/news?limit=${Math.ceil(limit / sources.length) + 2}`;
+        const json = await espnFetch(url) as any;
+        return (json.articles ?? []).map((a: any) => ({
+          id: `espn-${a.id ?? a.dataSourceIdentifier ?? Date.now()}`,
+          title: a.headline ?? "Sports Update",
+          summary: a.description ?? "",
+          source: "ESPN",
+          imageUrl: a.images?.[0]?.url ?? null,
+          publishedAt: a.published ?? new Date().toISOString(),
+          leagues: [s.league],
+        }));
+      })
+    );
+
+    const articles: any[] = [];
+    const seen = new Set<string>();
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        for (const a of r.value) {
+          if (!seen.has(a.id)) { seen.add(a.id); articles.push(a); }
+        }
+      }
+    }
+    articles.sort((a: any, b: any) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+    const response = { articles: articles.slice(0, limit) };
+    setCached(cacheKey, response, 300_000); // 5 min
+    res.json(response);
+  } catch (err) {
+    console.error("Sport news error:", err);
+    res.json({ articles: [] });
+  }
+});
+
+// ─── Upcoming events endpoint (TheSportsDB) ─────────────────────────────────
+// Maps sport → TheSportsDB league IDs
+const TSD_LEAGUE_IDS: Record<string, { id: number; name: string }[]> = {
+  combat: [
+    { id: 4443, name: "UFC" },
+  ],
+  tennis: [
+    { id: 1155, name: "ATP" },
+    { id: 1156, name: "WTA" },
+  ],
+  golf: [],
+  motorsports: [],
+  track: [],
+};
+
+const TSD_KEY = process.env.TSD_API_KEY ?? "123";
+
+router.get("/sports/upcoming/:sport", async (req, res) => {
+  const sport = req.params.sport.toLowerCase();
+  const cacheKey = `upcoming-${sport}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  const tsdLeagues = TSD_LEAGUE_IDS[sport] ?? [];
+
+  // Also pull upcoming from ESPN scoreboard for all leagues in this sport
+  const espnSources = SPORT_NEWS_MAP[sport] ?? [];
+  const espnLeagueKeys = espnSources.map(s => s.league).filter(l => l in LEAGUE_CONFIG);
+
+  try {
+    // TheSportsDB upcoming events
+    const tsdPromises = tsdLeagues.map(async (league) => {
+      try {
+        const url = `https://www.thesportsdb.com/api/v1/json/${TSD_KEY}/eventsnextleague.php?id=${league.id}`;
+        const json = await espnFetch(url) as any;
+        return (json.events ?? []).map((e: any) => ({
+          id: `tsd-${e.idEvent}`,
+          type: "upcoming" as const,
+          name: e.strEvent ?? "",
+          league: league.name,
+          date: e.dateEvent ?? "",
+          time: e.strTime ?? null,
+          venue: e.strVenue ?? null,
+          source: "TheSportsDB",
+        }));
+      } catch { return []; }
+    });
+
+    // ESPN scoreboard for upcoming/live events
+    const espnPromises = espnLeagueKeys.map(async (lg) => {
+      try {
+        const cfg = LEAGUE_CONFIG[lg];
+        if (!cfg) return [];
+        const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard`;
+        const json = await espnFetch(url) as any;
+        return (json.events ?? []).map((e: any) => {
+          const state = e.status?.type?.state;
+          return {
+            id: `espn-ev-${e.id}`,
+            type: state === "in" ? "live" as const : state === "post" ? "result" as const : "upcoming" as const,
+            name: e.name ?? e.shortName ?? "",
+            league: lg,
+            date: e.date ?? "",
+            time: null,
+            venue: e.competitions?.[0]?.venue?.fullName ?? null,
+            source: "ESPN",
+            status: e.status?.type?.shortDetail ?? null,
+            homeTeam: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "home")?.team?.displayName ?? null,
+            awayTeam: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "away")?.team?.displayName ?? null,
+            homeScore: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "home")?.score ?? null,
+            awayScore: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "away")?.score ?? null,
+          };
+        });
+      } catch { return []; }
+    });
+
+    const [tsdResults, espnResults] = await Promise.all([
+      Promise.allSettled(tsdPromises),
+      Promise.allSettled(espnPromises),
+    ]);
+
+    const events: any[] = [];
+    const seen = new Set<string>();
+    for (const r of [...espnResults, ...tsdResults]) {
+      if (r.status === "fulfilled") {
+        for (const e of r.value) {
+          if (!seen.has(e.id)) { seen.add(e.id); events.push(e); }
+        }
+      }
+    }
+
+    // Sort: live first, then upcoming by date, then results
+    const typeOrder: Record<string, number> = { live: 0, upcoming: 1, result: 2 };
+    events.sort((a, b) => {
+      const od = (typeOrder[a.type] ?? 1) - (typeOrder[b.type] ?? 1);
+      if (od !== 0) return od;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+
+    // Also fetch recent results from TheSportsDB
+    const recentPromises = tsdLeagues.map(async (league) => {
+      try {
+        const url = `https://www.thesportsdb.com/api/v1/json/${TSD_KEY}/eventspastleague.php?id=${league.id}`;
+        const json = await espnFetch(url) as any;
+        return (json.events ?? []).slice(0, 5).map((e: any) => ({
+          id: `tsd-past-${e.idEvent}`,
+          type: "result" as const,
+          name: e.strEvent ?? "",
+          league: league.name,
+          date: e.dateEvent ?? "",
+          venue: e.strVenue ?? null,
+          source: "TheSportsDB",
+          homeScore: e.intHomeScore ?? null,
+          awayScore: e.intAwayScore ?? null,
+        }));
+      } catch { return []; }
+    });
+    const recentResults = await Promise.allSettled(recentPromises);
+    for (const r of recentResults) {
+      if (r.status === "fulfilled") {
+        for (const e of r.value) {
+          if (!seen.has(e.id)) { seen.add(e.id); events.push(e); }
+        }
+      }
+    }
+
+    const response = { events };
+    setCached(cacheKey, response, 300_000); // 5 min
+    res.json(response);
+  } catch (err) {
+    console.error("Upcoming events error:", err);
+    res.json({ events: [] });
   }
 });
 

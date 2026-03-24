@@ -166,7 +166,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "timer-outline",
     color: "#FF6B35",
     gradient: ["#FF6B35", "#8B2A08"],
-    tagline: "World Athletics · Olympics",
+    tagline: "World Athletics · Diamond League · Olympics",
     leagues: [
       { key: "OLYMPICS", label: "Olympics" },
     ],
