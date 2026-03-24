@@ -1,42 +1,33 @@
 import { Router, type IRouter } from "express";
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
 const router: IRouter = Router();
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY ?? "dummy",
-  httpOptions: {
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
 });
 
-const MODEL = "gemini-2.5-flash";
-
-async function generateText(systemPrompt: string, userPrompt: string, jsonMode = false): Promise<string> {
-  const config: Record<string, unknown> = { maxOutputTokens: 8192 };
-  if (jsonMode) config.responseMimeType = "application/json";
-
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-    config: {
-      ...config,
-      systemInstruction: systemPrompt,
-    },
-  });
-  return response.text ?? "";
-}
+const MODEL = "llama-3.1-8b-instant";
 
 router.post("/ai/summarize", async (req, res) => {
   const { type, content, title } = req.body;
 
   try {
-    const systemPrompt = "You are a sports journalist assistant. Be concise and accurate.";
-    const userPrompt = type === "article"
+    const prompt = type === "article"
       ? `Summarize this sports article in 2-3 sentences for a fan. Be concise and highlight the most important points.\n\nTitle: ${title || ""}\n\nContent: ${content}`
       : `Give a quick 1-2 sentence summary of this game's current situation for a sports fan.\n\nDetails: ${content}`;
 
-    const summary = await generateText(systemPrompt, userPrompt);
+    const completion = await groq.chat.completions.create({
+      model: MODEL,
+      max_tokens: 150,
+      messages: [
+        { role: "system", content: "You are a sports journalist assistant. Be concise and accurate." },
+        { role: "user", content: prompt },
+      ],
+    });
+
+    const summary = completion.choices[0]?.message?.content ?? "Summary unavailable.";
     res.json({ summary });
   } catch (err) {
     console.error("AI summarize error:", err);
@@ -53,8 +44,14 @@ router.post("/ai/recap", async (req, res) => {
   const loseScore = Math.min(homeScore, awayScore);
 
   try {
-    const systemPrompt = "You are a sports journalist. Respond only with valid JSON.";
-    const userPrompt = `Generate a postgame recap for this ${league} game.
+    const completion = await groq.chat.completions.create({
+      model: MODEL,
+      max_tokens: 300,
+      messages: [
+        { role: "system", content: "You are a sports journalist. Respond only with valid JSON." },
+        {
+          role: "user",
+          content: `Generate a postgame recap for this ${league} game.
 
 Result: ${winner} defeated ${loser} ${winScore}-${loseScore}
 Key plays: ${(keyPlays as string[]).slice(0, 5).join("; ")}
@@ -64,9 +61,13 @@ Provide:
 2. The single key player who made the biggest impact (just a name)
 3. A 1-2 sentence "what it means" for standings/playoff implications
 
-Respond with JSON only: { "summary": "...", "keyPlayer": "...", "whatItMeans": "..." }`;
+Respond with JSON only: { "summary": "...", "keyPlayer": "...", "whatItMeans": "..." }`,
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
 
-    const raw = await generateText(systemPrompt, userPrompt, true);
+    const raw = completion.choices[0]?.message?.content ?? "{}";
     const parsed = JSON.parse(raw);
 
     res.json({
@@ -110,8 +111,15 @@ router.post("/ai/rewrite", async (req, res) => {
   }
 
   try {
-    const userPrompt = `Title: ${title || ""}\n\n${content}`;
-    const rewritten = await generateText(systemPrompt, userPrompt);
+    const completion = await groq.chat.completions.create({
+      model: MODEL,
+      max_tokens: 200,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Title: ${title || ""}\n\n${content}` },
+      ],
+    });
+    const rewritten = completion.choices[0]?.message?.content ?? content;
     res.json({ rewritten });
   } catch (err) {
     console.error("AI rewrite error:", err);
