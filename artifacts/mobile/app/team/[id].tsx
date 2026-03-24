@@ -309,7 +309,7 @@ function espnHeadshotUrl(athleteId: string, league: string): string | null {
   if (!athleteId) return null;
   const sport = HEADSHOT_SPORT[league.toUpperCase()];
   if (!sport) return null;
-  return `https://a.espncdn.com/combiner/i?img=/i/headshots/${sport}/players/full/${athleteId}.png&w=80&h=80&cb=1`;
+  return `https://a.espncdn.com/combiner/i?img=/i/headshots/${sport}/players/full/${athleteId}.png&w=120&h=120&cb=1`;
 }
 
 function PlayerAvatar({ player, teamColor, league }: { player: Player; teamColor: string; league: string }) {
@@ -320,14 +320,14 @@ function PlayerAvatar({ player, teamColor, league }: { player: Player; teamColor
       <Image
         source={{ uri: url }}
         style={roster.avatar}
-        resizeMode="cover"
+        resizeMode="contain"
         onError={() => setImgError(true)}
       />
     );
   }
   return (
-    <View style={[roster.avatar, { backgroundColor: `${teamColor}28` }]}>
-      <Text style={[roster.avatarNum, { color: teamColor }]}>{player.number}</Text>
+    <View style={[roster.avatar, roster.avatarFallback, { backgroundColor: `${teamColor}28`, borderColor: `${teamColor}44` }]}>
+      <Text style={[roster.avatarNum, { color: teamColor }]}>{player.number || "—"}</Text>
     </View>
   );
 }
@@ -385,6 +385,26 @@ function RosterTab({ team, teamColor, isLoading }: { team: TeamData; teamColor: 
   );
 }
 
+function DepthPlayerThumb({ player, teamColor, league, isStarter }: { player: Player; teamColor: string; league: string; isStarter: boolean }) {
+  const [err, setErr] = React.useState(false);
+  const url = player.athleteId ? espnHeadshotUrl(player.athleteId, league) : null;
+  if (url && !err) {
+    return (
+      <Image
+        source={{ uri: url }}
+        style={[depth.thumb, isStarter && { borderColor: `${teamColor}88` }]}
+        resizeMode="contain"
+        onError={() => setErr(true)}
+      />
+    );
+  }
+  return (
+    <View style={[depth.thumb, depth.thumbFallback, { backgroundColor: `${teamColor}22`, borderColor: isStarter ? `${teamColor}55` : "rgba(255,255,255,0.08)" }]}>
+      <Text style={[depth.thumbInitial, { color: teamColor }]}>{player.name.charAt(0)}</Text>
+    </View>
+  );
+}
+
 function DepthChartTab({ team, teamColor }: { team: TeamData; teamColor: string }) {
   const groups = groupRoster(team.roster);
   return (
@@ -402,6 +422,7 @@ function DepthChartTab({ team, teamColor }: { team: TeamData; teamColor: string 
               <View style={[depth.rank, { backgroundColor: i === 0 ? teamColor : "rgba(255,255,255,0.08)" }]}>
                 <Text style={[depth.rankText, { color: i === 0 ? "#fff" : C.textSecondary }]}>{i + 1}</Text>
               </View>
+              <DepthPlayerThumb player={p} teamColor={teamColor} league={team.league} isStarter={i === 0} />
               <Text style={depth.pos}>{p.position}</Text>
               <Text style={depth.name}>{p.name}</Text>
               <Text style={depth.num}>#{p.number}</Text>
@@ -717,11 +738,16 @@ const roster = StyleSheet.create({
     gap: 4,
   },
   avatar: {
-    width: 30, height: 30, borderRadius: 8,
-    alignItems: "center", justifyContent: "center",
+    width: 44, height: 44, borderRadius: 10,
     flexShrink: 0,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    overflow: "hidden",
   },
-  avatarNum: { fontSize: 11, fontWeight: "900", letterSpacing: 0.5 },
+  avatarFallback: {
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5,
+  },
+  avatarNum: { fontSize: 14, fontWeight: "900", letterSpacing: 0.5 },
   playerName: { color: C.text, fontSize: 14, fontFamily: "Inter_500Medium", flex: 1 },
   cell: { color: C.textSecondary, fontSize: 13, textAlign: "center", fontFamily: "Inter_400Regular" },
 });
@@ -729,10 +755,19 @@ const roster = StyleSheet.create({
 const depth = StyleSheet.create({
   section: { backgroundColor: C.card, borderRadius: 14, marginBottom: 12, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
   groupLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "800", letterSpacing: 1.1, padding: 12, paddingBottom: 6, backgroundColor: C.backgroundSecondary },
-  row: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 11, borderTopWidth: 1, borderTopColor: "rgba(80,77,71,0.15)" },
+  row: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, borderTopWidth: 1, borderTopColor: "rgba(80,77,71,0.15)" },
   rank: { width: 26, height: 26, borderRadius: 6, alignItems: "center", justifyContent: "center" },
   rankText: { fontSize: 11, fontWeight: "800" },
-  pos: { color: C.textTertiary, fontSize: 12, fontWeight: "700", width: 38 },
+  thumb: {
+    width: 36, height: 36, borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.10)",
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  thumbFallback: { alignItems: "center", justifyContent: "center" },
+  thumbInitial: { fontSize: 14, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  pos: { color: C.textTertiary, fontSize: 12, fontWeight: "700", width: 34 },
   name: { color: C.text, fontSize: 14, fontFamily: "Inter_500Medium", flex: 1 },
   num: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular" },
 });

@@ -786,17 +786,48 @@ export default function PlayerScreen() {
     }
   };
 
+  const HERO_H = topPad + 252;
+
   return (
     <View style={[styles.container, { paddingBottom: botPad }]}>
-      {/* ── Hero Header ── */}
-      <LinearGradient
-        colors={[team.color, `${team.color}AA`, C.background]}
-        style={[styles.hero, { paddingTop: topPad + 4 }]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        {/* Top bar */}
-        <View style={styles.topBar}>
+      {/* ── Hero Header — ESPN-style large headshot banner ── */}
+      <View style={[styles.heroContainer, { height: HERO_H }]}>
+        {/* Team-color gradient background */}
+        <LinearGradient
+          colors={[team.color, `${team.color}DD`, `${team.color}88`, C.background]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        {/* Bottom-fade overlay for text legibility */}
+        <LinearGradient
+          colors={["transparent", "rgba(12,12,12,0.92)"]}
+          style={[StyleSheet.absoluteFill, { top: "40%" }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
+
+        {/* Jersey number watermark — subtle background decoration */}
+        <Text style={styles.jerseyWatermark} numberOfLines={1}>
+          {player.number ? `#${player.number}` : ""}
+        </Text>
+
+        {/* Large headshot — right side, bottom-aligned, ESPN transparent-bg PNG */}
+        {headshotUrl && !headshotError ? (
+          <Image
+            source={{ uri: headshotUrl }}
+            style={styles.heroHeadshot}
+            resizeMode="contain"
+            onError={() => setHeadshotError(true)}
+          />
+        ) : (
+          <View style={styles.heroAvatarFallback}>
+            <Text style={styles.heroAvatarInitial}>{player.name.charAt(0).toUpperCase()}</Text>
+          </View>
+        )}
+
+        {/* Top bar — back + follow, absolutely positioned */}
+        <View style={[styles.topBar, { top: topPad + 8 }]}>
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </Pressable>
@@ -812,43 +843,27 @@ export default function PlayerScreen() {
           </Pressable>
         </View>
 
-        {/* Player identity */}
-        <View style={styles.playerIdentity}>
-          {/* Headshot or letter avatar */}
-          {headshotUrl && !headshotError ? (
-            <Image
-              source={{ uri: headshotUrl }}
-              style={[styles.headshotImg, { borderColor: `${team.color}60` }]}
-              onError={() => setHeadshotError(true)}
-            />
-          ) : (
-            <View style={[styles.playerAvatar, { backgroundColor: `${team.color}35`, borderColor: `${team.color}60` }]}>
-              <Text style={styles.avatarInitial}>{player.name.charAt(0).toUpperCase()}</Text>
+        {/* Player info — bottom-left overlay */}
+        <View style={styles.heroInfo}>
+          {player.number ? (
+            <View style={[styles.jerseyNumBadge, { backgroundColor: `${team.color}55` }]}>
+              <Text style={styles.jerseyNumText}>#{player.number}</Text>
             </View>
-          )}
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.playerName}>{player.name}</Text>
-            <Pressable
-              onPress={() => {
-                router.push({ pathname: "/team/[id]", params: { id: team.id } } as any);
-              }}
-            >
-              <Text style={styles.teamLink}>{team.name} · {team.league}</Text>
-            </Pressable>
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-              <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.height}</Text></View>
-              <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.weight}</Text></View>
-              {player.college && (
-                <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.college}</Text></View>
-              )}
-            </View>
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
-              <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
-            </View>
+          ) : null}
+          <Text style={styles.heroName} numberOfLines={2}>{player.name}</Text>
+          <Pressable onPress={() => router.push({ pathname: "/team/[id]", params: { id: team.id } } as any)}>
+            <Text style={styles.heroTeamLink}>{team.name} · {team.league}</Text>
+          </Pressable>
+          <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+            {player.height ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.height}</Text></View> : null}
+            {player.weight ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.weight}</Text></View> : null}
+            {player.college ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.college}</Text></View> : null}
+          </View>
+          <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
+            <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* ── Tab Bar ── */}
       <View style={styles.tabBar}>
@@ -883,27 +898,65 @@ export default function PlayerScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
-  hero: { paddingHorizontal: 16, paddingBottom: 20 },
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  backBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.25)" },
-  followBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.35)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.3)" },
+
+  heroContainer: {
+    width: "100%",
+    overflow: "hidden",
+    position: "relative",
+  },
+  jerseyWatermark: {
+    position: "absolute",
+    right: -8,
+    top: "8%",
+    fontSize: 180,
+    fontWeight: "900",
+    fontFamily: "Inter_700Bold",
+    color: "rgba(255,255,255,0.07)",
+    letterSpacing: -8,
+  },
+  heroHeadshot: {
+    position: "absolute",
+    right: -16,
+    bottom: 0,
+    width: width * 0.58,
+    height: 230,
+  },
+  heroAvatarFallback: {
+    position: "absolute",
+    right: 24,
+    bottom: 28,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroAvatarInitial: { color: "#fff", fontSize: 52, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  topBar: {
+    position: "absolute",
+    left: 0, right: 0,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  backBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.35)" },
+  followBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.40)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.28)" },
   followText: { color: "#fff", fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
-  playerIdentity: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
-  headshotImg: {
-    width: 80, height: 80, borderRadius: 40,
-    borderWidth: 2, flexShrink: 0,
-    backgroundColor: "rgba(255,255,255,0.1)",
+  heroInfo: {
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    right: width * 0.48,
   },
-  playerAvatar: {
-    width: 80, height: 80, borderRadius: 40,
-    alignItems: "center", justifyContent: "center",
-    borderWidth: 2, flexShrink: 0,
+  jerseyNumBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginBottom: 6,
   },
-  avatarInitial: { color: "#fff", fontSize: 32, fontWeight: "900", fontFamily: "Inter_700Bold" },
-  playerName: { color: "#fff", fontSize: 24, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 28 },
-  teamLink: { color: "rgba(255,255,255,0.75)", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 2 },
-  infoPill: { backgroundColor: "rgba(0,0,0,0.3)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  infoPillText: { color: "rgba(255,255,255,0.8)", fontSize: 11, fontFamily: "Inter_500Medium" },
+  jerseyNumText: { color: "rgba(255,255,255,0.95)", fontSize: 11, fontWeight: "900", letterSpacing: 0.5 },
+  heroName: { color: "#fff", fontSize: 26, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 30 },
+  heroTeamLink: { color: "rgba(255,255,255,0.72)", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 3 },
+  infoPill: { backgroundColor: "rgba(0,0,0,0.38)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  infoPillText: { color: "rgba(255,255,255,0.82)", fontSize: 11, fontFamily: "Inter_500Medium" },
   tabBar: { borderBottomWidth: 1, borderBottomColor: C.separator, backgroundColor: C.backgroundSecondary },
   tabScroll: { paddingHorizontal: 8 },
   tabItem: { alignItems: "center", paddingHorizontal: 14, paddingVertical: 12 },

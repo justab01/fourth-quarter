@@ -866,9 +866,9 @@ const s = StyleSheet.create({
   },
   playerNumBadge: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   playerNum: { color: C.textTertiary, fontSize: 12, fontWeight: "700" },
-  playerHeadshot: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.08)" },
-  playerHeadshotPlaceholder: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
-  playerHeadshotInitial: { color: C.textTertiary, fontSize: 12, fontWeight: "700" },
+  playerHeadshot: { width: 38, height: 38, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" },
+  playerHeadshotPlaceholder: { width: 38, height: 38, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
+  playerHeadshotInitial: { color: C.textTertiary, fontSize: 14, fontWeight: "700" },
   playerName: { flex: 1, color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
 
   empty: { color: C.textTertiary, fontSize: 14, textAlign: "center", paddingVertical: 20, fontFamily: "Inter_400Regular" },

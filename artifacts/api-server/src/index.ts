@@ -1,13 +1,10 @@
 import http from "http";
+import net from "net";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { createWsServer, broadcastGames, broadcastGameState } from "./lib/wsServer";
 
 process.on("uncaughtException", (err: NodeJS.ErrnoException) => {
-  if (err.code === "EADDRINUSE") {
-    logger.error({ err }, "Port already in use — exiting so the restart loop can retry");
-    process.exit(1);
-  }
   logger.error({ err }, "Uncaught exception — keeping server alive");
 });
 
@@ -27,13 +24,30 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+// ─── Wait until the port is free before binding ──────────────────────────────
+// When Replit restarts the workflow, the old tsx process may still hold the
+// port for a few seconds. Rather than crashing, we poll until it's available.
+async function waitForPortFree(p: number, maxWaitMs = 30_000): Promise<void> {
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    const free = await new Promise<boolean>((resolve) => {
+      const probe = net.createServer();
+      probe.once("error", () => { probe.close(); resolve(false); });
+      probe.once("listening", () => { probe.close(() => resolve(true)); });
+      probe.listen(p, "::");
+    });
+    if (free) return;
+    logger.warn({ port: p }, "Port busy — waiting 1s for previous process to exit…");
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  logger.error({ port: p }, "Port still busy after 30s — proceeding anyway (may fail)");
+}
+
 // Wrap Express in an HTTP server so we can attach WebSocket
 const httpServer = http.createServer(app);
 createWsServer(httpServer);
 
 // ─── Live broadcast loop ──────────────────────────────────────────────────────
-// Every 15s push current scoreboard to all "games" subscribers
-// Every 15s push game state to "game:<id>" subscribers for live games
 let broadcastRunning = false;
 
 async function startBroadcastLoop() {
@@ -44,7 +58,6 @@ async function startBroadcastLoop() {
 
   async function tick() {
     try {
-      // Fetch all live/recent games from internal ESPN endpoint
       const base = `http://localhost:${port}`;
       const resp = await fetch(`${base}/api/sports/games`).catch(() => null);
       if (resp?.ok) {
@@ -52,7 +65,6 @@ async function startBroadcastLoop() {
         if (Array.isArray(games) && games.length > 0) {
           broadcastGames(games);
 
-          // For each live game, also broadcast its specific state
           const liveGames = games.filter((g: any) => g.status === "live");
           for (const game of liveGames.slice(0, 5)) {
             const gameResp = await fetch(`${base}/api/sports/game/${game.id}`).catch(() => null);
@@ -64,14 +76,16 @@ async function startBroadcastLoop() {
         }
       }
     } catch {
-      // silent — don't crash the broadcast loop
+      // silent
     }
     setTimeout(tick, INTERVAL_MS);
   }
 
-  // Delay first tick by 5s to let server fully initialize
   setTimeout(tick, 5_000);
 }
+
+// Wait for port, then bind
+await waitForPortFree(port);
 
 httpServer.listen(port, () => {
   logger.info({ port }, "Server listening");
