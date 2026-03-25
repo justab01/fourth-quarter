@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import https from "https";
+import zlib from "zlib";
 import { db, sportGameEvents, sportGameStates } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -21,13 +22,30 @@ function setCached(key: string, data: unknown, ttlMs: number): void {
 // ─── ESPN fetch helper ────────────────────────────────────────────────────────
 async function espnFetch(url: string): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { "User-Agent": "Mozilla/5.0" } }, (res) => {
-      let raw = "";
-      res.on("data", (chunk: string) => (raw += chunk));
-      res.on("end", () => {
-        try { resolve(JSON.parse(raw)); }
-        catch (e) { reject(e); }
+    const req = https.get(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "application/json",
+      },
+    }, (res) => {
+      let stream: NodeJS.ReadableStream = res;
+      const encoding = res.headers["content-encoding"];
+      if (encoding === "gzip") {
+        stream = res.pipe(zlib.createGunzip());
+      } else if (encoding === "deflate") {
+        stream = res.pipe(zlib.createInflate());
+      }
+
+      const chunks: Buffer[] = [];
+      stream.on("data", (chunk: Buffer) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+      stream.on("end", () => {
+        try {
+          const raw = Buffer.concat(chunks).toString("utf-8");
+          resolve(JSON.parse(raw));
+        } catch (e) { reject(e); }
       });
+      stream.on("error", reject);
     });
     req.on("error", reject);
     req.setTimeout(8000, () => { req.destroy(); reject(new Error("ESPN timeout")); });
@@ -1628,8 +1646,39 @@ router.get("/sports/news/:sport", async (req, res) => {
   const sport = req.params.sport.toLowerCase();
   const limit = Math.min(Number(req.query.limit ?? 10), 30);
   const sources = SPORT_NEWS_MAP[sport];
-  if (!sources || sources.length === 0) {
+  if (!sources) {
     res.json({ articles: [] });
+    return;
+  }
+  if (sources.length === 0) {
+    const searchTerms: Record<string, string> = {
+      track: "track and field athletics running",
+      xgames: "X Games skateboarding BMX surfing",
+      esports: "esports League of Legends gaming",
+    };
+    const query = encodeURIComponent(searchTerms[sport] ?? sport);
+    const cacheKey = `sport-news-search-${sport}`;
+    const cached = getCached<unknown>(cacheKey);
+    if (cached) { res.json(cached); return; }
+    try {
+      const url = `https://site.api.espn.com/apis/search/v2?query=${query}&type=article&limit=${limit}&lang=en&region=us`;
+      const json = await espnFetch(url) as any;
+      const contents = json.results?.[0]?.contents ?? [];
+      const articles = contents.map((a: any) => ({
+        id: `espn-search-${a.id ?? a.nowId ?? Date.now()}`,
+        title: a.displayName ?? a.headline ?? a.title ?? "",
+        summary: a.description ?? "",
+        imageUrl: a.thumbnail ?? null,
+        publishedAt: a.date ?? null,
+        leagues: [sport],
+        source: "ESPN",
+      }));
+      const response = { articles: articles.slice(0, limit) };
+      setCached(cacheKey, response, 600_000);
+      res.json(response);
+    } catch {
+      res.json({ articles: [] });
+    }
     return;
   }
 
@@ -1674,19 +1723,30 @@ router.get("/sports/news/:sport", async (req, res) => {
   }
 });
 
-// ─── Upcoming events endpoint (TheSportsDB) ─────────────────────────────────
-// Maps sport → TheSportsDB league IDs
+// ─── Upcoming events endpoint (TheSportsDB + ESPN) ──────────────────────────
 const TSD_LEAGUE_IDS: Record<string, { id: number; name: string }[]> = {
-  combat: [
-    { id: 4443, name: "UFC" },
-  ],
-  tennis: [
-    { id: 1155, name: "ATP" },
-    { id: 1156, name: "WTA" },
-  ],
-  golf: [],
-  motorsports: [],
+  combat: [{ id: 4443, name: "UFC" }],
+  tennis: [{ id: 1155, name: "ATP" }, { id: 1156, name: "WTA" }],
+  golf: [{ id: 4761, name: "PGA Tour" }],
+  motorsports: [{ id: 4370, name: "F1" }],
   track: [],
+};
+
+const SPORT_ESPN_LEAGUES: Record<string, string[]> = {
+  basketball: ["NBA", "WNBA", "NCAAB"],
+  football: ["NFL", "NCAAF"],
+  baseball: ["MLB"],
+  hockey: ["NHL"],
+  soccer: ["MLS", "EPL", "UCL", "LIGA"],
+  tennis: ["ATP", "WTA"],
+  combat: ["UFC", "BOXING"],
+  golf: ["PGA", "LIV"],
+  motorsports: ["F1", "NASCAR"],
+  college: ["NCAAB", "NCAAF"],
+  womens: ["WNBA", "WTA"],
+  track: ["OLYMPICS"],
+  xgames: ["XGAMES"],
+  esports: [],
 };
 
 const TSD_KEY = process.env.TSD_API_KEY ?? "123";
@@ -1698,10 +1758,7 @@ router.get("/sports/upcoming/:sport", async (req, res) => {
   if (cached) { res.json(cached); return; }
 
   const tsdLeagues = TSD_LEAGUE_IDS[sport] ?? [];
-
-  // Also pull upcoming from ESPN scoreboard for all leagues in this sport
-  const espnSources = SPORT_NEWS_MAP[sport] ?? [];
-  const espnLeagueKeys = espnSources.map(s => s.league).filter(l => l in LEAGUE_CONFIG);
+  const espnLeagueKeys = (SPORT_ESPN_LEAGUES[sport] ?? []).filter(l => l in LEAGUE_CONFIG);
 
   try {
     // TheSportsDB upcoming events

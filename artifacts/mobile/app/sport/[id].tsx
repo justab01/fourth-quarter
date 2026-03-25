@@ -260,44 +260,37 @@ export default function SportBoardScreen() {
         }
         contentContainerStyle={styles.content}
       >
-        {/* ── Live & Scheduled Games ──────────────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Games</Text>
-            <Pressable
-              onPress={() => router.push("/(tabs)/live" as any)}
-              style={styles.seeAllBtn}
-            >
-              <Text style={[styles.seeAllText, { color: accentColor }]}>See all →</Text>
-            </Pressable>
-          </View>
-
-          {gamesLoading ? (
-            <>
-              <GameCardSkeleton />
-              <GameCardSkeleton />
-            </>
-          ) : filteredGames.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
-              <Text style={styles.emptyCardTitle}>No games scheduled today</Text>
-              <Text style={styles.emptyCardSub}>
-                {SPORT_DATA_NOTE[sport.id] ??
-                  `${sport.leagues.map((l) => l.label).join(" · ")} games will appear here when scheduled.`}
-              </Text>
+        {/* ── Games (only when loading or have games) ──────────────── */}
+        {(gamesLoading || filteredGames.length > 0) && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Games</Text>
+              <Pressable
+                onPress={() => router.push("/(tabs)/live" as any)}
+                style={styles.seeAllBtn}
+              >
+                <Text style={[styles.seeAllText, { color: accentColor }]}>See all →</Text>
+              </Pressable>
             </View>
-          ) : (
-            filteredGames.slice(0, 5).map((game) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                onPress={() =>
-                  router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)
-                }
-              />
-            ))
-          )}
-        </View>
+
+            {gamesLoading ? (
+              <>
+                <GameCardSkeleton />
+                <GameCardSkeleton />
+              </>
+            ) : (
+              filteredGames.slice(0, 5).map((game) => (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  onPress={() =>
+                    router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)
+                  }
+                />
+              ))
+            )}
+          </View>
+        )}
 
         {/* ── Top Athletes ──────────────────────────────────────────── */}
         {topAthletes.length > 0 && (
@@ -350,13 +343,15 @@ export default function SportBoardScreen() {
           </View>
         )}
 
-        {/* ── Upcoming Events ────────────────────────────────────────── */}
-        {upcomingEvents.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Upcoming & Recent</Text>
-            </View>
-            {upcomingEvents.slice(0, 8).map((ev) => (
+        {/* ── Schedule & Results (always visible) ────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              {filteredGames.length === 0 ? "Schedule & Results" : "Upcoming & Recent"}
+            </Text>
+          </View>
+          {upcomingEvents.length > 0 ? (
+            upcomingEvents.slice(0, 10).map((ev) => (
               <View key={ev.id} style={styles.eventRow}>
                 <View style={[styles.eventTypeBadge, {
                   backgroundColor: ev.type === "live" ? "#E53935" : ev.type === "result" ? C.textTertiary + "33" : accentColor + "33",
@@ -379,9 +374,18 @@ export default function SportBoardScreen() {
                   <Text style={styles.eventScore}>{ev.homeScore}-{ev.awayScore}</Text>
                 )}
               </View>
-            ))}
-          </View>
-        )}
+            ))
+          ) : (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
+              <Text style={styles.emptyCardTitle}>No events scheduled right now</Text>
+              <Text style={styles.emptyCardSub}>
+                {SPORT_DATA_NOTE[sport.id] ??
+                  `${sport.leagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* ── Latest News ────────────────────────────────────────────── */}
         <View style={styles.section}>
