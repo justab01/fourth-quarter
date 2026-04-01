@@ -33,6 +33,20 @@ function getLiveCount(games: Game[], sport: SportCategory): number {
 }
 
 // ─── Sport Card ───────────────────────────────────────────────────────────────
+function getSeasonPhase(sportId: string): string | null {
+  const month = new Date().getMonth();
+  const phases: Record<string, Record<number, string>> = {
+    basketball: { 0: "Mid-Season", 1: "All-Star Break", 2: "Playoff Push", 3: "Playoffs", 4: "Finals", 5: "Finals", 9: "Preseason", 10: "Season Start" },
+    football: { 0: "Playoffs", 1: "Super Bowl", 8: "Season Start", 9: "Mid-Season", 10: "Late Season", 11: "Playoffs" },
+    baseball: { 2: "Spring Training", 3: "Opening Day", 4: "Early Season", 7: "Trade Deadline", 8: "Wild Card Race", 9: "Postseason" },
+    soccer: { 0: "Mid-Season", 1: "Transfer Window", 4: "Title Race", 5: "Champions League Finals", 7: "Season Start", 11: "Winter Break" },
+    hockey: { 0: "Mid-Season", 1: "All-Star Break", 3: "Playoffs", 4: "Stanley Cup", 9: "Preseason", 10: "Season Start" },
+    tennis: { 0: "Australian Open", 4: "Clay Court", 5: "Roland Garros", 6: "Wimbledon", 7: "US Open Build", 8: "US Open" },
+    combat: { 0: "Fight Season", 2: "UFC 300s", 6: "International Fight Week", 11: "Year-End Cards" },
+  };
+  return phases[sportId]?.[month] ?? null;
+}
+
 function SportCard({
   sport,
   liveCount,
@@ -42,6 +56,7 @@ function SportCard({
   liveCount: number;
   onPress: () => void;
 }) {
+  const seasonPhase = getSeasonPhase(sport.id);
   return (
     <Pressable
       onPress={onPress}
@@ -57,6 +72,11 @@ function SportCard({
           <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
             <Text style={styles.liveBadgeText}>{liveCount} Live</Text>
+          </View>
+        )}
+        {seasonPhase && liveCount === 0 && (
+          <View style={styles.phaseBadge}>
+            <Text style={styles.phaseBadgeText}>{seasonPhase}</Text>
           </View>
         )}
         <Text style={styles.cardEmoji}>{sport.emoji}</Text>
@@ -322,5 +342,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 12,
     right: 12,
+  },
+  phaseBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  phaseBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+    letterSpacing: 0.3,
   },
 });

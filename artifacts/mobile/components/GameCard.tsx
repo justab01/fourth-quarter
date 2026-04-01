@@ -136,6 +136,50 @@ function CombatDivider({ label, color }: { label: string | null | undefined; col
   );
 }
 
+const RIVALRY_PAIRS: [string, string][] = [
+  ["Los Angeles Lakers", "Boston Celtics"], ["New York Yankees", "Boston Red Sox"],
+  ["Real Madrid", "FC Barcelona"], ["Manchester United", "Manchester City"],
+  ["Dallas Cowboys", "Philadelphia Eagles"], ["Chicago Cubs", "St. Louis Cardinals"],
+  ["Michigan Wolverines", "Ohio State Buckeyes"], ["Duke Blue Devils", "North Carolina Tar Heels"],
+];
+
+function getContextChips(game: Game): { label: string; color: string; bg: string }[] {
+  const chips: { label: string; color: string; bg: string }[] = [];
+  const diff = Math.abs((game.homeScore ?? 0) - (game.awayScore ?? 0));
+  const period = (game.quarter ?? "").toLowerCase();
+  const isOT = period.includes("ot") || period.includes("overtime");
+  const isLate = period.includes("4") || period.includes("q4") || period.includes("9th") || period.includes("3rd");
+
+  if (game.status === "live") {
+    if (isOT) chips.push({ label: "OT", color: "#fff", bg: "#7C3AED" });
+    else if (diff <= 3 && isLate) chips.push({ label: "CLOSE", color: "#fff", bg: C.live });
+    else if (diff <= 5) chips.push({ label: "TIGHT", color: C.live, bg: `${C.live}20` });
+  }
+
+  if (RIVALRY_PAIRS.some(([a, b]) =>
+    (game.homeTeam.includes(a.split(" ").slice(-1)[0]) && game.awayTeam.includes(b.split(" ").slice(-1)[0])) ||
+    (game.homeTeam.includes(b.split(" ").slice(-1)[0]) && game.awayTeam.includes(a.split(" ").slice(-1)[0]))
+  )) {
+    chips.push({ label: "RIVALRY", color: C.accentGold, bg: `${C.accentGold}18` });
+  }
+
+  return chips.slice(0, 2);
+}
+
+function ContextChips({ game }: { game: Game }) {
+  const chips = getContextChips(game);
+  if (chips.length === 0) return null;
+  return (
+    <View style={{ flexDirection: "row", gap: 4, marginTop: 4 }}>
+      {chips.map((c, i) => (
+        <View key={i} style={{ backgroundColor: c.bg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 }}>
+          <Text style={{ color: c.color, fontSize: 8, fontWeight: "900", letterSpacing: 0.6 }}>{c.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface GameCardProps {
   game: Game;
@@ -207,6 +251,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               ) : (
                 <Text style={hero.timeText}>{formatTime(game.startTime)}</Text>
               )}
+              <ContextChips game={game} />
             </View>
 
             {/* Teams + centered score block */}

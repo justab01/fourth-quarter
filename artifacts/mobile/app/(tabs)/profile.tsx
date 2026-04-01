@@ -290,6 +290,36 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* FAN / NERD MODE */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Experience Mode</Text>
+          <View style={styles.modeCard}>
+            <Pressable
+              style={[styles.modeOption, preferences.appMode === "fan" && styles.modeOptionActive]}
+              onPress={() => { Haptics.selectionAsync(); setPreferences({ appMode: "fan" as any }); }}
+            >
+              <Ionicons name="heart" size={20} color={preferences.appMode === "fan" ? C.accent : C.textTertiary} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.modeLabel, preferences.appMode === "fan" && { color: C.text }]}>Fan Mode</Text>
+                <Text style={styles.modeSub}>Clean scores, key highlights, simple stats</Text>
+              </View>
+              {preferences.appMode === "fan" && <Ionicons name="checkmark-circle" size={20} color={C.accent} />}
+            </Pressable>
+            <View style={styles.sep} />
+            <Pressable
+              style={[styles.modeOption, preferences.appMode === "nerd" && styles.modeOptionActive]}
+              onPress={() => { Haptics.selectionAsync(); setPreferences({ appMode: "nerd" as any }); }}
+            >
+              <Ionicons name="analytics" size={20} color={preferences.appMode === "nerd" ? C.accentGold : C.textTertiary} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.modeLabel, preferences.appMode === "nerd" && { color: C.text }]}>Nerd Mode</Text>
+                <Text style={styles.modeSub}>Advanced stats, deeper analysis, full data</Text>
+              </View>
+              {preferences.appMode === "nerd" && <Ionicons name="checkmark-circle" size={20} color={C.accentGold} />}
+            </Pressable>
+          </View>
+        </View>
+
         {/* SETTINGS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
@@ -574,6 +604,35 @@ const styles = StyleSheet.create({
   footerSub: {
     color: C.textTertiary,
     fontSize: 11,
+    fontFamily: "Inter_400Regular",
+  },
+  modeCard: {
+    backgroundColor: C.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    overflow: "hidden",
+  },
+  modeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  modeOptionActive: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  modeLabel: {
+    color: C.textSecondary,
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "Inter_700Bold",
+  },
+  modeSub: {
+    color: C.textTertiary,
+    fontSize: 12,
+    marginTop: 2,
     fontFamily: "Inter_400Regular",
   },
 });

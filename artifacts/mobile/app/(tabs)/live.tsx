@@ -40,6 +40,45 @@ const LEAGUE_META: Record<string, { color: string; emoji: string; fullName: stri
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
+function getUrgencyScore(game: Game, myTeams: string[]): number {
+  let score = 0;
+  const homeScore = game.homeScore ?? 0;
+  const awayScore = game.awayScore ?? 0;
+  const diff = Math.abs(homeScore - awayScore);
+  const period = (game.quarter ?? "").toLowerCase();
+  const isOT = period.includes("ot") || period.includes("overtime");
+  const isLate = period.includes("4") || period.includes("q4") || period.includes("9th") || period.includes("3rd") || period.includes("2nd half");
+
+  if (game.status === "live") {
+    score += 50;
+    if (isOT) score += 30;
+    if (diff <= 3 && isLate) score += 25;
+    else if (diff <= 5) score += 15;
+    else if (diff <= 10) score += 8;
+    if (diff >= 20) score -= 10;
+    if (isLate) score += 10;
+  } else if (game.status === "upcoming") {
+    score += 10;
+    const minsUntil = (new Date(game.startTime).getTime() - Date.now()) / 60000;
+    if (minsUntil <= 30 && minsUntil > 0) score += 15;
+    else if (minsUntil <= 60 && minsUntil > 0) score += 8;
+  }
+
+  if (myTeams.includes(game.homeTeam) || myTeams.includes(game.awayTeam)) score += 20;
+  if (isRivalry(game.homeTeam, game.awayTeam)) score += 12;
+
+  return score;
+}
+
+type SmartFilter = "all" | "close" | "upset" | "rivalry" | "my-teams";
+
+const SMART_FILTERS: { key: SmartFilter; label: string; icon: string }[] = [
+  { key: "all", label: "All", icon: "grid" },
+  { key: "close", label: "Close Games", icon: "flame" },
+  { key: "rivalry", label: "Rivalry", icon: "flash" },
+  { key: "my-teams", label: "My Teams", icon: "star" },
+];
+
 // ─── Known rivalries ──────────────────────────────────────────────────────────
 const RIVALRIES: [string, string][] = [
   ["Los Angeles Lakers", "Boston Celtics"],
@@ -87,11 +126,27 @@ function getImportanceTags(game: Game): ImportanceTag[] {
   const isLate = period.includes("4") || period.includes("q4") || period.includes("9th") ||
     period.includes("3rd") || period.includes("2nd half");
 
+  if (game.status === "finished") {
+    if (isOT) tags.push({ label: "OT", color: "#7C3AED", bgColor: `#7C3AED18` });
+    tags.push({ label: "FINAL", color: C.textTertiary, bgColor: `${C.textTertiary}15` });
+    return tags.slice(0, 2);
+  }
+
   if (game.status === "live") {
     if (isOT) tags.push({ label: "OT", color: "#fff", bgColor: "#7C3AED" });
     else if (diff <= 3 && isLate) tags.push({ label: "CLOSE", color: "#fff", bgColor: C.live });
-    else if (diff <= 5 && game.status === "live") tags.push({ label: "TIGHT", color: C.live, bgColor: `${C.live}20` });
+    else if (diff <= 5) tags.push({ label: "TIGHT", color: C.live, bgColor: `${C.live}20` });
     if (diff >= 20) tags.push({ label: "BLOWOUT", color: C.textTertiary, bgColor: `${C.textTertiary}18` });
+
+    if (game.league === "NHL" && period.includes("power play")) {
+      tags.push({ label: "POWER PLAY", color: "#60A5FA", bgColor: "#60A5FA18" });
+    }
+    if (game.league === "NFL" && diff <= 8 && isLate) {
+      tags.push({ label: "RED ZONE", color: "#FF6B35", bgColor: "#FF6B3518" });
+    }
+    if (["ATP", "WTA"].includes(game.league) && diff <= 1 && isLate) {
+      tags.push({ label: "MATCH POINT", color: "#F59E0B", bgColor: "#F59E0B18" });
+    }
   }
 
   if (isRivalry(game.homeTeam, game.awayTeam)) {
@@ -100,11 +155,19 @@ function getImportanceTags(game: Game): ImportanceTag[] {
 
   const now = new Date();
   const month = now.getMonth();
+
+  const isPlayoffBubble = (game.league === "NBA" && (month >= 2 && month <= 3)) ||
+    (game.league === "NHL" && (month >= 2 && month <= 3)) ||
+    (game.league === "MLB" && (month >= 8 && month <= 9));
+  if (isPlayoffBubble) {
+    tags.push({ label: "BUBBLE", color: "#F59E0B", bgColor: "#F59E0B15" });
+  }
+
   const isPlayoffSeason = (game.league === "NBA" && (month >= 3 && month <= 6)) ||
     (game.league === "MLB" && month >= 9) ||
     (game.league === "NHL" && month >= 3) ||
     (game.league === "NCAAB" && month === 2);
-  if (isPlayoffSeason) {
+  if (isPlayoffSeason && !isPlayoffBubble) {
     tags.push({ label: "PLAYOFF RACE", color: C.accentGreen, bgColor: `${C.accentGreen}18` });
   }
 
@@ -312,6 +375,7 @@ export default function LiveScreen() {
   const [dateOffset, setDateOffset] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [richMode, setRichMode] = useState(false);
+  const [smartFilter, setSmartFilter] = useState<SmartFilter>("all");
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
@@ -339,9 +403,24 @@ export default function LiveScreen() {
   const ALL_LEAGUES = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA", "UFC", "BOXING", "ATP", "WTA"] as string[];
 
   const isMyTeams = activeLeague === "My Teams";
-  const filteredBase = isMyTeams
+  let filteredBase = isMyTeams
     ? all.filter(g => isFav(g))
     : activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
+
+  if (smartFilter === "close") {
+    filteredBase = filteredBase.filter(g => g.status === "live" && Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) <= 5);
+  } else if (smartFilter === "rivalry") {
+    filteredBase = filteredBase.filter(g => isRivalry(g.homeTeam, g.awayTeam));
+  } else if (smartFilter === "my-teams") {
+    filteredBase = filteredBase.filter(g => isFav(g));
+  }
+
+  const mustWatchGames = all
+    .filter(g => g.status === "live")
+    .map(g => ({ game: g, urgency: getUrgencyScore(g, myTeams) }))
+    .sort((a, b) => b.urgency - a.urgency)
+    .slice(0, 3)
+    .filter(x => x.urgency >= 60);
 
   const leagueList = (isMyTeams || activeLeague === "All")
     ? ALL_LEAGUES
@@ -353,9 +432,9 @@ export default function LiveScreen() {
       games: filteredBase
         .filter(g => g.league === league)
         .sort((a, b) => {
-          const aFav = isFav(a) ? -5 : 0;
-          const bFav = isFav(b) ? -5 : 0;
-          return (STATUS_ORDER[a.status] + aFav) - (STATUS_ORDER[b.status] + bFav);
+          const statusDiff = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+          if (statusDiff !== 0) return statusDiff;
+          return getUrgencyScore(b, myTeams) - getUrgencyScore(a, myTeams);
         }),
     }))
     .filter(s => s.games.length > 0);
@@ -398,6 +477,54 @@ export default function LiveScreen() {
 
         {/* Calendar date strip */}
         <CalendarStrip offset={dateOffset} onChange={setDateOffset} liveToday={totalLive} />
+
+        {/* Must-Watch Hero */}
+        {dateOffset === 0 && mustWatchGames.length > 0 && (
+          <View style={styles.mustWatch}>
+            <View style={styles.mustWatchHeader}>
+              <Ionicons name="flame" size={14} color={C.live} />
+              <Text style={styles.mustWatchTitle}>MUST WATCH</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
+              {mustWatchGames.map(({ game, urgency }) => {
+                const diff = Math.abs((game.homeScore ?? 0) - (game.awayScore ?? 0));
+                const period = game.quarter ?? "Live";
+                const awayShort = game.awayTeam.split(" ").slice(-1)[0];
+                const homeShort = game.homeTeam.split(" ").slice(-1)[0];
+                return (
+                  <Pressable key={game.id} style={styles.mustWatchCard}
+                    onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}>
+                    <View style={styles.mustWatchTop}>
+                      <View style={styles.mustWatchLive}><View style={styles.mustWatchDot} /><Text style={styles.mustWatchLiveText}>LIVE</Text></View>
+                      <Text style={styles.mustWatchPeriod}>{period}</Text>
+                    </View>
+                    <Text style={styles.mustWatchScore}>{awayShort} {game.awayScore} - {game.homeScore} {homeShort}</Text>
+                    <Text style={styles.mustWatchReason}>
+                      {diff <= 3 ? "Down to the wire" : diff <= 5 ? "Tight game" : isFav(game) ? "Your team playing" : "High stakes"}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Smart Filters */}
+        {dateOffset === 0 && totalLive > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 16, paddingVertical: 4 }}>
+            {SMART_FILTERS.map(f => {
+              const active = smartFilter === f.key;
+              return (
+                <Pressable key={f.key} onPress={() => setSmartFilter(f.key)}>
+                  <View style={[styles.smartChip, active && styles.smartChipActive]}>
+                    <Ionicons name={f.icon as any} size={12} color={active ? "#fff" : C.textSecondary} />
+                    <Text style={[styles.smartChipText, active && { color: "#fff" }]}>{f.label}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {/* League filter chips */}
         <ScrollView
@@ -524,6 +651,29 @@ const styles = StyleSheet.create({
   },
   modeToggleActive: { borderColor: `${C.accent}55`, backgroundColor: `${C.accent}10` },
   modeLabel: { color: C.textSecondary, fontSize: 12, fontWeight: "700" },
+
+  mustWatch: { marginBottom: 10, gap: 8 },
+  mustWatchHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  mustWatchTitle: { color: C.live, fontSize: 10, fontWeight: "900", letterSpacing: 1.2 },
+  mustWatchCard: {
+    backgroundColor: C.card, borderRadius: 14, padding: 14, gap: 6, width: 180,
+    borderWidth: 1.5, borderColor: `${C.live}40`,
+  },
+  mustWatchTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  mustWatchLive: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.live, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
+  mustWatchDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: "#fff" },
+  mustWatchLiveText: { color: "#fff", fontSize: 8, fontWeight: "900" },
+  mustWatchPeriod: { color: C.textTertiary, fontSize: 10, fontWeight: "700" },
+  mustWatchScore: { color: C.text, fontSize: 16, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  mustWatchReason: { color: "#AEAEB2", fontSize: 11, fontFamily: "Inter_400Regular" },
+
+  smartChip: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 20, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.cardBorder,
+  },
+  smartChipActive: { backgroundColor: C.accent, borderColor: C.accent },
+  smartChipText: { color: C.textSecondary, fontSize: 12, fontWeight: "700" },
 
   filterScroll: { marginBottom: 6 },
   filterRow: { gap: 7, paddingRight: 16 },

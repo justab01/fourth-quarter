@@ -78,6 +78,9 @@ export const api = {
 
   getUpcomingEvents: (sport: string) =>
     apiFetch<{ events: UpcomingEvent[] }>(`/sports/upcoming/${encodeURIComponent(sport)}`),
+
+  getInOneBreath: () =>
+    apiFetch<{ summary: string; generated: string }>("/sports/in-one-breath"),
 };
 
 export type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
@@ -131,6 +134,14 @@ export interface StandingEntry {
   conference: string | null;
   division: string | null;
   rankChange: number | null;
+  homeRecord: string | null;
+  awayRecord: string | null;
+  last10: string | null;
+  pointsFor: number | null;
+  pointsAgainst: number | null;
+  differential: number | null;
+  draws: number | null;
+  points: number | null;
 }
 
 export interface NewsArticle {

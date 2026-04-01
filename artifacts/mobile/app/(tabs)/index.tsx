@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Pressable, Platform, Dimensions, FlatList, Animated
+  Pressable, Platform, Dimensions, FlatList, Animated, ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +20,7 @@ import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton
 import { goToTeam } from "@/utils/navHelpers";
 import { ALL_TEAMS } from "@/constants/allPlayers";
 import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
+import type { AppMode } from "@/context/PreferencesContext";
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -410,6 +411,180 @@ const fyStyles = StyleSheet.create({
     borderRadius: 6, borderWidth: 1, borderColor: `${C.accent}40`,
   },
   newText: { color: C.accent, fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
+});
+
+// ─── In One Breath ───────────────────────────────────────────────────────────
+function InOneBreath() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["in-one-breath"],
+    queryFn: () => api.getInOneBreath(),
+    staleTime: 120_000,
+    refetchInterval: 120_000,
+  });
+
+  if (isLoading) {
+    return (
+      <View style={iobStyles.card}>
+        <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+        <View style={iobStyles.header}>
+          <Ionicons name="sparkles" size={14} color={C.accentGold} />
+          <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
+          <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
+        </View>
+        <ActivityIndicator color={C.accent} size="small" />
+      </View>
+    );
+  }
+
+  if (!data?.summary) return null;
+
+  return (
+    <View style={iobStyles.card}>
+      <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+      <View style={iobStyles.header}>
+        <Ionicons name="sparkles" size={14} color={C.accentGold} />
+        <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
+        <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
+      </View>
+      <Text style={iobStyles.summary}>{data.summary}</Text>
+    </View>
+  );
+}
+
+const iobStyles = StyleSheet.create({
+  card: {
+    backgroundColor: C.card, borderRadius: 18, padding: 16, gap: 10,
+    borderWidth: 1, borderColor: `${C.accentGold}30`, overflow: "hidden",
+  },
+  header: { flexDirection: "row", alignItems: "center", gap: 7 },
+  headerLabel: { color: C.accentGold, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, flex: 1 },
+  aiBadge: {
+    backgroundColor: `${C.accent}22`, paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 5, borderWidth: 1, borderColor: `${C.accent}40`,
+  },
+  aiText: { color: C.accent, fontSize: 8, fontWeight: "900", letterSpacing: 0.8 },
+  summary: { color: "#AEAEB2", fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
+});
+
+// ─── Biggest Movers ──────────────────────────────────────────────────────────
+function BiggestMovers({ allGames }: { allGames: Game[] }) {
+  const liveGames = allGames.filter(g => g.status === "live");
+  const closeGames = liveGames.filter(g => Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) <= 5);
+  const blowouts = liveGames.filter(g => Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) >= 20);
+  const upcomingCount = allGames.filter(g => g.status === "upcoming").length;
+
+  const movers: { icon: string; label: string; detail: string; color: string; onPress?: () => void }[] = [];
+
+  if (closeGames.length > 0) {
+    movers.push({
+      icon: "flame", label: `${closeGames.length} nail-biter${closeGames.length > 1 ? "s" : ""}`,
+      detail: "Games within 5 pts", color: C.live,
+      onPress: () => router.push("/(tabs)/live" as any),
+    });
+  }
+  if (blowouts.length > 0) {
+    movers.push({ icon: "trending-up", label: `${blowouts.length} blowout${blowouts.length > 1 ? "s" : ""}`, detail: "20+ point leads", color: C.accentGreen });
+  }
+  if (upcomingCount > 0) {
+    movers.push({ icon: "time-outline", label: `${upcomingCount} coming up`, detail: "Still to tip off", color: C.accent });
+  }
+
+  if (movers.length === 0) return null;
+
+  return (
+    <View style={{ gap: 12 }}>
+      <SectionHeading label="Biggest Movers" accentColor={C.accentGold} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+        {movers.map((m, i) => (
+          <Pressable key={i} onPress={m.onPress} style={moverStyles.card}>
+            <View style={[moverStyles.iconBg, { backgroundColor: `${m.color}18` }]}>
+              <Ionicons name={m.icon as any} size={16} color={m.color} />
+            </View>
+            <Text style={moverStyles.label}>{m.label}</Text>
+            <Text style={moverStyles.detail}>{m.detail}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+const moverStyles = StyleSheet.create({
+  card: { backgroundColor: C.card, borderRadius: 14, padding: 14, gap: 6, borderWidth: 1, borderColor: C.cardBorder, width: 140 },
+  iconBg: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  label: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  detail: { color: C.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular" },
+});
+
+// ─── Tonight's Watchlist ─────────────────────────────────────────────────────
+function TonightsWatchlist({ allGames, myTeams }: { allGames: Game[]; myTeams: string[] }) {
+  const upcoming = allGames.filter(g => g.status === "upcoming");
+  if (upcoming.length === 0) return null;
+
+  const RIVAL_PAIRS = [
+    ["Los Angeles Lakers", "Boston Celtics"], ["New York Yankees", "Boston Red Sox"],
+    ["Real Madrid", "FC Barcelona"], ["Manchester United", "Manchester City"],
+    ["Dallas Cowboys", "Philadelphia Eagles"], ["Chicago Cubs", "St. Louis Cardinals"],
+  ];
+
+  const scored = upcoming.map(g => {
+    let score = 0;
+    if (myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam)) score += 10;
+    if (RIVAL_PAIRS.some(([a, b]) => (g.homeTeam === a && g.awayTeam === b) || (g.homeTeam === b && g.awayTeam === a))) score += 8;
+    if (["NBA", "NFL", "EPL", "UCL"].includes(g.league)) score += 3;
+    return { game: g, score };
+  }).sort((a, b) => b.score - a.score).slice(0, 4);
+
+  return (
+    <View style={{ gap: 12 }}>
+      <SectionHeading label="Tonight's Watchlist" accentColor={C.accent} badge={
+        <View style={watchlistStyles.badge}>
+          <Ionicons name="eye" size={10} color={C.accent} />
+          <Text style={watchlistStyles.badgeText}>CURATED</Text>
+        </View>
+      } />
+      <View style={watchlistStyles.list}>
+        {scored.map(({ game }, idx) => {
+          const startTime = new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+          const isMy = myTeams.includes(game.homeTeam) || myTeams.includes(game.awayTeam);
+          return (
+            <Pressable key={game.id} onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}>
+              <View style={watchlistStyles.row}>
+                {idx > 0 && <View style={watchlistStyles.divider} />}
+                <View style={watchlistStyles.rowInner}>
+                  <View style={watchlistStyles.timeCol}>
+                    <Text style={watchlistStyles.time}>{startTime}</Text>
+                    <Text style={watchlistStyles.league}>{game.league}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={watchlistStyles.matchup} numberOfLines={1}>
+                      {game.awayTeam.split(" ").slice(-1)[0]} @ {game.homeTeam.split(" ").slice(-1)[0]}
+                    </Text>
+                    {isMy && <Text style={watchlistStyles.myTag}>Your team</Text>}
+                  </View>
+                  <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
+                </View>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const watchlistStyles = StyleSheet.create({
+  badge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${C.accent}15`, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  badgeText: { color: C.accent, fontSize: 8, fontWeight: "900", letterSpacing: 0.6 },
+  list: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
+  row: {},
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 14 },
+  rowInner: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, gap: 12 },
+  timeCol: { alignItems: "center", width: 50 },
+  time: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  league: { color: C.textTertiary, fontSize: 10, fontWeight: "600" },
+  matchup: { color: C.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  myTag: { color: C.accent, fontSize: 10, fontWeight: "700", marginTop: 2 },
 });
 
 // ─── League Pulse ─────────────────────────────────────────────────────────────
@@ -826,6 +1001,11 @@ export default function HubScreen() {
           </View>
         </View>
 
+        {/* IN ONE BREATH */}
+        <View style={styles.section}>
+          <InOneBreath />
+        </View>
+
         {/* HERO BANNER */}
         {heroGames.length > 0 && !gamesLoading && (
           <View style={styles.heroSection}>
@@ -883,6 +1063,20 @@ export default function HubScreen() {
           <View style={styles.section}>
             <SectionHeading label="My Teams" accentColor={C.accent} />
             <MyTeamsTiles myTeams={myTeams} allGames={allGames} />
+          </View>
+        )}
+
+        {/* BIGGEST MOVERS */}
+        {!gamesLoading && allGames.length > 0 && (
+          <View style={styles.section}>
+            <BiggestMovers allGames={allGames} />
+          </View>
+        )}
+
+        {/* TONIGHT'S WATCHLIST */}
+        {!gamesLoading && allGames.length > 0 && (
+          <View style={styles.section}>
+            <TonightsWatchlist allGames={allGames} myTeams={myTeams} />
           </View>
         )}
 

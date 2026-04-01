@@ -103,6 +103,12 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 - **GameCard**: Livescore-style layout — status badge on left (LIVE/FT/time), team rows with 28px circle logos + name + score, league accent bar on right edge. Hero variant: large team logos + centered score. Compact: left stripe + stacked rows.
 - **NewsCard**: 3px colored top bar (league color) + dark card body. Hero: gradient backdrop + emoji + title overlay.
 - **Auth/state**: AsyncStorage preferences, onboarding flow (4 steps), Houston personalization (Rockets/Astros/Texans/Dynamo)
+- **Fan/Nerd Mode**: Toggle in Profile screen — Fan mode (default) shows clean scores/simple stats; Nerd mode shows advanced stats and deeper analysis. Stored in PreferencesContext as `appMode`
+- **Home Tab Features**: "In One Breath" AI summary (GROQ-powered 2-line sports day recap, gold border card), "Biggest Movers" (nail-biters/blowouts/upcoming), "Tonight's Watchlist" (AI-curated upcoming games scored by relevance + rivalry)
+- **Live Tab Features**: Urgency scoring (close score + late stage + rivalry + favorite → higher rank), Smart Filters (All/Close Games/Rivalry/My Teams), Must-Watch Hero carousel (top 3 high-urgency live games)
+- **Standings Features**: Sport-adaptive columns (W/D/L/PTS for soccer, W/L/GB for US sports, +/- differential), "Why It Matters" context lines (playoff bubble, hot/cold streaks, relegation zone, close races)
+- **Sports Tab Features**: Season phase badges on sport cards (e.g. "Playoff Push", "Spring Training", "Transfer Window")
+- **Context Chips**: Importance tags on game cards (OT, CLOSE, TIGHT, RIVALRY, BUBBLE, PLAYOFF RACE, RED ZONE, POWER PLAY, MATCH POINT, FINAL, BLOWOUT)
 - **Screens**: Onboarding, Hub (home), Live, News, Standings, Profile + Game Detail, Article Detail, Team Page, Player Page
 - **Components**: GameCard, NewsCard, RecapCard, SearchModal, GameCardSkeleton, NewsCardSkeleton, ErrorBoundary/Fallback
 - **Navigation**: Tabs via `expo-router` — standard (non-floating) dark tab bar with hairline top separator; white active icon, gray inactive; consistent across iOS/Android/web (no BlurView)
@@ -122,7 +128,8 @@ Expo React Native mobile app — "Fourth Quarter" sports app.
 
 - `GET /api/sports/games?league=` — **live ESPN** scoreboard. No param = all 10 leagues; comma-separated (e.g. `NBA,NHL`); `ALL` = everything. 15s live / 30s finished cache
 - `GET /api/sports/game/:id` — **live ESPN** game detail with key plays, stats, lineups; 15s/30s cache; **fire-and-forget DB ingestion** to `sport_game_events` + `sport_game_states`
-- `GET /api/sports/standings?league=` — **live ESPN** standings for NBA/NFL/MLB/MLS/NHL/WNBA/NCAAB/EPL/UCL/LIGA; 5-minute cache
+- `GET /api/sports/standings?league=` — **live ESPN** standings for NBA/NFL/MLB/MLS/NHL/WNBA/NCAAB/EPL/UCL/LIGA; 5-minute cache; returns extended stats (homeRecord, awayRecord, last10, pointsFor, pointsAgainst, differential, draws, points)
+- `GET /api/sports/in-one-breath` — **GROQ AI** 2-line summary of the sports day; 2-minute cache; graceful fallback if no API key
 - `GET /api/news?teams=&leagues=` — **live ESPN** news, filterable by team/league; 2-minute cache
 - `GET /api/sports/news/:sport` — **live ESPN** sport-specific news (basketball, football, baseball, hockey, soccer, tennis, combat, golf, motorsports, college, womens, track, xgames, esports); 2-minute cache
 - `GET /api/sports/upcoming/:sport` — **live TheSportsDB + ESPN** upcoming/recent events per sport; 5-minute cache

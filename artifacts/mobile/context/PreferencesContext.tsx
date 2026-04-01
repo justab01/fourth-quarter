@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export type AppMode = "fan" | "nerd";
+
 export interface UserPreferences {
   userId: string;
   name: string;
@@ -11,6 +13,7 @@ export interface UserPreferences {
   darkMode: boolean;
   notifications: boolean;
   onboardingComplete: boolean;
+  appMode: AppMode;
 }
 
 const DEFAULT_PREFS: UserPreferences = {
@@ -23,6 +26,7 @@ const DEFAULT_PREFS: UserPreferences = {
   darkMode: true,
   notifications: true,
   onboardingComplete: false,
+  appMode: "fan" as AppMode,
 };
 
 const STORAGE_KEY = "@fourth_quarter_prefs";

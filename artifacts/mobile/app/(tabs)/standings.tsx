@@ -235,6 +235,42 @@ export default function StandingsScreen() {
   const leagueMeta = LEAGUE_META[activeLeague] ?? { color: C.accent, label: activeLeague };
   const hasGamesBack = standings.some(e => e.gamesBack !== null);
   const hasZones = !!ZONE_CONFIGS[activeLeague];
+  const isSoccer = ["EPL", "UCL", "LIGA", "MLS"].includes(activeLeague);
+  const hasDraws = standings.some(e => e.draws != null && e.draws > 0);
+  const hasDiff = standings.some(e => e.differential != null);
+  const hasPoints = standings.some(e => e.points != null);
+  const hasHomeAway = standings.some(e => e.homeRecord != null);
+
+  function getWhyItMatters(entry: typeof standings[number], idx: number): string | null {
+    const zone = getZoneForRank(activeLeague, entry.rank);
+    const nextZone = getZoneForRank(activeLeague, entry.rank + 1);
+    const prevEntry = standings[idx - 1];
+    const nextEntry = standings[idx + 1];
+
+    if (zone && zone.shortLabel === "PLAYOFFS" && nextZone && nextZone.shortLabel !== "PLAYOFFS") {
+      return "On the playoff bubble — every game matters";
+    }
+    if (zone && zone.shortLabel === "PLAY-IN" && entry.rank >= 9 && entry.rank <= 10) {
+      return "Play-In spot on the line";
+    }
+    if (zone && zone.shortLabel === "UCL" && entry.rank === 4) {
+      return "Last Champions League spot";
+    }
+    if (zone && zone.shortLabel === "REL" && entry.rank >= 18) {
+      return "In the relegation zone — must win";
+    }
+    if (entry.streak?.startsWith("W") && parseInt(entry.streak.slice(1)) >= 5) {
+      return `On a ${entry.streak} hot streak`;
+    }
+    if (entry.streak?.startsWith("L") && parseInt(entry.streak.slice(1)) >= 5) {
+      return `Struggling — ${entry.streak} cold streak`;
+    }
+    if (prevEntry && entry.gamesBack !== null && prevEntry.gamesBack !== null) {
+      const gap = (entry.gamesBack ?? 0) - (prevEntry.gamesBack ?? 0);
+      if (gap <= 0.5 && gap > 0) return `Just ${gap} ${isSoccer ? "pts" : "GB"} from moving up`;
+    }
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -297,8 +333,11 @@ export default function StandingsScreen() {
                 <Text style={styles.thRank}>#</Text>
                 <Text style={styles.thTeam}>TEAM</Text>
                 <Text style={styles.thStat}>W</Text>
+                {hasDraws && <Text style={styles.thStat}>D</Text>}
                 <Text style={styles.thStat}>L</Text>
-                {hasGamesBack && <Text style={styles.thStat}>GB</Text>}
+                {hasPoints && <Text style={styles.thStat}>PTS</Text>}
+                {hasGamesBack && !hasPoints && <Text style={styles.thStat}>GB</Text>}
+                {hasDiff && <Text style={styles.thStat}>+/-</Text>}
                 <Text style={styles.thStreak}>STK</Text>
               </View>
 
@@ -372,16 +411,40 @@ export default function StandingsScreen() {
 
                       {/* Stats */}
                       <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.wins}</Text>
+                      {hasDraws && <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.draws ?? 0}</Text>}
                       <Text style={[styles.tdStat, isMyTeam && { color: C.text }]}>{entry.losses}</Text>
-                      {hasGamesBack && (
+                      {hasPoints && (
+                        <Text style={[styles.tdStat, { color: leagueMeta.color, fontWeight: "700" }]}>
+                          {entry.points ?? 0}
+                        </Text>
+                      )}
+                      {hasGamesBack && !hasPoints && (
                         <Text style={[styles.tdStat, { color: entry.gamesBack === 0 ? leagueMeta.color : C.textTertiary }]}>
                           {entry.gamesBack === 0 ? "—" : entry.gamesBack?.toFixed(1) ?? "—"}
+                        </Text>
+                      )}
+                      {hasDiff && (
+                        <Text style={[styles.tdStat, {
+                          color: (entry.differential ?? 0) > 0 ? C.accentGreen : (entry.differential ?? 0) < 0 ? C.live : C.textTertiary
+                        }]}>
+                          {(entry.differential ?? 0) > 0 ? "+" : ""}{entry.differential ?? 0}
                         </Text>
                       )}
                       <View style={styles.tdStreak}>
                         <StreakBadge streak={entry.streak} />
                       </View>
                     </Pressable>
+
+                    {/* Why It Matters context line */}
+                    {(() => {
+                      const wim = getWhyItMatters(entry, idx);
+                      return wim ? (
+                        <View style={styles.whyItMatters}>
+                          <Ionicons name="information-circle" size={11} color={C.accent} />
+                          <Text style={styles.wimText}>{wim}</Text>
+                        </View>
+                      ) : null;
+                    })()}
 
                     {/* Expanded detail row */}
                     {isExpanded && (
@@ -393,6 +456,30 @@ export default function StandingsScreen() {
                               {entry.winPct.toFixed(3)}
                             </Text>
                           </View>
+                          {entry.homeRecord && (
+                            <View style={styles.expandedStat}>
+                              <Text style={styles.expandedStatLabel}>HOME</Text>
+                              <Text style={styles.expandedStatVal}>{entry.homeRecord}</Text>
+                            </View>
+                          )}
+                          {entry.awayRecord && (
+                            <View style={styles.expandedStat}>
+                              <Text style={styles.expandedStatLabel}>AWAY</Text>
+                              <Text style={styles.expandedStatVal}>{entry.awayRecord}</Text>
+                            </View>
+                          )}
+                          {entry.pointsFor != null && (
+                            <View style={styles.expandedStat}>
+                              <Text style={styles.expandedStatLabel}>{isSoccer ? "GF" : "PF"}</Text>
+                              <Text style={styles.expandedStatVal}>{entry.pointsFor}</Text>
+                            </View>
+                          )}
+                          {entry.pointsAgainst != null && (
+                            <View style={styles.expandedStat}>
+                              <Text style={styles.expandedStatLabel}>{isSoccer ? "GA" : "PA"}</Text>
+                              <Text style={styles.expandedStatVal}>{entry.pointsAgainst}</Text>
+                            </View>
+                          )}
                           <View style={styles.expandedStat}>
                             <Text style={styles.expandedStatLabel}>STREAK</Text>
                             <StreakBadge streak={entry.streak} />
@@ -499,6 +586,13 @@ const styles = StyleSheet.create({
 
   tdStat: { width: 36, textAlign: "center", color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
   tdStreak: { width: 44, alignItems: "center" },
+
+  whyItMatters: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 14, paddingVertical: 6,
+    backgroundColor: `${Colors.dark.accent}08`,
+  },
+  wimText: { color: Colors.dark.accent, fontSize: 11, fontFamily: "Inter_400Regular", fontStyle: "italic" },
 
   expandedRow: {
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator,

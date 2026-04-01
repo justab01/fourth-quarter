@@ -983,6 +983,14 @@ interface StandingEntry {
   conference: string | null;
   division: string | null;
   rankChange: number | null;
+  homeRecord: string | null;
+  awayRecord: string | null;
+  last10: string | null;
+  pointsFor: number | null;
+  pointsAgainst: number | null;
+  differential: number | null;
+  draws: number | null;
+  points: number | null;
 }
 
 interface EspnStatEntry {
@@ -1016,6 +1024,33 @@ function parseGb(displayValue: string | undefined): number | null {
   return isNaN(n) ? null : n;
 }
 
+function extractExtendedStats(stats: EspnStatEntry[]) {
+  const homeWins = getStat(stats, "homeWins")?.value ?? getStat(stats, "Home Wins")?.value;
+  const homeLosses = getStat(stats, "homeLosses")?.value ?? getStat(stats, "Home Losses")?.value;
+  const awayWins = getStat(stats, "awayWins")?.value ?? getStat(stats, "Away Wins")?.value;
+  const awayLosses = getStat(stats, "awayLosses")?.value ?? getStat(stats, "Away Losses")?.value;
+  const homeRecord = (homeWins != null && homeLosses != null) ? `${homeWins}-${homeLosses}` : null;
+  const awayRecord = (awayWins != null && awayLosses != null) ? `${awayWins}-${awayLosses}` : null;
+  const pf = getStat(stats, "pointsFor")?.value ?? getStat(stats, "avgPointsFor")?.value ?? null;
+  const pa = getStat(stats, "pointsAgainst")?.value ?? getStat(stats, "avgPointsAgainst")?.value ?? null;
+  const diff = getStat(stats, "differential")?.value ?? getStat(stats, "pointDifferential")?.value ?? null;
+  const draws = getStat(stats, "ties")?.value ?? getStat(stats, "draws")?.value ?? null;
+  const points = getStat(stats, "points")?.value ?? null;
+  const gf = getStat(stats, "goalsFor")?.value ?? null;
+  const ga = getStat(stats, "goalsAgainst")?.value ?? null;
+  const gd = getStat(stats, "goalDifference")?.value ?? null;
+  return {
+    homeRecord,
+    awayRecord,
+    last10: null as string | null,
+    pointsFor: pf != null ? Number(pf) : (gf != null ? Number(gf) : null),
+    pointsAgainst: pa != null ? Number(pa) : (ga != null ? Number(ga) : null),
+    differential: diff != null ? Number(diff) : (gd != null ? Number(gd) : null),
+    draws: draws != null ? Number(draws) : null,
+    points: points != null ? Number(points) : null,
+  };
+}
+
 async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
   const cacheKey = `standings-${league}`;
   const cached = getCached<StandingEntry[]>(cacheKey);
@@ -1037,7 +1072,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
         const streak = getStat(stats, "streak")?.displayValue ?? null;
         const logoUrl = e.team.logos?.[0]?.href ?? null;
-        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const ext = extractExtendedStats(stats);
+        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null, ...ext };
       });
 
     } else if (league === "NFL") {
@@ -1054,7 +1090,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const gamesBack = gbVal != null ? Number(gbVal) : null;
         const streak = getStat(stats, "streak")?.displayValue ?? null;
         const logoUrl = e.team.logos?.[0]?.href ?? null;
-        return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const ext = extractExtendedStats(stats);
+        return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null, ...ext };
       });
       raw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
       entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
@@ -1073,7 +1110,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
           const streak = getStat(stats, "streak")?.displayValue ?? null;
           const logoUrl = e.team.logos?.[0]?.href ?? null;
-          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: child.name ?? null, division: null, rankChange: null });
+          const ext = extractExtendedStats(stats);
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: child.name ?? null, division: null, rankChange: null, ...ext });
         }
       }
       allRaw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
@@ -1092,7 +1130,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
         const streak = getStat(stats, "streak")?.displayValue ?? null;
         const logoUrl = e.team.logos?.[0]?.href ?? null;
-        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const ext = extractExtendedStats(stats);
+        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null, ...ext };
       });
 
     } else if (league === "WNBA") {
@@ -1108,7 +1147,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
         const streak = getStat(stats, "streak")?.displayValue ?? null;
         const logoUrl = e.team.logos?.[0]?.href ?? null;
-        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null };
+        const ext = extractExtendedStats(stats);
+        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null, ...ext };
       });
 
     } else if (league === "NCAAB") {
@@ -1122,7 +1162,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
         const losses = Number(getStat(stats, "losses")?.value ?? 0);
         const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
         const logoUrl = e.team.logos?.[0]?.href ?? null;
-        return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null as number | null, streak: null as string | null, conference: null as string | null, division: null as string | null, rankChange: null as number | null };
+        const ext = extractExtendedStats(stats);
+        return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null as number | null, streak: null as string | null, conference: null as string | null, division: null as string | null, rankChange: null as number | null, ...ext };
       });
       raw.sort((a, b) => b.winPct - a.winPct);
       entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
@@ -1142,7 +1183,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const points = Number(getStat(stats, "points")?.value ?? 0);
           const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
           const logoUrl = e.team.logos?.[0]?.href ?? null;
-          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
+          const ext = extractExtendedStats(stats);
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, ...ext, points });
         }
       }
       if (allRaw.length === 0) {
@@ -1154,12 +1196,13 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           const gamesPlayed = Number(getStat(stats, "gamesPlayed")?.value ?? 0);
           const winPct = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 1000) / 1000 : 0;
           const logoUrl = e.team.logos?.[0]?.href ?? null;
-          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, points });
+          const ext = extractExtendedStats(stats);
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: null, conference: null, division: null, rankChange: null, ...ext, points });
         }
       }
       allRaw.sort((a, b) => b.points - a.points);
       const leaderPts = allRaw[0]?.points ?? 0;
-      entries = allRaw.map(({ points, ...e }, i) => ({ ...e, rank: i + 1, gamesBack: leaderPts - points }));
+      entries = allRaw.map((e, i) => ({ ...e, rank: i + 1, gamesBack: leaderPts - e.points }));
 
     } else if (league === "MLS") {
       const json = await espnFetch(
@@ -1178,7 +1221,8 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           // MLS has no gamesBehind/streak in ESPN data; will compute pointsBack below
           const streakStat = getStat(stats, "streak")?.displayValue ?? null;
           const logoUrl = e.team.logos?.[0]?.href ?? null;
-          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: streakStat, conference: child.name ?? null, division: null, rankChange, points });
+          const ext = extractExtendedStats(stats);
+          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null, streak: streakStat, conference: child.name ?? null, division: null, rankChange, ...ext, points });
         }
       }
       allRaw.sort((a, b) => b.points - a.points);
@@ -1187,10 +1231,10 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
       // system (3 for win, 1 for draw). We express "points behind the leader"
       // (overall, not conference-relative) as the gamesBack proxy so the UI can
       // show a meaningful numeric distance from first place.
-      entries = allRaw.map(({ points, ...e }, i) => ({
+      entries = allRaw.map((e, i) => ({
         ...e,
         rank: i + 1,
-        gamesBack: leaderPts - points,
+        gamesBack: leaderPts - e.points,
       }));
     }
 
@@ -1206,6 +1250,76 @@ router.get("/sports/standings", async (req, res) => {
   const league = ((req.query.league as string) ?? "NBA").toUpperCase();
   const standings = await fetchLeagueStandings(league);
   res.json({ standings });
+});
+
+router.get("/sports/in-one-breath", async (_req, res) => {
+  const cacheKey = "in-one-breath";
+  const cached = getCached<{ summary: string; generated: string }>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    const defaultLeagues = ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING"];
+    const results = await Promise.all(defaultLeagues.map(l => fetchLeagueGames(l).catch(() => [])));
+    const games = results.flat();
+    const live = games.filter((g: any) => g.status === "live");
+    const upcoming = games.filter((g: any) => g.status === "upcoming");
+    const finished = games.filter((g: any) => g.status === "finished");
+
+    const leagueCounts: Record<string, number> = {};
+    live.forEach((g: any) => { leagueCounts[g.league] = (leagueCounts[g.league] ?? 0) + 1; });
+
+    const closeGames = live.filter((g: any) => {
+      const diff = Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0));
+      return diff <= 5;
+    });
+
+    const prompt = `You are a sports broadcaster. Summarize today's sports day in exactly 2 punchy sentences. Be specific with team names and scores. Use a confident, insider tone.
+
+Here's what's happening:
+- ${live.length} games live right now across ${Object.keys(leagueCounts).join(", ") || "no leagues"}
+- ${closeGames.length} close games (within 5 points)
+- ${upcoming.length} games still to come
+- ${finished.length} games already final
+${live.slice(0, 6).map((g: any) => `  ${g.awayTeam} ${g.awayScore ?? 0} @ ${g.homeTeam} ${g.homeScore ?? 0} (${g.league}, ${g.quarter ?? "Live"})`).join("\n")}
+${finished.slice(0, 4).map((g: any) => `  Final: ${g.awayTeam} ${g.awayScore ?? 0} @ ${g.homeTeam} ${g.homeScore ?? 0} (${g.league})`).join("\n")}
+${upcoming.slice(0, 4).map((g: any) => `  Coming up: ${g.awayTeam} @ ${g.homeTeam} (${g.league})`).join("\n")}
+
+Respond with ONLY the 2-sentence summary, no quotes or extra text.`;
+
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      const fallbackLines: string[] = [];
+      if (live.length > 0) fallbackLines.push(`${live.length} games live across ${Object.keys(leagueCounts).join(", ")}.`);
+      else if (upcoming.length > 0) fallbackLines.push(`${upcoming.length} games on tap today.`);
+      else fallbackLines.push("Quiet day across the sports world.");
+      if (closeGames.length > 0) fallbackLines.push(`${closeGames.length} nail-biters going down to the wire.`);
+      else if (finished.length > 0) fallbackLines.push(`${finished.length} games already in the books.`);
+      const result = { summary: fallbackLines.join(" "), generated: new Date().toISOString() };
+      setCached(cacheKey, result, 120_000);
+      res.json(result);
+      return;
+    }
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 120,
+        temperature: 0.7,
+      }),
+    });
+
+    const groqJson = await groqRes.json() as any;
+    const summary = groqJson.choices?.[0]?.message?.content?.trim() ?? "Sports day is loading — check back soon.";
+    const result = { summary, generated: new Date().toISOString() };
+    setCached(cacheKey, result, 120_000);
+    res.json(result);
+  } catch (err) {
+    console.error("In One Breath error:", err);
+    res.json({ summary: "The sports world is buzzing today — stay tuned for live updates.", generated: new Date().toISOString() });
+  }
 });
 
 // ─── ATHLETE ENDPOINTS ────────────────────────────────────────────────────────
