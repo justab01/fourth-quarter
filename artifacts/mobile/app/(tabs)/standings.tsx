@@ -240,12 +240,22 @@ export default function StandingsScreen() {
   const hasDiff = standings.some(e => e.differential != null);
   const hasPoints = standings.some(e => e.points != null);
   const hasHomeAway = standings.some(e => e.homeRecord != null);
+  const hasConferences = standings.some(e => e.conference != null);
+  const hasClinch = standings.some(e => e.clinched != null);
+  const conferences = hasConferences
+    ? [...new Set(standings.map(e => e.conference).filter(Boolean))] as string[]
+    : [null];
 
-  function getWhyItMatters(entry: typeof standings[number], idx: number): string | null {
+  function getWhyItMatters(entry: typeof standings[number], idx: number, confEntries?: typeof standings): string | null {
+    const relevantStandings = confEntries ?? standings;
     const zone = getZoneForRank(activeLeague, entry.rank);
     const nextZone = getZoneForRank(activeLeague, entry.rank + 1);
-    const prevEntry = standings[idx - 1];
-    const nextEntry = standings[idx + 1];
+    const prevEntry = relevantStandings[idx - 1];
+    const nextEntry = relevantStandings[idx + 1];
+
+    if (entry.clinched === "y") return "Clinched division title";
+    if (entry.clinched === "x") return "Clinched playoff berth";
+    if (entry.clinched === "e") return "Eliminated from playoff contention";
 
     if (zone && zone.shortLabel === "PLAYOFFS" && nextZone && nextZone.shortLabel !== "PLAYOFFS") {
       return "On the playoff bubble — every game matters";
@@ -326,6 +336,21 @@ export default function StandingsScreen() {
               </ScrollView>
             )}
 
+            {conferences.map(conf => {
+              const confStandings = conf
+                ? standings.filter(e => e.conference === conf)
+                : standings;
+              if (confStandings.length === 0) return null;
+              return (
+                <View key={conf ?? "all"}>
+                  {conf && (
+                    <View style={styles.confHeader}>
+                      <View style={[styles.confDot, { backgroundColor: leagueMeta.color }]} />
+                      <Text style={[styles.confTitle, { color: leagueMeta.color }]}>{conf}</Text>
+                      <View style={styles.confLine} />
+                    </View>
+                  )}
+
             {/* Table */}
             <View style={styles.table}>
               {/* Table header */}
@@ -341,7 +366,7 @@ export default function StandingsScreen() {
                 <Text style={styles.thStreak}>STK</Text>
               </View>
 
-              {standings.map((entry, idx) => {
+              {confStandings.map((entry, idx) => {
                 const isMyTeam = preferences.favoriteTeams.includes(entry.teamName);
                 const zone = getZoneForRank(activeLeague, entry.rank);
                 const boundary = isZoneBoundary(activeLeague, entry.rank);
@@ -364,7 +389,7 @@ export default function StandingsScreen() {
                       onLongPress={() => goToTeam(entry.teamName, activeLeague)}
                       style={[
                         styles.tableRow,
-                        idx < standings.length - 1 && !boundary && styles.tableRowBorder,
+                        idx < confStandings.length - 1 && !boundary && styles.tableRowBorder,
                         isMyTeam && styles.tableRowHighlight,
                       ]}
                     >
@@ -385,7 +410,7 @@ export default function StandingsScreen() {
                       {/* Rank */}
                       <View style={styles.tdRank}>
                         <Text style={[styles.rankNum, isMyTeam && { color: leagueMeta.color, fontWeight: "800" }]}>
-                          {entry.rank}
+                          {entry.playoffSeed ?? entry.rank}
                         </Text>
                         <RankChange delta={entry.rankChange} />
                       </View>
@@ -399,10 +424,19 @@ export default function StandingsScreen() {
                           borderColor={isMyTeam ? `${leagueMeta.color}55` : "rgba(255,255,255,0.08)"}
                         />
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.teamText, isMyTeam && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
-                            {entry.teamName}
-                          </Text>
-                          {entry.conference && (
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                            <Text style={[styles.teamText, isMyTeam && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
+                              {entry.teamName}
+                            </Text>
+                            {entry.clinched && (
+                              <View style={[styles.clinchBadge, { borderColor: `${leagueMeta.color}60` }]}>
+                                <Text style={[styles.clinchText, { color: leagueMeta.color }]}>
+                                  {entry.clinched === "y" ? "y" : entry.clinched === "x" ? "x" : entry.clinched === "e" ? "e" : entry.clinched}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          {!hasConferences && entry.conference && (
                             <Text style={styles.conferenceText}>{entry.conference}</Text>
                           )}
                         </View>
@@ -427,7 +461,7 @@ export default function StandingsScreen() {
                         <Text style={[styles.tdStat, {
                           color: (entry.differential ?? 0) > 0 ? C.accentGreen : (entry.differential ?? 0) < 0 ? C.live : C.textTertiary
                         }]}>
-                          {(entry.differential ?? 0) > 0 ? "+" : ""}{entry.differential ?? 0}
+                          {(entry.differential ?? 0) > 0 ? "+" : ""}{Number.isInteger(entry.differential ?? 0) ? (entry.differential ?? 0) : (entry.differential ?? 0).toFixed(1)}
                         </Text>
                       )}
                       <View style={styles.tdStreak}>
@@ -437,7 +471,7 @@ export default function StandingsScreen() {
 
                     {/* Why It Matters context line */}
                     {(() => {
-                      const wim = getWhyItMatters(entry, idx);
+                      const wim = getWhyItMatters(entry, idx, confStandings);
                       return wim ? (
                         <View style={styles.whyItMatters}>
                           <Ionicons name="information-circle" size={11} color={C.accent} />
@@ -505,6 +539,18 @@ export default function StandingsScreen() {
                 );
               })}
             </View>
+                </View>
+              );
+            })}
+
+            {hasClinch && (
+              <View style={styles.clinchLegend}>
+                <Text style={styles.clinchLegendTitle}>CLINCH KEY</Text>
+                <Text style={styles.clinchLegendItem}>x — Clinched playoff berth</Text>
+                <Text style={styles.clinchLegendItem}>y — Clinched division title</Text>
+                <Text style={styles.clinchLegendItem}>e — Eliminated</Text>
+              </View>
+            )}
 
             {/* Legend */}
             <View style={styles.legend}>
@@ -593,6 +639,28 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.dark.accent}08`,
   },
   wimText: { color: Colors.dark.accent, fontSize: 11, fontFamily: "Inter_400Regular", fontStyle: "italic" },
+
+  confHeader: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 16, paddingVertical: 12, marginTop: 12,
+  },
+  confDot: { width: 8, height: 8, borderRadius: 4 },
+  confTitle: { fontSize: 14, fontWeight: "900", fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  confLine: { flex: 1, height: 1, backgroundColor: C.separator },
+
+  clinchBadge: {
+    borderWidth: 1, borderRadius: 4,
+    paddingHorizontal: 3, paddingVertical: 0.5,
+  },
+  clinchText: { fontSize: 8, fontWeight: "900" },
+
+  clinchLegend: {
+    marginHorizontal: 16, marginTop: 12, padding: 12,
+    backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator,
+  },
+  clinchLegendTitle: { fontSize: 10, fontWeight: "900", color: C.textSecondary, letterSpacing: 1, marginBottom: 6 },
+  clinchLegendItem: { fontSize: 11, color: C.textTertiary, marginBottom: 2 },
 
   expandedRow: {
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator,

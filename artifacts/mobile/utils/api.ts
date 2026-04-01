@@ -142,6 +142,8 @@ export interface StandingEntry {
   differential: number | null;
   draws: number | null;
   points: number | null;
+  playoffSeed: number | null;
+  clinched: string | null;
 }
 
 export interface NewsArticle {
