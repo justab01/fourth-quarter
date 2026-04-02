@@ -422,6 +422,7 @@ function InOneBreath() {
     staleTime: 120_000,
     refetchInterval: 120_000,
   });
+  const [expanded, setExpanded] = useState(true);
 
   if (isLoading) {
     return (
@@ -440,15 +441,18 @@ function InOneBreath() {
   if (!data?.summary) return null;
 
   return (
-    <View style={iobStyles.card}>
-      <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-      <View style={iobStyles.header}>
-        <Ionicons name="sparkles" size={14} color={C.accentGold} />
-        <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
-        <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
+    <Pressable onPress={() => setExpanded(v => !v)}>
+      <View style={iobStyles.card}>
+        <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+        <View style={iobStyles.header}>
+          <Ionicons name="sparkles" size={14} color={C.accentGold} />
+          <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
+          <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
+          <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={16} color={C.textSecondary} style={{ marginLeft: 4 }} />
+        </View>
+        {expanded && <Text style={iobStyles.summary}>{data.summary}</Text>}
       </View>
-      <Text style={iobStyles.summary}>{data.summary}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -993,12 +997,6 @@ export default function HubScreen() {
               <Ionicons name="search" size={14} color={C.accent} />
               <Text style={styles.searchPillText}>Search</Text>
             </Pressable>
-            {allLiveGames.length > 0 && (
-              <Pressable style={styles.livePill} onPress={() => router.push("/(tabs)/live" as any)}>
-                <View style={styles.headerDot} />
-                <Text style={styles.livePillText}>{allLiveGames.length} Live</Text>
-              </Pressable>
-            )}
             <ProfileButton />
           </View>
         </View>
@@ -1143,7 +1141,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 30, fontWeight: "900", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
   teamBadge: { backgroundColor: C.accent, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   teamBadgeText: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1 },
-  headerRight: { alignItems: "flex-end", paddingTop: 18, gap: 8 },
+  headerRight: { flexDirection: "row", alignItems: "center", paddingTop: 18, gap: 10 },
   searchPill: {
     flexDirection: "row", alignItems: "center", gap: 7,
     backgroundColor: C.card, borderWidth: 1.5, borderColor: `${C.accent}55`,
