@@ -13,6 +13,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
 import { TeamLogo } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
+import { ProfileButton } from "@/components/ProfileButton";
 
 const C = Colors.dark;
 
@@ -449,6 +450,7 @@ export default function StandingsScreen() {
             <Text style={styles.subtitle}>{leagueMeta.label} · {new Date().getFullYear()}</Text>
           </View>
           <SearchButton />
+          <ProfileButton />
         </View>
 
         {/* League tabs */}

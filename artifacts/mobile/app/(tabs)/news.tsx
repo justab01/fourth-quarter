@@ -12,6 +12,7 @@ import { api, type NewsArticle } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsCardSkeleton } from "@/components/LoadingSkeleton";
+import { ProfileButton } from "@/components/ProfileButton";
 
 const C = Colors.dark;
 
@@ -128,13 +129,16 @@ export default function NewsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>News</Text>
-          {filter === "My Teams" && preferences.favoriteTeams.length > 0 && (
-            <View style={styles.personalTag}>
-              <Ionicons name="star" size={11} color={C.accent} />
-              <Text style={styles.personalTagText}>Personalized</Text>
-            </View>
-          )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>News</Text>
+            {filter === "My Teams" && preferences.favoriteTeams.length > 0 && (
+              <View style={styles.personalTag}>
+                <Ionicons name="star" size={11} color={C.accent} />
+                <Text style={styles.personalTagText}>Personalized</Text>
+              </View>
+            )}
+          </View>
+          <ProfileButton />
         </View>
 
         {/* Filter chips */}

@@ -14,6 +14,7 @@ import { GameCard } from "@/components/GameCard";
 import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { usePreferences } from "@/context/PreferencesContext";
 import { SearchButton } from "@/components/SearchButton";
+import { ProfileButton } from "@/components/ProfileButton";
 
 const C = Colors.dark;
 
@@ -472,6 +473,7 @@ export default function LiveScreen() {
               </Text>
             </Pressable>
             <SearchButton />
+            <ProfileButton />
           </View>
         </View>
 

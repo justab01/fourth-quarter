@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { SPORT_CATEGORIES, type SportCategory } from "@/constants/sportCategories";
 import { useSearch } from "@/context/SearchContext";
+import { ProfileButton } from "@/components/ProfileButton";
 import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 
@@ -131,9 +132,12 @@ export default function SportsScreen() {
           <Text style={styles.headerEyebrow}>FOURTH QUARTER</Text>
           <Text style={styles.headerTitle}>Sports</Text>
         </View>
-        <Pressable onPress={() => openSearch()} style={styles.searchBtn} hitSlop={8}>
-          <Ionicons name="search" size={20} color={C.text} />
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Pressable onPress={() => openSearch()} style={styles.searchBtn} hitSlop={8}>
+            <Ionicons name="search" size={20} color={C.text} />
+          </Pressable>
+          <ProfileButton />
+        </View>
       </View>
 
       <ScrollView

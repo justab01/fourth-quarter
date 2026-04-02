@@ -17,6 +17,7 @@ import { GameCard, TeamLogo } from "@/components/GameCard";
 import { NewsCard } from "@/components/NewsCard";
 import { RecapCard } from "@/components/RecapCard";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
+import { ProfileButton } from "@/components/ProfileButton";
 import { goToTeam } from "@/utils/navHelpers";
 import { ALL_TEAMS } from "@/constants/allPlayers";
 import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
@@ -998,6 +999,7 @@ export default function HubScreen() {
                 <Text style={styles.livePillText}>{allLiveGames.length} Live</Text>
               </Pressable>
             )}
+            <ProfileButton />
           </View>
         </View>
 

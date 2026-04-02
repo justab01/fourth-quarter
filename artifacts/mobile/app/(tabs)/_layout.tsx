@@ -72,20 +72,20 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Tab 5 — Profile */}
+      {/* Tab 5 — News */}
       <Tabs.Screen
-        name="profile"
+        name="news"
         options={{
-          title: "Profile",
+          title: "News",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
+            <Ionicons name={focused ? "newspaper" : "newspaper-outline"} size={21} color={color} />
           ),
         }}
       />
 
       {/* Hidden tabs — accessible via router.push, not in bar */}
-      <Tabs.Screen name="news"   options={{ href: null }} />
-      <Tabs.Screen name="search" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
+      <Tabs.Screen name="search"  options={{ href: null }} />
     </Tabs>
   );
 }
