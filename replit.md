@@ -41,7 +41,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - **Fan/Nerd Mode:** Toggle for simplified vs. advanced stats.
     - **Home Tab:** "In One Breath" AI summary, "Biggest Movers" (nail-biters/blowouts/upcoming), "Tonight's Watchlist" (AI-curated games).
     - **Live Tab:** Urgency scoring, Smart Filters (All/Close Games/Rivalry/My Teams), Must-Watch Hero carousel.
-    - **Standings:** Sport-adaptive columns, "Why It Matters" context lines, conference grouping (East/West for NBA), playoff seed display, clinch badges (y=division, x=playoff, e=eliminated) with legend.
+    - **Standings:** Sport-adaptive columns, "Why It Matters" context lines, collapsible conference groups (East/West for NBA sorted by seed), playoff seed display, clinch badges (y=division, x=playoff, e=eliminated) with legend. NCAAB tournament bracket with round labels, seed matchups, live/final indicators. Dynamic NBA season year.
     - **Sports Tab:** Season phase badges on sport cards.
     - **Context Chips:** Importance tags on game cards (OT, CLOSE, RIVALRY, PLAYOFF RACE, etc.).
 - **API Server Routes:**

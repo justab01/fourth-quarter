@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Platform, ActivityIndicator, Animated
+  Platform, ActivityIndicator, Animated, Image
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
-import { api, StandingEntry } from "@/utils/api";
+import { api, StandingEntry, TournamentRound, TournamentMatchup } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
 import { TeamLogo } from "@/components/GameCard";
@@ -172,6 +172,157 @@ function RankChange({ delta }: { delta: number | null }) {
   );
 }
 
+// ─── Tournament Bracket ──────────────────────────────────────────────────────
+function TournamentBracket({ rounds, color, show, onToggle }: {
+  rounds: TournamentRound[];
+  color: string;
+  show: boolean;
+  onToggle: () => void;
+}) {
+  if (rounds.length === 0) return null;
+  const totalGames = rounds.reduce((n, r) => n + r.matchups.length, 0);
+  const liveGames = rounds.reduce((n, r) => n + r.matchups.filter(m => m.status === "live").length, 0);
+
+  return (
+    <View style={trnS.container}>
+      <Pressable onPress={onToggle} style={trnS.header}>
+        <Ionicons name="trophy" size={16} color={color} />
+        <Text style={[trnS.headerTitle, { color }]}>Tournament</Text>
+        {liveGames > 0 && (
+          <View style={trnS.liveBadge}>
+            <View style={trnS.liveDot} />
+            <Text style={trnS.liveText}>{liveGames} LIVE</Text>
+          </View>
+        )}
+        <Text style={trnS.gameCount}>{totalGames} games</Text>
+        <View style={{ flex: 1 }} />
+        <Ionicons name={show ? "chevron-up" : "chevron-down"} size={14} color={color} />
+      </Pressable>
+
+      {show && rounds.map((round, ri) => (
+        <View key={ri}>
+          <View style={trnS.roundHeader}>
+            <View style={[trnS.roundDot, { backgroundColor: color }]} />
+            <Text style={trnS.roundName}>{round.name}</Text>
+            <View style={[trnS.roundLine, { backgroundColor: `${color}30` }]} />
+          </View>
+          {round.matchups.map((m, mi) => (
+            <TournamentMatchupRow key={mi} matchup={m} color={color} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function TournamentMatchupRow({ matchup: m, color }: { matchup: TournamentMatchup; color: string }) {
+  const isLive = m.status === "live";
+  const isDone = m.status === "finished";
+  return (
+    <View style={[trnS.matchup, isLive && { borderColor: `${C.live}40`, backgroundColor: `${C.live}08` }]}>
+      <View style={trnS.matchupTeam}>
+        {m.logo1 ? (
+          <Image source={{ uri: m.logo1 }} style={trnS.matchupLogo} />
+        ) : (
+          <View style={[trnS.matchupLogo, { backgroundColor: C.card }]} />
+        )}
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            {m.seed1 != null && <Text style={trnS.seed}>({m.seed1})</Text>}
+            <Text style={[trnS.teamName, isDone && m.winner === m.team1 && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
+              {m.team1}
+            </Text>
+          </View>
+        </View>
+        {m.score1 != null && (
+          <Text style={[trnS.score, isDone && m.winner === m.team1 && { color: C.text, fontWeight: "800" }]}>
+            {m.score1}
+          </Text>
+        )}
+      </View>
+      <View style={trnS.matchupDivider} />
+      <View style={trnS.matchupTeam}>
+        {m.logo2 ? (
+          <Image source={{ uri: m.logo2 }} style={trnS.matchupLogo} />
+        ) : (
+          <View style={[trnS.matchupLogo, { backgroundColor: C.card }]} />
+        )}
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            {m.seed2 != null && <Text style={trnS.seed}>({m.seed2})</Text>}
+            <Text style={[trnS.teamName, isDone && m.winner === m.team2 && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
+              {m.team2}
+            </Text>
+          </View>
+        </View>
+        {m.score2 != null && (
+          <Text style={[trnS.score, isDone && m.winner === m.team2 && { color: C.text, fontWeight: "800" }]}>
+            {m.score2}
+          </Text>
+        )}
+      </View>
+      {isLive && (
+        <View style={trnS.liveIndicator}>
+          <View style={trnS.liveDot} />
+          <Text style={trnS.liveLabel}>LIVE</Text>
+        </View>
+      )}
+      {isDone && (
+        <View style={trnS.finalIndicator}>
+          <Text style={trnS.finalLabel}>FINAL</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const trnS = StyleSheet.create({
+  container: {
+    backgroundColor: C.card, borderRadius: 16, overflow: "hidden",
+    borderWidth: 1, borderColor: C.cardBorder, marginBottom: 12,
+  },
+  header: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
+  },
+  headerTitle: { fontSize: 15, fontWeight: "900", letterSpacing: 0.3 },
+  gameCount: { fontSize: 10, color: C.textTertiary, fontWeight: "600" },
+  liveBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: `${C.live}18`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+  },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  liveText: { fontSize: 9, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
+  roundHeader: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 14, paddingVertical: 8, backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  roundDot: { width: 5, height: 5, borderRadius: 3 },
+  roundName: { fontSize: 11, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.3 },
+  roundLine: { flex: 1, height: 1 },
+  matchup: {
+    marginHorizontal: 10, marginVertical: 4, borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.02)", borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.separator, overflow: "hidden",
+  },
+  matchupTeam: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 10, paddingVertical: 7,
+  },
+  matchupLogo: { width: 20, height: 20, borderRadius: 10 },
+  seed: { fontSize: 10, color: C.textTertiary, fontWeight: "700" },
+  teamName: { fontSize: 12, color: C.textSecondary, fontFamily: "Inter_500Medium", flex: 1 },
+  score: { fontSize: 14, color: C.textTertiary, fontWeight: "700", fontFamily: "Inter_700Bold", minWidth: 24, textAlign: "right" },
+  matchupDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 10 },
+  liveIndicator: {
+    position: "absolute", top: 4, right: 6, flexDirection: "row", alignItems: "center", gap: 3,
+  },
+  liveLabel: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
+  finalIndicator: { position: "absolute", top: 6, right: 8 },
+  finalLabel: { fontSize: 8, fontWeight: "800", color: C.textTertiary, letterSpacing: 0.5 },
+});
+
 // ─── Top movers bar ───────────────────────────────────────────────────────────
 function TopMovers({ standings }: { standings: StandingEntry[] }) {
   const hotStreak = standings.filter(e => e.streak?.startsWith("W") && parseInt(e.streak.slice(1)) >= 3)
@@ -221,6 +372,8 @@ export default function StandingsScreen() {
   const defaultLeague = myLeagues[0] ?? "NBA";
   const [activeLeague, setActiveLeague] = useState(defaultLeague);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [collapsedConfs, setCollapsedConfs] = useState<Set<string>>(new Set());
+  const [showTournament, setShowTournament] = useState(true);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
@@ -232,6 +385,7 @@ export default function StandingsScreen() {
   });
 
   const standings = data?.standings ?? [];
+  const tournament = data?.tournament ?? [];
   const leagueMeta = LEAGUE_META[activeLeague] ?? { color: C.accent, label: activeLeague };
   const hasGamesBack = standings.some(e => e.gamesBack !== null);
   const hasZones = !!ZONE_CONFIGS[activeLeague];
@@ -321,6 +475,15 @@ export default function StandingsScreen() {
           </View>
         ) : (
           <>
+            {tournament.length > 0 && (
+              <TournamentBracket
+                rounds={tournament}
+                color={leagueMeta.color}
+                show={showTournament}
+                onToggle={() => setShowTournament(prev => !prev)}
+              />
+            )}
+
             {/* Top movers */}
             <TopMovers standings={standings} />
 
@@ -337,21 +500,37 @@ export default function StandingsScreen() {
             )}
 
             {conferences.map(conf => {
-              const confStandings = conf
+              const confStandings = (conf
                 ? standings.filter(e => e.conference === conf)
-                : standings;
+                : standings).sort((a, b) => (a.playoffSeed ?? a.rank) - (b.playoffSeed ?? b.rank));
               if (confStandings.length === 0) return null;
+              const isCollapsed = conf ? collapsedConfs.has(conf) : false;
+              const toggleConf = () => {
+                if (!conf) return;
+                setCollapsedConfs(prev => {
+                  const next = new Set(prev);
+                  if (next.has(conf)) next.delete(conf); else next.add(conf);
+                  return next;
+                });
+              };
+              const confTeamCount = confStandings.length;
+              const confRecord = confStandings[0] ? `${confStandings[0].teamName.split(" ").slice(-1)[0]} leads` : "";
               return (
                 <View key={conf ?? "all"}>
                   {conf && (
-                    <View style={styles.confHeader}>
+                    <Pressable onPress={toggleConf} style={styles.confHeader}>
                       <View style={[styles.confDot, { backgroundColor: leagueMeta.color }]} />
                       <Text style={[styles.confTitle, { color: leagueMeta.color }]}>{conf}</Text>
+                      <Text style={styles.confCount}>{confTeamCount} teams</Text>
                       <View style={styles.confLine} />
-                    </View>
+                      <Ionicons
+                        name={isCollapsed ? "chevron-down" : "chevron-up"}
+                        size={14} color={leagueMeta.color}
+                      />
+                    </Pressable>
                   )}
 
-            {/* Table */}
+            {!isCollapsed && (
             <View style={styles.table}>
               {/* Table header */}
               <View style={[styles.tableHead, { borderBottomColor: `${leagueMeta.color}33` }]}>
@@ -420,7 +599,7 @@ export default function StandingsScreen() {
                         <TeamLogo
                           uri={entry.logoUrl}
                           name={entry.teamName}
-                          size={30}
+                          size={24}
                           borderColor={isMyTeam ? `${leagueMeta.color}55` : "rgba(255,255,255,0.08)"}
                         />
                         <View style={{ flex: 1 }}>
@@ -539,6 +718,7 @@ export default function StandingsScreen() {
                 );
               })}
             </View>
+            )}
                 </View>
               );
             })}
@@ -609,10 +789,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5,
     backgroundColor: "rgba(255,255,255,0.025)",
   },
-  thRank: { width: 42, color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2, paddingLeft: 6 },
+  thRank: { width: 30, color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2, paddingLeft: 4 },
   thTeam: { flex: 1, color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
-  thStat: { width: 36, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
-  thStreak: { width: 44, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
+  thStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
+  thStreak: { width: 40, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
 
   tableRow: {
     flexDirection: "row", alignItems: "center",
@@ -623,15 +803,15 @@ const styles = StyleSheet.create({
   tableRowHighlight: {},
   myTeamBar: { position: "absolute", left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
 
-  tdRank: { width: 42, flexDirection: "row", alignItems: "center", gap: 2, paddingLeft: 4 },
-  rankNum: { color: C.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold", minWidth: 20 },
+  tdRank: { width: 30, flexDirection: "row", alignItems: "center", gap: 2, paddingLeft: 2 },
+  rankNum: { color: C.textSecondary, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold", minWidth: 16 },
 
-  tdTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 9 },
+  tdTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 7 },
   teamText: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium", flex: 1 },
   conferenceText: { color: C.textTertiary, fontSize: 10 },
 
-  tdStat: { width: 36, textAlign: "center", color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
-  tdStreak: { width: 44, alignItems: "center" },
+  tdStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular" },
+  tdStreak: { width: 40, alignItems: "center" },
 
   whyItMatters: {
     flexDirection: "row", alignItems: "center", gap: 5,
@@ -647,6 +827,7 @@ const styles = StyleSheet.create({
   confDot: { width: 8, height: 8, borderRadius: 4 },
   confTitle: { fontSize: 14, fontWeight: "900", fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
   confLine: { flex: 1, height: 1, backgroundColor: C.separator },
+  confCount: { fontSize: 10, color: C.textTertiary, fontWeight: "600", marginLeft: 4 },
 
   clinchBadge: {
     borderWidth: 1, borderRadius: 4,

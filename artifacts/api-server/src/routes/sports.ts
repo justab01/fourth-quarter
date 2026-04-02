@@ -1103,6 +1103,14 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
           allEntries.push({ rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null, ...ext, playoffSeed: null, clinched: null });
         });
       }
+      allEntries.sort((a, b) => {
+        if (a.conference !== b.conference) return (a.conference ?? "").localeCompare(b.conference ?? "");
+        return (a.playoffSeed ?? 99) - (b.playoffSeed ?? 99);
+      });
+      for (const conf of [...new Set(allEntries.map(e => e.conference))]) {
+        let rank = 1;
+        allEntries.filter(e => e.conference === conf).forEach(e => { e.rank = rank++; });
+      }
       entries = allEntries;
 
     } else if (league === "NFL") {
@@ -1183,7 +1191,7 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
     } else if (league === "NCAAB") {
       const json = await espnFetch(
         "https://site.web.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/standings" +
-        "?region=us&lang=en&contentorigin=espn&type=0&level=1&sort=winpercent%3Adesc&limit=25"
+        "?region=us&lang=en&contentorigin=espn&type=0&level=1&sort=winpercent%3Adesc&limit=68"
       ) as EspnStandingsResponse;
       const raw = (json.standings?.entries ?? []).map((e) => {
         const stats = e.stats ?? [];
@@ -1275,10 +1283,90 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
   }
 }
 
+interface TournamentRound {
+  name: string;
+  matchups: {
+    seed1: number | null;
+    team1: string;
+    logo1: string | null;
+    score1: number | null;
+    seed2: number | null;
+    team2: string;
+    logo2: string | null;
+    score2: number | null;
+    status: "upcoming" | "live" | "finished";
+    winner: string | null;
+  }[];
+}
+
+async function fetchNCAABTournament(): Promise<TournamentRound[]> {
+  const cacheKey = "ncaab-tournament";
+  const cached = getCached<TournamentRound[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const year = new Date().getMonth() >= 9 ? new Date().getFullYear() + 1 : new Date().getFullYear();
+    const json = await espnFetch(
+      `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=${year}0301-${year}0410&groups=100&limit=100`
+    ) as any;
+    const events = json.events ?? [];
+    if (events.length === 0) {
+      setCached(cacheKey, [], 600_000);
+      return [];
+    }
+
+    const roundMap = new Map<string, TournamentRound>();
+    for (const ev of events) {
+      const roundName = ev.season?.slug?.includes("ncaa")
+        ? (ev.competitions?.[0]?.type?.abbreviation ?? ev.shortName ?? "Tournament")
+        : null;
+      const notes = ev.competitions?.[0]?.notes?.[0]?.headline ?? "";
+      const round = notes || roundName || "Tournament";
+      if (!roundMap.has(round)) {
+        roundMap.set(round, { name: round, matchups: [] });
+      }
+      const comp = ev.competitions?.[0];
+      if (!comp) continue;
+      const teams = comp.competitors ?? [];
+      const t1 = teams[0]; const t2 = teams[1];
+      if (!t1 || !t2) continue;
+      const statusType = comp.status?.type?.name ?? "";
+      let status: "upcoming" | "live" | "finished" = "upcoming";
+      if (statusType === "STATUS_FINAL" || statusType === "STATUS_END_PERIOD") status = "finished";
+      else if (statusType === "STATUS_IN_PROGRESS" || statusType === "STATUS_HALFTIME") status = "live";
+
+      const winner = status === "finished"
+        ? (Number(t1.score) > Number(t2.score) ? t1.team?.displayName : t2.team?.displayName)
+        : null;
+
+      roundMap.get(round)!.matchups.push({
+        seed1: t1.curatedRank?.current ?? null,
+        team1: t1.team?.displayName ?? "TBD",
+        logo1: t1.team?.logo ?? null,
+        score1: status !== "upcoming" ? Number(t1.score ?? 0) : null,
+        seed2: t2.curatedRank?.current ?? null,
+        team2: t2.team?.displayName ?? "TBD",
+        logo2: t2.team?.logo ?? null,
+        score2: status !== "upcoming" ? Number(t2.score ?? 0) : null,
+        status,
+        winner,
+      });
+    }
+
+    const rounds = [...roundMap.values()];
+    setCached(cacheKey, rounds, 300_000);
+    return rounds;
+  } catch (err) {
+    console.error("NCAAB tournament fetch error:", err);
+    return [];
+  }
+}
+
 router.get("/sports/standings", async (req, res) => {
   const league = ((req.query.league as string) ?? "NBA").toUpperCase();
   const standings = await fetchLeagueStandings(league);
-  res.json({ standings });
+  const tournament = league === "NCAAB" ? await fetchNCAABTournament() : [];
+  res.json({ standings, tournament });
 });
 
 router.get("/sports/in-one-breath", async (_req, res) => {

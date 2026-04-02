@@ -24,7 +24,7 @@ export const api = {
     apiFetch<GameDetail>(`/sports/game/${gameId}`),
 
   getStandings: (league: string) =>
-    apiFetch<{ standings: StandingEntry[] }>(`/sports/standings?league=${league}`),
+    apiFetch<{ standings: StandingEntry[]; tournament: TournamentRound[] }>(`/sports/standings?league=${league}`),
 
   getNews: (teams?: string[], leagues?: string[]) => {
     const params = new URLSearchParams();
@@ -144,6 +144,24 @@ export interface StandingEntry {
   points: number | null;
   playoffSeed: number | null;
   clinched: string | null;
+}
+
+export interface TournamentMatchup {
+  seed1: number | null;
+  team1: string;
+  logo1: string | null;
+  score1: number | null;
+  seed2: number | null;
+  team2: string;
+  logo2: string | null;
+  score2: number | null;
+  status: "upcoming" | "live" | "finished";
+  winner: string | null;
+}
+
+export interface TournamentRound {
+  name: string;
+  matchups: TournamentMatchup[];
 }
 
 export interface NewsArticle {
