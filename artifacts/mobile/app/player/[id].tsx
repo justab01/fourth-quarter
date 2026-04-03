@@ -449,22 +449,31 @@ function CareerStatsTab({ liveProfile, league, teamColor }: {
 }
 
 // ─── Season helpers ───────────────────────────────────────────────────────────
-function getCurrentSeason(): number {
-  const now = new Date();
-  return now.getFullYear() + (now.getMonth() >= 7 ? 1 : 0);
+const SINGLE_YEAR_LEAGUES = new Set(["NFL", "MLB", "MLS", "WNBA", "NCAAF"]);
+
+function isSplitYearLeague(league: string): boolean {
+  return !SINGLE_YEAR_LEAGUES.has(league.toUpperCase());
 }
 
-function buildSeasonList(draftYear: number | null | undefined, yearsExperience: number | null | undefined): number[] {
-  const current = getCurrentSeason();
+function getCurrentSeason(league: string): number {
+  const now = new Date();
+  if (isSplitYearLeague(league)) {
+    return now.getFullYear() + (now.getMonth() >= 7 ? 1 : 0);
+  }
+  return now.getFullYear();
+}
+
+function buildSeasonList(league: string, draftYear: number | null | undefined, yearsExperience: number | null | undefined): number[] {
+  const current = getCurrentSeason(league);
+  const splitYear = isSplitYearLeague(league);
   let startYear: number;
   if (draftYear && draftYear > 1900) {
-    startYear = draftYear + 1;
+    startYear = splitYear ? draftYear + 1 : draftYear;
   } else if (yearsExperience && yearsExperience > 0) {
     startYear = current - yearsExperience + 1;
   } else {
     startYear = current - 2;
   }
-  startYear = Math.max(startYear, 2002);
   const seasons: number[] = [];
   for (let y = current; y >= startYear; y--) {
     seasons.push(y);
@@ -473,8 +482,7 @@ function buildSeasonList(draftYear: number | null | undefined, yearsExperience: 
 }
 
 function formatSeasonLabel(year: number, league: string): string {
-  const lg = league.toUpperCase();
-  if (lg === "MLB" || lg === "MLS") return `${year}`;
+  if (!isSplitYearLeague(league)) return `${year}`;
   return `${year - 1}-${String(year).slice(2)}`;
 }
 
@@ -483,8 +491,8 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
   league: string; athleteId: string; teamColor: string;
   draftYear?: number | null; yearsExperience?: number | null;
 }) {
-  const seasons = React.useMemo(() => buildSeasonList(draftYear, yearsExperience), [draftYear, yearsExperience]);
-  const [selectedSeason, setSelectedSeason] = useState<number>(seasons[0] ?? getCurrentSeason());
+  const seasons = React.useMemo(() => buildSeasonList(league, draftYear, yearsExperience), [league, draftYear, yearsExperience]);
+  const [selectedSeason, setSelectedSeason] = useState<number>(seasons[0] ?? getCurrentSeason(league));
   const seasonListRef = React.useRef<ScrollView>(null);
 
   const { data, isLoading, isError } = useQuery({
