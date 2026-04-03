@@ -483,7 +483,7 @@ export default function TeamScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { preferences, savePreferences } = usePreferences();
-  const [activeTab, setActiveTab] = useState<Tab>("Roster");
+  const [activeTab, setActiveTab] = useState<Tab>("Scores");
   const tabScrollRef = useRef<ScrollView>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
