@@ -495,6 +495,12 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
   const [selectedSeason, setSelectedSeason] = useState<number>(seasons[0] ?? getCurrentSeason(league));
   const seasonListRef = React.useRef<ScrollView>(null);
 
+  React.useEffect(() => {
+    if (seasons.length > 0 && !seasons.includes(selectedSeason)) {
+      setSelectedSeason(seasons[0]);
+    }
+  }, [seasons, selectedSeason]);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["gamelog", league, athleteId, selectedSeason],
     queryFn: () => api.getAthleteGameLog(league, athleteId, selectedSeason),

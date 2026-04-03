@@ -1760,7 +1760,11 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
   const cfg = LEAGUE_CONFIG[leagueKey];
   if (!cfg) { res.status(400).json({ error: `Unknown league: ${league}` }); return; }
 
-  const currentSeason = new Date().getFullYear() + (new Date().getMonth() >= 7 ? 1 : 0);
+  const SINGLE_YEAR_LEAGUES = new Set(["NFL", "MLB", "MLS", "WNBA", "NCAAF"]);
+  const now = new Date();
+  const currentSeason = SINGLE_YEAR_LEAGUES.has(leagueKey)
+    ? now.getFullYear()
+    : now.getFullYear() + (now.getMonth() >= 7 ? 1 : 0);
   const seasonParam = req.query.season ? Number(req.query.season) : currentSeason;
   if (Number.isNaN(seasonParam) || seasonParam < 1900 || seasonParam > currentSeason + 1) {
     res.status(400).json({ error: "Invalid season year" }); return;
