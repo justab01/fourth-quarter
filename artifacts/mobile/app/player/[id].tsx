@@ -472,7 +472,7 @@ function buildSeasonList(league: string, draftYear: number | null | undefined, y
   } else if (yearsExperience && yearsExperience > 0) {
     startYear = current - yearsExperience + 1;
   } else {
-    startYear = current - 2;
+    startYear = current;
   }
   const seasons: number[] = [];
   for (let y = current; y >= startYear; y--) {
