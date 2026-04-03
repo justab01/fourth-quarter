@@ -286,20 +286,36 @@ export interface AthleteProfile {
   careerStats: Record<string, string>;
 }
 
+export interface GameLogEntry {
+  date: string;
+  opponent: string;
+  opponentId: string;
+  homeAway: "home" | "away";
+  result: string;
+  score: string;
+  stats: Record<string, string>;
+}
+
+export interface GameLogCategory {
+  displayName: string;
+  games: GameLogEntry[];
+}
+
+export type GameLogSectionType = "regular" | "postseason" | "playin" | "preseason" | "allstar" | "other";
+
+export interface GameLogSection {
+  type: GameLogSectionType;
+  displayName: string;
+  categories: GameLogCategory[];
+}
+
 export interface AthleteGameLog {
   leagueKey: string;
   athleteId: string;
   season?: number;
   statLabels: string[];
-  gameLogs: {
-    date: string;
-    opponent: string;
-    opponentId: string;
-    homeAway: "home" | "away";
-    result: string;
-    score: string;
-    stats: Record<string, string>;
-  }[];
+  sections?: GameLogSection[];
+  gameLogs: GameLogEntry[];
 }
 
 export interface AthleteSearchResult {

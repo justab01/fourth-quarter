@@ -1,0 +1,560 @@
+Yes — draft needs to be a real system in the app, not some random tab you tack on at the end.
+
+The clean answer is this:
+
+Build a universal “Draft Center” layer across the app, then let each sport plug into it differently.
+
+That works because several major leagues you care about already have formal draft ecosystems today: the NFL has a seven-round draft with 257 picks in 2026, the NBA has a draft plus lottery and combine flow, MLB runs its First-Year Player Draft during All-Star Week, the NHL holds its draft in late June, the WNBA has both its annual draft and, in 2026, an expansion draft, and MLS still runs the SuperDraft.  ￼
+
+What to add to the app
+
+You need a new product surface:
+
+Draft Center
+
+This should live as a first-class feature, not buried.
+
+Best placements:
+	•	top-level from Home as a featured rail when draft season is active
+	•	inside each league page as its own tab
+	•	inside team pages
+	•	inside player/prospect pages
+	•	inside news/search so draft content is discoverable year-round
+
+Main league tabs that should support Draft Center now
+
+Launch these first:
+	•	NFL Draft
+	•	NBA Draft
+	•	WNBA Draft
+	•	MLB Draft
+	•	NHL Draft
+	•	MLS SuperDraft
+
+That is the real core set right now based on active official league draft structures.  ￼
+
+Also support these special draft modes
+
+Not just normal amateur drafts:
+	•	Lottery
+	•	Mock Drafts
+	•	Combine / measurables
+	•	Draft order
+	•	Tradeable picks
+	•	Expansion Draft
+	•	Draft history
+	•	Prospect rankings / big boards
+
+That matters because the NBA officially surfaces combine data and key draft-process dates, MLB has special draft-order rules like Competitive Balance picks, and the WNBA currently has a separate expansion draft flow in addition to the regular draft.  ￼
+
+⸻
+
+Where it should go in the app
+
+1. League page
+
+Each draft-enabled league gets a Draft tab beside Scores, Teams, Players, Standings, News.
+
+Example:
+	•	NFL
+	•	NBA
+	•	MLB
+	•	NHL
+	•	WNBA
+	•	MLS
+
+League tab layout:
+	•	Overview
+	•	Scores
+	•	Teams
+	•	Standings
+	•	Players
+	•	Draft
+	•	News
+
+2. Team page
+
+Each team page needs a Draft Assets module.
+
+Show:
+	•	current picks owned
+	•	incoming picks
+	•	traded-away picks
+	•	recent selections
+	•	team needs
+	•	salary/cap/roster context if applicable
+	•	latest mocks linked to that team
+
+This is a massive win because fans don’t just care about who got drafted — they care what their team can do.
+
+3. Prospect / player pages
+
+For prospects, add a separate page mode:
+	•	Bio
+	•	Stats
+	•	Scouting
+	•	Measurables
+	•	Draft Projection
+	•	Mock History
+	•	Combine / testing
+	•	News
+
+For drafted players:
+	•	Draft year
+	•	round
+	•	pick number
+	•	drafting team
+	•	trade context if applicable
+
+4. Home screen
+
+Home should have draft-aware rails during seasonally relevant windows:
+	•	“Upcoming Drafts”
+	•	“Latest Mock Drafts”
+	•	“Top Prospects”
+	•	“Draft Order”
+	•	“Biggest Risers”
+	•	“Recent Pick Trades”
+
+5. Search
+
+Searching a player should let the app understand:
+	•	active pro player
+	•	prospect
+	•	former draft pick
+	•	undrafted player
+
+That way search feels smart.
+
+⸻
+
+What Draft Center should contain
+
+A. Overview screen
+
+This is the front page for each league’s draft.
+
+Show:
+	•	next draft date
+	•	location
+	•	order
+	•	top prospects
+	•	latest news
+	•	mock draft carousel
+	•	trade watch
+	•	recent movement
+
+For example, the 2026 NFL Draft is April 23–25 in Pittsburgh, the WNBA Draft is April 13, the MLB Draft is July 11–12 in Philadelphia, and the 2026 NHL Draft is June 26–27 in Buffalo.  ￼
+
+B. Draft Order screen
+
+Must show:
+	•	all picks by round
+	•	pick owner
+	•	original owner
+	•	traded-from note
+	•	compensatory / competitive balance / special pick types where relevant
+
+This especially matters in the NFL and MLB because the NFL runs a full seven-round order and MLB includes Competitive Balance rounds with special trade/forfeiture rules.  ￼
+
+C. Prospect Board screen
+
+This is your big board.
+
+Sort/filter by:
+	•	overall
+	•	position
+	•	school/team/club
+	•	age
+	•	country
+	•	measurements
+	•	projected round
+	•	team fit
+
+For NBA and NHL especially, this should feel premium because official league ecosystems already center prospects and combines heavily.  ￼
+
+D. Mock Draft screen
+
+This is one of the biggest engagement pieces.
+
+Have:
+	•	app official mock
+	•	community mock
+	•	team-specific mock
+	•	lottery simulation for NBA/WNBA where useful
+	•	scenario mode after trades
+
+E. Pick Tracker screen
+
+Live draft night screen:
+	•	pick number
+	•	team on the clock
+	•	selection
+	•	trade alert
+	•	available best prospects
+	•	grade
+	•	clip/highlight
+	•	instant fit analysis
+
+F. Draft History screen
+
+For every league:
+	•	by year
+	•	by team
+	•	by school
+	•	by player
+	•	by position
+
+This gives the app historical gravity.
+
+⸻
+
+The sports logic you need
+
+NFL
+
+NFL draft should feel like a war room.
+
+Must support:
+	•	seven rounds
+	•	full team order
+	•	compensatory picks
+	•	team needs
+	•	prospect cards
+	•	mock drafts
+	•	combine/pro day notes
+	•	live tracker
+	•	undrafted free agent follow-up
+
+The NFL’s official draft page confirms seven rounds and 257 picks for 2026.  ￼
+
+NBA
+
+NBA draft needs a cleaner, more premium prospect feel.
+
+Must support:
+	•	lottery
+	•	combine
+	•	measurement tables
+	•	scrimmage data
+	•	international prospects
+	•	first/second round boards
+	•	mock drafts
+	•	team fit
+
+The NBA officially surfaces lottery/combine dates and combine stats dashboards.  ￼
+
+WNBA
+
+Do not treat WNBA like a smaller NBA clone. Give it real space.
+
+Must support:
+	•	annual draft
+	•	lottery
+	•	prospect board
+	•	team needs
+	•	expansion-draft view when relevant
+	•	college/international pathways
+
+WNBA.com confirms the 2026 annual draft and also a separate 2026 expansion draft for Portland and Toronto.  ￼
+
+MLB
+
+MLB draft is different and needs its own product language.
+
+Must support:
+	•	draft order
+	•	bonus-pool context later if you want
+	•	college vs high school flags
+	•	pitcher vs hitter profile split
+	•	Competitive Balance round markers
+	•	prospect rankings
+	•	pipeline-style team boards
+
+MLB’s official pages confirm the annual First-Year Player Draft and Competitive Balance round structure.  ￼
+
+NHL
+
+NHL needs:
+	•	prospect ranks
+	•	draft order
+	•	junior/college/international club background
+	•	position
+	•	handedness
+	•	height/weight
+	•	scouting blurbs
+	•	draft tracker
+	•	team pipeline
+
+The NHL’s official draft pages emphasize Buffalo 2026 and prospect tracking.  ￼
+
+MLS
+
+Yes, support MLS too.
+
+Not the biggest traffic monster, but it still belongs if you’re building a real broad sports app.
+
+Must support:
+	•	SuperDraft order
+	•	eligible players
+	•	team selections
+	•	Generation adidas notes
+	•	prospect cards
+	•	team fit
+
+MLS still ran the 2026 SuperDraft with official order, eligible player lists, and selection tracking.  ￼
+
+⸻
+
+What to do for sports without a normal draft
+
+This is where you keep the app smart instead of forcing fake draft tabs everywhere.
+
+For leagues/sports that mainly use transfers, academies, signings, or qualification systems, do not force “Draft.” Use a parallel acquisition label like:
+	•	Prospects
+	•	Signings
+	•	Recruitment
+	•	Transfer Market
+	•	Academy Pipeline
+	•	Roster Building
+
+So:
+	•	soccer outside MLS = transfer market first
+	•	combat sports = signed fights / contender pipeline
+	•	golf/tennis/track = prospects / junior pipeline / rankings, not draft
+	•	college sports = recruiting + portal, not pro-draft tab inside the college product
+
+That keeps the app honest.
+
+⸻
+
+Best product structure
+
+Add a universal acquisition rail
+
+Not every sport should show the same word.
+
+Use this logic:
+	•	if league has draft → show Draft
+	•	if league has no draft but has prospects → show Prospects
+	•	if league is transfer-driven → show Transfers
+	•	if league is academy/development driven → show Pipeline
+
+That’s how you scale without making the UI dumb.
+
+⸻
+
+Your app architecture should be
+
+New top-level module
+
+Acquisition Engine
+
+Inside it:
+	•	Draft Center
+	•	Prospect Boards
+	•	Mock Drafts
+	•	Pick Tracker
+	•	Team Assets
+	•	Draft History
+	•	Expansion Drafts
+	•	Recruitment / Transfer equivalents for non-draft sports
+
+This is cleaner than randomly hardcoding “Draft” all over.
+
+⸻
+
+Best mobile navigation for Draft Center
+
+Inside a draft-enabled league
+
+Tabs:
+	•	Overview
+	•	Order
+	•	Prospects
+	•	Mocks
+	•	Teams
+	•	Tracker
+	•	History
+
+On draft night
+
+Auto-switch a league’s Draft tab to:
+	•	Live
+	•	Picks
+	•	Best Available
+	•	Trades
+	•	Team Needs
+
+That would go crazy.
+
+⸻
+
+Team page additions
+
+On every team page for draft leagues, add this block:
+
+Draft Assets card
+	•	2026 picks owned
+	•	2027 picks owned
+	•	picks missing
+	•	incoming via trade
+	•	latest mock pick
+	•	team needs
+	•	last 5 draft picks
+
+And make it tappable into a full screen.
+
+⸻
+
+Prospect page additions
+
+Every prospect card/page should include:
+	•	headshot
+	•	school/club
+	•	age
+	•	nationality
+	•	position
+	•	measurements
+	•	scouting grades
+	•	highlights
+	•	draft range
+	•	consensus rank
+	•	recent movement
+	•	comparable players
+	•	team fits
+	•	news
+
+For NBA/NFL, include combine/pro day numbers.
+For MLB/NHL, include handedness/throws/shoots and developmental league background.
+For MLS, include school/academy/Generation adidas tag.
+
+⸻
+
+Data model you need
+
+Every draft item should support fields like:
+	•	sport
+	•	league
+	•	draft_type
+	•	draft_year
+	•	round
+	•	overall_pick
+	•	pick_in_round
+	•	team_id
+	•	original_team_id
+	•	acquired_via_trade
+	•	compensatory_flag
+	•	competitive_balance_flag
+	•	lottery_flag
+	•	expansion_flag
+	•	prospect_id
+	•	prospect_rank
+	•	school_or_club
+	•	nationality
+	•	position
+	•	measurements
+	•	scouting_grade
+	•	projection_range
+	•	status
+
+For live picks:
+	•	on_clock
+	•	selection_made
+	•	announced_at
+	•	trade_pending
+	•	trade_completed
+
+For team assets:
+	•	owned_pick
+	•	owed_pick
+	•	protected_pick
+	•	swap_rights
+	•	pick_notes
+
+⸻
+
+Exact UI recommendation
+
+Home
+	•	Draft Now rail
+	•	Top Prospects rail
+	•	Latest Mock Drafts rail
+
+League
+	•	Draft tab
+
+Team
+	•	Draft Assets section
+
+Player/Prospect
+	•	Draft profile / draft history module
+
+News
+	•	Draft filter
+
+Search
+	•	“Prospects” result type
+
+⸻
+
+What I’d launch first
+
+Phase 1
+	•	NFL Draft
+	•	NBA Draft
+	•	WNBA Draft
+	•	MLB Draft
+	•	NHL Draft
+	•	MLS SuperDraft
+	•	team draft assets
+	•	prospect pages
+	•	draft order pages
+	•	live pick tracker
+
+Phase 2
+	•	expansion drafts
+	•	draft history database
+	•	mock draft simulator
+	•	team needs engine
+	•	best available engine
+	•	notifications
+
+Phase 3
+	•	transfer/recruitment equivalents for non-draft sports
+	•	personalized draft boards
+	•	betting/award tie-ins if you ever want that later
+
+⸻
+
+Copy-paste handoff for dev
+
+Draft System Requirements
+	•	Add a universal Draft Center framework to the app for leagues with active draft systems
+	•	Draft-enabled leagues at launch should include NFL, NBA, WNBA, MLB, NHL, and MLS
+	•	Each draft-enabled league page must include a Draft tab
+	•	Draft tab must support subpages for Overview, Order, Prospects, Mock Drafts, Teams, Live Tracker, and History
+	•	Team pages must include a Draft Assets module showing owned picks, traded picks, incoming picks, team needs, and recent selections
+	•	Prospect pages must support draft-specific profiles with measurements, rankings, scouting notes, projection range, and team fit
+	•	Live draft mode must support on-the-clock state, pick announcements, best available players, and trade alerts
+	•	System must support multiple draft types including annual amateur drafts, lotteries, combines, expansion drafts, and league-specific special pick structures
+	•	Data model must support original pick owner, current pick owner, round, overall pick number, trade status, and league-specific special pick tags
+	•	Sports without draft systems should not force a Draft tab and instead use alternate acquisition surfaces such as Prospects, Transfers, Recruitment, or Pipeline
+	•	Search and news systems must support draft content as its own discoverable content type
+
+⸻
+
+My strongest take
+
+Do not think of this as “add draft somewhere.”
+
+Think of it as:
+
+the app needs a full player-acquisition layer.
+
+Draft is one branch.
+Transfers are another.
+Recruiting is another.
+Prospect pipelines are another.
+
+That’s how the app starts feeling like a real sports operating system instead of just scores with extra tabs.

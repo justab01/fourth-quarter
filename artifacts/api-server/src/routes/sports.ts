@@ -1783,7 +1783,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
     const eventsMap: Record<string, any> = json.events ?? {};
     const seasonTypes: any[] = json.seasonTypes ?? [];
 
-    const gameLogs: {
+    type GameEntry = {
       date: string;
       opponent: string;
       opponentId: string;
@@ -1791,37 +1791,80 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
       result: string;
       score: string;
       stats: Record<string, string>;
+    };
+
+    function parseEvent(evEntry: any): GameEntry | null {
+      const evId = evEntry.eventId ?? "";
+      const meta = eventsMap[evId];
+      if (!meta) return null;
+      const statsArr: string[] = evEntry.stats ?? [];
+      const statsMap: Record<string, string> = {};
+      labels.forEach((label, i) => {
+        if (statsArr[i] !== undefined) statsMap[label] = statsArr[i];
+      });
+      const opponent = meta.opponent?.abbreviation ?? meta.opponent?.displayName ?? "";
+      const opponentId = meta.opponent?.id ?? "";
+      const teamId = meta.team?.id ?? "";
+      const homeAway: "home" | "away" = meta.homeTeamId === teamId ? "home" : "away";
+      const homeScore = meta.homeTeamScore ?? "";
+      const awayScore = meta.awayTeamScore ?? "";
+      const score = homeScore !== "" && awayScore !== ""
+        ? `${awayScore}-${homeScore}`
+        : "";
+      const result = meta.gameResult ?? "";
+      const date = meta.gameDate ?? "";
+      if (!opponent || (Object.keys(statsMap).length === 0 && !result)) return null;
+      return { date, opponent, opponentId, homeAway, result, score, stats: statsMap };
+    }
+
+    function classifySeasonType(displayName: string): string {
+      const dn = displayName.toLowerCase();
+      if (dn.includes("postseason") || dn.includes("playoff")) return "postseason";
+      if (dn.includes("play in") || dn.includes("play-in") || dn.includes("playin")) return "playin";
+      if (dn.includes("preseason")) return "preseason";
+      if (dn.includes("all-star") || dn.includes("all star")) return "allstar";
+      return "regular";
+    }
+
+    const sections: {
+      type: string;
+      displayName: string;
+      categories: {
+        displayName: string;
+        games: GameEntry[];
+      }[];
     }[] = [];
 
+    const gameLogs: GameEntry[] = [];
+
     for (const seasonType of seasonTypes) {
+      const stName = seasonType.displayName ?? "";
+      const stType = classifySeasonType(stName);
+      const cleanName = stName
+        .replace(/^\d{4}(-\d{2})?\s+/, "")
+        .replace(/^\d{4}\s+/, "");
+
+      const cats: { displayName: string; games: GameEntry[] }[] = [];
+
       for (const cat of seasonType.categories ?? []) {
+        if (cat.type === "total") continue;
+        const catGames: GameEntry[] = [];
         for (const evEntry of cat.events ?? []) {
-          const evId = evEntry.eventId ?? "";
-          const meta = eventsMap[evId];
-          if (!meta) continue;
-
-          const statsArr: string[] = evEntry.stats ?? [];
-          const statsMap: Record<string, string> = {};
-          labels.forEach((label, i) => {
-            if (statsArr[i] !== undefined) statsMap[label] = statsArr[i];
-          });
-
-          const opponent = meta.opponent?.abbreviation ?? meta.opponent?.displayName ?? "";
-          const opponentId = meta.opponent?.id ?? "";
-          const teamId = meta.team?.id ?? "";
-          const homeAway: "home" | "away" = meta.homeTeamId === teamId ? "home" : "away";
-          const homeScore = meta.homeTeamScore ?? "";
-          const awayScore = meta.awayTeamScore ?? "";
-          const score = homeScore !== "" && awayScore !== ""
-            ? `${awayScore}-${homeScore}`
-            : "";
-          const result = meta.gameResult ?? "";
-          const date = meta.gameDate ?? "";
-
-          if (opponent && (Object.keys(statsMap).length > 0 || result)) {
-            gameLogs.push({ date, opponent, opponentId, homeAway, result, score, stats: statsMap });
+          const g = parseEvent(evEntry);
+          if (g) {
+            catGames.push(g);
+            gameLogs.push(g);
           }
         }
+        if (catGames.length > 0) {
+          const catName = cat.displayName ?? "";
+          const prettyName = catName.charAt(0).toUpperCase() + catName.slice(1);
+          cats.push({ displayName: prettyName, games: catGames });
+        }
+      }
+
+      if (cats.length > 0) {
+        sections.push({ type: stType, displayName: cleanName || stName, categories: cats });
       }
     }
 
@@ -1830,6 +1873,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
       athleteId,
       season: seasonParam,
       statLabels: labels,
+      sections,
       gameLogs,
     };
 

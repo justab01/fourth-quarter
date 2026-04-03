@@ -21,7 +21,7 @@ import {
   getAthleteProfile, type TennisProfile, type CombatProfile,
   type XGamesProfile, type OlympicsProfile,
 } from "@/constants/athleteProfiles";
-import { api, type AthleteProfile as LiveProfile, type AthleteGameLog } from "@/utils/api";
+import { api, type AthleteProfile as LiveProfile, type AthleteGameLog, type GameLogEntry, type GameLogSection, type GameLogCategory, type GameLogSectionType } from "@/utils/api";
 
 // ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
 const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|EPL|UCL|LIGA|ATP|WTA|UFC|BOXING|OLYMPICS|XGAMES)-(\d+)$/i;
@@ -518,17 +518,28 @@ const GL_EXPANDED_STATS: Record<string, string[]> = {
   NHL: ["+/-", "PIM", "PPG", "SHG", "GWG"],
 };
 
-// ─── Month grouping helper ───────────────────────────────────────────────────
-type GameLogEntry = {
-  date: string;
-  opponent: string;
-  opponentId: string;
-  homeAway: "home" | "away";
-  result: string;
-  score: string;
-  stats: Record<string, string>;
-};
+// ─── Averaging helper ────────────────────────────────────────────────────────
+function computeAverages(games: GameLogEntry[]): Record<string, string> {
+  const numericKeys = new Set<string>();
+  for (const g of games) {
+    for (const [k, v] of Object.entries(g.stats)) {
+      const n = parseFloat(v);
+      if (!isNaN(n) && !v.includes("-")) numericKeys.add(k);
+    }
+  }
+  const averages: Record<string, string> = {};
+  averages["GP"] = String(games.length);
+  for (const k of numericKeys) {
+    const vals = games.map(g => parseFloat(g.stats[k] ?? "0")).filter(v => !isNaN(v));
+    if (vals.length > 0) {
+      const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+      averages[k] = avg % 1 === 0 ? String(avg) : avg.toFixed(1);
+    }
+  }
+  return averages;
+}
 
+// ─── Month grouping helper ───────────────────────────────────────────────────
 type MonthGroup = {
   month: string;
   monthKey: string;
@@ -541,7 +552,6 @@ function groupByMonth(games: GameLogEntry[]): MonthGroup[] {
   for (const g of games) {
     const d = new Date(g.date);
     const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("en-US", { month: "long" });
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(g);
   }
@@ -550,27 +560,70 @@ function groupByMonth(games: GameLogEntry[]): MonthGroup[] {
   for (const [key, games] of groups) {
     const d = new Date(games[0].date);
     const month = d.toLocaleDateString("en-US", { month: "long" }).toUpperCase();
-
-    const numericKeys = new Set<string>();
-    for (const g of games) {
-      for (const [k, v] of Object.entries(g.stats)) {
-        const n = parseFloat(v);
-        if (!isNaN(n) && !v.includes("-")) numericKeys.add(k);
-      }
-    }
-    const averages: Record<string, string> = {};
-    averages["GP"] = String(games.length);
-    for (const k of numericKeys) {
-      const vals = games.map(g => parseFloat(g.stats[k] ?? "0")).filter(v => !isNaN(v));
-      if (vals.length > 0) {
-        const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
-        averages[k] = avg % 1 === 0 ? String(avg) : avg.toFixed(1);
-      }
-    }
-
-    result.push({ month, monthKey: key, games, averages });
+    result.push({ month, monthKey: key, games, averages: computeAverages(games) });
   }
   return result.sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+}
+
+// ─── Section display order & icons ──────────────────────────────────────────
+const SECTION_ORDER: Record<GameLogSectionType, number> = {
+  regular: 0, postseason: 1, playin: 2, preseason: 3, allstar: 4, other: 5,
+};
+const SECTION_ICONS: Record<string, string> = {
+  regular: "basketball-outline",
+  postseason: "trophy-outline",
+  playin: "flash-outline",
+  preseason: "fitness-outline",
+  allstar: "star-outline",
+};
+const CHAMPIONSHIP_ROUNDS = new Set(["NBA Finals", "World Series", "Stanley Cup Final", "Super Bowl", "MLS Cup Final"]);
+const POSTSEASON_LABEL_MAP: Record<string, string> = {
+  "Conference Quarterfinals": "First Round",
+};
+
+function applyFilterToGames(games: GameLogEntry[], filter: GLFilter): GameLogEntry[] {
+  switch (filter) {
+    case "Home": return games.filter(g => g.homeAway === "home");
+    case "Away": return games.filter(g => g.homeAway === "away");
+    case "Wins": return games.filter(g => g.result?.toUpperCase() === "W");
+    case "Losses": return games.filter(g => g.result?.toUpperCase() === "L");
+    default: return games;
+  }
+}
+
+function filterSections(sections: GameLogSection[], filter: GLFilter): GameLogSection[] {
+  if (filter === "All") return sections;
+
+  if (filter === "Last 5" || filter === "Last 10") {
+    const limit = filter === "Last 5" ? 5 : 10;
+    let remaining = limit;
+    const result: GameLogSection[] = [];
+    for (const section of sections) {
+      if (remaining <= 0) break;
+      const cats: GameLogCategory[] = [];
+      for (const cat of section.categories) {
+        if (remaining <= 0) break;
+        const sliced = cat.games.slice(0, remaining);
+        if (sliced.length > 0) {
+          cats.push({ ...cat, games: sliced });
+          remaining -= sliced.length;
+        }
+      }
+      if (cats.length > 0) result.push({ ...section, categories: cats });
+    }
+    return result;
+  }
+
+  const result: GameLogSection[] = [];
+  for (const section of sections) {
+    const cats: GameLogCategory[] = [];
+    for (const cat of section.categories) {
+      const filtered = applyFilterToGames(cat.games, filter);
+      if (filtered.length > 0) cats.push({ ...cat, games: filtered });
+    }
+    if (cats.length > 0) result.push({ ...section, categories: cats });
+  }
+  return result;
 }
 
 // ─── Skeleton loader ─────────────────────────────────────────────────────────
@@ -730,7 +783,135 @@ function MonthAvgCard({ month, averages, quickStats, teamColor }: {
   );
 }
 
-// ─── Live Game Log Tab — redesigned mobile-first ─────────────────────────────
+// ─── Competition Section Accordion ──────────────────────────────────────────
+function CompetitionSection({ section, league, teamColor, quickStats, defaultOpen }: {
+  section: GameLogSection; league: string; teamColor: string;
+  quickStats: string[]; defaultOpen: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  const allGames = React.useMemo(() => {
+    let games: GameLogEntry[] = [];
+    for (const cat of section.categories) games = games.concat(cat.games);
+    return games;
+  }, [section]);
+
+  const totalAvg = React.useMemo(() => computeAverages(allGames), [allGames]);
+  const isPostseason = section.type === "postseason";
+  const isPlayIn = section.type === "playin";
+  const iconName = SECTION_ICONS[section.type] ?? "calendar-outline";
+
+  const summaryParts = React.useMemo(() => {
+    const parts: string[] = [`${allGames.length} Games`];
+    const ptsKey = league === "NHL" ? "PTS" : league === "MLB" ? "H" : "PTS";
+    if (totalAvg[ptsKey]) parts.push(`${totalAvg[ptsKey]} ${ptsKey === "PTS" ? "PPG" : ptsKey}`);
+    if (totalAvg["REB"]) parts.push(`${totalAvg["REB"]} REB`);
+    if (totalAvg["AST"]) parts.push(`${totalAvg["AST"]} AST`);
+    if (totalAvg["G"] && league === "NHL") parts.push(`${totalAvg["G"]} G`);
+    if (totalAvg["A"] && league === "NHL") parts.push(`${totalAvg["A"]} A`);
+    return parts.join(" • ");
+  }, [totalAvg, allGames.length, league]);
+
+  const record = React.useMemo(() => {
+    const w = allGames.filter(g => g.result?.toUpperCase() === "W").length;
+    const l = allGames.filter(g => g.result?.toUpperCase() === "L").length;
+    return `${w}-${l}`;
+  }, [allGames]);
+
+  if (allGames.length === 0) return null;
+
+  return (
+    <View style={glS.sectionWrap}>
+      <Pressable
+        style={glS.sectionHeader}
+        onPress={() => {
+          setOpen(o => !o);
+          if (Platform.OS !== "web") Haptics.selectionAsync();
+        }}
+      >
+        <View style={glS.sectionHeaderLeft}>
+          <Ionicons name={iconName as any} size={18} color={isPostseason ? "#FFD700" : teamColor} />
+          <Text style={[glS.sectionTitle, isPostseason && { color: "#FFD700" }]}>{section.displayName}</Text>
+          <View style={[glS.recordBadge, isPostseason && { backgroundColor: "rgba(255,215,0,0.12)" }]}>
+            <Text style={[glS.recordText, isPostseason && { color: "#FFD700" }]}>{record}</Text>
+          </View>
+        </View>
+        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color={C.textTertiary} />
+      </Pressable>
+
+      {!open && (
+        <Text style={glS.sectionSummary}>{summaryParts}</Text>
+      )}
+
+      {open && (
+        <View style={glS.sectionBody}>
+          {isPostseason || isPlayIn ? (
+            section.categories.map((cat, ci) => {
+              const catLabel = POSTSEASON_LABEL_MAP[cat.displayName] ?? cat.displayName;
+              const isFinals = CHAMPIONSHIP_ROUNDS.has(cat.displayName);
+              if (cat.games.length === 0) return null;
+              const catAvg = computeAverages(cat.games);
+              const catW = cat.games.filter(g => g.result?.toUpperCase() === "W").length;
+              const catL = cat.games.filter(g => g.result?.toUpperCase() === "L").length;
+
+              return (
+                <View key={ci} style={glS.roundSection}>
+                  <View style={glS.roundHeaderRow}>
+                    {isFinals && <Text style={{ fontSize: 14, marginRight: 4 }}>🏆</Text>}
+                    <Text style={[glS.roundTitle, isFinals && { color: "#FFD700" }]}>{catLabel}</Text>
+                    <View style={glS.monthDivider} />
+                    <Text style={glS.roundRecord}>{catW}-{catL}</Text>
+                  </View>
+                  <SectionAvgCard averages={catAvg} quickStats={quickStats} teamColor={teamColor} isPostseason />
+                  {cat.games.map((game, gi) => (
+                    <GameRow key={`${ci}-${gi}`} game={game} league={league} teamColor={teamColor} quickStats={quickStats} />
+                  ))}
+                </View>
+              );
+            })
+          ) : (
+            (() => {
+              const months = groupByMonth(allGames);
+              return months.map(mg => (
+                <View key={mg.monthKey} style={glS.monthSection}>
+                  <View style={glS.monthHeaderRow}>
+                    <Text style={glS.monthHeader}>{mg.month}</Text>
+                    <View style={glS.monthDivider} />
+                  </View>
+                  <MonthAvgCard month={mg.month} averages={mg.averages} quickStats={quickStats} teamColor={teamColor} />
+                  {mg.games.map((game, i) => (
+                    <GameRow key={`${mg.monthKey}-${i}`} game={game} league={league} teamColor={teamColor} quickStats={quickStats} />
+                  ))}
+                </View>
+              ));
+            })()
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Section Average Card ───────────────────────────────────────────────────
+function SectionAvgCard({ averages, quickStats, teamColor, isPostseason }: {
+  averages: Record<string, string>; quickStats: string[]; teamColor: string; isPostseason?: boolean;
+}) {
+  const displayStats = ["GP", ...quickStats.filter(k => averages[k] !== undefined)];
+  return (
+    <View style={[glS.monthAvgCard, isPostseason && { borderColor: "rgba(255,215,0,0.1)" }]}>
+      <View style={glS.monthAvgRow}>
+        {displayStats.map(k => (
+          <View key={k} style={glS.monthAvgItem}>
+            <Text style={glS.monthAvgStatLabel}>{k}</Text>
+            <Text style={[glS.monthAvgStatValue, k === "GP" && { color: teamColor }]}>{averages[k] ?? "—"}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ─── Live Game Log Tab — competition-segmented ──────────────────────────────
 function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperience }: {
   league: string; athleteId: string; teamColor: string;
   draftYear?: number | null; yearsExperience?: number | null;
@@ -754,33 +935,39 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
 
   const quickStats = GL_QUICK_STATS[league.toUpperCase()] ?? ["MIN", "PTS", "REB", "AST"];
 
-  const filteredGames = React.useMemo(() => {
-    if (!data?.gameLogs) return [];
-    let games = [...data.gameLogs];
-    switch (activeFilter) {
-      case "Last 5": games = games.slice(0, 5); break;
-      case "Last 10": games = games.slice(0, 10); break;
-      case "Home": games = games.filter(g => g.homeAway === "home"); break;
-      case "Away": games = games.filter(g => g.homeAway === "away"); break;
-      case "Wins": games = games.filter(g => g.result?.toUpperCase() === "W"); break;
-      case "Losses": games = games.filter(g => g.result?.toUpperCase() === "L"); break;
-    }
-    return games;
-  }, [data?.gameLogs, activeFilter]);
+  const sortedSections = React.useMemo(() => {
+    if (!data?.sections) return [];
+    return [...data.sections].sort((a, b) =>
+      (SECTION_ORDER[a.type as GameLogSectionType] ?? 99) - (SECTION_ORDER[b.type as GameLogSectionType] ?? 99)
+    );
+  }, [data?.sections]);
 
-  const monthGroups = React.useMemo(() => groupByMonth(filteredGames), [filteredGames]);
+  const filteredSections = React.useMemo(() =>
+    filterSections(sortedSections, activeFilter),
+    [sortedSections, activeFilter]
+  );
+
+  const totalGames = data?.gameLogs?.length ?? 0;
+  const filteredTotal = React.useMemo(() => {
+    let count = 0;
+    for (const s of filteredSections) for (const c of s.categories) count += c.games.length;
+    return count;
+  }, [filteredSections]);
 
   if (isLoading) {
     return <GameLogSkeleton />;
   }
 
+  const hasPostseason = sortedSections.some(s => s.type === "postseason");
+  const subtitle = hasPostseason
+    ? `${formatSeasonLabel(selectedSeason, league)} Season`
+    : `${formatSeasonLabel(selectedSeason, league)} Regular Season`;
+
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
       <View style={glS.introBlock}>
         <Text style={glS.introTitle}>Game Log</Text>
-        <Text style={glS.introSubtitle}>
-          {formatSeasonLabel(selectedSeason, league)} Regular Season
-        </Text>
+        <Text style={glS.introSubtitle}>{subtitle}</Text>
       </View>
 
       <View style={glS.seasonDropdownWrap}>
@@ -844,7 +1031,7 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
         })}
       </ScrollView>
 
-      {(isError || filteredGames.length === 0) ? (
+      {(isError || filteredTotal === 0) ? (
         <View style={{ alignItems: "center", justifyContent: "center", padding: 48, gap: 12 }}>
           <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
           <Text style={{ color: "#AEAEB2", fontSize: 15, fontWeight: "600", textAlign: "center" }}>
@@ -862,19 +1049,17 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
       ) : (
         <View style={{ paddingHorizontal: 16, gap: 0 }}>
           <Text style={glS.gamesCountText}>
-            {filteredGames.length} game{filteredGames.length !== 1 ? "s" : ""}
+            {filteredTotal} game{filteredTotal !== 1 ? "s" : ""} • {filteredSections.length} section{filteredSections.length !== 1 ? "s" : ""}
           </Text>
-          {monthGroups.map(mg => (
-            <View key={mg.monthKey} style={glS.monthSection}>
-              <View style={glS.monthHeaderRow}>
-                <Text style={glS.monthHeader}>{mg.month}</Text>
-                <View style={glS.monthDivider} />
-              </View>
-              <MonthAvgCard month={mg.month} averages={mg.averages} quickStats={quickStats} teamColor={teamColor} />
-              {mg.games.map((game, i) => (
-                <GameRow key={`${mg.monthKey}-${i}`} game={game} league={league} teamColor={teamColor} quickStats={quickStats} />
-              ))}
-            </View>
+          {filteredSections.map((section, si) => (
+            <CompetitionSection
+              key={`${section.type}-${si}`}
+              section={section}
+              league={league}
+              teamColor={teamColor}
+              quickStats={quickStats}
+              defaultOpen={section.type === "regular" || (section.type === "postseason" && hasPostseason)}
+            />
           ))}
         </View>
       )}
@@ -913,8 +1098,42 @@ const glS = StyleSheet.create({
     color: C.textTertiary, fontSize: 12, fontWeight: "600", letterSpacing: 0.5,
     marginBottom: 8, textTransform: "uppercase",
   },
-  monthSection: { marginBottom: 24 },
-  monthHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, marginBottom: 10 },
+  sectionWrap: {
+    marginBottom: 20, backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 12,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)", overflow: "hidden",
+  },
+  sectionHeader: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 14, paddingVertical: 12,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  sectionHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  sectionTitle: {
+    color: C.text, fontSize: 15, fontWeight: "700", fontFamily: "Inter_700Bold",
+    textTransform: "capitalize",
+  },
+  recordBadge: {
+    backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 2,
+  },
+  recordText: { color: C.textSecondary, fontSize: 11, fontWeight: "700" },
+  sectionSummary: {
+    color: C.textTertiary, fontSize: 12, fontWeight: "500",
+    paddingHorizontal: 14, paddingBottom: 10, paddingTop: 0,
+  },
+  sectionBody: { paddingHorizontal: 8, paddingBottom: 8 },
+  roundSection: { marginBottom: 16 },
+  roundHeaderRow: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    marginTop: 8, marginBottom: 8, paddingHorizontal: 4,
+  },
+  roundTitle: {
+    color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "800",
+    letterSpacing: 0.8, textTransform: "uppercase",
+  },
+  roundRecord: { color: C.textTertiary, fontSize: 12, fontWeight: "700" },
+  monthSection: { marginBottom: 16 },
+  monthHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, marginBottom: 10, paddingHorizontal: 4 },
   monthHeader: {
     color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: "800",
     letterSpacing: 1.2, textTransform: "uppercase",

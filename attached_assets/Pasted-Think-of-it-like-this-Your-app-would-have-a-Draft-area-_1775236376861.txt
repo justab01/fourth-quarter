@@ -1,0 +1,224 @@
+Think of it like this:
+
+Your app would have a Draft area the same way ESPN has scores, standings, and stats.
+
+A normal fan would use it in a few simple ways.
+
+1. “I wanna see who my team can draft”
+
+They open:
+	•	NFL
+	•	tap Draft
+	•	see:
+	•	draft order
+	•	their team’s picks
+	•	top prospects
+	•	latest mock drafts
+
+So if I’m a Texans fan, I could open Texans or NFL Draft and instantly see:
+	•	what pick Houston has
+	•	who people think they’ll take
+	•	what positions they need
+	•	if they traded any picks away
+
+That’s probably the most common use.
+
+⸻
+
+2. “I wanna see the best prospects”
+
+They open:
+	•	NBA Draft
+	•	tap Prospects
+
+Then they see a clean list like:
+	•	Cooper Flagg
+	•	Dylan Harper
+	•	Ace Bailey
+
+And each prospect card would show stuff like:
+	•	position
+	•	school/team
+	•	height/weight
+	•	projected draft range
+	•	quick scouting summary
+
+So it would feel kinda like player pages, but for players who aren’t in the league yet.
+
+⸻
+
+3. “I wanna follow the draft live”
+
+On draft night, the Draft page would switch into live mode.
+
+So instead of just static info, it would show:
+	•	Pick 1 — team on the clock
+	•	who got picked
+	•	best available prospects left
+	•	trade alerts
+	•	quick grade or fit summary
+
+So a person could sit there during the draft and follow every pick in real time.
+
+Basically like a score page, but for the draft.
+
+⸻
+
+4. “I wanna know what happened in past drafts”
+
+They open:
+	•	History
+
+Then they can look at:
+	•	2025 draft
+	•	2024 draft
+	•	2023 draft
+
+And tap a team or player to see:
+	•	who was picked
+	•	what round
+	•	what number
+	•	which team drafted them
+
+That makes the app feel way deeper and more official.
+
+⸻
+
+What it would look like
+
+League page example
+
+Let’s say somebody opens NBA.
+
+At the top tabs they might see:
+	•	Scores
+	•	Teams
+	•	Standings
+	•	Players
+	•	Draft
+	•	News
+
+Then inside Draft:
+	•	Overview
+	•	Order
+	•	Prospects
+	•	Mocks
+	•	Tracker
+	•	History
+
+So it’s clean.
+Not confusing.
+Everything draft-related lives in one place.
+
+⸻
+
+Team page example
+
+If they open the Rockets page, they’d see a section like:
+
+Draft Assets
+	•	2026 1st-round pick
+	•	2026 2nd-round pick
+	•	team needs: center, wing defense
+	•	projected selection: Player X
+	•	recent picks: last 5 years
+
+So now the fan doesn’t have to leave the team page to understand the future.
+
+⸻
+
+Prospect page example
+
+If they tap a prospect, the page could look like this:
+
+Player header
+	•	headshot
+	•	name
+	•	school/team
+	•	position
+
+Tabs
+	•	Overview
+	•	Stats
+	•	Scouting
+	•	Measurables
+	•	Projection
+	•	News
+
+And on that page they’d see:
+	•	height / weight
+	•	strengths
+	•	weaknesses
+	•	projected round
+	•	mock draft history
+	•	team fits
+
+So it feels just like a regular player page, but built for draft guys.
+
+⸻
+
+Best simple visual flow
+
+Example: NFL fan experience
+
+User opens app
+→ taps NFL
+→ taps Draft
+→ sees:
+
+Top section
+	•	next draft countdown
+	•	top prospects
+	•	latest mock
+
+Middle section
+	•	draft order
+	•	team needs
+	•	trending players
+
+Bottom section
+	•	latest draft news
+	•	history
+	•	previous picks
+
+That’s it.
+Simple.
+Useful.
+Easy to understand.
+
+⸻
+
+For sports without drafts
+
+This is where it stays smart.
+
+If a sport doesn’t really use drafts, the user would not see “Draft.”
+
+They’d see something that fits better, like:
+	•	Transfers
+	•	Prospects
+	•	Recruiting
+	•	Pipeline
+
+So the app wouldn’t force the wrong system onto the wrong sport.
+
+⸻
+
+The easiest way to think about it
+
+Your app would be showing fans:
+	•	who’s coming next
+	•	who their team can get
+	•	what picks they have
+	•	what happened live
+	•	what happened in past drafts
+
+So Draft becomes the future-building section of the app.
+
+Scores = what happened
+Stats = how they performed
+Draft = who’s next
+
+That’s the simple vision.
+
+I can sketch the exact mobile screen layout next, like what the Draft tab would look like card by card.

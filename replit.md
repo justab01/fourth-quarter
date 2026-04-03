@@ -43,6 +43,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - **Live Tab:** Urgency scoring, Smart Filters (All/Close Games/Rivalry/My Teams), Must-Watch Hero carousel.
     - **Standings:** Sport-adaptive columns, "Why It Matters" context lines, collapsible conference groups (East/West for NBA sorted by seed), playoff seed display, clinch badges (y=division, x=playoff, e=eliminated) with legend. NCAAB tournament bracket with round labels, seed matchups, live/final indicators. Dynamic NBA season year.
     - **Sports Tab:** Season phase badges on sport cards.
+    - **Game Log:** Competition-segmented timeline. Season → Competition Type (Regular Season, Postseason, Play-In, Preseason) → Stage/Round. Regular season groups by month with averages. Postseason groups by round (First Round, Conference Semifinals/Finals, NBA Finals) with series records and per-round averages. Championship rounds marked with 🏆 and gold styling. Collapsible accordion sections with summary headers. Centralized filtering (All/Last 5/Last 10/Home/Away/Wins/Losses) applied globally across sections.
     - **Context Chips:** Importance tags on game cards (OT, CLOSE, RIVALRY, PLAYOFF RACE, etc.).
 - **API Server Routes:**
     - `GET /api/sports/games?league=`: Live ESPN scoreboard.
@@ -53,7 +54,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - `GET /api/sports/news/:sport`: Live ESPN sport-specific news.
     - `GET /api/sports/upcoming/:sport`: Live TheSportsDB + ESPN upcoming/recent events.
     - `GET /api/sports/athlete/:league/:athleteId`: ESPN athlete profile (stats, draft, experience).
-    - `GET /api/sports/athlete/:league/:athleteId/gamelog?season=YYYY`: Per-season game log with `opponentId`. Defaults to current season (league-aware). Career coverage via season picker on mobile. Response includes month-groupable data: date, opponent, opponentId, homeAway, result, score, stats.
+    - `GET /api/sports/athlete/:league/:athleteId/gamelog?season=YYYY`: Per-season game log with competition segmentation. Returns `sections[]` (type: regular/postseason/playin/preseason/allstar, displayName, categories[].games[]) AND flat `gameLogs[]` for backward compat. Postseason categories contain round names (NBA Finals, Conference Finals, etc.). Regular season categories contain months. Supports league-aware season defaults.
     - `POST /api/tts`: OpenAI neural TTS (voice "nova", speed 0.92) with SHA-256 cache key and IP rate limiting (10 req/min). Falls back to device TTS on client.
     - `POST /api/ai/summarize`: OpenAI article/game summary.
     - `POST /api/ai/recap`: OpenAI postgame recap.
