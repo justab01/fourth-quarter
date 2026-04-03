@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, Pressable, Animated,
   Image, Modal, Platform,
@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as Speech from "expo-speech";
 import Colors from "@/constants/colors";
 import type { NewsArticle } from "@/utils/api";
 
@@ -39,6 +40,56 @@ function getLeagueColor(leagues: string[]): string {
   }
   return C.accent;
 }
+
+// ─── Listen button ───────────────────────────────────────────────────────────
+function ListenButton({ article, color }: { article: NewsArticle; color: string }) {
+  const [speaking, setSpeaking] = useState(false);
+
+  const toggle = useCallback(async () => {
+    const isSpeaking = await Speech.isSpeakingAsync();
+    if (isSpeaking || speaking) {
+      Speech.stop();
+      setSpeaking(false);
+      return;
+    }
+    const text = `${article.title}. ${article.summary}`;
+    setSpeaking(true);
+    Speech.speak(text, {
+      language: "en-US",
+      rate: 0.95,
+      onDone: () => setSpeaking(false),
+      onStopped: () => setSpeaking(false),
+      onError: () => setSpeaking(false),
+    });
+  }, [article, speaking]);
+
+  return (
+    <Pressable
+      onPress={(e) => { e.stopPropagation?.(); toggle(); }}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      style={({ pressed }) => [listenS.btn, { borderColor: `${color}40`, opacity: pressed ? 0.7 : 1 }]}
+    >
+      <Ionicons
+        name={speaking ? "stop-circle" : "volume-high"}
+        size={14}
+        color={speaking ? C.live : color}
+      />
+      <Text style={[listenS.label, { color: speaking ? C.live : color }]}>
+        {speaking ? "Stop" : "Listen"}
+      </Text>
+    </Pressable>
+  );
+}
+
+const listenS = StyleSheet.create({
+  btn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 10, borderWidth: 1,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  label: { fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
+});
 
 // ─── Summary preview modal (long-press on mobile) ────────────────────────────
 function SummaryModal({
@@ -78,12 +129,17 @@ function SummaryModal({
             <Text style={modal.metaText}>{timeAgo(article.publishedAt)}</Text>
           </View>
 
-          <Pressable
-            style={[modal.closeBtn, { borderColor: accentColor + "55" }]}
-            onPress={onClose}
-          >
-            <Text style={[modal.closeBtnText, { color: accentColor }]}>Close</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <ListenButton article={article} color={accentColor} />
+            </View>
+            <Pressable
+              style={[modal.closeBtn, { borderColor: accentColor + "55", flex: 1 }]}
+              onPress={onClose}
+            >
+              <Text style={[modal.closeBtnText, { color: accentColor }]}>Close</Text>
+            </Pressable>
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -179,7 +235,10 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
                 <Text style={heroS.summary} numberOfLines={2}>{article.summary}</Text>
                 <View style={heroS.footer}>
                   <Text style={heroS.source}>{article.source}</Text>
-                  <Ionicons name="arrow-forward-circle" size={18} color={accentColor} />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <ListenButton article={article} color={accentColor} />
+                    <Ionicons name="arrow-forward-circle" size={18} color={accentColor} />
+                  </View>
                 </View>
               </View>
             </View>
@@ -231,7 +290,10 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
                     </View>
                     <Text style={card.sourceText}>{article.source}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={C.textTertiary} />
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <ListenButton article={article} color={getLeagueColor(article.leagues)} />
+                    <Ionicons name="chevron-forward" size={16} color={C.textTertiary} />
+                  </View>
                 </View>
               </Animated.View>
             </View>
