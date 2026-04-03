@@ -2331,4 +2331,139 @@ router.post("/tts", async (req, res) => {
   }
 });
 
+// ─── Draft Center ────────────────────────────────────────────────────────────
+
+const DRAFT_SPORT_PATH: Record<string, string> = {
+  NFL: "football/nfl",
+  NBA: "basketball/nba",
+  NHL: "hockey/nhl",
+  MLB: "baseball/mlb",
+};
+
+const POSITION_MAP: Record<string, string> = {
+  "1": "WR", "7": "TE", "8": "QB", "9": "RB", "10": "FB",
+  "29": "CB", "30": "LB", "32": "DT", "36": "S",
+  "46": "OT", "47": "OG", "91": "C", "96": "LS", "80": "PK", "94": "P",
+  "264": "EDGE",
+};
+
+router.get("/sports/draft/:league", async (req, res) => {
+  try {
+    const league = (req.params.league ?? "").toUpperCase();
+    const sportPath = DRAFT_SPORT_PATH[league];
+    if (!sportPath) {
+      res.status(400).json({ error: `Unsupported league: ${league}` });
+      return;
+    }
+
+    const year = req.query.year ? Number(req.query.year) : undefined;
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${sportPath}/draft${year ? `?year=${year}` : ""}`;
+    const cacheKey = `draft_${league}_${year ?? "current"}`;
+    const cached = getCached(cacheKey);
+    if (cached) { res.json(cached); return; }
+
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      res.status(502).json({ error: "ESPN draft API error" });
+      return;
+    }
+    const data = await resp.json() as any;
+
+    const teamsMap = new Map<string, any>();
+    const positionsMap = new Map<string, string>();
+
+    for (const pos of data.positions ?? []) {
+      positionsMap.set(pos.id, pos.abbreviation ?? POSITION_MAP[pos.id] ?? pos.id);
+    }
+
+    const teams = (data.teams ?? []).map((t: any) => {
+      const team = {
+        id: t.id,
+        name: t.displayName ?? "",
+        abbreviation: t.abbreviation ?? "",
+        location: t.location ?? "",
+        logo: t.logo ?? t.darkLogo ?? "",
+        needs: (t.needs ?? []).map((n: any) => ({
+          position: positionsMap.get(n.positionId) ?? POSITION_MAP[n.positionId] ?? n.positionId,
+          met: n.met ?? false,
+        })),
+        nextPick: t.nextpick ?? null,
+        record: t.record?.season?.displayValue ?? null,
+      };
+      teamsMap.set(t.id, team);
+      return team;
+    });
+
+    const picks = (data.picks ?? []).map((p: any) => {
+      const team = teamsMap.get(p.teamId);
+      const athlete = p.athlete;
+      return {
+        pick: p.pick,
+        overall: p.overall,
+        round: p.round,
+        traded: p.traded ?? false,
+        tradeNote: p.tradeNote ?? "",
+        status: p.status ?? "",
+        team: team ? {
+          id: team.id,
+          name: team.name,
+          abbreviation: team.abbreviation,
+          logo: team.logo,
+        } : null,
+        athlete: athlete ? {
+          id: athlete.alternativeId ?? athlete.id ?? "",
+          name: athlete.displayName ?? "",
+          position: positionsMap.get(athlete.position?.id) ?? POSITION_MAP[athlete.position?.id] ?? athlete.position?.abbreviation ?? "",
+          school: athlete.team?.location ?? athlete.team?.displayName ?? "",
+          headshot: athlete.headshot?.href ?? "",
+          height: athlete.displayHeight ?? "",
+          weight: athlete.displayWeight ?? "",
+          grade: athlete.attributes?.find((a: any) => a.name === "grade")?.displayValue ?? null,
+          rank: athlete.attributes?.find((a: any) => a.name === "overall")?.displayValue ?? null,
+        } : null,
+      };
+    });
+
+    const prospects = (data.current?.bestAvailablePicks ?? []).map((p: any) => ({
+      id: p.alternativeId ?? p.id ?? "",
+      name: p.displayName ?? "",
+      position: positionsMap.get(p.position?.id) ?? POSITION_MAP[p.position?.id] ?? p.position?.abbreviation ?? "",
+      school: p.team?.location ?? p.team?.displayName ?? "",
+      headshot: p.headshot?.href ?? "",
+      height: p.displayHeight ?? "",
+      weight: p.displayWeight ?? "",
+      grade: p.attributes?.find((a: any) => a.name === "grade")?.displayValue ?? null,
+      rank: p.attributes?.find((a: any) => a.name === "overall")?.displayValue ?? null,
+    }));
+
+    const draftStatus = data.status?.state ?? "pre";
+    const statusName = data.status?.name ?? "SCHEDULED";
+
+    const totalRounds = league === "NFL" ? 7 : league === "NBA" ? 2 : league === "NHL" ? 7 : league === "MLB" ? 20 : 7;
+
+    const otcPick = picks.find((p: any) => p.status === "ON_THE_CLOCK");
+    const currentPickOverall = otcPick?.overall ?? data.current?.pickId ?? null;
+
+    const result = {
+      league,
+      year: data.year ?? new Date().getFullYear(),
+      displayName: data.displayName ?? `${data.year} ${league} Draft`,
+      status: draftStatus,
+      statusName,
+      currentPick: currentPickOverall,
+      totalRounds,
+      picks,
+      teams,
+      prospects,
+      positions: Array.from(positionsMap.entries()).map(([id, abbr]) => ({ id, abbreviation: abbr })),
+    };
+
+    setCached(cacheKey, result, draftStatus === "in" ? 30_000 : 300_000);
+    res.json(result);
+  } catch (err) {
+    console.error("Draft API error:", err);
+    res.status(500).json({ error: "Failed to fetch draft data" });
+  }
+});
+
 export default router;

@@ -46,6 +46,7 @@ function RootLayoutNav() {
         <Stack.Screen name="sport/[id]" options={{ headerShown: false, presentation: "card" }} />
         <Stack.Screen name="team/[id]" options={{ headerShown: false, presentation: "card" }} />
         <Stack.Screen name="player/[id]" options={{ headerShown: false, presentation: "card" }} />
+        <Stack.Screen name="draft/[league]" options={{ headerShown: false, presentation: "card" }} />
       </Stack>
       {/* Global search modal — available on every screen */}
       <SearchModal />

@@ -521,6 +521,58 @@ const moverStyles = StyleSheet.create({
   detail: { color: C.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular" },
 });
 
+// ─── Draft Center ────────────────────────────────────────────────────────────
+const DRAFT_LEAGUES = [
+  { league: "NFL", emoji: "\uD83C\uDFC8", color: C.nfl, label: "NFL Draft" },
+  { league: "NBA", emoji: "\uD83C\uDFC0", color: C.nba, label: "NBA Draft" },
+  { league: "NHL", emoji: "\uD83C\uDFD2", color: C.accentBlue, label: "NHL Draft" },
+  { league: "MLB", emoji: "\u26BE", color: C.mlb, label: "MLB Draft" },
+];
+
+function DraftCenterSection() {
+  return (
+    <View style={{ gap: 12 }}>
+      <SectionHeading label="Draft Center" accentColor={C.accentGold} badge={
+        <View style={draftStyles.badge}>
+          <Ionicons name="trophy" size={10} color={C.accentGold} />
+        </View>
+      } />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={draftStyles.scroll}>
+        {DRAFT_LEAGUES.map(({ league, emoji, color, label }) => (
+          <Pressable
+            key={league}
+            onPress={() => router.push(`/draft/${league}` as any)}
+            style={draftStyles.card}
+          >
+            <LinearGradient
+              colors={[`${color}30`, `${color}08`]}
+              style={draftStyles.cardGradient}
+            >
+              <Text style={draftStyles.cardEmoji}>{emoji}</Text>
+              <Text style={draftStyles.cardLabel}>{label}</Text>
+              <View style={[draftStyles.cardChip, { backgroundColor: `${color}30` }]}>
+                <Text style={[draftStyles.cardChipText, { color }]}>VIEW</Text>
+                <Ionicons name="chevron-forward" size={10} color={color} />
+              </View>
+            </LinearGradient>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+const draftStyles = StyleSheet.create({
+  badge: { backgroundColor: `${C.accentGold}22`, padding: 4, borderRadius: 8, borderWidth: 1, borderColor: `${C.accentGold}40` },
+  scroll: { gap: 10, paddingRight: 20 },
+  card: { width: 130, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.separator },
+  cardGradient: { padding: 14, gap: 8, alignItems: "flex-start", minHeight: 120, justifyContent: "space-between" },
+  cardEmoji: { fontSize: 28 },
+  cardLabel: { color: "#FFF", fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  cardChip: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  cardChipText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
+});
+
 // ─── Tonight's Watchlist ─────────────────────────────────────────────────────
 function TonightsWatchlist({ allGames, myTeams }: { allGames: Game[]; myTeams: string[] }) {
   const upcoming = allGames.filter(g => g.status === "upcoming");
@@ -1072,6 +1124,11 @@ export default function HubScreen() {
             <BiggestMovers allGames={allGames} />
           </View>
         )}
+
+        {/* DRAFT CENTER */}
+        <View style={styles.section}>
+          <DraftCenterSection />
+        </View>
 
         {/* TONIGHT'S WATCHLIST */}
         {!gamesLoading && allGames.length > 0 && (

@@ -81,6 +81,11 @@ export const api = {
 
   getInOneBreath: () =>
     apiFetch<{ summary: string; generated: string }>("/sports/in-one-breath"),
+
+  getDraft: (league: string, year?: number) => {
+    const params = year ? `?year=${year}` : "";
+    return apiFetch<DraftData>(`/sports/draft/${encodeURIComponent(league)}${params}`);
+  },
 };
 
 export type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
@@ -330,4 +335,62 @@ export interface AthleteSearchResult {
   team: string | null;
   teamAbbr: string | null;
   teamLogo: string | null;
+}
+
+export interface DraftPick {
+  pick: number;
+  overall: number;
+  round: number;
+  traded: boolean;
+  tradeNote: string;
+  status: string;
+  team: { id: string; name: string; abbreviation: string; logo: string } | null;
+  athlete: {
+    id: string;
+    name: string;
+    position: string;
+    school: string;
+    headshot: string;
+    height: string;
+    weight: string;
+    grade: string | null;
+    rank: string | null;
+  } | null;
+}
+
+export interface DraftTeam {
+  id: string;
+  name: string;
+  abbreviation: string;
+  location: string;
+  logo: string;
+  needs: { position: string; met: boolean }[];
+  nextPick: number | null;
+  record: string | null;
+}
+
+export interface DraftProspect {
+  id: string;
+  name: string;
+  position: string;
+  school: string;
+  headshot: string;
+  height: string;
+  weight: string;
+  grade: string | null;
+  rank: string | null;
+}
+
+export interface DraftData {
+  league: string;
+  year: number;
+  displayName: string;
+  status: string;
+  statusName: string;
+  currentPick: number | null;
+  totalRounds: number;
+  picks: DraftPick[];
+  teams: DraftTeam[];
+  prospects: DraftProspect[];
+  positions: { id: string; abbreviation: string }[];
 }
