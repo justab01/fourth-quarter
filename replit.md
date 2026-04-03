@@ -17,7 +17,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
 
 **UI/UX Decisions (Mobile Application - `@workspace/mobile`):**
 - **Theme:** "Livescore Dark" with a near-black background (`#0F0F0F`), dark charcoal cards (`#1C1C1E`), red live badges (`#E8162B`), white text, muted gray secondary elements, orange accent (`#EF7828`), gold AI elements (`#D4A843`), and green for wins (`#30D158`).
-- **Navigation:** Standard (non-floating) dark tab bar with a hairline top separator, white active icons, and gray inactive icons, consistent across iOS, Android, and web.
+- **Navigation:** 5 bottom tabs (Home, Scores, Sports, Standings, News) with standard dark tab bar. Profile is accessed via circular avatar button (`ProfileButton`) in all tab headers — not a tab. `live.tsx` file renders the "Scores" tab.
 - **Components:** `GameCard` (Livescore-style with hero and compact variants), `NewsCard` (3px colored top bar), `RecapCard`, `SearchModal`, `GameCardSkeleton`, `NewsCardSkeleton`, `ErrorBoundary/Fallback`.
 - **Gamecast Engine (`Mobile Gamecast Engine (Layer 3)`):**
     - `ArenaRenderer.tsx`: Sport-specific SVG courts/fields with live overlays (shot trail dots, possession indicators, line of scrimmage, runner glow).
@@ -52,6 +52,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - `GET /api/news?teams=&leagues=`: Live ESPN news.
     - `GET /api/sports/news/:sport`: Live ESPN sport-specific news.
     - `GET /api/sports/upcoming/:sport`: Live TheSportsDB + ESPN upcoming/recent events.
+    - `POST /api/tts`: OpenAI neural TTS (voice "nova", speed 0.92) with SHA-256 cache key and IP rate limiting (10 req/min). Falls back to device TTS on client.
     - `POST /api/ai/summarize`: OpenAI article/game summary.
     - `POST /api/ai/recap`: OpenAI postgame recap.
     - `GET /api/user/preferences?userId=`: Fetch user preferences.

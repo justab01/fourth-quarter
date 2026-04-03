@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import https from "https";
 import zlib from "zlib";
+import { createHash } from "crypto";
 import { db, sportGameEvents, sportGameStates } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -2094,6 +2095,81 @@ router.get("/sports/upcoming/:sport", async (req, res) => {
   } catch (err) {
     console.error("Upcoming events error:", err);
     res.json({ events: [] });
+  }
+});
+
+// ─── Text-to-Speech (OpenAI Neural TTS) ──────────────────────────────────────
+
+const ttsRateMap = new Map<string, number[]>();
+const TTS_RATE_WINDOW = 60_000;
+const TTS_RATE_LIMIT = 10;
+
+router.post("/tts", async (req, res) => {
+  try {
+    const clientIp = req.ip ?? "unknown";
+    const now = Date.now();
+    const timestamps = (ttsRateMap.get(clientIp) ?? []).filter(t => now - t < TTS_RATE_WINDOW);
+    if (timestamps.length >= TTS_RATE_LIMIT) {
+      res.status(429).json({ error: "Too many requests" });
+      return;
+    }
+    timestamps.push(now);
+    ttsRateMap.set(clientIp, timestamps);
+
+    const rawText = req.body?.text;
+    if (typeof rawText !== "string") {
+      res.status(400).json({ error: "Text required" });
+      return;
+    }
+    const text = rawText.trim();
+    if (!text || text.length > 2000) {
+      res.status(400).json({ error: "Text required (max 2000 chars)" });
+      return;
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ error: "TTS not configured" });
+      return;
+    }
+
+    const cacheKey = `tts-${createHash("sha256").update(text).digest("hex")}`;
+    const cached = getCached<Buffer>(cacheKey);
+    if (cached) {
+      res.set({ "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=3600" });
+      res.send(cached);
+      return;
+    }
+
+    const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "tts-1",
+        voice: "nova",
+        input: text,
+        speed: 0.92,
+        response_format: "mp3",
+      }),
+    });
+
+    if (!ttsRes.ok) {
+      console.error("OpenAI TTS error:", ttsRes.status, await ttsRes.text());
+      res.status(502).json({ error: "TTS generation failed" });
+      return;
+    }
+
+    const audioBuffer = Buffer.from(await ttsRes.arrayBuffer());
+    setCached(cacheKey, audioBuffer, 3_600_000);
+
+    res.set({ "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=3600" });
+    res.send(audioBuffer);
+  } catch (err) {
+    console.error("TTS error:", err);
+    res.status(500).json({ error: "TTS error" });
   }
 });
 

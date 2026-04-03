@@ -1,12 +1,13 @@
 import React, { useRef, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, Pressable, Animated,
-  Image, Modal, Platform,
+  Image, Modal, Platform, ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
+import { Audio } from "expo-av";
 import Colors from "@/constants/colors";
 import type { NewsArticle } from "@/utils/api";
 
@@ -41,49 +42,172 @@ function getLeagueColor(leagues: string[]): string {
   return C.accent;
 }
 
+// ─── TTS API helper ──────────────────────────────────────────────────────────
+const TTS_BASE = process.env.EXPO_PUBLIC_DOMAIN
+  ? `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`
+  : "/api";
+
+function formatForSpeech(title: string, summary: string): string {
+  const clean = (s: string) =>
+    s.replace(/[—–]/g, ", ")
+     .replace(/(\d+)-(\d+)/g, "$1 to $2")
+     .replace(/\bvs\.?\b/gi, "versus")
+     .replace(/\bPts\b/gi, "points")
+     .replace(/\bReb\b/gi, "rebounds")
+     .replace(/\bAst\b/gi, "assists")
+     .replace(/\bPPG\b/g, "points per game")
+     .replace(/\s+/g, " ")
+     .trim();
+  return `${clean(title)}. ... ${clean(summary)}`;
+}
+
 // ─── Listen button ───────────────────────────────────────────────────────────
 function ListenButton({ article, color }: { article: NewsArticle; color: string }) {
-  const [speaking, setSpeaking] = useState(false);
+  const [state, setState] = useState<"idle" | "loading" | "playing">("idle");
+  const soundRef = useRef<Audio.Sound | null>(null);
 
-  const toggle = useCallback(async () => {
-    const isSpeaking = await Speech.isSpeakingAsync();
-    if (isSpeaking || speaking) {
-      Speech.stop();
-      setSpeaking(false);
-      return;
+  const stop = useCallback(async () => {
+    if (soundRef.current) {
+      try { await soundRef.current.stopAsync(); } catch {}
+      try { await soundRef.current.unloadAsync(); } catch {}
+      soundRef.current = null;
     }
-    const text = `${article.title}. ${article.summary}`;
-    setSpeaking(true);
+    Speech.stop();
+    setState("idle");
+  }, []);
+
+  const playWithOpenAI = useCallback(async (text: string): Promise<boolean> => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+      const res = await fetch(`${TTS_BASE}/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!res.ok) return false;
+
+      const blob = await res.blob();
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: `data:audio/mpeg;base64,${base64}` },
+        { shouldPlay: true, volume: 1.0 },
+        (status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            soundRef.current = null;
+            setState("idle");
+          }
+        }
+      );
+      soundRef.current = sound;
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const fallbackToDeviceTTS = useCallback(async (text: string) => {
+    let voiceId: string | undefined;
+    try {
+      const voices = await Speech.getAvailableVoicesAsync();
+      const preferred = [
+        "com.apple.voice.compact.en-US.Samantha",
+        "com.apple.ttsbundle.Samantha-compact",
+        "Google UK English Female",
+        "Microsoft Zira",
+        "Samantha",
+      ];
+      const englishVoices = voices.filter(v => v.language?.startsWith("en"));
+      for (const pref of preferred) {
+        const match = englishVoices.find(v =>
+          v.identifier?.includes(pref) || v.name?.includes(pref)
+        );
+        if (match) { voiceId = match.identifier; break; }
+      }
+      if (!voiceId) {
+        const femaleVoice = englishVoices.find(v =>
+          /female|samantha|karen|moira|tessa|fiona/i.test(v.name ?? "")
+        );
+        if (femaleVoice) voiceId = femaleVoice.identifier;
+      }
+    } catch {}
     Speech.speak(text, {
       language: "en-US",
-      rate: 0.95,
-      onDone: () => setSpeaking(false),
-      onStopped: () => setSpeaking(false),
-      onError: () => setSpeaking(false),
+      rate: Platform.OS === "ios" ? 0.48 : 0.88,
+      pitch: 0.9,
+      voice: voiceId,
+      onDone: () => setState("idle"),
+      onStopped: () => setState("idle"),
+      onError: () => setState("idle"),
     });
-  }, [article, speaking]);
+  }, []);
+
+  const toggle = useCallback(async () => {
+    if (state !== "idle") {
+      await stop();
+      return;
+    }
+    if (Platform.OS !== "web") Haptics.selectionAsync();
+    setState("loading");
+
+    try {
+      const text = formatForSpeech(article.title, article.summary);
+      const success = await playWithOpenAI(text);
+      if (success) {
+        setState("playing");
+      } else {
+        await fallbackToDeviceTTS(text);
+        setState("playing");
+      }
+    } catch {
+      setState("idle");
+    }
+  }, [article, state, stop, playWithOpenAI, fallbackToDeviceTTS]);
+
+  React.useEffect(() => { return () => { stop(); }; }, [stop]);
+
+  const icon = state === "loading" ? null
+    : state === "playing" ? "stop-circle"
+    : "volume-high";
+  const label = state === "loading" ? "Loading…"
+    : state === "playing" ? "Stop"
+    : "Listen";
+  const activeColor = state === "playing" ? C.live
+    : state === "loading" ? C.textSecondary
+    : color;
 
   return (
     <Pressable
       onPress={(e) => { e.stopPropagation?.(); toggle(); }}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      style={({ pressed }) => [listenS.btn, { borderColor: `${color}40`, opacity: pressed ? 0.7 : 1 }]}
+      disabled={state === "loading"}
+      style={({ pressed }) => [listenS.btn, { borderColor: `${activeColor}40`, opacity: pressed ? 0.7 : 1 }]}
     >
-      <Ionicons
-        name={speaking ? "stop-circle" : "volume-high"}
-        size={14}
-        color={speaking ? C.live : color}
-      />
-      <Text style={[listenS.label, { color: speaking ? C.live : color }]}>
-        {speaking ? "Stop" : "Listen"}
-      </Text>
+      {state === "loading" ? (
+        <ActivityIndicator size={12} color={C.textSecondary} />
+      ) : (
+        <Ionicons name={icon as any} size={14} color={activeColor} />
+      )}
+      <Text style={[listenS.label, { color: activeColor }]}>{label}</Text>
     </Pressable>
   );
 }
 
 const listenS = StyleSheet.create({
   btn: {
-    flexDirection: "row", alignItems: "center", gap: 4,
+    flexDirection: "row", alignItems: "center", gap: 5,
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 10, borderWidth: 1,
     backgroundColor: "rgba(255,255,255,0.04)",
