@@ -1826,6 +1826,107 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
       return "regular";
     }
 
+    function cleanSectionDisplayName(raw: string): string {
+      let name = raw
+        .replace(/^\d{4}(-\d{2})?\s+/, "")
+        .replace(/^\d{4}\s+/, "");
+      if (/play\s*in\s*regular\s*season/i.test(name)) name = "Play-In Tournament";
+      return name;
+    }
+
+    function inferNFLRound(dateStr: string): string {
+      const d = new Date(dateStr);
+      const mmdd = (d.getMonth() + 1) * 100 + d.getDate();
+      if (mmdd >= 201) return "Super Bowl";
+      if (mmdd >= 125) return "Conference Championship";
+      if (mmdd >= 117) return "Divisional Round";
+      if (mmdd >= 107) return "Wild Card";
+      return "Postseason";
+    }
+
+    function inferNCAAFRound(dateStr: string): string {
+      const d = new Date(dateStr);
+      const mmdd = (d.getMonth() + 1) * 100 + d.getDate();
+      if (mmdd >= 113) return "National Championship";
+      if (mmdd >= 101) return "College Football Playoff";
+      if (mmdd >= 1201) return "Bowl Game";
+      return "Postseason";
+    }
+
+    function groupSeriesByOpponent(games: GameEntry[]): { opponent: string; games: GameEntry[] }[] {
+      const sorted = [...games].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const series: { opponent: string; games: GameEntry[] }[] = [];
+      for (const g of sorted) {
+        const last = series[series.length - 1];
+        if (last && last.opponent === g.opponent) {
+          last.games.push(g);
+        } else {
+          series.push({ opponent: g.opponent, games: [g] });
+        }
+      }
+      return series;
+    }
+
+    function inferSeriesRounds(games: GameEntry[], league: string): { displayName: string; games: GameEntry[] }[] {
+      if (league === "NFL") {
+        const byRound = new Map<string, GameEntry[]>();
+        for (const g of games) {
+          const round = inferNFLRound(g.date);
+          if (!byRound.has(round)) byRound.set(round, []);
+          byRound.get(round)!.push(g);
+        }
+        const result: { displayName: string; games: GameEntry[] }[] = [];
+        const order = ["Super Bowl", "Conference Championship", "Divisional Round", "Wild Card", "Postseason"];
+        for (const label of order) {
+          const rg = byRound.get(label);
+          if (rg && rg.length > 0) result.push({ displayName: label, games: rg });
+        }
+        return result.length > 0 ? result : [{ displayName: "Postseason", games }];
+      }
+
+      if (league === "NCAAF") {
+        const byRound = new Map<string, GameEntry[]>();
+        for (const g of games) {
+          const round = inferNCAAFRound(g.date);
+          if (!byRound.has(round)) byRound.set(round, []);
+          byRound.get(round)!.push(g);
+        }
+        const result: { displayName: string; games: GameEntry[] }[] = [];
+        const order = ["National Championship", "College Football Playoff", "Bowl Game", "Postseason"];
+        for (const label of order) {
+          const rg = byRound.get(label);
+          if (rg && rg.length > 0) result.push({ displayName: label, games: rg });
+        }
+        return result.length > 0 ? result : [{ displayName: "Postseason", games }];
+      }
+
+      if (league === "NHL" || league === "MLS" || league === "MLB") {
+        const series = groupSeriesByOpponent(games);
+
+        const ROUND_NAMES: Record<string, string[]> = {
+          NHL: ["First Round", "Second Round", "Conference Finals", "Stanley Cup Final"],
+          MLS: ["First Round", "Conference Semifinals", "Conference Finals", "MLS Cup Final"],
+          MLB: ["Wild Card", "Division Series", "League Championship Series", "World Series"],
+        };
+        const roundNames = ROUND_NAMES[league] ?? [];
+
+        const totalRounds = roundNames.length;
+        const numSeries = series.length;
+        const startIdx = Math.max(0, totalRounds - numSeries);
+
+        const result: { displayName: string; games: GameEntry[] }[] = [];
+        for (let i = 0; i < numSeries; i++) {
+          const nameIdx = startIdx + i;
+          const label = nameIdx < totalRounds ? roundNames[nameIdx] : `Round ${i + 1}`;
+          result.push({ displayName: label, games: series[i].games });
+        }
+        result.reverse();
+        return result.length > 0 ? result : [{ displayName: "Postseason", games }];
+      }
+
+      return [{ displayName: "Postseason", games }];
+    }
+
     const sections: {
       type: string;
       displayName: string;
@@ -1840,9 +1941,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
     for (const seasonType of seasonTypes) {
       const stName = seasonType.displayName ?? "";
       const stType = classifySeasonType(stName);
-      const cleanName = stName
-        .replace(/^\d{4}(-\d{2})?\s+/, "")
-        .replace(/^\d{4}\s+/, "");
+      const cleanName = cleanSectionDisplayName(stName);
 
       const cats: { displayName: string; games: GameEntry[] }[] = [];
 
@@ -1864,7 +1963,13 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
       }
 
       if (cats.length > 0) {
-        sections.push({ type: stType, displayName: cleanName || stName, categories: cats });
+        if (stType === "postseason" && cats.length === 1 && /^postseason$/i.test(cats[0].displayName)) {
+          const allPostGames = cats[0].games;
+          const inferredRounds = inferSeriesRounds(allPostGames, leagueKey);
+          sections.push({ type: stType, displayName: cleanName || "Postseason", categories: inferredRounds });
+        } else {
+          sections.push({ type: stType, displayName: cleanName || stName, categories: cats });
+        }
       }
     }
 

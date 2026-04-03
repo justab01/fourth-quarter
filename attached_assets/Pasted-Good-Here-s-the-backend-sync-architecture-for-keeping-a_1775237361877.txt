@@ -1,0 +1,454 @@
+Good. Here’s the backend sync architecture for keeping all 3 features live and real:
+	•	game logs
+	•	postseason / tournament segmentation
+	•	draft center
+
+The simple system
+
+Your app should run on 4 layers:
+
+1. Ingest
+
+Pull from real sources only:
+	•	schedules
+	•	teams
+	•	players
+	•	standings
+	•	game stats
+	•	playoff series schedules
+	•	draft prospects / draft order / picks
+
+Sportradar already exposes NBA schedules, playoff series schedules, player profiles, daily change logs, and draft/prospect feeds, and official league sites publish current draft centers and key dates.  ￼
+
+2. Normalize
+
+Convert every source into your own clean tables:
+	•	teams
+	•	players
+	•	games
+	•	game_logs
+	•	competitions
+	•	stages
+	•	draft_prospects
+	•	draft_picks
+	•	team_draft_assets
+
+3. Refresh
+
+Run scheduled sync jobs:
+	•	live games: fast
+	•	standings/rosters: medium
+	•	draft/prospect/order: event-based and seasonal
+	•	historical corrections: daily change log / patch jobs
+
+Sportradar’s NBA and NFL docs both highlight change-log based update workflows specifically for updates to teams, players, schedules, standings, and stats.  ￼
+
+4. Serve
+
+Your app reads from your database, not directly from the external feeds on every screen load. That gives you speed, stability, and control.
+
+⸻
+
+What the backend should actually do
+
+A. Master data tables
+
+teams
+	•	id
+	•	source
+	•	source_team_id
+	•	league
+	•	name
+	•	abbreviation
+	•	logo_url
+	•	last_synced_at
+
+players
+	•	id
+	•	source
+	•	source_player_id
+	•	league
+	•	team_id
+	•	full_name
+	•	headshot_url
+	•	position
+	•	status
+	•	is_prospect
+	•	draft_year
+	•	last_synced_at
+
+games
+	•	id
+	•	source_game_id
+	•	league
+	•	season
+	•	game_date
+	•	home_team_id
+	•	away_team_id
+	•	status
+	•	competition_type
+	•	stage_name
+	•	month_bucket
+	•	series_id
+	•	last_synced_at
+
+player_game_logs
+	•	id
+	•	player_id
+	•	game_id
+	•	team_id
+	•	opponent_team_id
+	•	stat_json
+	•	result
+	•	minutes
+	•	started
+	•	last_synced_at
+
+draft_prospects
+	•	id
+	•	source_prospect_id
+	•	league
+	•	draft_year
+	•	full_name
+	•	school_or_club
+	•	position
+	•	measurements_json
+	•	ranking
+	•	projection_range
+	•	last_synced_at
+
+draft_picks
+	•	id
+	•	league
+	•	draft_year
+	•	round
+	•	overall_pick
+	•	current_team_id
+	•	original_team_id
+	•	prospect_id
+	•	pick_status
+	•	trade_note
+	•	last_synced_at
+
+team_draft_assets
+	•	id
+	•	team_id
+	•	league
+	•	draft_year
+	•	round
+	•	pick_owner_team_id
+	•	original_team_id
+	•	notes
+	•	last_synced_at
+
+⸻
+
+How the 3 features use that data
+
+1. Game logs
+
+The app should never build rows from fake JSON. It should read:
+	•	one real player
+	•	one real game
+	•	one real stat record
+
+Then the UI groups them by:
+	•	regular season → month
+	•	playoffs → round
+	•	tournament/cup → stage
+
+Sportradar’s NBA schedules documentation explicitly separates daily schedule, full season schedule, and series schedule for playoffs, which is exactly what your segmentation layer needs.  ￼
+
+2. Postseason / championship segmentation
+
+Do not hardcode “Finals” manually in the frontend.
+
+Instead store:
+	•	competition_type = playoffs
+	•	stage_name = Conference Finals
+	•	series_id = xyz
+
+Then the frontend renders:
+	•	Conference Finals
+	•	NBA Finals
+	•	Wild Card
+	•	World Series
+	•	etc.
+
+For NBA specifically, playoff series schedules are available as a separate feed, which gives you cleaner stage handling than guessing from dates alone.  ￼
+
+3. Draft center
+
+Draft pages should read from:
+	•	draft_prospects
+	•	draft_picks
+	•	team_draft_assets
+
+For NFL and NBA, draft/prospect structures are already formalized in vendor and official league pages, including prospect endpoints, top prospect feeds, combine measurements, and official draft hubs.  ￼
+
+⸻
+
+Refresh schedule you should use
+
+Live games
+
+Run:
+	•	scoreboard/game state sync every 15–30 seconds
+	•	player box score sync every 30–60 seconds
+	•	play-by-play more frequently later if you add it
+
+Schedules / standings / rosters
+
+Run:
+	•	every 2–6 hours
+	•	plus nightly full reconciliation
+
+Draft / prospects / order
+
+Run:
+	•	daily in quiet periods
+	•	every 1–2 hours during lottery/combine/draft weeks
+	•	every 30–120 seconds during the live draft if you have a live source
+
+That matters because official NBA and WNBA draft pages and official league draft centers change as dates, order, and event details update.  ￼
+
+Historical corrections
+
+Run:
+	•	daily change-log job
+	•	nightly repair job
+
+Sportradar’s daily change-log pattern is built exactly for this kind of correction flow.  ￼
+
+⸻
+
+The anti-fake-data rules
+
+These rules should be hardcoded into production.
+
+Rule 1
+
+If a player/prospect/team does not come from a verified source, do not show it.
+
+Rule 2
+
+If a feed is missing, show:
+	•	“Data pending”
+	•	“Official feed not available yet”
+	•	“Draft order not finalized”
+
+Never show synthetic fallback people.
+
+Rule 3
+
+Every entity must have:
+	•	source ID
+	•	source name
+	•	last synced timestamp
+
+Rule 4
+
+Production should disable all mock records.
+
+Use something like:
+
+const ALLOW_SYNTHETIC_DATA = process.env.NODE_ENV !== 'production';
+
+Then block any mock insert when production is live.
+
+⸻
+
+Best sync design
+
+Job types
+
+syncDailySchedules
+
+Pulls:
+	•	today’s games
+	•	nearby future games
+	•	status updates
+
+syncPlayerProfiles
+
+Pulls:
+	•	players
+	•	bios
+	•	team changes
+	•	draft metadata
+
+syncGameStats
+
+Pulls:
+	•	box scores
+	•	player logs
+	•	corrections
+
+syncCompetitionStages
+
+Maps games into:
+	•	regular season
+	•	play-in
+	•	playoffs
+	•	finals
+	•	cup
+	•	tournament stage
+
+syncDraftProspects
+
+Pulls:
+	•	prospect list
+	•	rankings
+	•	measurements
+	•	combine updates
+
+syncDraftOrderAndPicks
+
+Pulls:
+	•	order
+	•	trades
+	•	live selections
+	•	team assets
+
+reconcileChanges
+
+Uses change logs to patch stale records
+
+⸻
+
+How to map the data cleanly
+
+For NBA game logs
+
+When a game comes in, assign:
+	•	competition_type = regular_season if normal season
+	•	competition_type = playoffs if series schedule / playoff context
+	•	stage_name = First Round | Conference Semifinals | Conference Finals | NBA Finals
+	•	month_bucket = April for regular-season grouping only
+
+That gives you ESPN-style organization without hardcoding it in UI.
+
+For drafts
+
+When a prospect comes in:
+	•	store real name
+	•	store real source ID
+	•	mark is_prospect = true
+	•	connect to league + draft year
+
+When a pick is announced:
+	•	update draft_picks.prospect_id
+	•	mark pick_status = selected
+	•	attach team and trade note
+
+⸻
+
+Suggested stack for your app
+
+For a Replit / Node / Expo setup, I’d do:
+
+Backend
+	•	Node.js
+	•	TypeScript
+	•	Express or Fastify
+	•	Postgres
+	•	Prisma
+	•	Redis for cache + rate-limit buffering
+	•	cron jobs / scheduled workers
+
+Mobile
+	•	Expo / React Native
+	•	TanStack Query for client caching
+	•	stale-while-revalidate behavior
+	•	local persistence for recently viewed pages
+
+Infra behavior
+	•	DB is source of truth for app
+	•	Redis caches hot endpoints
+	•	workers ingest external feeds
+	•	frontend never calls raw external APIs directly in production
+
+⸻
+
+Cache rules
+
+Cache aggressively for:
+	•	team pages
+	•	standings
+	•	prospect boards
+	•	draft history
+
+Cache lightly for:
+	•	live scores
+	•	on-the-clock draft screen
+	•	live picks
+
+Never trust cache forever
+
+Every cached response should carry:
+	•	fetchedAt
+	•	sourceUpdatedAt
+	•	staleAfter
+
+⸻
+
+Simple endpoint model
+
+Your own API could look like:
+
+Game logs
+	•	GET /players/:id/game-logs?season=2025-26
+	•	GET /players/:id/game-logs?season=2025-26&competition=playoffs
+
+Draft
+	•	GET /draft/:league/:year/overview
+	•	GET /draft/:league/:year/prospects
+	•	GET /draft/:league/:year/order
+	•	GET /draft/:league/:year/picks/live
+	•	GET /teams/:id/draft-assets
+
+Team/league
+	•	GET /leagues/:league/competitions
+	•	GET /teams/:id/future-assets
+
+⸻
+
+What the user sees when data is missing
+
+This part matters.
+
+Instead of fake players, show:
+
+Draft page
+	•	“Official prospect feed has not published this player yet.”
+
+Team assets
+	•	“Pick ownership still being verified.”
+
+Game logs
+	•	“Stats are being updated from official feed.”
+
+That keeps trust high.
+
+⸻
+
+The production launch checklist
+
+Before this goes live, make sure you have:
+	•	real provider connected
+	•	stable source IDs stored
+	•	mock data disabled
+	•	nightly reconciliation
+	•	live refresh jobs
+	•	stale-data UI states
+	•	duplicate detection
+	•	source timestamps visible internally
+	•	logs/alerts for broken syncs
+
+⸻
+
+The one-sentence command for your dev
+
+Build the sports app around a live-ingest database architecture where official/vendor-backed sources sync into normalized tables on scheduled workers, production mock data is disabled, and the frontend renders only verified, timestamped records for game logs, postseason segmentation, and drafts.
+
+If you want, I’ll turn this into a full Replit-ready backend folder structure with routes, tables, cron jobs, and sync worker names.

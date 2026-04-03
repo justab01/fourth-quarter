@@ -576,7 +576,10 @@ const SECTION_ICONS: Record<string, string> = {
   preseason: "fitness-outline",
   allstar: "star-outline",
 };
-const CHAMPIONSHIP_ROUNDS = new Set(["NBA Finals", "World Series", "Stanley Cup Final", "Super Bowl", "MLS Cup Final"]);
+const CHAMPIONSHIP_ROUNDS = new Set([
+  "NBA Finals", "World Series", "Stanley Cup Final", "Super Bowl", "MLS Cup Final",
+  "WNBA Finals", "National Championship",
+]);
 const POSTSEASON_LABEL_MAP: Record<string, string> = {
   "Conference Quarterfinals": "First Round",
 };
