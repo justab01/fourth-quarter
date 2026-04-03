@@ -486,14 +486,259 @@ function formatSeasonLabel(year: number, league: string): string {
   return `${year - 1}-${String(year).slice(2)}`;
 }
 
-// ─── Live Game Log Tab — uses ESPN via our API ────────────────────────────────
+// ─── ESPN team logo helper ────────────────────────────────────────────────────
+const LOGO_SPORT_MAP: Record<string, string> = {
+  NBA: "nba", NFL: "nfl", MLB: "mlb", NHL: "nhl", MLS: "soccer",
+  WNBA: "wnba", NCAAB: "mens-college-basketball", NCAAF: "college-football",
+  EPL: "soccer", UCL: "soccer", LIGA: "soccer",
+};
+function getTeamLogoUrl(league: string, opponentAbbr: string): string {
+  const sport = LOGO_SPORT_MAP[league.toUpperCase()] ?? league.toLowerCase();
+  return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/${sport}/500/${opponentAbbr.toLowerCase()}.png&w=40&h=40`;
+}
+
+// ─── Game log filter types ───────────────────────────────────────────────────
+type GLFilter = "All" | "Last 5" | "Last 10" | "Home" | "Away" | "Wins" | "Losses";
+const GL_FILTERS: GLFilter[] = ["All", "Last 5", "Last 10", "Home", "Away", "Wins", "Losses"];
+
+// ─── Stat priority per league ────────────────────────────────────────────────
+const GL_QUICK_STATS: Record<string, string[]> = {
+  NBA: ["MIN", "PTS", "FG", "3PT", "REB", "AST"],
+  NFL: ["CMP", "ATT", "YDS", "TD", "INT", "CAR"],
+  MLB: ["AB", "H", "HR", "RBI", "R", "AVG"],
+  NHL: ["G", "A", "PTS", "SOG", "TOI", "+/-"],
+  MLS: ["MIN", "G", "A", "SH", "SOG", "FC"],
+  WNBA: ["MIN", "PTS", "FG", "3PT", "REB", "AST"],
+};
+
+const GL_EXPANDED_STATS: Record<string, string[]> = {
+  NBA: ["STL", "BLK", "TO", "PF", "+/-", "FT", "FT%", "FG%", "3P%"],
+  NFL: ["RUSH", "RECY", "SACKS", "FUM", "RTG"],
+  MLB: ["BB", "K", "SB", "OBP", "SLG", "OPS"],
+  NHL: ["+/-", "PIM", "PPG", "SHG", "GWG"],
+};
+
+// ─── Month grouping helper ───────────────────────────────────────────────────
+type GameLogEntry = {
+  date: string;
+  opponent: string;
+  opponentId: string;
+  homeAway: "home" | "away";
+  result: string;
+  score: string;
+  stats: Record<string, string>;
+};
+
+type MonthGroup = {
+  month: string;
+  monthKey: string;
+  games: GameLogEntry[];
+  averages: Record<string, string>;
+};
+
+function groupByMonth(games: GameLogEntry[]): MonthGroup[] {
+  const groups = new Map<string, GameLogEntry[]>();
+  for (const g of games) {
+    const d = new Date(g.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("en-US", { month: "long" });
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(g);
+  }
+
+  const result: MonthGroup[] = [];
+  for (const [key, games] of groups) {
+    const d = new Date(games[0].date);
+    const month = d.toLocaleDateString("en-US", { month: "long" }).toUpperCase();
+
+    const numericKeys = new Set<string>();
+    for (const g of games) {
+      for (const [k, v] of Object.entries(g.stats)) {
+        const n = parseFloat(v);
+        if (!isNaN(n) && !v.includes("-")) numericKeys.add(k);
+      }
+    }
+    const averages: Record<string, string> = {};
+    averages["GP"] = String(games.length);
+    for (const k of numericKeys) {
+      const vals = games.map(g => parseFloat(g.stats[k] ?? "0")).filter(v => !isNaN(v));
+      if (vals.length > 0) {
+        const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+        averages[k] = avg % 1 === 0 ? String(avg) : avg.toFixed(1);
+      }
+    }
+
+    result.push({ month, monthKey: key, games, averages });
+  }
+  return result.sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+}
+
+// ─── Skeleton loader ─────────────────────────────────────────────────────────
+function GameLogSkeleton() {
+  return (
+    <View style={{ padding: 16, gap: 20 }}>
+      <View style={{ gap: 8 }}>
+        <View style={{ width: 120, height: 16, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 4 }} />
+        <View style={{ width: "100%", height: 44, backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10 }} />
+      </View>
+      {[1, 2, 3].map(section => (
+        <View key={section} style={{ gap: 10 }}>
+          <View style={{ width: 80, height: 14, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 4 }} />
+          <View style={{ backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 12, height: 40 }} />
+          {[1, 2, 3, 4].map(row => (
+            <View key={row} style={{ height: 64, backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 8, marginBottom: 2 }} />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ─── Result Badge ────────────────────────────────────────────────────────────
+function ResultBadge({ result, score }: { result: string; score: string }) {
+  const isWin = result.toUpperCase() === "W";
+  const isLoss = result.toUpperCase() === "L";
+  const hasOT = score.toLowerCase().includes("ot");
+  const bg = isWin ? "rgba(76,175,80,0.15)" : isLoss ? "rgba(244,67,54,0.15)" : "rgba(255,255,255,0.08)";
+  const color = isWin ? "#4CAF50" : isLoss ? "#F44336" : C.textSecondary;
+  const displayScore = score.replace(/\s*ot/i, "").trim();
+
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+      <View style={[glS.resultBadge, { backgroundColor: bg }]}>
+        <Text style={[glS.resultBadgeText, { color }]}>{result} {displayScore}</Text>
+      </View>
+      {hasOT && (
+        <View style={glS.otBadge}>
+          <Text style={glS.otBadgeText}>OT</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Single Game Row ─────────────────────────────────────────────────────────
+const GameRow = React.memo(function GameRow({ game, league, teamColor, quickStats }: {
+  game: GameLogEntry; league: string; teamColor: string; quickStats: string[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  const d = new Date(game.date);
+  const dayAbbr = d.toLocaleDateString("en-US", { weekday: "short" });
+  const dateStr = d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+  const logoUrl = getTeamLogoUrl(league, game.opponent);
+  const isAway = game.homeAway === "away";
+
+  const expandedKeys = GL_EXPANDED_STATS[league.toUpperCase()] ?? [];
+  const expandedStats = expandedKeys.filter(k => game.stats[k] !== undefined);
+
+  return (
+    <Pressable
+      onPress={() => {
+        setExpanded(e => !e);
+        if (Platform.OS !== "web") Haptics.selectionAsync();
+      }}
+      style={({ pressed }) => [
+        glS.gameRow,
+        pressed && { backgroundColor: "rgba(255,255,255,0.04)" },
+      ]}
+    >
+      <View style={glS.gameRowTop}>
+        <View style={glS.gameRowLeft}>
+          <Text style={glS.gameDate}>{dayAbbr} {dateStr}</Text>
+          <Text style={glS.homeAwayIndicator}>{isAway ? "@" : "vs"}</Text>
+          {!logoError ? (
+            <Image source={{ uri: logoUrl }} style={glS.oppLogo} onError={() => setLogoError(true)} />
+          ) : (
+            <View style={[glS.oppLogo, glS.oppLogoFallback]}>
+              <Text style={glS.oppLogoInitial}>{game.opponent.charAt(0)}</Text>
+            </View>
+          )}
+          <Text style={glS.oppName}>{game.opponent}</Text>
+        </View>
+        <View style={glS.gameRowRight}>
+          {game.result && game.score ? (
+            <ResultBadge result={game.result} score={game.score} />
+          ) : (
+            <Text style={glS.noResult}>—</Text>
+          )}
+          <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={14} color={C.textTertiary} />
+        </View>
+      </View>
+      <View style={glS.gameRowBottom}>
+        {quickStats.map(k => {
+          const val = game.stats[k];
+          if (val === undefined) return null;
+          const isKey = k === "PTS" || k === "YDS" || k === "HR" || k === "G";
+          return (
+            <View key={k} style={glS.statChip}>
+              <Text style={glS.statChipLabel}>{k}</Text>
+              <Text style={[glS.statChipValue, isKey && { color: teamColor }]}>{val}</Text>
+            </View>
+          );
+        })}
+      </View>
+      {expanded && expandedStats.length > 0 && (
+        <View style={glS.expandedSection}>
+          <View style={glS.expandedDivider} />
+          <Text style={glS.expandedTitle}>FULL STAT LINE</Text>
+          <View style={glS.expandedGrid}>
+            {Object.entries(game.stats).map(([k, v]) => (
+              <View key={k} style={glS.expandedItem}>
+                <Text style={glS.expandedLabel}>{k}</Text>
+                <Text style={glS.expandedValue}>{v}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
+            {game.homeAway === "home" && (
+              <View style={[glS.contextPill, { backgroundColor: "rgba(76,175,80,0.12)" }]}>
+                <Ionicons name="home" size={10} color="#4CAF50" />
+                <Text style={[glS.contextPillText, { color: "#4CAF50" }]}>Home</Text>
+              </View>
+            )}
+            {game.homeAway === "away" && (
+              <View style={[glS.contextPill, { backgroundColor: "rgba(100,149,237,0.12)" }]}>
+                <Ionicons name="airplane" size={10} color="#6495ED" />
+                <Text style={[glS.contextPillText, { color: "#6495ED" }]}>Away</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+    </Pressable>
+  );
+});
+
+// ─── Monthly Average Card ────────────────────────────────────────────────────
+function MonthAvgCard({ month, averages, quickStats, teamColor }: {
+  month: string; averages: Record<string, string>; quickStats: string[]; teamColor: string;
+}) {
+  const displayStats = ["GP", ...quickStats.filter(k => averages[k] !== undefined)];
+  return (
+    <View style={glS.monthAvgCard}>
+      <Text style={glS.monthAvgLabel}>{month} AVG</Text>
+      <View style={glS.monthAvgRow}>
+        {displayStats.map(k => (
+          <View key={k} style={glS.monthAvgItem}>
+            <Text style={glS.monthAvgStatLabel}>{k}</Text>
+            <Text style={[glS.monthAvgStatValue, k === "GP" && { color: teamColor }]}>{averages[k] ?? "—"}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ─── Live Game Log Tab — redesigned mobile-first ─────────────────────────────
 function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperience }: {
   league: string; athleteId: string; teamColor: string;
   draftYear?: number | null; yearsExperience?: number | null;
 }) {
   const seasons = React.useMemo(() => buildSeasonList(league, draftYear, yearsExperience), [league, draftYear, yearsExperience]);
   const [selectedSeason, setSelectedSeason] = useState<number>(seasons[0] ?? getCurrentSeason(league));
-  const seasonListRef = React.useRef<ScrollView>(null);
+  const [activeFilter, setActiveFilter] = useState<GLFilter>("All");
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
 
   React.useEffect(() => {
     if (seasons.length > 0 && !seasons.includes(selectedSeason)) {
@@ -507,110 +752,230 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
     staleTime: 900_000,
   });
 
-  const seasonPicker = (
-    <View style={{ marginBottom: 12 }}>
+  const quickStats = GL_QUICK_STATS[league.toUpperCase()] ?? ["MIN", "PTS", "REB", "AST"];
+
+  const filteredGames = React.useMemo(() => {
+    if (!data?.gameLogs) return [];
+    let games = [...data.gameLogs];
+    switch (activeFilter) {
+      case "Last 5": games = games.slice(0, 5); break;
+      case "Last 10": games = games.slice(0, 10); break;
+      case "Home": games = games.filter(g => g.homeAway === "home"); break;
+      case "Away": games = games.filter(g => g.homeAway === "away"); break;
+      case "Wins": games = games.filter(g => g.result?.toUpperCase() === "W"); break;
+      case "Losses": games = games.filter(g => g.result?.toUpperCase() === "L"); break;
+    }
+    return games;
+  }, [data?.gameLogs, activeFilter]);
+
+  const monthGroups = React.useMemo(() => groupByMonth(filteredGames), [filteredGames]);
+
+  if (isLoading) {
+    return <GameLogSkeleton />;
+  }
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+      <View style={glS.introBlock}>
+        <Text style={glS.introTitle}>Game Log</Text>
+        <Text style={glS.introSubtitle}>
+          {formatSeasonLabel(selectedSeason, league)} Regular Season
+        </Text>
+      </View>
+
+      <View style={glS.seasonDropdownWrap}>
+        <Pressable
+          style={glS.seasonDropdown}
+          onPress={() => {
+            setSeasonDropdownOpen(o => !o);
+            if (Platform.OS !== "web") Haptics.selectionAsync();
+          }}
+        >
+          <Text style={glS.seasonDropdownText}>{formatSeasonLabel(selectedSeason, league)}</Text>
+          <Ionicons name={seasonDropdownOpen ? "chevron-up" : "chevron-down"} size={18} color={C.textSecondary} />
+        </Pressable>
+        {seasonDropdownOpen && (
+          <View style={glS.seasonDropdownList}>
+            <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled showsVerticalScrollIndicator>
+              {seasons.map(s => {
+                const active = s === selectedSeason;
+                return (
+                  <Pressable
+                    key={s}
+                    onPress={() => {
+                      setSelectedSeason(s);
+                      setSeasonDropdownOpen(false);
+                      setActiveFilter("All");
+                      if (Platform.OS !== "web") Haptics.selectionAsync();
+                    }}
+                    style={[glS.seasonDropdownItem, active && { backgroundColor: `${teamColor}22` }]}
+                  >
+                    <Text style={[glS.seasonDropdownItemText, active && { color: teamColor, fontWeight: "700" }]}>
+                      {formatSeasonLabel(s, league)}
+                    </Text>
+                    {active && <Ionicons name="checkmark" size={16} color={teamColor} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+
       <ScrollView
-        ref={seasonListRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+        contentContainerStyle={glS.filterRow}
       >
-        {seasons.map(s => {
-          const active = s === selectedSeason;
+        {GL_FILTERS.map(f => {
+          const active = f === activeFilter;
           return (
             <Pressable
-              key={s}
+              key={f}
               onPress={() => {
-                setSelectedSeason(s);
+                setActiveFilter(f);
                 if (Platform.OS !== "web") Haptics.selectionAsync();
               }}
-              style={{
-                paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
-                backgroundColor: active ? teamColor : C.card,
-                borderWidth: 1, borderColor: active ? teamColor : "rgba(255,255,255,0.08)",
-              }}
+              style={[glS.filterPill, active && { backgroundColor: teamColor, borderColor: teamColor }]}
             >
-              <Text style={{
-                color: active ? "#fff" : C.textSecondary,
-                fontSize: 13, fontWeight: active ? "700" : "500",
-              }}>
-                {formatSeasonLabel(s, league)}
-              </Text>
+              <Text style={[glS.filterPillText, active && { color: "#fff" }]}>{f}</Text>
             </Pressable>
           );
         })}
       </ScrollView>
-    </View>
-  );
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1 }}>
-        {seasonPicker}
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
-          <ActivityIndicator color={teamColor} size="large" />
-          <Text style={{ color: "#AEAEB2", fontSize: 13 }}>Loading {formatSeasonLabel(selectedSeason, league)} game log…</Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (isError || !data || data.gameLogs.length === 0) {
-    return (
-      <View style={{ flex: 1 }}>
-        {seasonPicker}
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+      {(isError || filteredGames.length === 0) ? (
+        <View style={{ alignItems: "center", justifyContent: "center", padding: 48, gap: 12 }}>
           <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
-          <Text style={{ color: "#AEAEB2", fontSize: 14, textAlign: "center" }}>
-            No game log for {formatSeasonLabel(selectedSeason, league)}{isError ? " — ESPN API unavailable" : ""}
+          <Text style={{ color: "#AEAEB2", fontSize: 15, fontWeight: "600", textAlign: "center" }}>
+            {isError
+              ? "Couldn't load game logs"
+              : activeFilter !== "All"
+                ? `No games found for "${activeFilter}"`
+                : `No game log for ${formatSeasonLabel(selectedSeason, league)}`
+            }
           </Text>
+          {isError && (
+            <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>ESPN API unavailable</Text>
+          )}
         </View>
-      </View>
-    );
-  }
-
-  const logs = data.gameLogs;
-  const allKeys = [...new Set(logs.flatMap(l => Object.keys(l.stats)))];
-  const shownKeys = allKeys.slice(0, 6);
-
-  return (
-    <ScrollView contentContainerStyle={{ padding: 0, paddingBottom: 40 }}>
-      {seasonPicker}
-      <View style={table.card}>
-        <Text style={[table.title, { marginBottom: 4 }]}>
-          {formatSeasonLabel(selectedSeason, league)} — {logs.length} Game{logs.length !== 1 ? "s" : ""}
-        </Text>
-        <View style={table.header}>
-          <Text style={[table.headerCell, { width: 70 }]}>DATE</Text>
-          <Text style={[table.headerCell, { flex: 1 }]}>OPP</Text>
-          <Text style={[table.headerCell, { width: 32 }]}>RES</Text>
-          {shownKeys.map(k => (
-            <Text key={k} style={[table.headerCell, { width: 44, textAlign: "right" }]}>{k}</Text>
-          ))}
-        </View>
-        {logs.map((log, i) => {
-          const dateStr = log.date ? new Date(log.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
-          const isWin = log.result?.toUpperCase().startsWith("W");
-          const isLoss = log.result?.toUpperCase().startsWith("L");
-          return (
-            <View key={i} style={[table.row, { backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.025)" }]}>
-              <Text style={[table.cell, { width: 70, color: C.textSecondary, fontSize: 11 }]}>{dateStr}</Text>
-              <Text style={[table.cell, { flex: 1, fontSize: 12 }]} numberOfLines={1}>
-                {log.homeAway === "away" ? "@" : "vs"} {log.opponent || "—"}
-              </Text>
-              <Text style={[table.cell, { width: 32, fontWeight: "800", color: isWin ? "#4CAF50" : isLoss ? "#F44336" : C.textSecondary }]}>
-                {log.result || "—"}
-              </Text>
-              {shownKeys.map(k => (
-                <Text key={k} style={[table.cell, { width: 44, textAlign: "right", color: C.text }]}>{log.stats[k] ?? "—"}</Text>
+      ) : (
+        <View style={{ paddingHorizontal: 16, gap: 0 }}>
+          <Text style={glS.gamesCountText}>
+            {filteredGames.length} game{filteredGames.length !== 1 ? "s" : ""}
+          </Text>
+          {monthGroups.map(mg => (
+            <View key={mg.monthKey} style={glS.monthSection}>
+              <View style={glS.monthHeaderRow}>
+                <Text style={glS.monthHeader}>{mg.month}</Text>
+                <View style={glS.monthDivider} />
+              </View>
+              <MonthAvgCard month={mg.month} averages={mg.averages} quickStats={quickStats} teamColor={teamColor} />
+              {mg.games.map((game, i) => (
+                <GameRow key={`${mg.monthKey}-${i}`} game={game} league={league} teamColor={teamColor} quickStats={quickStats} />
               ))}
             </View>
-          );
-        })}
-      </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
+
+const glS = StyleSheet.create({
+  introBlock: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  introTitle: { color: C.text, fontSize: 30, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  introSubtitle: { color: C.textTertiary, fontSize: 14, fontFamily: "Inter_500Medium", marginTop: 2 },
+  seasonDropdownWrap: { paddingHorizontal: 16, marginBottom: 10, zIndex: 10 },
+  seasonDropdown: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    paddingHorizontal: 16, height: 46,
+  },
+  seasonDropdownText: { color: C.text, fontSize: 15, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  seasonDropdownList: {
+    backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
+    marginTop: 4, overflow: "hidden",
+  },
+  seasonDropdownItem: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)",
+  },
+  seasonDropdownItemText: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_500Medium" },
+  filterRow: { paddingHorizontal: 16, gap: 8, marginBottom: 12 },
+  filterPill: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "transparent",
+  },
+  filterPillText: { color: C.textSecondary, fontSize: 13, fontWeight: "500" },
+  gamesCountText: {
+    color: C.textTertiary, fontSize: 12, fontWeight: "600", letterSpacing: 0.5,
+    marginBottom: 8, textTransform: "uppercase",
+  },
+  monthSection: { marginBottom: 24 },
+  monthHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, marginBottom: 10 },
+  monthHeader: {
+    color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: "800",
+    letterSpacing: 1.2, textTransform: "uppercase",
+  },
+  monthDivider: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.06)" },
+  monthAvgCard: {
+    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    padding: 12, marginBottom: 8,
+  },
+  monthAvgLabel: {
+    color: C.textTertiary, fontSize: 10, fontWeight: "800",
+    letterSpacing: 0.8, marginBottom: 6, textTransform: "uppercase",
+  },
+  monthAvgRow: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  monthAvgItem: { alignItems: "center", minWidth: 36 },
+  monthAvgStatLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
+  monthAvgStatValue: { color: C.text, fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold", marginTop: 1 },
+  gameRow: {
+    paddingVertical: 12, paddingHorizontal: 12,
+    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)",
+    borderRadius: 6,
+  },
+  gameRowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  gameRowLeft: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
+  gameDate: { color: C.textTertiary, fontSize: 12, fontWeight: "500", width: 68 },
+  homeAwayIndicator: { color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: "600", width: 16 },
+  oppLogo: { width: 20, height: 20, borderRadius: 10 },
+  oppLogoFallback: { backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" },
+  oppLogoInitial: { color: C.textSecondary, fontSize: 10, fontWeight: "800" },
+  oppName: { color: C.text, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold", marginLeft: 2 },
+  gameRowRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  noResult: { color: C.textTertiary, fontSize: 13 },
+  resultBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
+  resultBadgeText: { fontSize: 12, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  otBadge: {
+    backgroundColor: "rgba(255,165,0,0.15)", borderRadius: 6,
+    paddingHorizontal: 4, paddingVertical: 1,
+  },
+  otBadgeText: { color: "#FFA500", fontSize: 9, fontWeight: "800" },
+  gameRowBottom: { flexDirection: "row", gap: 10, marginTop: 6, flexWrap: "wrap" },
+  statChip: { flexDirection: "row", alignItems: "center", gap: 3 },
+  statChipLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "600" },
+  statChipValue: { color: C.textSecondary, fontSize: 12, fontWeight: "700" },
+  expandedSection: { marginTop: 8, paddingTop: 0 },
+  expandedDivider: { height: 1, backgroundColor: "rgba(255,255,255,0.06)", marginBottom: 8 },
+  expandedTitle: {
+    color: C.textTertiary, fontSize: 10, fontWeight: "800",
+    letterSpacing: 0.8, marginBottom: 6, textTransform: "uppercase",
+  },
+  expandedGrid: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
+  expandedItem: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 6,
+    paddingHorizontal: 8, paddingVertical: 4, marginBottom: 2,
+  },
+  expandedLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700" },
+  expandedValue: { color: C.text, fontSize: 12, fontWeight: "600" },
+  contextPill: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  contextPillText: { fontSize: 10, fontWeight: "700" },
+});
 
 // ─── Preferred stat column order per league ────────────────────────────────────
 const PREFERRED_COLS: Record<string, string[]> = {
@@ -1584,34 +1949,38 @@ export default function PlayerScreen() {
     }
   };
 
-  const HERO_H = topPad + 252;
+  const isCompactHeader = activeTab === "Game Log";
+  const HERO_H = isCompactHeader ? topPad + 72 : topPad + 252;
 
   return (
     <View style={[styles.container, { paddingBottom: botPad }]}>
-      {/* ── Hero Header — ESPN-style large headshot banner ── */}
+      {/* ── Hero Header — full or compact based on active tab ── */}
       <View style={[styles.heroContainer, { height: HERO_H }]}>
-        {/* Team-color gradient background */}
         <LinearGradient
-          colors={[team.color, `${team.color}DD`, `${team.color}88`, C.background]}
+          colors={isCompactHeader
+            ? [`${team.color}44`, `${team.color}22`, C.background]
+            : [team.color, `${team.color}DD`, `${team.color}88`, C.background]
+          }
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
-        {/* Bottom-fade overlay for text legibility */}
-        <LinearGradient
-          colors={["transparent", "rgba(12,12,12,0.92)"]}
-          style={[StyleSheet.absoluteFill, { top: "40%" }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        />
+        {!isCompactHeader && (
+          <LinearGradient
+            colors={["transparent", "rgba(12,12,12,0.92)"]}
+            style={[StyleSheet.absoluteFill, { top: "40%" }]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        )}
 
-        {/* Jersey number watermark — subtle background decoration */}
-        <Text style={styles.jerseyWatermark} numberOfLines={1}>
-          {player.number ? `#${player.number}` : ""}
-        </Text>
+        {!isCompactHeader && (
+          <Text style={styles.jerseyWatermark} numberOfLines={1}>
+            {player.number ? `#${player.number}` : ""}
+          </Text>
+        )}
 
-        {/* Large headshot — right side, bottom-aligned, ESPN transparent-bg PNG */}
-        {headshotUrl && !headshotError ? (
+        {!isCompactHeader && (headshotUrl && !headshotError ? (
           <Image
             source={{ uri: headshotUrl }}
             style={styles.heroHeadshot}
@@ -1622,45 +1991,76 @@ export default function PlayerScreen() {
           <View style={styles.heroAvatarFallback}>
             <Text style={styles.heroAvatarInitial}>{player.name.charAt(0).toUpperCase()}</Text>
           </View>
-        )}
+        ))}
 
-        {/* Top bar — back + follow, absolutely positioned */}
-        <View style={[styles.topBar, { top: topPad + 8 }]}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setFollowed(f => !f);
-            }}
-            style={[styles.followBtn, followed && { backgroundColor: team.color }]}
-          >
-            <Ionicons name={followed ? "checkmark" : "add"} size={16} color="#fff" />
-            <Text style={styles.followText}>{followed ? "Following" : "Follow"}</Text>
-          </Pressable>
-        </View>
-
-        {/* Player info — bottom-left overlay */}
-        <View style={styles.heroInfo}>
-          {player.number ? (
-            <View style={[styles.jerseyNumBadge, { backgroundColor: `${team.color}55` }]}>
-              <Text style={styles.jerseyNumText}>#{player.number}</Text>
+        {isCompactHeader ? (
+          <View style={[compactS.wrap, { top: topPad + 8 }]}>
+            <View style={compactS.left}>
+              <Pressable onPress={() => router.back()} style={styles.backBtn}>
+                <Ionicons name="arrow-back" size={22} color="#fff" />
+              </Pressable>
+              {headshotUrl && !headshotError ? (
+                <Image source={{ uri: headshotUrl }} style={compactS.headshot} />
+              ) : (
+                <View style={compactS.avatarFallback}>
+                  <Text style={compactS.avatarInitial}>{player.name.charAt(0)}</Text>
+                </View>
+              )}
+              <View style={compactS.textWrap}>
+                <Text style={compactS.name} numberOfLines={1}>{player.name}</Text>
+                <Text style={compactS.sub}>{team.name} · {team.league}</Text>
+              </View>
+              <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
             </View>
-          ) : null}
-          <Text style={styles.heroName} numberOfLines={2}>{player.name}</Text>
-          <Pressable onPress={() => router.push({ pathname: "/team/[id]", params: { id: team.id } } as any)}>
-            <Text style={styles.heroTeamLink}>{team.name} · {team.league}</Text>
-          </Pressable>
-          <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            {player.height ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.height}</Text></View> : null}
-            {player.weight ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.weight}</Text></View> : null}
-            {player.college ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.college}</Text></View> : null}
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setFollowed(f => !f);
+              }}
+              style={[styles.followBtn, followed && { backgroundColor: team.color }]}
+            >
+              <Ionicons name={followed ? "checkmark" : "add"} size={16} color="#fff" />
+              <Text style={styles.followText}>{followed ? "Following" : "Follow"}</Text>
+            </Pressable>
           </View>
-          <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
-            <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
-          </View>
-        </View>
+        ) : (
+          <>
+            <View style={[styles.topBar, { top: topPad + 8 }]}>
+              <Pressable onPress={() => router.back()} style={styles.backBtn}>
+                <Ionicons name="arrow-back" size={22} color="#fff" />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setFollowed(f => !f);
+                }}
+                style={[styles.followBtn, followed && { backgroundColor: team.color }]}
+              >
+                <Ionicons name={followed ? "checkmark" : "add"} size={16} color="#fff" />
+                <Text style={styles.followText}>{followed ? "Following" : "Follow"}</Text>
+              </Pressable>
+            </View>
+            <View style={styles.heroInfo}>
+              {player.number ? (
+                <View style={[styles.jerseyNumBadge, { backgroundColor: `${team.color}55` }]}>
+                  <Text style={styles.jerseyNumText}>#{player.number}</Text>
+                </View>
+              ) : null}
+              <Text style={styles.heroName} numberOfLines={2}>{player.name}</Text>
+              <Pressable onPress={() => router.push({ pathname: "/team/[id]", params: { id: team.id } } as any)}>
+                <Text style={styles.heroTeamLink}>{team.name} · {team.league}</Text>
+              </Pressable>
+              <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                {player.height ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.height}</Text></View> : null}
+                {player.weight ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.weight}</Text></View> : null}
+                {player.college ? <View style={styles.infoPill}><Text style={styles.infoPillText}>{player.college}</Text></View> : null}
+              </View>
+              <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
+                <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
+              </View>
+            </View>
+          </>
+        )}
       </View>
 
       {/* ── Tab Bar ── */}
@@ -1692,6 +2092,24 @@ export default function PlayerScreen() {
     </View>
   );
 }
+
+const compactS = StyleSheet.create({
+  wrap: {
+    position: "absolute", left: 0, right: 0,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  left: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  headshot: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.1)" },
+  avatarFallback: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center",
+  },
+  avatarInitial: { color: "#fff", fontSize: 18, fontWeight: "800" },
+  textWrap: { flex: 1 },
+  name: { color: "#fff", fontSize: 16, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  sub: { color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: "Inter_500Medium" },
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({

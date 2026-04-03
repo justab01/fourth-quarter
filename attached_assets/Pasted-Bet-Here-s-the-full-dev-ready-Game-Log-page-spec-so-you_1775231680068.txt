@@ -1,0 +1,1048 @@
+Bet. Here’s the full dev-ready Game Log page spec so your app stops feeling like a squeezed spreadsheet and starts feeling like a real mobile sports product.
+
+GAME LOG PAGE — FULL MOBILE REDESIGN SPEC
+
+Core goal
+
+Build a mobile-first, scan-fast, premium-feeling Game Log page for athlete profiles that feels:
+	•	cleaner than ESPN
+	•	less clunky than a desktop table
+	•	better organized by month
+	•	faster to read in one thumb
+	•	expandable when users want more depth
+
+This page should prioritize:
+	•	instant recognition
+	•	strong spacing
+	•	clean opponent identity
+	•	monthly grouping
+	•	compact stat digestion
+	•	deeper detail on tap
+
+⸻
+
+1. PAGE ARCHITECTURE
+
+Overall structure
+
+From top to bottom:
+
+1. Sticky compact player header
+
+2. Sticky horizontal tab bar
+
+3. Page intro block
+
+4. Filter / season controls
+
+5. Monthly game log sections
+
+6. Expandable game details or bottom sheet
+
+7. Optional persistent quick actions
+
+⸻
+
+2. HEADER REDESIGN
+
+Do not use the giant hero banner on Game Log
+
+That big player image section is fine for Overview, but on Game Log it wastes vertical space and makes the stat content feel buried.
+
+Replace it with a compact sticky header
+
+Compact player header contents
+
+Left side:
+	•	player headshot, 40–48px
+	•	player name
+	•	team name + league
+	•	position badge
+
+Right side:
+	•	follow button
+	•	maybe jersey number chip
+
+Compact header height
+	•	Expanded: 88px
+	•	Collapsed sticky: 64px
+
+Visual rules
+	•	keep background tied to team color gradient, but much more subtle
+	•	use a darker overlay for readability
+	•	do not allow the art to dominate the screen
+	•	remove oversized background jersey number from this tab
+
+Example structure
+
+Tyrese Haliburton
+Pacers • NBA
+[GUARD]
+
+with follow button on right
+
+⸻
+
+3. TAB BAR
+
+Make tabs horizontal and sticky
+
+Tabs:
+	•	Overview
+	•	News
+	•	Stats
+	•	Bio
+	•	Splits
+	•	Game Log
+	•	Advanced
+
+Rules
+	•	horizontally scrollable
+	•	sticky beneath the compact header
+	•	active tab has:
+	•	brighter white text
+	•	bold weight
+	•	colored underline
+	•	inactive tabs:
+	•	slightly muted gray
+	•	no underline
+
+Sizing
+	•	tab font: 15–16
+	•	horizontal padding per tab: 14–16
+	•	bar height: 48–52
+
+UX note
+
+When user scrolls, tabs stay visible. This is important because Game Log pages get long.
+
+⸻
+
+4. PAGE INTRO BLOCK
+
+Under the tabs, give the page breathing room.
+
+Layout
+
+Game Log
+Small subtitle:
+2025–26 Regular Season
+
+Then season selector.
+
+Spacing
+	•	top padding: 16
+	•	left/right padding: 16
+	•	title font: 30–32 semibold
+	•	subtitle font: 14–15 muted
+
+This is where ESPN feels better than yours right now. They make the page feel like a page, not just a table dropped under a header.
+
+⸻
+
+5. FILTER + CONTROL ROW
+
+Row 1: Season selector
+
+Use a rounded dropdown pill:
+	•	full width
+	•	height: 44–48
+	•	dark fill
+	•	thin border
+	•	chevron right aligned
+
+Examples:
+	•	2025–26
+	•	2024–25
+	•	Career
+	•	Playoffs
+
+Row 2: Optional quick filters
+
+Horizontal pills:
+	•	Regular Season
+	•	Playoffs
+	•	Last 5
+	•	Last 10
+	•	Home
+	•	Away
+	•	Wins
+	•	Losses
+
+Pill styling
+	•	selected: filled with team accent color
+	•	unselected: dark outline
+	•	rounded capsule
+	•	font 13–14 medium
+
+Why this matters
+
+Now the page becomes interactive and modern instead of static and stale.
+
+⸻
+
+6. MAIN CONTENT MODEL
+
+Do not use one endless full-width spreadsheet as the primary mobile experience.
+
+Use month-grouped stacked sections.
+
+Month section structure
+
+Each month block contains:
+
+A. Month header
+
+Example:
+APRIL
+
+B. Monthly averages strip
+
+Example:
+GP 1 • MIN 26.0 • PTS 8.0 • REB 4.0 • AST 5.0 • FG% 42.9
+
+C. Game rows
+
+One row per game, optimized for thumb reading
+
+⸻
+
+7. MONTH HEADER DESIGN
+
+Month header
+
+Should feel distinct, simple, and structural.
+
+Style
+	•	all caps or semi-caps
+	•	font: 14–16 bold
+	•	muted white or off-white
+	•	top margin: 20–24
+	•	bottom margin: 8–10
+
+Optional:
+	•	divider line below the month title
+
+Example
+
+APRIL
+
+This helps the user mentally reset as they scroll.
+
+⸻
+
+8. MONTHLY AVERAGES STRIP
+
+This is one of the strongest additions you should steal and improve.
+
+Purpose
+
+Gives users instant context for the month without scanning every game.
+
+Layout style
+
+Make it feel like a compact stat card, separate from game rows.
+
+Recommended design
+
+Rounded rectangle with:
+	•	slightly lighter background than page
+	•	subtle border
+	•	12–14px padding
+	•	horizontal scroll if needed
+
+Content priority
+
+Show only 5–7 key monthly stats:
+	•	GP
+	•	MIN
+	•	PTS
+	•	REB
+	•	AST
+	•	FG%
+	•	3PT%
+
+Optional second-line if sport-specific or screen allows:
+	•	STL
+	•	BLK
+	•	+/-
+
+Example
+
+APRIL AVG
+GP 6 • MIN 34.2 • PTS 21.5 • REB 4.2 • AST 9.8 • FG% 48.3 • 3PT% 39.1
+
+Styling
+	•	“APRIL AVG” label smaller and muted
+	•	stat values brighter and bolder
+	•	keep alignment very clean
+
+⸻
+
+9. GAME ROW REDESIGN
+
+This is the main event.
+
+Use a two-level row, not raw table density
+
+Each row should be a tap target with clear hierarchy.
+
+⸻
+
+Row Layout Option A — Best mobile version
+
+Top line
+	•	Date
+	•	home/away indicator
+	•	opponent logo
+	•	opponent abbreviation
+	•	result pill aligned right
+
+Example:
+Thu 4/2   @ [OKC logo] OKC      L 139–96
+
+Bottom line
+
+Use compact stat chips or inline stat labels:
+MIN 26   PTS 8   FG 3–7   3PT 1–4   REB 4   AST 5
+
+Optional right chevron
+
+Shows row is expandable
+
+⸻
+
+Row Layout Option B — Hybrid mini-table
+
+If you want more stat-table energy:
+
+Left block:
+	•	Date
+	•	Opponent with logo
+	•	Result
+
+Right block:
+	•	horizontally arranged stats in equal-width slots
+
+Still keep it card-like, not hard grid-like.
+
+⸻
+
+10. ROW CONTENT PRIORITY
+
+For basketball, the visible default row should show only the most useful quick stats.
+
+Default visible stats
+	•	MIN
+	•	PTS
+	•	FG
+	•	3PT
+	•	REB
+	•	AST
+
+Optional substitutions:
+	•	FT instead of REB for some users
+	•	+/- as a user-toggle or advanced mode
+
+Hidden until expanded
+	•	STL
+	•	BLK
+	•	TO
+	•	PF
+	•	FT
+	•	+/-
+	•	TS%
+	•	USG%
+	•	Game Score
+	•	fantasy points
+	•	shot chart link
+
+That way the page stays clean.
+
+⸻
+
+11. OPPONENT CELL DESIGN
+
+This is a major improvement area.
+
+Opponent cell format
+	•	home/away prefix
+	•	opponent logo
+	•	opponent abbreviation
+	•	optional opponent record/rank in expanded view
+
+Example
+
+@ [Knicks logo] NYK
+vs [Bucks logo] MIL
+
+Specs
+	•	logo size: 18–22px
+	•	spacing between logo and abbreviation: 8px
+	•	abbreviation weight: medium/semi-bold
+	•	home/away prefix muted gray
+
+The logo is not a decoration. It’s a scan-speed tool.
+
+⸻
+
+12. RESULT BADGE
+
+Result needs more visual presence.
+
+Badge content
+	•	W or L
+	•	final score
+	•	optional OT badge
+
+Examples:
+	•	W 127–113
+	•	L 139–96
+	•	W 127–125 OT
+
+Style
+
+Win
+	•	green tinted background
+	•	green text or white text with green accent border
+
+Loss
+	•	red tinted background
+	•	red text or white text with red accent border
+
+Overtime
+	•	small OT capsule appended
+
+Badge size
+	•	min height: 24
+	•	horizontal padding: 8–10
+	•	rounded full capsule
+
+This makes rows instantly scannable.
+
+⸻
+
+13. ROW VISUAL STYLE
+
+Spacing
+	•	horizontal padding: 16
+	•	vertical padding: 12–14
+	•	row gap: 6–8 between rows if cards
+	•	divider if flat-list style
+
+Card or flat?
+
+Best answer:
+	•	use flat rows inside a month section
+	•	but with subtle rounded hover/tap highlight
+	•	do not over-card everything or it’ll get noisy
+
+Press state
+
+On tap:
+	•	slightly lighter surface
+	•	smooth 120–180ms animation
+	•	expand details or open bottom sheet
+
+⸻
+
+14. EXPANDED GAME DETAILS
+
+When the user taps a row, give them richer info.
+
+Two options
+
+Option A: Inline expansion
+
+Row expands downward beneath itself.
+
+Pros:
+	•	fast
+	•	contextual
+	•	easier for scan-heavy use
+
+Option B: Bottom sheet
+
+Tap row opens a bottom sheet with richer details.
+
+Pros:
+	•	feels more premium
+	•	more room for advanced content
+	•	works better if you want links, visuals, and charts
+
+Best recommendation
+
+Use inline expansion for quick stats.
+Use bottom sheet for full game details if user taps “See more.”
+
+⸻
+
+15. EXPANDED CONTENT FOR BASKETBALL
+
+Inside expansion or bottom sheet:
+
+Section 1: Full stat line
+	•	MIN
+	•	PTS
+	•	REB
+	•	AST
+	•	STL
+	•	BLK
+	•	TO
+	•	PF
+	•	+/-
+	•	FG
+	•	3PT
+	•	FT
+
+Section 2: Context
+	•	starter or bench
+	•	double-double / triple-double badge
+	•	home or away
+	•	game date/time
+	•	arena
+	•	team record after game
+	•	opponent record after game
+
+Section 3: Quick links
+	•	Box Score
+	•	Play-by-Play
+	•	Highlights
+	•	Recap
+
+Section 4: Optional advanced stats
+	•	TS%
+	•	eFG%
+	•	USG%
+	•	ORtg
+	•	DRtg
+	•	Game Score
+
+Do not dump all this into the main row.
+
+⸻
+
+16. TABLE MODE, IF YOU INSIST ON TABLE MODE
+
+If you really want table mode for power users, add a toggle:
+
+View:
+	•	Compact
+	•	Table
+
+Compact
+
+The default mobile-native design above.
+
+Table
+
+A horizontally scrollable stat table for stat nerds.
+
+Rules for table mode
+	•	freeze first 3 columns:
+	•	Date
+	•	Opp
+	•	Result
+	•	horizontal scroll remaining stat columns
+	•	sticky column headers
+	•	strong zebra striping or row dividers
+	•	keep logos in Opp column
+	•	monthly averages still stay grouped above rows
+
+That gives you both beauty and depth.
+
+⸻
+
+17. TYPOGRAPHY SYSTEM
+
+Your current page likely feels clunky partly because the type hierarchy is too flat.
+
+Recommended scale
+
+Page title
+	•	30–32
+	•	semibold/bold
+
+Subtitle / season text
+	•	14–15
+	•	medium
+	•	muted
+
+Month header
+	•	14–16
+	•	bold
+	•	tracking slightly increased if all caps
+
+Game row top line
+	•	14–15
+	•	medium/semi-bold
+
+Game row bottom line
+	•	12–13
+	•	medium
+	•	muted but readable
+
+Averages strip values
+	•	13–14
+	•	semibold
+
+Metadata labels
+	•	11–12
+	•	muted
+
+⸻
+
+18. COLOR SYSTEM
+
+Keep dark mode, but clean it up.
+
+Base surfaces
+	•	page background: near-black
+	•	section surfaces: slightly lifted charcoal
+	•	borders: subtle cool gray with low opacity
+	•	text primary: off-white
+	•	text secondary: muted gray
+
+Accent
+
+Use team color strategically, not everywhere.
+
+Team color should appear in:
+	•	active underline
+	•	follow button outline/fill maybe
+	•	subtle month average accent
+	•	selected filters
+	•	maybe thin left-edge highlight on rows
+
+Do not flood the page with orange or purple or whatever. ESPN’s strength is restraint.
+
+⸻
+
+19. ICONOGRAPHY + LOGOS
+
+Use logos consistently
+
+Opponent logo should appear:
+	•	every row
+	•	possibly in expanded detail
+	•	maybe in month-average contextual card if useful
+
+Use small icons sparingly
+
+Possible icons:
+	•	home/away marker
+	•	expand chevron
+	•	filters
+	•	sort
+	•	shot chart / video link
+
+Do not icon-bomb the interface.
+
+⸻
+
+20. SCROLL BEHAVIOR
+
+This matters a lot for mobile feel.
+
+Sticky elements
+
+Sticky stack should be:
+	1.	compact player header
+	2.	tabs
+	3.	maybe filter row only while near top, then unstick
+
+Scroll behavior rules
+	•	hero must collapse quickly
+	•	page title should scroll naturally
+	•	tabs remain accessible
+	•	month headers can optionally pin briefly during their section
+
+Optional premium touch:
+	•	as user scrolls deeper, header compresses to name + team only
+
+⸻
+
+21. RESPONSIVE MOBILE RULES
+
+Width constraints
+
+Designed first for:
+	•	375px
+	•	390px
+	•	402px
+	•	414px
+
+Safe area handling
+
+Respect:
+	•	notches
+	•	bottom bar
+	•	iPhone home indicator
+	•	sticky tab clearance
+
+Touch targets
+	•	minimum 44px height for interactive elements
+	•	rows should feel easy to tap with one thumb
+
+⸻
+
+22. DATA ORGANIZATION LOGIC
+
+Structure game logs by:
+
+Group
+	•	season
+	•	competition type
+	•	month
+
+Within month
+	•	sort descending by date by default
+	•	allow sort toggle if needed
+
+Monthly averages
+
+Must be computed from visible filtered games only
+
+Example:
+If user selects “Home,” monthly averages change to home-only averages.
+
+That makes the page feel smart.
+
+⸻
+
+23. SMART FILTERING BEHAVIOR
+
+Filters should dynamically update:
+	•	visible rows
+	•	monthly average strips
+	•	section counts
+
+Example:
+If user chooses “Last 10,” do not show full months unless relevant. Instead maybe use:
+	•	Last 10 Games
+	•	with one summary strip
+
+If user chooses “Playoffs,” split by playoff rounds instead of months if you want to get fancy later:
+	•	First Round
+	•	Semifinals
+	•	Conference Finals
+	•	Finals
+
+That could be hard.
+
+⸻
+
+24. EMPTY / ERROR / LOADING STATES
+
+Loading state
+
+Do not show ugly spinners only.
+
+Use skeleton loaders for:
+	•	compact header
+	•	month average strip
+	•	5–8 fake rows
+
+Empty state
+
+Examples:
+	•	No games found for this filter
+	•	This player did not appear in any playoff games this season
+
+Error state
+
+Simple retry block:
+	•	Couldn’t load game logs
+	•	Retry button
+
+Keep the visual language consistent.
+
+⸻
+
+25. PERFORMANCE RULES
+
+Since this page can get long:
+
+Must use
+	•	virtualized list
+	•	memoized rows
+	•	image caching for logos/headshots
+	•	deferred expansion content load if needed
+
+Avoid
+	•	rendering all expanded row content at once
+	•	heavy shadows everywhere
+	•	overly large logo assets
+	•	giant hero images on stat tabs
+
+Performance is part of why clunky feels clunky.
+
+⸻
+
+26. BEST INFORMATION DENSITY STRATEGY
+
+You are trying to solve this balance:
+
+Too much data = ugly
+Too little data = useless
+
+So the right answer is:
+
+Layer 1
+
+Quick-scan row
+
+Layer 2
+
+Monthly average strip
+
+Layer 3
+
+Expansion / bottom sheet
+
+That’s the winning structure.
+
+⸻
+
+27. VISUAL EXAMPLE OF A SINGLE SECTION
+
+APRIL
+
+[APRIL AVG card]
+GP 6 • MIN 34.2 • PTS 21.5 • REB 4.2 • AST 9.8 • FG% 48.3 • 3PT% 39.1
+
+Thu 4/2   @ [OKC] OKC      [L 139–96]
+MIN 26   PTS 8   FG 3–7   3PT 1–4   REB 4   AST 5
+
+Tue 3/31  vs [CLE] CLE     [W 127–113]
+MIN 31   PTS 13   FG 4–8   3PT 1–3   REB 5   AST 9
+
+That already feels way better than a dense raw grid.
+
+⸻
+
+28. WHAT TO REMOVE FROM YOUR CURRENT VERSION
+
+Cut or reduce:
+	•	giant hero image on Game Log
+	•	oversized background jersey number
+	•	too many columns visible at once
+	•	cramped row heights
+	•	overly dark undifferentiated surfaces
+	•	long invisible stat walls
+	•	tabs competing with content
+	•	spreadsheet-first layout on mobile
+
+⸻
+
+29. WHAT TO ADD IMMEDIATELY
+
+Add:
+	•	compact sticky player header
+	•	month grouping
+	•	monthly averages strip
+	•	opponent logos
+	•	result pills
+	•	two-line row layout
+	•	expanded details
+	•	cleaner typography hierarchy
+	•	more padding
+	•	filter pills
+	•	better scroll behavior
+
+⸻
+
+30. REACT NATIVE / EXPO COMPONENT BREAKDOWN
+
+Recommended component tree
+
+PlayerGameLogScreen
+	•	StickyPlayerHeader
+	•	ProfileTabBar
+	•	GameLogIntro
+	•	SeasonSelector
+	•	FilterPillRow
+	•	VirtualizedSectionList
+	•	MonthSectionHeader
+	•	MonthAverageCard
+	•	GameLogRow
+	•	GamePrimaryLine
+	•	GameSecondaryStats
+	•	ExpandableGameDetails or trigger to bottom sheet
+	•	GameLogBottomSheet
+
+⸻
+
+31. COMPONENT RESPONSIBILITIES
+
+StickyPlayerHeader
+
+Handles:
+	•	compact player identity
+	•	follow action
+	•	sticky collapse logic
+
+ProfileTabBar
+
+Handles:
+	•	horizontal tab navigation
+	•	active indicator
+	•	sticky placement
+
+GameLogIntro
+
+Handles:
+	•	page title
+	•	subtitle
+
+SeasonSelector
+
+Handles:
+	•	season dropdown
+	•	regular season vs playoffs selection
+
+FilterPillRow
+
+Handles:
+	•	filter chips
+	•	selection state
+	•	updates visible rows and averages
+
+MonthSectionHeader
+
+Displays month title
+
+MonthAverageCard
+
+Displays aggregated monthly stats
+
+GameLogRow
+
+Displays compact, scan-first row
+Tap to expand or open bottom sheet
+
+GameLogBottomSheet
+
+Displays full game details and links
+
+⸻
+
+32. RECOMMENDED INTERACTION DETAILS
+
+Tap row
+	•	quick expand inline with animation
+or
+	•	open bottom sheet
+
+Long press row
+
+Optional:
+	•	add to compare
+	•	copy stat line
+	•	open game details
+
+Swipe
+
+Not necessary here unless you add favorite or compare actions later
+
+⸻
+
+33. ANIMATION RULES
+
+Keep animations fast and subtle.
+
+Use for:
+	•	header collapse
+	•	active tab underline movement
+	•	row expansion
+	•	bottom sheet open
+	•	filter chip selection
+
+Avoid:
+	•	bouncy weird motion
+	•	dramatic parallax on stat pages
+	•	flashy transitions that slow utility
+
+This page is about confidence and speed.
+
+⸻
+
+34. ACCESSIBILITY RULES
+
+Must have
+	•	dynamic text support
+	•	clear color contrast
+	•	touch targets 44+
+	•	logo + team name accessible labels
+	•	result badges readable by screen readers
+	•	expanded details keyboard/screen-reader friendly if web-compatible too
+
+⸻
+
+35. FUTURE UPSIDE FEATURES
+
+Once core UI is fixed, later you can add:
+	•	compare this month vs season average
+	•	“best games” sort
+	•	home/away splits mini visual
+	•	trend sparkline next to monthly averages
+	•	shot chart shortcut
+	•	fantasy point view
+	•	betting performance overlay for props
+	•	playoff round grouping instead of months
+	•	“vs this opponent” quick summary
+
+But don’t start there. Fix the scan experience first.
+
+⸻
+
+36. FINAL PRODUCT DIRECTION IN ONE SENTENCE
+
+Make the Game Log page feel like a premium, mobile-native scouting feed, not a desktop stat table shoved into a phone.
+
+⸻
+
+37. COPY-PASTE DEV HANDOFF
+
+Use this directly:
+
+Game Log Page Redesign Requirements
+	•	Replace large player hero banner on Game Log with compact sticky player header
+	•	Keep horizontal sticky profile tab bar with active underline for Game Log
+	•	Add page intro block with title “Game Log” and subtitle for season/competition
+	•	Add full-width season dropdown beneath intro
+	•	Add optional horizontal quick-filter pills for Regular Season, Playoffs, Last 5, Last 10, Home, Away, Wins, Losses
+	•	Group game logs by month using sectioned list layout
+	•	Add a monthly averages card at the top of each month section
+	•	Monthly averages card should show key stats only: GP, MIN, PTS, REB, AST, FG%, 3PT%
+	•	Replace dense spreadsheet-first mobile layout with two-line game rows
+	•	Row line 1 should show date, home/away indicator, opponent logo, opponent abbreviation, and result badge
+	•	Row line 2 should show key quick stats: MIN, PTS, FG, 3PT, REB, AST
+	•	Add opponent logos in every row
+	•	Style result as colored pill badges for win/loss and optional overtime
+	•	Allow row tap to expand inline or open bottom sheet with full stat line and quick links
+	•	Use better spacing, stronger typography hierarchy, and more visual breathing room
+	•	Maintain dark mode but reduce visual heaviness with subtle surface separation
+	•	Use team color only as accent for active tab, selected filter, and minor highlights
+	•	Optimize for fast thumb scanning on small mobile screens
+	•	If table mode is retained, freeze Date/Opp/Result columns and horizontally scroll remaining stat columns
+	•	Use virtualized section list for performance
+	•	Compute monthly averages dynamically based on currently active filters
+
+⸻
+
+38. MY STRONG RECOMMENDATION
+
+Your best move is:
+default to compact month-grouped rows
+and let hardcore users open deeper data.
+
+That’s how you get:
+	•	ESPN familiarity
+	•	better mobile feel
+	•	less clunk
+	•	more polish
+	•	better app identity
+
+Next, I can do one of two things:
+I can write the exact React Native layout structure, or I can make you a full holistic redesign spec for all athlete profile tabs so the whole page system feels consistent instead of just Game Log.

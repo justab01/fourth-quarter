@@ -1786,6 +1786,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
     const gameLogs: {
       date: string;
       opponent: string;
+      opponentId: string;
       homeAway: "home" | "away";
       result: string;
       score: string;
@@ -1806,6 +1807,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
           });
 
           const opponent = meta.opponent?.abbreviation ?? meta.opponent?.displayName ?? "";
+          const opponentId = meta.opponent?.id ?? "";
           const teamId = meta.team?.id ?? "";
           const homeAway: "home" | "away" = meta.homeTeamId === teamId ? "home" : "away";
           const homeScore = meta.homeTeamScore ?? "";
@@ -1817,7 +1819,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
           const date = meta.gameDate ?? "";
 
           if (opponent && (Object.keys(statsMap).length > 0 || result)) {
-            gameLogs.push({ date, opponent, homeAway, result, score, stats: statsMap });
+            gameLogs.push({ date, opponent, opponentId, homeAway, result, score, stats: statsMap });
           }
         }
       }

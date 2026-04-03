@@ -294,6 +294,7 @@ export interface AthleteGameLog {
   gameLogs: {
     date: string;
     opponent: string;
+    opponentId: string;
     homeAway: "home" | "away";
     result: string;
     score: string;

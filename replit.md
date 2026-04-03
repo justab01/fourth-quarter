@@ -53,7 +53,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - `GET /api/sports/news/:sport`: Live ESPN sport-specific news.
     - `GET /api/sports/upcoming/:sport`: Live TheSportsDB + ESPN upcoming/recent events.
     - `GET /api/sports/athlete/:league/:athleteId`: ESPN athlete profile (stats, draft, experience).
-    - `GET /api/sports/athlete/:league/:athleteId/gamelog?season=YYYY`: Per-season game log. Defaults to current season. Career coverage via season picker on mobile.
+    - `GET /api/sports/athlete/:league/:athleteId/gamelog?season=YYYY`: Per-season game log with `opponentId`. Defaults to current season (league-aware). Career coverage via season picker on mobile. Response includes month-groupable data: date, opponent, opponentId, homeAway, result, score, stats.
     - `POST /api/tts`: OpenAI neural TTS (voice "nova", speed 0.92) with SHA-256 cache key and IP rate limiting (10 req/min). Falls back to device TTS on client.
     - `POST /api/ai/summarize`: OpenAI article/game summary.
     - `POST /api/ai/recap`: OpenAI postgame recap.
