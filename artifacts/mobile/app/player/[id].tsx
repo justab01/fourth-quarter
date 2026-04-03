@@ -448,45 +448,124 @@ function CareerStatsTab({ liveProfile, league, teamColor }: {
   );
 }
 
+// ─── Season helpers ───────────────────────────────────────────────────────────
+function getCurrentSeason(): number {
+  const now = new Date();
+  return now.getFullYear() + (now.getMonth() >= 7 ? 1 : 0);
+}
+
+function buildSeasonList(draftYear: number | null | undefined, yearsExperience: number | null | undefined): number[] {
+  const current = getCurrentSeason();
+  let startYear: number;
+  if (draftYear && draftYear > 1900) {
+    startYear = draftYear + 1;
+  } else if (yearsExperience && yearsExperience > 0) {
+    startYear = current - yearsExperience + 1;
+  } else {
+    startYear = current - 2;
+  }
+  startYear = Math.max(startYear, 2002);
+  const seasons: number[] = [];
+  for (let y = current; y >= startYear; y--) {
+    seasons.push(y);
+  }
+  return seasons;
+}
+
+function formatSeasonLabel(year: number, league: string): string {
+  const lg = league.toUpperCase();
+  if (lg === "MLB" || lg === "MLS") return `${year}`;
+  return `${year - 1}-${String(year).slice(2)}`;
+}
+
 // ─── Live Game Log Tab — uses ESPN via our API ────────────────────────────────
-function LiveGameLogTab({ league, athleteId, teamColor }: {
+function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperience }: {
   league: string; athleteId: string; teamColor: string;
+  draftYear?: number | null; yearsExperience?: number | null;
 }) {
+  const seasons = React.useMemo(() => buildSeasonList(draftYear, yearsExperience), [draftYear, yearsExperience]);
+  const [selectedSeason, setSelectedSeason] = useState<number>(seasons[0] ?? getCurrentSeason());
+  const seasonListRef = React.useRef<ScrollView>(null);
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["gamelog", league, athleteId],
-    queryFn: () => api.getAthleteGameLog(league, athleteId),
+    queryKey: ["gamelog", league, athleteId, selectedSeason],
+    queryFn: () => api.getAthleteGameLog(league, athleteId, selectedSeason),
     staleTime: 900_000,
   });
 
+  const seasonPicker = (
+    <View style={{ marginBottom: 12 }}>
+      <ScrollView
+        ref={seasonListRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+      >
+        {seasons.map(s => {
+          const active = s === selectedSeason;
+          return (
+            <Pressable
+              key={s}
+              onPress={() => {
+                setSelectedSeason(s);
+                if (Platform.OS !== "web") Haptics.selectionAsync();
+              }}
+              style={{
+                paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+                backgroundColor: active ? teamColor : C.card,
+                borderWidth: 1, borderColor: active ? teamColor : "rgba(255,255,255,0.08)",
+              }}
+            >
+              <Text style={{
+                color: active ? "#fff" : C.textSecondary,
+                fontSize: 13, fontWeight: active ? "700" : "500",
+              }}>
+                {formatSeasonLabel(s, league)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
-        <ActivityIndicator color={teamColor} size="large" />
-        <Text style={{ color: "#AEAEB2", fontSize: 13 }}>Loading game log…</Text>
+      <View style={{ flex: 1 }}>
+        {seasonPicker}
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+          <ActivityIndicator color={teamColor} size="large" />
+          <Text style={{ color: "#AEAEB2", fontSize: 13 }}>Loading {formatSeasonLabel(selectedSeason, league)} game log…</Text>
+        </View>
       </View>
     );
   }
 
   if (isError || !data || data.gameLogs.length === 0) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
-        <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
-        <Text style={{ color: "#AEAEB2", fontSize: 14, textAlign: "center" }}>
-          No game log available{isError ? " — ESPN API unavailable" : ""}
-        </Text>
+      <View style={{ flex: 1 }}>
+        {seasonPicker}
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
+          <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
+          <Text style={{ color: "#AEAEB2", fontSize: 14, textAlign: "center" }}>
+            No game log for {formatSeasonLabel(selectedSeason, league)}{isError ? " — ESPN API unavailable" : ""}
+          </Text>
+        </View>
       </View>
     );
   }
 
   const logs = data.gameLogs;
-  // Show top 6 stat keys from the first game that has stats
   const allKeys = [...new Set(logs.flatMap(l => Object.keys(l.stats)))];
   const shownKeys = allKeys.slice(0, 6);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 0 }}>
+    <ScrollView contentContainerStyle={{ padding: 0, paddingBottom: 40 }}>
+      {seasonPicker}
       <View style={table.card}>
-        <Text style={[table.title, { marginBottom: 4 }]}>Last {logs.length} Games</Text>
+        <Text style={[table.title, { marginBottom: 4 }]}>
+          {formatSeasonLabel(selectedSeason, league)} — {logs.length} Game{logs.length !== 1 ? "s" : ""}
+        </Text>
         <View style={table.header}>
           <Text style={[table.headerCell, { width: 70 }]}>DATE</Text>
           <Text style={[table.headerCell, { flex: 1 }]}>OPP</Text>
@@ -1478,6 +1557,8 @@ export default function PlayerScreen() {
           league={liveLeague}
           athleteId={liveAthleteId}
           teamColor={team.color}
+          draftYear={liveProfile?.draft?.year}
+          yearsExperience={liveProfile?.yearsExperience}
         />
       ) : (
         <GameLogTab

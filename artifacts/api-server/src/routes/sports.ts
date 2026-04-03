@@ -1753,28 +1753,30 @@ router.get("/sports/athlete/:league/:athleteId", async (req, res) => {
   }
 });
 
-// GET /api/sports/athlete/:league/:athleteId/gamelog
+// GET /api/sports/athlete/:league/:athleteId/gamelog?season=YYYY
 router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
   const { league, athleteId } = req.params;
   const leagueKey = league.toUpperCase();
   const cfg = LEAGUE_CONFIG[leagueKey];
   if (!cfg) { res.status(400).json({ error: `Unknown league: ${league}` }); return; }
 
-  const cacheKey = `athlete-gamelog-${leagueKey}-${athleteId}`;
+  const currentSeason = new Date().getFullYear() + (new Date().getMonth() >= 7 ? 1 : 0);
+  const seasonParam = req.query.season ? Number(req.query.season) : currentSeason;
+  if (Number.isNaN(seasonParam) || seasonParam < 1900 || seasonParam > currentSeason + 1) {
+    res.status(400).json({ error: "Invalid season year" }); return;
+  }
+
+  const cacheKey = `athlete-gamelog-${leagueKey}-${athleteId}-${seasonParam}`;
   const cached = getCached<unknown>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   try {
     const glPath = GAMELOG_PATH[leagueKey] ?? cfg.espnPath;
-    const season = new Date().getFullYear() + (new Date().getMonth() >= 7 ? 1 : 0);
-    const url = `https://site.web.api.espn.com/apis/common/v3/sports/${glPath}/athletes/${athleteId}/gamelog?season=${season}&lang=en`;
+    const url = `https://site.web.api.espn.com/apis/common/v3/sports/${glPath}/athletes/${athleteId}/gamelog?season=${seasonParam}&lang=en`;
     const json = await espnFetch(url) as any;
 
-    // Labels are top-level arrays
     const labels: string[] = json.labels ?? [];
-    // Events object is keyed by event ID
     const eventsMap: Record<string, any> = json.events ?? {};
-    // Season types → categories → events with stats arrays
     const seasonTypes: any[] = json.seasonTypes ?? [];
 
     const gameLogs: {
@@ -1820,11 +1822,12 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
     const response = {
       leagueKey,
       athleteId,
+      season: seasonParam,
       statLabels: labels,
-      gameLogs: gameLogs.slice(0, 30),
+      gameLogs,
     };
 
-    setCached(cacheKey, response, 900_000); // 15 min
+    setCached(cacheKey, response, 900_000);
     res.json(response);
   } catch (err) {
     console.error("Game log error:", err);

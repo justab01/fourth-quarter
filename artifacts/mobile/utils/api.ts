@@ -64,8 +64,8 @@ export const api = {
   getAthleteProfile: (league: string, athleteId: string) =>
     apiFetch<AthleteProfile>(`/sports/athlete/${encodeURIComponent(league)}/${encodeURIComponent(athleteId)}`),
 
-  getAthleteGameLog: (league: string, athleteId: string) =>
-    apiFetch<AthleteGameLog>(`/sports/athlete/${encodeURIComponent(league)}/${encodeURIComponent(athleteId)}/gamelog`),
+  getAthleteGameLog: (league: string, athleteId: string, season?: number) =>
+    apiFetch<AthleteGameLog>(`/sports/athlete/${encodeURIComponent(league)}/${encodeURIComponent(athleteId)}/gamelog${season ? `?season=${season}` : ""}`),
 
   searchAthletes: (q: string, league?: string, limit = 15) => {
     const params = new URLSearchParams({ q, limit: String(limit) });
@@ -289,6 +289,7 @@ export interface AthleteProfile {
 export interface AthleteGameLog {
   leagueKey: string;
   athleteId: string;
+  season?: number;
   statLabels: string[];
   gameLogs: {
     date: string;
