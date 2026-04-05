@@ -374,26 +374,9 @@ function todayYYYYMMDD(): string {
 }
 
 // ─── Per-player stat extraction from ESPN boxscore.players ────────────────────
-function extractPlayerStats(
-  group: EspnStatisticsGroup,
-  statKeys: string[],
-): PlayerStatLine[] {
-  return group.athletes
-    .filter((a) => !a.didNotPlay && !a.ejected)
-    .map((a) => {
-      const statsObj: Record<string, string> = {};
-      statKeys.forEach((key, i) => {
-        const val = a.stats[i];
-        if (val != null) statsObj[key] = val;
-      });
-      return { name: a.athlete.displayName, starter: a.starter, stats: statsObj };
-    });
-}
-
 function extractPlayerStatsByLabel(
   group: EspnStatisticsGroup,
   wantedLabels: string[],
-  labelAliases?: Record<string, string>,
 ): PlayerStatLine[] {
   const rawLabels = group.labels;
   const rawNames = group.names;
@@ -407,8 +390,7 @@ function extractPlayerStatsByLabel(
     .map((a) => {
       const statsObj: Record<string, string> = {};
       for (const key of wantedLabels) {
-        const espnLabel = labelAliases?.[key] ?? key;
-        const idx = labelToIdx[espnLabel];
+        const idx = labelToIdx[key];
         if (idx !== undefined && a.stats[idx] != null) {
           statsObj[key] = a.stats[idx];
         }
@@ -549,18 +531,14 @@ function extractBoxscore(
     const isHome = isHomeTeam(playerEntry.team.id, playerEntry.team.displayName);
 
     if (isMLB) {
-      // MLB has two stat groups: batting + pitching
       const batting = playerEntry.statistics.find((sg) => sg.type === "batting");
       const pitching = playerEntry.statistics.find((sg) => sg.type === "pitching");
       const lines: PlayerStatLine[] = [];
       if (batting) {
-        const statKeys = batting.names.slice(0, MLB_BATTING_KEYS.length);
-        lines.push(...extractPlayerStats(batting, statKeys));
+        lines.push(...extractPlayerStatsByLabel(batting, MLB_BATTING_KEYS));
       }
       if (pitching) {
-        const statKeys = pitching.names.slice(0, MLB_PITCHING_KEYS.length);
-        const pitchers = extractPlayerStats(pitching, statKeys);
-        // Mark pitchers distinctly
+        const pitchers = extractPlayerStatsByLabel(pitching, MLB_PITCHING_KEYS);
         pitchers.forEach((p) => { p.stats["role"] = "P"; });
         lines.push(...pitchers);
       }

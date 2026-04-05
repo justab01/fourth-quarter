@@ -44,6 +44,10 @@ const PLAYER_STAT_COLS: Record<string, string[]> = {
   UCL:   ["MIN", "G", "A", "SHT"],
   LIGA:  ["MIN", "G", "A", "SHT"],
   NHL:   ["G", "A", "+/-", "S", "TOI", "PIM"],
+  UFC:   ["SLM", "SLA", "TD", "SUB"],
+  BOXING: ["PTS", "KD", "RDS"],
+  ATP:   ["ACES", "DF", "1ST%", "BP"],
+  WTA:   ["ACES", "DF", "1ST%", "BP"],
 };
 
 const NHL_GOALIE_STAT_COLS = ["SV", "GA", "SA", "SV%", "TOI"];
@@ -276,8 +280,8 @@ export default function GameDetailScreen() {
                           { team: game.awayTeam, logo: game.awayTeamLogo, players: data.awayPlayerStats ?? [] },
                           { team: game.homeTeam, logo: game.homeTeamLogo, players: data.homePlayerStats ?? [] },
                         ].map(({ team, logo, players }) => {
-                          const skaters = players.filter((p: any) => p.stats?.role !== "G");
-                          const goalies = players.filter((p: any) => p.stats?.role === "G");
+                          const skaters = players.filter((p) => p.stats?.role !== "G");
+                          const goalies = players.filter((p) => p.stats?.role === "G");
                           return (
                             <View key={team}>
                               <PlayerBoxscore teamName={team} teamLogo={logo} players={skaters} league={game.league} dc={dc} />
