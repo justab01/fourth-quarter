@@ -639,8 +639,8 @@ const styles = StyleSheet.create({
   },
   chipCountText: { fontSize: 10, fontWeight: "700", color: C.textTertiary },
 
-  sections: { gap: 20, paddingVertical: 6 },
-  section: { gap: 10 },
+  sections: { gap: 12, paddingVertical: 6 },
+  section: { gap: 8 },
   list: { gap: 0 },
   listCard: {
     backgroundColor: C.card, borderRadius: 16, overflow: "hidden",
