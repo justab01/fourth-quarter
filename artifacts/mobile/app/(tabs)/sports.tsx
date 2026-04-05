@@ -110,9 +110,14 @@ export default function SportsScreen() {
   const insets = useSafeAreaInsets();
   const { openSearch } = useSearch();
 
+  const todayDate = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
   const { data: gamesData } = useQuery({
-    queryKey: ["games"],
-    queryFn: () => api.getGames(),
+    queryKey: ["games", todayDate],
+    queryFn: () => api.getGames(undefined, todayDate),
     staleTime: 60_000,
   });
 

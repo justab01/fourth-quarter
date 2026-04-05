@@ -31,6 +31,9 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
 - **API Codegen:** Orval generates React Query hooks (`@workspace/api-client-react`) and Zod schemas (`@workspace/api-zod`) from an OpenAPI specification (`@workspace/api-spec`).
 - **Build System:** esbuild for CJS bundling.
 - **Real-time Updates:** WebSocket server (`WS /ws`) for pushing live game scores and specific game updates, triggering React Query cache invalidation.
+- **Caching & Efficiency:**
+    - **Server:** In-memory cache with TTL-based expiration (15s live → 5min static). Request deduplication via `inflight` promise map prevents cache stampede (concurrent requests for same key share one ESPN fetch). Periodic cache cleanup every 60s prevents memory leaks.
+    - **Client:** All screens share unified `["games", dateParam]` query key so Home, Scores, Sports tab, and Sport detail screens reuse the same React Query cache entry instead of fetching separately. Rankings cached 10min client-side, news 2min, standings 5min.
 - **AI Integration:** GROQ AI for "In One Breath" sports summaries and OpenAI `gpt-4o-mini` for article/game summaries and postgame recaps.
 - **Mobile State Management:** `PreferencesContext` for user preferences (favoriteTeams, favoritePlayers, favoriteLeagues, mode), persisted to AsyncStorage and synced with the backend. Player follow uses canonical `LEAGUE-espnId` keys for consistency across navigation paths.
 - **Universal Sports Model (Database):** Includes `user_preferences`, `sport_game_events` (universal event table for historical data), and `sport_game_states` (live game snapshots).

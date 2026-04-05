@@ -6,9 +6,10 @@ import { db, sportGameEvents, sportGameStates } from "@workspace/db";
 
 const router: IRouter = Router();
 
-// ─── In-memory cache ──────────────────────────────────────────────────────────
+// ─── In-memory cache with request deduplication ──────────────────────────────
 interface CacheEntry { data: unknown; expiresAt: number }
 const cache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<unknown>>();
 
 function getCached<T>(key: string): T | null {
   const entry = cache.get(key);
@@ -19,6 +20,30 @@ function getCached<T>(key: string): T | null {
 function setCached(key: string, data: unknown, ttlMs: number): void {
   cache.set(key, { data, expiresAt: Date.now() + ttlMs });
 }
+
+async function cachedFetch<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
+  const cached = getCached<T>(key);
+  if (cached) return cached;
+  const existing = inflight.get(key);
+  if (existing) return existing as Promise<T>;
+  const promise = fetcher().then((data) => {
+    setCached(key, data, ttlMs);
+    inflight.delete(key);
+    return data;
+  }).catch((err) => {
+    inflight.delete(key);
+    throw err;
+  });
+  inflight.set(key, promise);
+  return promise;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (now > entry.expiresAt) cache.delete(key);
+  }
+}, 60_000);
 
 // ─── ESPN fetch helper ────────────────────────────────────────────────────────
 async function espnFetch(url: string): Promise<unknown> {
@@ -419,28 +444,38 @@ async function fetchLeagueGames(leagueKey: string, dateStr?: string): Promise<Ga
   const cacheKey = `scoreboard-${leagueKey}-${dateStr ?? "today"}`;
   const cached = getCached<GameShape[]>(cacheKey);
   if (cached) return cached;
+
+  const existing = inflight.get(cacheKey);
+  if (existing) return existing as Promise<GameShape[]>;
+
   const cfg = LEAGUE_CONFIG[leagueKey];
   const dateParam = dateStr ? `?dates=${dateStr}` : "";
   const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard${dateParam}`;
-  try {
-    const json = (await espnFetch(url)) as EspnScoreboard;
-    const games = (json.events ?? [])
-      .filter((ev) => ev.competitions?.length > 0)
-      .map((ev) => mapEvent(ev, leagueKey));
-    const hasLive = games.some((g) => g.status === "live");
-    // Cache today+live short, today no-live medium, past days long (they won't change), future medium
-    const isToday = !dateStr;
-    const isFuture = dateStr ? dateStr > todayYYYYMMDD() : false;
-    const ttl = isToday && hasLive ? 15_000
-              : isToday ? 60_000
-              : isFuture ? 120_000
-              : 300_000; // past days: cache 5 min
-    setCached(cacheKey, games, ttl);
-    return games;
-  } catch (err) {
-    console.error(`ESPN scoreboard fetch error for ${leagueKey}:`, err);
-    return [];
-  }
+
+  const promise = (async () => {
+    try {
+      const json = (await espnFetch(url)) as EspnScoreboard;
+      const games = (json.events ?? [])
+        .filter((ev) => ev.competitions?.length > 0)
+        .map((ev) => mapEvent(ev, leagueKey));
+      const hasLive = games.some((g) => g.status === "live");
+      const isToday = !dateStr;
+      const isFuture = dateStr ? dateStr > todayYYYYMMDD() : false;
+      const ttl = isToday && hasLive ? 15_000
+                : isToday ? 60_000
+                : isFuture ? 120_000
+                : 300_000;
+      setCached(cacheKey, games, ttl);
+      return games;
+    } catch (err) {
+      console.error(`ESPN scoreboard fetch error for ${leagueKey}:`, err);
+      return [];
+    } finally {
+      inflight.delete(cacheKey);
+    }
+  })();
+  inflight.set(cacheKey, promise);
+  return promise;
 }
 
 function todayYYYYMMDD(): string {

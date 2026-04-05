@@ -360,7 +360,7 @@ export default function LiveScreen() {
   const dateParam = offsetToYYYYMMDD(dateOffset);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["live-games", dateParam],
+    queryKey: ["games", dateParam],
     queryFn: () => api.getGames(undefined, dateParam),
     refetchInterval: dateOffset === 0 ? 30000 : false,
     staleTime: dateOffset === 0 ? 20000 : 300_000,

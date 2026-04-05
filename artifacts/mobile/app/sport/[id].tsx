@@ -469,9 +469,14 @@ export default function SportBoardScreen() {
   const archetype = getArchetypeForSport(sport, activeLeague);
   const rankingsLeague = getRankingsLeague(sport, activeLeague);
 
+  const todayDate = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+
   const { data: gamesData, isLoading: gamesLoading, refetch: refetchGames } = useQuery({
-    queryKey: ["games"],
-    queryFn: () => api.getGames(),
+    queryKey: ["games", todayDate],
+    queryFn: () => api.getGames(undefined, todayDate),
     staleTime: 60_000,
   });
 
