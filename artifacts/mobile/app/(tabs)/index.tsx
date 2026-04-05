@@ -222,11 +222,15 @@ const iobStyles = StyleSheet.create({
 function MoversChips({ allGames }: { allGames: Game[] }) {
   const liveGames = allGames.filter(g => g.status === "live");
   const closeGames = liveGames.filter(g => Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) <= 5);
+  const blowoutGames = liveGames.filter(g => Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) >= 20);
   const upcomingCount = allGames.filter(g => g.status === "upcoming").length;
 
   const chips: { label: string; color: string; icon: string }[] = [];
   if (closeGames.length > 0) {
     chips.push({ label: `${closeGames.length} nail-biter${closeGames.length > 1 ? "s" : ""}`, color: C.live, icon: "flame" });
+  }
+  if (blowoutGames.length > 0) {
+    chips.push({ label: `${blowoutGames.length} blowout${blowoutGames.length > 1 ? "s" : ""}`, color: C.textTertiary, icon: "trending-up" });
   }
   if (upcomingCount > 0) {
     chips.push({ label: `${upcomingCount} upcoming`, color: C.accent, icon: "time-outline" });
@@ -344,6 +348,40 @@ const tabStyles = StyleSheet.create({
   count: { fontSize: 11, fontWeight: "600", color: C.textTertiary },
 });
 
+function isCuratedGame(game: Game): boolean {
+  if (game.status === "live") {
+    const diff = Math.abs((game.homeScore ?? 0) - (game.awayScore ?? 0));
+    if (diff <= 5) return true;
+    const period = (game.quarter ?? "").toLowerCase();
+    if (period.includes("ot") || period.includes("overtime")) return true;
+  }
+  if (game.status === "upcoming") {
+    const title = `${game.homeTeam} ${game.awayTeam}`.toLowerCase();
+    const rivalryWords = ["rivalry", "derby", "classic"];
+    if (rivalryWords.some(w => title.includes(w))) return true;
+  }
+  return false;
+}
+
+function CuratedBadge() {
+  return (
+    <View style={curatedStyles.badge}>
+      <Ionicons name="star" size={9} color={C.accentGold} />
+      <Text style={curatedStyles.badgeText}>PICK</Text>
+    </View>
+  );
+}
+
+const curatedStyles = StyleSheet.create({
+  badge: {
+    position: "absolute", top: 8, right: 8, zIndex: 2,
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: `${C.accentGold}22`, paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 6, borderWidth: 1, borderColor: `${C.accentGold}40`,
+  },
+  badgeText: { color: C.accentGold, fontSize: 8, fontWeight: "900", letterSpacing: 0.5 },
+});
+
 function TodaysGamesWidget({ allGames, myTeams, onGamePress, isLoading, isError, onRetry }: {
   allGames: Game[]; myTeams: string[]; onGamePress: (g: Game) => void;
   isLoading: boolean; isError: boolean; onRetry: () => void;
@@ -428,6 +466,7 @@ function TodaysGamesWidget({ allGames, myTeams, onGamePress, isLoading, isError,
               contentContainerStyle={{ gap: 12, paddingRight: 20 }}
               renderItem={({ item }) => (
                 <View style={{ width: 172 }}>
+                  {isCuratedGame(item) && <CuratedBadge />}
                   <GameCard game={item} variant="compact"
                     isFavorite={myTeams.includes(item.homeTeam) || myTeams.includes(item.awayTeam)}
                     onPress={() => onGamePress(item)} />
@@ -458,7 +497,17 @@ const widgetStyles = StyleSheet.create({
   },
 });
 
+const DRAFT_SEASONS: Record<string, [number, number]> = {
+  NFL: [3, 5], NBA: [5, 7], NHL: [6, 7], MLB: [6, 8],
+};
+
+function isDraftRelevant(): boolean {
+  const month = new Date().getMonth() + 1;
+  return Object.values(DRAFT_SEASONS).some(([start, end]) => month >= start && month <= end);
+}
+
 function DraftBar() {
+  if (!isDraftRelevant()) return null;
   return (
     <View style={draftStyles.bar}>
       <LinearGradient
@@ -750,7 +799,7 @@ export default function HubScreen() {
           />
         </View>
 
-        {/* ── DRAFT BAR (compact single row) ── */}
+        {/* ── DRAFT BAR (compact single row, conditional on draft season) ── */}
         <View style={styles.section}>
           <DraftBar />
         </View>
