@@ -379,7 +379,6 @@ const ESPN_LABEL_ALIASES: Record<string, string[]> = {
   "A":    ["assists", "Assists"],
   "PTS":  ["points", "Points"],
   "S":    ["shotsTotal", "shots", "Shots"],
-  "SOG":  ["shootoutGoals"],
   "+/-":  ["plusMinus"],
   "PIM":  ["penaltyMinutes"],
   "TOI":  ["timeOnIce"],
@@ -610,8 +609,12 @@ function extractBoxscore(
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
     } else if (isCombat || isTennis) {
-      // ESPN does not provide standard boxscore player stats for combat sports or tennis
-      // These sports use different data structures (fight results, set scores)
+      // ESPN summary API returns no boxscore.players data for combat sports (UFC/Boxing)
+      // or tennis (ATP/WTA). These sports use fundamentally different ESPN data structures:
+      // - UFC: fight cards with win/loss only (no per-round statistics in API)
+      // - Tennis: tournament brackets with set scores (no player stat tables)
+      // The boxscore.players array is empty/undefined for these leagues,
+      // so this branch ensures they don't fall through to NFL stat keys.
     } else {
       const sg = playerEntry.statistics[0];
       if (!sg) continue;
