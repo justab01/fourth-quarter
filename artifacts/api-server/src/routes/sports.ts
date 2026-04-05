@@ -374,9 +374,36 @@ function todayYYYYMMDD(): string {
 }
 
 // ─── Per-player stat extraction from ESPN boxscore.players ────────────────────
+const ESPN_LABEL_ALIASES: Record<string, string[]> = {
+  "G":    ["goals", "Goals"],
+  "A":    ["assists", "Assists"],
+  "PTS":  ["points", "Points"],
+  "S":    ["shotsTotal", "shots", "Shots"],
+  "SOG":  ["shootoutGoals"],
+  "+/-":  ["plusMinus"],
+  "PIM":  ["penaltyMinutes"],
+  "TOI":  ["timeOnIce"],
+  "SV":   ["saves", "Saves"],
+  "GA":   ["goalsAgainst"],
+  "SA":   ["shotsAgainst"],
+  "SV%":  ["savePct"],
+  "MIN":  ["minutes", "Minutes"],
+  "REB":  ["rebounds", "Rebounds"],
+  "AST":  ["assists", "Assists"],
+  "STL":  ["steals", "Steals"],
+  "BLK":  ["blocks", "Blocks"],
+  "FG":   ["fieldGoals"],
+  "3PT":  ["threePointers"],
+  "FT":   ["freeThrows"],
+  "YDS":  ["yards", "Yards"],
+  "TD":   ["touchdowns"],
+  "INT":  ["interceptions"],
+};
+
 function extractPlayerStatsByLabel(
   group: EspnStatisticsGroup,
   wantedLabels: string[],
+  computedStats?: (stats: Record<string, string>) => void,
 ): PlayerStatLine[] {
   const rawLabels = group.labels;
   const rawNames = group.names;
@@ -390,11 +417,21 @@ function extractPlayerStatsByLabel(
     .map((a) => {
       const statsObj: Record<string, string> = {};
       for (const key of wantedLabels) {
-        const idx = labelToIdx[key];
+        let idx = labelToIdx[key];
+        if (idx === undefined) {
+          const aliases = ESPN_LABEL_ALIASES[key];
+          if (aliases) {
+            for (const alias of aliases) {
+              idx = labelToIdx[alias];
+              if (idx !== undefined) break;
+            }
+          }
+        }
         if (idx !== undefined && a.stats[idx] != null) {
           statsObj[key] = a.stats[idx];
         }
       }
+      if (computedStats) computedStats(statsObj);
       return { name: a.athlete.displayName, starter: a.starter, stats: statsObj };
     });
 }
@@ -511,8 +548,10 @@ function extractBoxscore(
   const MLB_BATTING_KEYS = ["H-AB", "R", "H", "RBI", "HR", "BB", "K"];
   const MLB_PITCHING_KEYS = ["IP", "H", "R", "ER", "BB", "K"];
   const MLS_PLAYER_KEYS  = ["MIN", "G", "A", "SHT", "SV"];
-  const NHL_SKATER_LABELS = ["G", "A", "+/-", "S", "HT", "BS", "TOI", "PIM", "FO%"];
+  const NHL_SKATER_LABELS = ["G", "A", "PTS", "+/-", "S", "HT", "BS", "TOI", "PIM", "FO%"];
   const NHL_GOALIE_LABELS = ["SV", "GA", "SA", "SV%", "TOI"];
+  const isCombat = ["UFC", "BOXING"].includes(leagueKey);
+  const isTennis = ["ATP", "WTA"].includes(leagueKey);
 
   let homeStats: Record<string, string | number> = {};
   let awayStats: Record<string, string | number> = {};
@@ -551,20 +590,28 @@ function extractBoxscore(
       }
     } else if (isNHL) {
       const lines: PlayerStatLine[] = [];
+      const computeNhlPts = (stats: Record<string, string>) => {
+        const g = parseInt(stats["G"] ?? "0", 10) || 0;
+        const a = parseInt(stats["A"] ?? "0", 10) || 0;
+        if (!stats["PTS"]) stats["PTS"] = String(g + a);
+      };
       for (const sg of playerEntry.statistics) {
         if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
-        const espnLabels = sg.labels ?? sg.names ?? [];
+        const espnLabels = (sg.labels && sg.labels.length > 0) ? sg.labels : (sg.names ?? []);
         const isGoalieGroup = espnLabels.includes("GA") || espnLabels.includes("SA") || espnLabels.includes("SV%");
         if (isGoalieGroup) {
           const goalies = extractPlayerStatsByLabel(sg, NHL_GOALIE_LABELS);
           goalies.forEach(g => { g.stats["role"] = "G"; });
           lines.push(...goalies);
         } else {
-          lines.push(...extractPlayerStatsByLabel(sg, NHL_SKATER_LABELS));
+          lines.push(...extractPlayerStatsByLabel(sg, NHL_SKATER_LABELS, computeNhlPts));
         }
       }
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
+    } else if (isCombat || isTennis) {
+      // ESPN does not provide standard boxscore player stats for combat sports or tennis
+      // These sports use different data structures (fight results, set scores)
     } else {
       const sg = playerEntry.statistics[0];
       if (!sg) continue;

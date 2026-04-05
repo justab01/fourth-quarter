@@ -43,7 +43,7 @@ const PLAYER_STAT_COLS: Record<string, string[]> = {
   EPL:   ["MIN", "G", "A", "SHT"],
   UCL:   ["MIN", "G", "A", "SHT"],
   LIGA:  ["MIN", "G", "A", "SHT"],
-  NHL:   ["G", "A", "+/-", "S", "TOI", "PIM"],
+  NHL:   ["G", "A", "PTS", "+/-", "S", "TOI", "PIM"],
   UFC:   ["SLM", "SLA", "TD", "SUB"],
   BOXING: ["PTS", "KD", "RDS"],
   ATP:   ["ACES", "DF", "1ST%", "BP"],
