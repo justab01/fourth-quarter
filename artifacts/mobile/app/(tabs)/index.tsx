@@ -655,9 +655,14 @@ export default function HubScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
+  const todayDate = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
   const { data: gamesData, isLoading: gamesLoading, isError: gamesError, refetch: refetchGames } = useQuery({
-    queryKey: ["games"],
-    queryFn: () => api.getGames(),
+    queryKey: ["games", todayDate],
+    queryFn: () => api.getGames(undefined, todayDate),
     staleTime: 30000,
     refetchInterval: 30000,
     retry: 2,

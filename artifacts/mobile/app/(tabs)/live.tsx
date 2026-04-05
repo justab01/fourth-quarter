@@ -186,8 +186,7 @@ function offsetToDate(offset: number): Date {
   return d;
 }
 
-function offsetToYYYYMMDD(offset: number): string | undefined {
-  if (offset === 0) return undefined;
+function offsetToYYYYMMDD(offset: number): string {
   const d = offsetToDate(offset);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -378,7 +377,7 @@ export default function LiveScreen() {
   const dateParam = offsetToYYYYMMDD(dateOffset);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["live-games", dateParam ?? "today"],
+    queryKey: ["live-games", dateParam],
     queryFn: () => api.getGames(undefined, dateParam),
     refetchInterval: dateOffset === 0 ? 30000 : false,
     staleTime: dateOffset === 0 ? 20000 : 300_000,
