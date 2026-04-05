@@ -39,7 +39,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
 - **Mobile App Features:**
     - **Onboarding Flow:** 4 steps, including Houston personalization (Rockets/Astros/Texans/Dynamo).
     - **Fan/Nerd Mode:** Toggle for simplified vs. advanced stats.
-    - **Home Tab:** "In One Breath" AI summary, "Biggest Movers" (nail-biters/blowouts/upcoming), "Tonight's Watchlist" (AI-curated games).
+    - **Home Tab (Redesigned):** Consolidated from 13 sections to ~7: Header → In One Breath (collapsed by default) → Hero Banner + Movers Chips inline → My Teams strip (merged ForYou) → Today's Games (with sport tabs, merged Watchlist & LeaguePulse) → Draft Bar (compact single row) → Headlines (merged TopStory + StoryClusters) → AI Recaps. Smart sport-tab default selects live league first.
     - **Live Tab:** Urgency scoring, Smart Filters (All/Close Games/Rivalry/My Teams), Must-Watch Hero carousel.
     - **Standings:** Sport-adaptive columns, "Why It Matters" context lines, collapsible conference groups (East/West for NBA sorted by seed), playoff seed display, clinch badges (y=division, x=playoff, e=eliminated) with legend. NCAAB tournament bracket with round labels, seed matchups, live/final indicators. Dynamic NBA season year.
     - **Sports Tab:** Season phase badges on sport cards.

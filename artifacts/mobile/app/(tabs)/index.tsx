@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Pressable, Platform, Dimensions, FlatList, Animated, ActivityIndicator
+  Pressable, Platform, Dimensions, FlatList, ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,12 +16,11 @@ import { useSearch } from "@/context/SearchContext";
 import { GameCard, TeamLogo } from "@/components/GameCard";
 import { NewsCard } from "@/components/NewsCard";
 import { RecapCard } from "@/components/RecapCard";
-import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
+import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { ProfileButton } from "@/components/ProfileButton";
 import { goToTeam } from "@/utils/navHelpers";
 import { ALL_TEAMS } from "@/constants/allPlayers";
 import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
-import type { AppMode } from "@/context/PreferencesContext";
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -54,7 +53,6 @@ const LEAGUE_COLORS: Record<string, string> = {
 };
 function getLeagueColor(l: string) { return LEAGUE_COLORS[l] ?? C.accent; }
 
-// ─── Context line generator ──────────────────────────────────────────────────
 function getGameContext(game: Game, myTeams: string[]): string | null {
   const homeScore = game.homeScore ?? 0;
   const awayScore = game.awayScore ?? 0;
@@ -62,11 +60,9 @@ function getGameContext(game: Game, myTeams: string[]): string | null {
   const isMyTeam = myTeams.includes(game.homeTeam) || myTeams.includes(game.awayTeam);
   const period = game.quarter ?? "";
   const time = game.timeRemaining ?? "";
-
   const awayShort = shortAthleteName(game.awayTeam);
   const homeShort = shortAthleteName(game.homeTeam);
 
-  // ── Tennis context ─────────────────────────────────────────────────────────
   if (isTennisLeague(game.league)) {
     if (game.status === "live") {
       const setsLeader = homeScore > awayScore ? homeShort : awayScore > homeScore ? awayShort : null;
@@ -89,7 +85,6 @@ function getGameContext(game: Game, myTeams: string[]): string | null {
     return null;
   }
 
-  // ── Combat context ─────────────────────────────────────────────────────────
   if (isCombatLeague(game.league)) {
     const emoji = game.league === "BOXING" ? "🥊" : "🥋";
     if (game.status === "live") {
@@ -113,7 +108,6 @@ function getGameContext(game: Game, myTeams: string[]): string | null {
     return null;
   }
 
-  // ── Team sports context ────────────────────────────────────────────────────
   if (game.status === "live") {
     const leader = homeScore > awayScore ? game.homeTeam : game.awayTeam;
     const leaderShort = leader.split(" ").slice(-1)[0];
@@ -144,44 +138,6 @@ function getGameContext(game: Game, myTeams: string[]): string | null {
   return null;
 }
 
-// ─── Playoff implications ────────────────────────────────────────────────────
-const PLAYOFF_MONTHS: Record<string, number[]> = {
-  NBA: [2, 3, 4],       // March, April, May (0-indexed)
-  NHL: [2, 3, 4],
-  MLB: [7, 8, 9],       // August, September, October
-  NFL: [9, 10, 11, 12, 0], // Oct-Jan
-  MLS: [8, 9, 10],
-};
-
-function getPlayoffImplication(game: Game): string | null {
-  const now = new Date();
-  const month = now.getMonth();
-  const lg = game.league as string;
-  const months = PLAYOFF_MONTHS[lg];
-  if (!months || !months.includes(month)) return null;
-
-  const homeScore = game.homeScore ?? 0;
-  const awayScore = game.awayScore ?? 0;
-
-  const implLines: Record<string, string> = {
-    NBA: "🏆 Playoff seeding implications",
-    NHL: "🏒 Playoff race — every point counts",
-    MLB: "⚾ Wild card race implications",
-    NFL: "🏈 Playoff push — division stakes",
-    MLS: "⚽ Playoff positioning on the line",
-  };
-
-  const line = implLines[lg];
-  if (!line) return null;
-
-  if (game.status === "live") {
-    const diff = Math.abs(homeScore - awayScore);
-    if (diff <= 5) return `${line} · One-possession game`;
-  }
-  return line;
-}
-
-// ─── Section heading ──────────────────────────────────────────────────────────
 function SectionHeading({ label, accentColor, onSeeAll, badge }: {
   label: string; accentColor?: string; onSeeAll?: () => void; badge?: React.ReactNode;
 }) {
@@ -209,212 +165,6 @@ const secStyles = StyleSheet.create({
   arrowLabel: { color: C.accent, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 });
 
-// ─── My Teams tiles ───────────────────────────────────────────────────────────
-function MyTeamsTiles({ myTeams, allGames }: {
-  myTeams: string[]; allGames: Game[];
-}) {
-  if (myTeams.length === 0) return null;
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
-      {myTeams.map(team => {
-        const teamGames = allGames.filter(g => g.homeTeam === team || g.awayTeam === team);
-        const live = teamGames.find(g => g.status === "live");
-        const next = teamGames.find(g => g.status === "upcoming");
-        const last = teamGames.find(g => g.status === "finished");
-        const featured = live ?? next ?? last;
-        const league = featured?.league ?? ALL_TEAMS.find(t => t.name === team)?.league ?? "NBA";
-        const color = getLeagueColor(league);
-        const abbr = team.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
-        let statusLine = "";
-        if (live) statusLine = "● LIVE";
-        else if (next) {
-          const d = new Date(next.startTime);
-          statusLine = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-        } else if (last) {
-          const isHome = last.homeTeam === team;
-          const my = isHome ? last.homeScore : last.awayScore;
-          const opp = isHome ? last.awayScore : last.homeScore;
-          const won = (my ?? 0) > (opp ?? 0);
-          statusLine = `${won ? "W" : "L"} ${my}–${opp}`;
-        }
-        const logoUri =
-          featured
-            ? (featured.homeTeam === team ? featured.homeTeamLogo : featured.awayTeamLogo)
-            : allGames.find(g => g.homeTeam === team)?.homeTeamLogo
-              ?? allGames.find(g => g.awayTeam === team)?.awayTeamLogo
-              ?? null;
-        return (
-          <Pressable key={team} onPress={() => goToTeam(team, league)} style={tileStyles.tile}>
-            <TeamLogo uri={logoUri} name={team} size={60} borderColor={`${color}55`} />
-            <Text style={tileStyles.teamShort} numberOfLines={1}>{abbr}</Text>
-            {statusLine ? (
-              <Text style={[tileStyles.status, live && { color: C.live }]} numberOfLines={1}>{statusLine}</Text>
-            ) : null}
-          </Pressable>
-        );
-      })}
-    </ScrollView>
-  );
-}
-
-const tileStyles = StyleSheet.create({
-  tile: { alignItems: "center", gap: 5, width: 68 },
-  teamShort: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  status: { color: C.textTertiary, fontSize: 10, fontWeight: "600", textAlign: "center" },
-});
-
-// ─── For You Section ──────────────────────────────────────────────────────────
-interface InsightCard {
-  id: string;
-  icon: string;
-  iconColor: string;
-  label: string;
-  sublabel: string;
-  onPress?: () => void;
-  urgent?: boolean;
-}
-
-function ForYouSection({ allGames, myTeams }: { allGames: Game[]; myTeams: string[] }) {
-  const cards: InsightCard[] = [];
-
-  const myGames = allGames.filter(g => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam));
-  const liveAll = allGames.filter(g => g.status === "live");
-  const myLive = myGames.filter(g => g.status === "live");
-  const myNext = myGames.filter(g => g.status === "upcoming").sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-  const myFinished = myGames.filter(g => g.status === "finished");
-
-  myLive.forEach(g => {
-    const teamShort = myTeams.find(t => t === g.homeTeam || t === g.awayTeam)?.split(" ").slice(-1)[0] ?? "";
-    const score = `${g.awayScore}–${g.homeScore}`;
-    const period = g.quarter ?? "Live";
-    cards.push({
-      id: `live-${g.id}`,
-      icon: "radio",
-      iconColor: C.live,
-      label: `${teamShort} LIVE`,
-      sublabel: `${score} · ${period}`,
-      onPress: () => router.push({ pathname: "/game/[id]", params: { id: g.id } } as any),
-      urgent: true,
-    });
-  });
-
-  if (myLive.length === 0 && myNext.length > 0) {
-    const g = myNext[0];
-    const teamShort = myTeams.find(t => t === g.homeTeam || t === g.awayTeam)?.split(" ").slice(-1)[0] ?? "";
-    const opp = myTeams.includes(g.homeTeam) ? g.awayTeam.split(" ").slice(-1)[0] : g.homeTeam.split(" ").slice(-1)[0];
-    const now = new Date();
-    const start = new Date(g.startTime);
-    const minsUntil = Math.floor((start.getTime() - now.getTime()) / 60000);
-    const timeStr = minsUntil > 0 && minsUntil <= 90 ? `in ${minsUntil}m` : start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    cards.push({
-      id: `next-${g.id}`,
-      icon: "time-outline",
-      iconColor: C.accent,
-      label: `${teamShort} vs ${opp}`,
-      sublabel: `Starts ${timeStr}`,
-      onPress: () => router.push({ pathname: "/game/[id]", params: { id: g.id } } as any),
-    });
-  }
-
-  myFinished.slice(0, 2).forEach(g => {
-    const myTeam = myTeams.find(t => t === g.homeTeam || t === g.awayTeam)!;
-    const isHome = g.homeTeam === myTeam;
-    const myScore = isHome ? g.homeScore : g.awayScore;
-    const oppScore = isHome ? g.awayScore : g.homeScore;
-    const won = (myScore ?? 0) > (oppScore ?? 0);
-    const teamShort = myTeam.split(" ").slice(-1)[0];
-    cards.push({
-      id: `result-${g.id}`,
-      icon: won ? "checkmark-circle" : "close-circle",
-      iconColor: won ? C.accentGreen : C.live,
-      label: `${teamShort} ${won ? "won" : "lost"}`,
-      sublabel: `${myScore}–${oppScore} final`,
-      onPress: () => router.push({ pathname: "/game/[id]", params: { id: g.id } } as any),
-    });
-  });
-
-  if (liveAll.length > 0) {
-    const byLeague: Record<string, number> = {};
-    liveAll.forEach(g => { byLeague[g.league] = (byLeague[g.league] ?? 0) + 1; });
-    const topLeague = Object.entries(byLeague).sort((a, b) => b[1] - a[1])[0];
-    if (topLeague) {
-      cards.push({
-        id: "league-pulse",
-        icon: "pulse",
-        iconColor: getLeagueColor(topLeague[0]),
-        label: `${topLeague[1]} ${topLeague[0]} games live`,
-        sublabel: "Tap to see all scores",
-        onPress: () => router.push("/(tabs)/live" as any),
-      });
-    }
-  }
-
-  const now = new Date();
-  const month = now.getMonth();
-  if (month >= 2 && month <= 4) {
-    cards.push({
-      id: "season-ctx",
-      icon: "trophy-outline",
-      iconColor: C.accentGold,
-      label: "Playoff race heating up",
-      sublabel: "Check standings for latest",
-      onPress: () => router.push("/(tabs)/standings" as any),
-    });
-  }
-
-  if (cards.length === 0) return null;
-
-  return (
-    <View style={{ gap: 12 }}>
-      <SectionHeading label="For You" accentColor={C.accent} badge={
-        <View style={fyStyles.newBadge}><Text style={fyStyles.newText}>NOW</Text></View>
-      } />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
-        {cards.map(card => (
-          <Pressable key={card.id} style={[fyStyles.card, card.urgent && fyStyles.urgentCard]} onPress={card.onPress}>
-            {card.urgent && <View style={fyStyles.urgentGlow} />}
-            <View style={[fyStyles.iconBg, { backgroundColor: `${card.iconColor}20` }]}>
-              <Ionicons name={card.icon as any} size={18} color={card.iconColor} />
-            </View>
-            <Text style={fyStyles.label} numberOfLines={1}>{card.label}</Text>
-            <Text style={fyStyles.sublabel} numberOfLines={1}>{card.sublabel}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-const fyStyles = StyleSheet.create({
-  card: {
-    backgroundColor: C.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-    padding: 14,
-    gap: 6,
-    width: 148,
-    overflow: "hidden",
-  },
-  urgentCard: { borderColor: `${C.live}40` },
-  urgentGlow: {
-    position: "absolute", top: 0, left: 0, right: 0, height: 2,
-    backgroundColor: C.live, borderRadius: 1,
-  },
-  iconBg: {
-    width: 34, height: 34, borderRadius: 10,
-    alignItems: "center", justifyContent: "center",
-  },
-  label: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  sublabel: { color: C.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular" },
-  newBadge: {
-    backgroundColor: `${C.accent}22`, paddingHorizontal: 6, paddingVertical: 2,
-    borderRadius: 6, borderWidth: 1, borderColor: `${C.accent}40`,
-  },
-  newText: { color: C.accent, fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
-});
-
-// ─── In One Breath ───────────────────────────────────────────────────────────
 function InOneBreath() {
   const { data, isLoading } = useQuery({
     queryKey: ["in-one-breath"],
@@ -422,43 +172,41 @@ function InOneBreath() {
     staleTime: 120_000,
     refetchInterval: 120_000,
   });
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   if (isLoading) {
     return (
-      <View style={iobStyles.card}>
+      <Pressable style={iobStyles.card} onPress={() => setExpanded(v => !v)}>
         <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
         <View style={iobStyles.header}>
           <Ionicons name="sparkles" size={14} color={C.accentGold} />
           <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
           <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
+          <ActivityIndicator color={C.accent} size="small" style={{ marginLeft: 4 }} />
         </View>
-        <ActivityIndicator color={C.accent} size="small" />
-      </View>
+      </Pressable>
     );
   }
 
   if (!data?.summary) return null;
 
   return (
-    <Pressable onPress={() => setExpanded(v => !v)}>
-      <View style={iobStyles.card}>
-        <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-        <View style={iobStyles.header}>
-          <Ionicons name="sparkles" size={14} color={C.accentGold} />
-          <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
-          <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
-          <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={16} color={C.textSecondary} style={{ marginLeft: 4 }} />
-        </View>
-        {expanded && <Text style={iobStyles.summary}>{data.summary}</Text>}
+    <Pressable onPress={() => setExpanded(v => !v)} style={iobStyles.card}>
+      <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+      <View style={iobStyles.header}>
+        <Ionicons name="sparkles" size={14} color={C.accentGold} />
+        <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
+        <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
+        <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={16} color={C.textSecondary} style={{ marginLeft: 4 }} />
       </View>
+      {expanded && <Text style={iobStyles.summary}>{data.summary}</Text>}
     </Pressable>
   );
 }
 
 const iobStyles = StyleSheet.create({
   card: {
-    backgroundColor: C.card, borderRadius: 18, padding: 16, gap: 10,
+    backgroundColor: C.card, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, gap: 10,
     borderWidth: 1, borderColor: `${C.accentGold}30`, overflow: "hidden",
   },
   header: { flexDirection: "row", alignItems: "center", gap: 7 },
@@ -471,285 +219,86 @@ const iobStyles = StyleSheet.create({
   summary: { color: "#AEAEB2", fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
 });
 
-// ─── Biggest Movers ──────────────────────────────────────────────────────────
-function BiggestMovers({ allGames }: { allGames: Game[] }) {
+function MoversChips({ allGames }: { allGames: Game[] }) {
   const liveGames = allGames.filter(g => g.status === "live");
   const closeGames = liveGames.filter(g => Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) <= 5);
-  const blowouts = liveGames.filter(g => Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) >= 20);
   const upcomingCount = allGames.filter(g => g.status === "upcoming").length;
 
-  const movers: { icon: string; label: string; detail: string; color: string; onPress?: () => void }[] = [];
-
+  const chips: { label: string; color: string; icon: string }[] = [];
   if (closeGames.length > 0) {
-    movers.push({
-      icon: "flame", label: `${closeGames.length} nail-biter${closeGames.length > 1 ? "s" : ""}`,
-      detail: "Games within 5 pts", color: C.live,
-      onPress: () => router.push("/(tabs)/live" as any),
-    });
-  }
-  if (blowouts.length > 0) {
-    movers.push({ icon: "trending-up", label: `${blowouts.length} blowout${blowouts.length > 1 ? "s" : ""}`, detail: "20+ point leads", color: C.accentGreen });
+    chips.push({ label: `${closeGames.length} nail-biter${closeGames.length > 1 ? "s" : ""}`, color: C.live, icon: "flame" });
   }
   if (upcomingCount > 0) {
-    movers.push({ icon: "time-outline", label: `${upcomingCount} coming up`, detail: "Still to tip off", color: C.accent });
+    chips.push({ label: `${upcomingCount} upcoming`, color: C.accent, icon: "time-outline" });
   }
-
-  if (movers.length === 0) {
-    return (
-      <View style={{ gap: 12 }}>
-        <SectionHeading label="Biggest Movers" accentColor={C.accentGold} />
-        <View style={moverStyles.emptyCard}>
-          <Ionicons name="pulse-outline" size={20} color={C.textTertiary} />
-          <Text style={moverStyles.emptyText}>No major swings right now</Text>
-        </View>
-      </View>
-    );
-  }
+  if (chips.length === 0) return null;
 
   return (
-    <View style={{ gap: 12 }}>
-      <SectionHeading label="Biggest Movers" accentColor={C.accentGold} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-        {movers.map((m, i) => (
-          <Pressable key={i} onPress={m.onPress} style={moverStyles.card}>
-            <View style={[moverStyles.iconBg, { backgroundColor: `${m.color}18` }]}>
-              <Ionicons name={m.icon as any} size={16} color={m.color} />
-            </View>
-            <Text style={moverStyles.label}>{m.label}</Text>
-            <Text style={moverStyles.detail}>{m.detail}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+    <View style={chipStyles.row}>
+      {chips.map((c, i) => (
+        <Pressable key={i} style={chipStyles.chip} onPress={() => router.push("/(tabs)/live" as any)}>
+          <Ionicons name={c.icon as any} size={11} color={c.color} />
+          <Text style={[chipStyles.chipText, { color: c.color }]}>{c.label}</Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
 
-const moverStyles = StyleSheet.create({
-  card: { backgroundColor: C.card, borderRadius: 14, padding: 14, gap: 6, borderWidth: 1, borderColor: C.cardBorder, width: 140 },
-  iconBg: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  label: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  detail: { color: C.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular" },
-  emptyCard: {
-    backgroundColor: C.card, borderRadius: 14, padding: 16, gap: 8,
-    borderWidth: 1, borderColor: C.cardBorder, alignItems: "center", justifyContent: "center",
-    minHeight: 60, flexDirection: "row",
+const chipStyles = StyleSheet.create({
+  row: { flexDirection: "row", gap: 8, flexWrap: "wrap", paddingHorizontal: 4 },
+  chip: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
-  emptyText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  chipText: { fontSize: 11, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
 });
 
-// ─── Draft Center ────────────────────────────────────────────────────────────
-const DRAFT_LEAGUES = [
-  { league: "NFL", emoji: "\uD83C\uDFC8", color: C.nfl, label: "NFL Draft" },
-  { league: "NBA", emoji: "\uD83C\uDFC0", color: C.nba, label: "NBA Draft" },
-  { league: "NHL", emoji: "\uD83C\uDFD2", color: C.accentBlue, label: "NHL Draft" },
-  { league: "MLB", emoji: "\u26BE", color: C.mlb, label: "MLB Draft" },
-  { league: "WNBA", emoji: "\uD83C\uDFC0", color: "#E91E8C", label: "WNBA Draft" },
-];
-
-function DraftCenterSection() {
+function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game[] }) {
+  if (myTeams.length === 0) return null;
   return (
-    <View style={{ gap: 12 }}>
-      <SectionHeading label="Draft Center" accentColor={C.accentGold} badge={
-        <View style={draftStyles.badge}>
-          <Ionicons name="trophy" size={10} color={C.accentGold} />
-        </View>
-      } />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={draftStyles.scroll}>
-        {DRAFT_LEAGUES.map(({ league, emoji, color, label }) => (
-          <Pressable
-            key={league}
-            onPress={() => router.push(`/draft/${league}` as any)}
-            style={draftStyles.card}
-          >
-            <LinearGradient
-              colors={[`${color}30`, `${color}08`]}
-              style={draftStyles.cardGradient}
-            >
-              <Text style={draftStyles.cardEmoji}>{emoji}</Text>
-              <Text style={draftStyles.cardLabel}>{label}</Text>
-              <View style={[draftStyles.cardChip, { backgroundColor: `${color}30` }]}>
-                <Text style={[draftStyles.cardChipText, { color }]}>VIEW</Text>
-                <Ionicons name="chevron-forward" size={10} color={color} />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-const draftStyles = StyleSheet.create({
-  badge: { backgroundColor: `${C.accentGold}22`, padding: 4, borderRadius: 8, borderWidth: 1, borderColor: `${C.accentGold}40` },
-  scroll: { gap: 10, paddingRight: 20 },
-  card: { width: 130, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.separator },
-  cardGradient: { padding: 14, gap: 8, alignItems: "flex-start", minHeight: 120, justifyContent: "space-between" },
-  cardEmoji: { fontSize: 28 },
-  cardLabel: { color: "#FFF", fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  cardChip: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  cardChipText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
-});
-
-// ─── Tonight's Watchlist ─────────────────────────────────────────────────────
-function TonightsWatchlist({ allGames, myTeams }: { allGames: Game[]; myTeams: string[] }) {
-  const upcoming = allGames.filter(g => g.status === "upcoming");
-  if (upcoming.length === 0) {
-    return (
-      <View style={{ gap: 12 }}>
-        <SectionHeading label="Tonight's Watchlist" accentColor={C.accent} />
-        <View style={watchlistStyles.emptyCard}>
-          <Ionicons name="moon-outline" size={20} color={C.textTertiary} />
-          <Text style={watchlistStyles.emptyText}>No upcoming games on the schedule</Text>
-        </View>
-      </View>
-    );
-  }
-
-  const RIVAL_PAIRS = [
-    ["Los Angeles Lakers", "Boston Celtics"], ["New York Yankees", "Boston Red Sox"],
-    ["Real Madrid", "FC Barcelona"], ["Manchester United", "Manchester City"],
-    ["Dallas Cowboys", "Philadelphia Eagles"], ["Chicago Cubs", "St. Louis Cardinals"],
-  ];
-
-  const scored = upcoming.map(g => {
-    let score = 0;
-    if (myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam)) score += 10;
-    if (RIVAL_PAIRS.some(([a, b]) => (g.homeTeam === a && g.awayTeam === b) || (g.homeTeam === b && g.awayTeam === a))) score += 8;
-    if (["NBA", "NFL", "EPL", "UCL"].includes(g.league)) score += 3;
-    return { game: g, score };
-  }).sort((a, b) => b.score - a.score).slice(0, 4);
-
-  return (
-    <View style={{ gap: 12 }}>
-      <SectionHeading label="Tonight's Watchlist" accentColor={C.accent} badge={
-        <View style={watchlistStyles.badge}>
-          <Ionicons name="eye" size={10} color={C.accent} />
-          <Text style={watchlistStyles.badgeText}>CURATED</Text>
-        </View>
-      } />
-      <View style={watchlistStyles.list}>
-        {scored.map(({ game }, idx) => {
-          const startTime = new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-          const isMy = myTeams.includes(game.homeTeam) || myTeams.includes(game.awayTeam);
-          return (
-            <Pressable key={game.id} onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}>
-              <View style={watchlistStyles.row}>
-                {idx > 0 && <View style={watchlistStyles.divider} />}
-                <View style={watchlistStyles.rowInner}>
-                  <View style={watchlistStyles.timeCol}>
-                    <Text style={watchlistStyles.time}>{startTime}</Text>
-                    <Text style={watchlistStyles.league}>{game.league}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={watchlistStyles.matchup} numberOfLines={1}>
-                      {game.awayTeam.split(" ").slice(-1)[0]} @ {game.homeTeam.split(" ").slice(-1)[0]}
-                    </Text>
-                    {isMy && <Text style={watchlistStyles.myTag}>Your team</Text>}
-                  </View>
-                  <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
-                </View>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-const watchlistStyles = StyleSheet.create({
-  badge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${C.accent}15`, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
-  badgeText: { color: C.accent, fontSize: 8, fontWeight: "900", letterSpacing: 0.6 },
-  list: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
-  row: {},
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 14 },
-  rowInner: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, gap: 12 },
-  timeCol: { alignItems: "center", width: 50 },
-  time: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  league: { color: C.textTertiary, fontSize: 10, fontWeight: "600" },
-  matchup: { color: C.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
-  myTag: { color: C.accent, fontSize: 10, fontWeight: "700", marginTop: 2 },
-  emptyCard: {
-    backgroundColor: C.card, borderRadius: 14, padding: 16, gap: 8,
-    borderWidth: 1, borderColor: C.cardBorder, alignItems: "center", justifyContent: "center",
-    minHeight: 60, flexDirection: "row",
-  },
-  emptyText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
-});
-
-// ─── League Pulse ─────────────────────────────────────────────────────────────
-const LEAGUE_EMOJIS: Record<string, string> = {
-  NBA: "🏀", NFL: "🏈", MLB: "⚾", MLS: "⚽", NHL: "🏒",
-  WNBA: "🏀", NCAAB: "🎓", EPL: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", UCL: "⭐", LIGA: "🇪🇸",
-};
-
-function LeaguePulse({ allGames }: { allGames: Game[] }) {
-  const leagueMap: Record<string, Game[]> = {};
-  allGames.forEach(g => {
-    if (!leagueMap[g.league]) leagueMap[g.league] = [];
-    leagueMap[g.league].push(g);
-  });
-
-  const leagueOrder = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "EPL", "UCL", "LIGA", "WNBA"];
-  const pulseItems = leagueOrder
-    .filter(l => leagueMap[l]?.length > 0)
-    .map(l => ({
-      league: l,
-      games: leagueMap[l],
-      liveCount: leagueMap[l].filter(g => g.status === "live").length,
-      topGame: leagueMap[l].find(g => g.status === "live") ?? leagueMap[l].find(g => g.status === "upcoming") ?? leagueMap[l][0],
-    }))
-    .slice(0, 6);
-
-  if (pulseItems.length === 0) {
-    return (
-      <View style={{ gap: 12 }}>
-        <SectionHeading label="League Pulse" accentColor={C.textTertiary} onSeeAll={() => router.push("/(tabs)/live" as any)} />
-        <View style={pulseStyles.emptyCard}>
-          <Ionicons name="globe-outline" size={20} color={C.textTertiary} />
-          <Text style={pulseStyles.emptyText}>No league action right now</Text>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={{ gap: 12 }}>
-      <SectionHeading label="League Pulse" accentColor={C.textTertiary} onSeeAll={() => router.push("/(tabs)/live" as any)} />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
-        {pulseItems.map(({ league, liveCount, topGame, games }) => {
+    <View style={{ gap: 10 }}>
+      <SectionHeading label="My Teams" accentColor={C.accent} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
+        {myTeams.map(team => {
+          const teamGames = allGames.filter(g => g.homeTeam === team || g.awayTeam === team);
+          const live = teamGames.find(g => g.status === "live");
+          const next = teamGames.find(g => g.status === "upcoming");
+          const last = teamGames.find(g => g.status === "finished");
+          const featured = live ?? next ?? last;
+          const league = featured?.league ?? ALL_TEAMS.find(t => t.name === team)?.league ?? "NBA";
           const color = getLeagueColor(league);
-          const emoji = LEAGUE_EMOJIS[league] ?? "🏆";
-          const homeAbbr = topGame.homeTeam.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
-          const awayAbbr = topGame.awayTeam.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
-          const isLive = topGame.status === "live";
-          const statusText = isLive
-            ? `${topGame.awayScore}–${topGame.homeScore}`
-            : topGame.status === "upcoming"
-              ? new Date(topGame.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-              : `Final`;
+          const abbr = team.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
+          let statusLine = "";
+          let statusColor = C.textTertiary;
+          if (live) {
+            statusLine = "● LIVE";
+            statusColor = C.live;
+          } else if (next) {
+            const d = new Date(next.startTime);
+            statusLine = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+          } else if (last) {
+            const isHome = last.homeTeam === team;
+            const my = isHome ? last.homeScore : last.awayScore;
+            const opp = isHome ? last.awayScore : last.homeScore;
+            const won = (my ?? 0) > (opp ?? 0);
+            statusLine = `${won ? "W" : "L"} ${my}–${opp}`;
+            statusColor = won ? C.accentGreen : C.live;
+          }
+          const logoUri =
+            featured
+              ? (featured.homeTeam === team ? featured.homeTeamLogo : featured.awayTeamLogo)
+              : allGames.find(g => g.homeTeam === team)?.homeTeamLogo
+                ?? allGames.find(g => g.awayTeam === team)?.awayTeamLogo
+                ?? null;
           return (
-            <Pressable
-              key={league}
-              style={pulseStyles.card}
-              onPress={() => router.push("/(tabs)/live" as any)}
-            >
-              <View style={[pulseStyles.topBar, { backgroundColor: color }]} />
-              <View style={pulseStyles.header}>
-                <Text style={pulseStyles.emoji}>{emoji}</Text>
-                <Text style={[pulseStyles.leagueName, { color }]}>{league}</Text>
-                {liveCount > 0 && (
-                  <View style={pulseStyles.livePill}>
-                    <View style={pulseStyles.liveDot} />
-                    <Text style={pulseStyles.liveText}>{liveCount}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={pulseStyles.matchup} numberOfLines={1}>{awayAbbr} vs {homeAbbr}</Text>
-              <Text style={[pulseStyles.score, isLive && { color: C.text }]}>{statusText}</Text>
-              {games.length > 1 && (
-                <Text style={pulseStyles.more}>+{games.length - 1} more</Text>
-              )}
+            <Pressable key={team} onPress={() => goToTeam(team, league)} style={tileStyles.tile}>
+              <TeamLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
+              <Text style={tileStyles.teamShort} numberOfLines={1}>{abbr}</Text>
+              {statusLine ? (
+                <Text style={[tileStyles.status, { color: statusColor }]} numberOfLines={1}>{statusLine}</Text>
+              ) : null}
             </Pressable>
           );
         })}
@@ -758,33 +307,12 @@ function LeaguePulse({ allGames }: { allGames: Game[] }) {
   );
 }
 
-const pulseStyles = StyleSheet.create({
-  card: {
-    backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.cardBorder,
-    padding: 12, width: 120, gap: 4, overflow: "hidden",
-  },
-  topBar: { position: "absolute", top: 0, left: 0, right: 0, height: 2 },
-  header: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
-  emoji: { fontSize: 13 },
-  leagueName: { fontSize: 11, fontWeight: "900", letterSpacing: 0.5, flex: 1 },
-  livePill: {
-    flexDirection: "row", alignItems: "center", gap: 3,
-    backgroundColor: `${C.live}22`, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 5,
-  },
-  liveDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.live },
-  liveText: { color: C.live, fontSize: 9, fontWeight: "900" },
-  matchup: { color: C.textSecondary, fontSize: 12, fontWeight: "600", marginTop: 4 },
-  score: { color: C.textTertiary, fontSize: 14, fontWeight: "800", fontFamily: "Inter_700Bold" },
-  more: { color: C.textTertiary, fontSize: 10 },
-  emptyCard: {
-    backgroundColor: C.card, borderRadius: 14, padding: 16, gap: 8,
-    borderWidth: 1, borderColor: C.cardBorder, alignItems: "center", justifyContent: "center",
-    minHeight: 60, flexDirection: "row",
-  },
-  emptyText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
+const tileStyles = StyleSheet.create({
+  tile: { alignItems: "center", gap: 4, width: 62 },
+  teamShort: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  status: { fontSize: 10, fontWeight: "600", textAlign: "center" },
 });
 
-// ─── Sport tab pill ───────────────────────────────────────────────────────────
 function SportTab({ sport, active, liveCount, totalCount, onPress }: {
   sport: SportKey; active: boolean; liveCount: number; totalCount: number; onPress: () => void;
 }) {
@@ -816,12 +344,11 @@ const tabStyles = StyleSheet.create({
   count: { fontSize: 11, fontWeight: "600", color: C.textTertiary },
 });
 
-// ─── Today's Games widget ─────────────────────────────────────────────────────
 function TodaysGamesWidget({ allGames, myTeams, onGamePress, isLoading, isError, onRetry }: {
   allGames: Game[]; myTeams: string[]; onGamePress: (g: Game) => void;
   isLoading: boolean; isError: boolean; onRetry: () => void;
 }) {
-  const getDefaultSport = (): SportKey => {
+  const getDefaultSport = useCallback((): SportKey => {
     for (const s of SPORTS) {
       if (allGames.some(g => g.league === s && g.status === "live")) return s;
     }
@@ -829,13 +356,22 @@ function TodaysGamesWidget({ allGames, myTeams, onGamePress, isLoading, isError,
       if (allGames.some(g => g.league === s)) return s;
     }
     return "NBA";
+  }, [allGames]);
+  const [activeSport, setActiveSport] = useState<SportKey>("NBA");
+  const userSelected = useRef(false);
+  useEffect(() => {
+    if (!userSelected.current && allGames.length > 0) {
+      setActiveSport(getDefaultSport());
+    }
+  }, [allGames, getDefaultSport]);
+  const handleSportPress = (s: SportKey) => {
+    userSelected.current = true;
+    setActiveSport(s);
   };
-  const [activeSport, setActiveSport] = useState<SportKey>(getDefaultSport);
   const sportGames = allGames.filter(g => g.league === activeSport);
   const favGames = sortByStatus(sportGames.filter(g => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam)));
   const favSet = new Set(favGames.map(g => g.id));
-  const topGames = sportGames.filter(g => !favSet.has(g.id))
-    .sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status]).slice(0, 5);
+  const otherGames = sortByStatus(sportGames.filter(g => !favSet.has(g.id)));
   const sportColor = SPORT_COLOR[activeSport];
 
   return (
@@ -845,7 +381,7 @@ function TodaysGamesWidget({ allGames, myTeams, onGamePress, isLoading, isError,
           <SportTab key={s} sport={s} active={s === activeSport}
             liveCount={allGames.filter(g => g.league === s && g.status === "live").length}
             totalCount={allGames.filter(g => g.league === s).length}
-            onPress={() => setActiveSport(s)} />
+            onPress={() => handleSportPress(s)} />
         ))}
       </ScrollView>
       {isLoading ? (
@@ -863,10 +399,9 @@ function TodaysGamesWidget({ allGames, myTeams, onGamePress, isLoading, isError,
           <Text style={widgetStyles.emptyText}>No {activeSport} games today</Text>
         </View>
       ) : (
-        <View style={{ gap: 16 }}>
+        <View style={{ gap: 14 }}>
           {favGames.length > 0 && (
-            <View style={{ gap: 10 }}>
-              <SectionHeading label="My Teams" accentColor={sportColor} />
+            <View style={{ gap: 8 }}>
               <View style={widgetStyles.groupedList}>
                 {favGames.map((g, idx) => (
                   <View key={g.id}>
@@ -887,20 +422,17 @@ function TodaysGamesWidget({ allGames, myTeams, onGamePress, isLoading, isError,
               </View>
             </View>
           )}
-          {topGames.length > 0 && (
-            <View style={{ gap: 10 }}>
-              <SectionHeading label="Around the League" />
-              <FlatList horizontal data={topGames} keyExtractor={g => g.id}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12, paddingRight: 20 }}
-                renderItem={({ item }) => (
-                  <View style={{ width: 172 }}>
-                    <GameCard game={item} variant="compact"
-                      isFavorite={myTeams.includes(item.homeTeam) || myTeams.includes(item.awayTeam)}
-                      onPress={() => onGamePress(item)} />
-                  </View>
-                )} />
-            </View>
+          {otherGames.length > 0 && (
+            <FlatList horizontal data={otherGames.slice(0, 6)} keyExtractor={g => g.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12, paddingRight: 20 }}
+              renderItem={({ item }) => (
+                <View style={{ width: 172 }}>
+                  <GameCard game={item} variant="compact"
+                    isFavorite={myTeams.includes(item.homeTeam) || myTeams.includes(item.awayTeam)}
+                    onPress={() => onGamePress(item)} />
+                </View>
+              )} />
           )}
         </View>
       )}
@@ -919,16 +451,55 @@ const widgetStyles = StyleSheet.create({
     borderWidth: 1, borderColor: C.cardBorder,
   },
   rowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginLeft: 70 },
-  contextBanner: {
-    paddingHorizontal: 14, paddingTop: 8, paddingBottom: 2,
-  },
+  contextBanner: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 2 },
   contextText: {
     fontSize: 11, color: C.accent, fontWeight: "700", fontFamily: "Inter_600SemiBold",
     letterSpacing: 0.1,
   },
 });
 
-// ─── Story Cluster ────────────────────────────────────────────────────────────
+function DraftBar() {
+  return (
+    <View style={draftStyles.bar}>
+      <LinearGradient
+        colors={[`${C.accentGold}18`, `${C.accentGold}06`]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+      />
+      <Ionicons name="trophy" size={16} color={C.accentGold} />
+      <Text style={draftStyles.barLabel}>Draft Center</Text>
+      <View style={{ flex: 1 }} />
+      <View style={draftStyles.leagueRow}>
+        {["NFL", "NBA", "NHL", "MLB"].map(l => (
+          <Pressable
+            key={l}
+            onPress={() => router.push(`/draft/${l}` as any)}
+            style={draftStyles.leaguePill}
+          >
+            <Text style={[draftStyles.leaguePillText, { color: getLeagueColor(l) }]}>{l}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Ionicons name="chevron-forward" size={14} color={C.textTertiary} />
+    </View>
+  );
+}
+
+const draftStyles = StyleSheet.create({
+  bar: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: C.card, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
+    borderWidth: 1, borderColor: `${C.accentGold}25`, overflow: "hidden",
+  },
+  barLabel: { color: C.text, fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  leagueRow: { flexDirection: "row", gap: 6 },
+  leaguePill: {
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  leaguePillText: { fontSize: 10, fontWeight: "900", letterSpacing: 0.5 },
+});
+
 const TOPIC_KEYWORDS: Array<{ label: string; keywords: string[]; color: string; icon: string }> = [
   { label: "NBA", keywords: ["nba", "basketball", "celtics", "lakers", "warriors", "heat", "bucks", "nets", "sixers", "knicks", "rockets", "suns"], color: C.nba, icon: "🏀" },
   { label: "NFL", keywords: ["nfl", "football", "chiefs", "eagles", "cowboys", "patriots", "texans", "49ers", "packers", "bears"], color: C.nfl, icon: "🏈" },
@@ -948,11 +519,15 @@ function getArticleTopic(article: NewsArticle): { label: string; color: string; 
   return null;
 }
 
-function StoryClusters({ articles, onArticlePress }: { articles: NewsArticle[]; onArticlePress: (a: NewsArticle) => void }) {
+function Headlines({ articles, onArticlePress }: { articles: NewsArticle[]; onArticlePress: (a: NewsArticle) => void }) {
+  if (articles.length === 0) return null;
+
+  const heroArticle = articles[0];
+  const rest = articles.slice(1, 8);
+
   const clustered: Record<string, { articles: NewsArticle[]; color: string; icon: string }> = {};
   const unclustered: NewsArticle[] = [];
-
-  articles.forEach(a => {
+  rest.forEach(a => {
     const topic = getArticleTopic(a);
     if (topic) {
       if (!clustered[topic.label]) clustered[topic.label] = { articles: [], color: topic.color, icon: topic.icon };
@@ -961,23 +536,21 @@ function StoryClusters({ articles, onArticlePress }: { articles: NewsArticle[]; 
       unclustered.push(a);
     }
   });
-
   const clusterList = Object.entries(clustered)
     .filter(([, v]) => v.articles.length >= 1)
     .sort(([, a], [, b]) => b.articles.length - a.articles.length)
-    .slice(0, 4);
-
-  if (clusterList.length === 0) return null;
+    .slice(0, 3);
 
   return (
     <View style={{ gap: 12 }}>
-      <SectionHeading label="Stories" onSeeAll={() => router.push("/(tabs)/news" as any)} />
+      <SectionHeading label="Headlines" accentColor={C.nba} onSeeAll={() => router.push("/(tabs)/news" as any)} />
+      <NewsCard article={heroArticle} hero onPress={() => onArticlePress(heroArticle)} />
       {clusterList.map(([topic, { articles: arts, color, icon }]) => (
         <View key={topic} style={clusterStyles.cluster}>
           <View style={[clusterStyles.clusterHeader, { borderLeftColor: color }]}>
             <Text style={clusterStyles.clusterIcon}>{icon}</Text>
             <Text style={[clusterStyles.clusterLabel, { color }]}>{topic}</Text>
-            <Text style={clusterStyles.clusterCount}>{arts.length} stories</Text>
+            <Text style={clusterStyles.clusterCount}>{arts.length}</Text>
           </View>
           {arts.slice(0, 2).map(a => (
             <Pressable key={a.id} style={clusterStyles.storyRow} onPress={() => onArticlePress(a)}>
@@ -988,13 +561,20 @@ function StoryClusters({ articles, onArticlePress }: { articles: NewsArticle[]; 
           ))}
         </View>
       ))}
+      {unclustered.slice(0, 3).map(a => (
+        <Pressable key={a.id} style={clusterStyles.storyRow} onPress={() => onArticlePress(a)}>
+          <View style={clusterStyles.storyDot} />
+          <Text style={clusterStyles.storyTitle} numberOfLines={2}>{a.title}</Text>
+          <Ionicons name="chevron-forward" size={12} color={C.textTertiary} />
+        </Pressable>
+      ))}
     </View>
   );
 }
 
 const clusterStyles = StyleSheet.create({
   cluster: {
-    backgroundColor: C.card, borderRadius: 16, overflow: "hidden",
+    backgroundColor: C.card, borderRadius: 14, overflow: "hidden",
     borderWidth: 1, borderColor: C.cardBorder,
   },
   clusterHeader: {
@@ -1016,7 +596,6 @@ const clusterStyles = StyleSheet.create({
   storyTitle: { flex: 1, color: C.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
 });
 
-// ─── Main Hub screen ──────────────────────────────────────────────────────────
 export default function HubScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
@@ -1070,8 +649,6 @@ export default function HubScreen() {
       : sortByStatus(myTeamGames).slice(0, 3);
 
   const articles = newsData?.articles ?? [];
-  const heroArticle = articles[0];
-  const restArticles = articles.slice(1, 10);
   const isHouston = myTeams.some(t => HOUSTON_TEAMS.includes(t));
 
   const handleGamePress = (game: Game) => {
@@ -1089,7 +666,7 @@ export default function HubScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
       >
-        {/* HEADER */}
+        {/* ── HEADER ── */}
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getGreeting()},</Text>
@@ -1109,12 +686,12 @@ export default function HubScreen() {
           </View>
         </View>
 
-        {/* IN ONE BREATH */}
+        {/* ── IN ONE BREATH (collapsed by default) ── */}
         <View style={styles.section}>
           <InOneBreath />
         </View>
 
-        {/* HERO BANNER */}
+        {/* ── HERO BANNER + MOVERS CHIPS ── */}
         {heroGames.length > 0 && !gamesLoading && (
           <View style={styles.heroSection}>
             <ScrollView
@@ -1129,7 +706,6 @@ export default function HubScreen() {
             >
               {heroGames.map(game => {
                 const ctx = getGameContext(game, myTeams);
-                const playoff = getPlayoffImplication(game);
                 return (
                   <View key={game.id} style={{ width: SCREEN_W - 32, gap: 6 }}>
                     <GameCard game={game} variant="hero" onPress={() => handleGamePress(game)} />
@@ -1137,12 +713,6 @@ export default function HubScreen() {
                       <View style={styles.heroContext}>
                         <Ionicons name="information-circle" size={12} color={C.accent} />
                         <Text style={styles.heroContextText}>{ctx}</Text>
-                      </View>
-                    )}
-                    {playoff && (
-                      <View style={[styles.heroContext, { borderColor: `${C.accentGold}40`, backgroundColor: `${C.accentGold}10` }]}>
-                        <Ionicons name="trophy" size={12} color={C.accentGold} />
-                        <Text style={[styles.heroContextText, { color: C.accentGold }]}>{playoff}</Text>
                       </View>
                     )}
                   </View>
@@ -1156,44 +726,20 @@ export default function HubScreen() {
                 ))}
               </View>
             )}
+            <View style={{ paddingHorizontal: 16, paddingTop: 6 }}>
+              <MoversChips allGames={allGames} />
+            </View>
           </View>
         )}
 
-        {/* FOR YOU */}
-        {!gamesLoading && allGames.length > 0 && (
-          <View style={styles.section}>
-            <ForYouSection allGames={allGames} myTeams={myTeams} />
-          </View>
-        )}
-
-        {/* MY TEAMS */}
+        {/* ── MY TEAMS STRIP ── */}
         {myTeams.length > 0 && (
           <View style={styles.section}>
-            <SectionHeading label="My Teams" accentColor={C.accent} />
-            <MyTeamsTiles myTeams={myTeams} allGames={allGames} />
+            <MyTeamsStrip myTeams={myTeams} allGames={allGames} />
           </View>
         )}
 
-        {/* BIGGEST MOVERS */}
-        {!gamesLoading && allGames.length > 0 && (
-          <View style={styles.section}>
-            <BiggestMovers allGames={allGames} />
-          </View>
-        )}
-
-        {/* DRAFT CENTER */}
-        <View style={styles.section}>
-          <DraftCenterSection />
-        </View>
-
-        {/* TONIGHT'S WATCHLIST */}
-        {!gamesLoading && allGames.length > 0 && (
-          <View style={styles.section}>
-            <TonightsWatchlist allGames={allGames} myTeams={myTeams} />
-          </View>
-        )}
-
-        {/* TODAY'S GAMES */}
+        {/* ── TODAY'S GAMES (with sport tabs, includes all games — no separate Watchlist/LeaguePulse) ── */}
         <View style={styles.section}>
           <SectionHeading label="Today's Games" accentColor={C.accent}
             onSeeAll={() => router.push("/(tabs)/live" as any)} />
@@ -1204,29 +750,19 @@ export default function HubScreen() {
           />
         </View>
 
-        {/* LEAGUE PULSE */}
-        {!gamesLoading && allGames.length > 0 && (
+        {/* ── DRAFT BAR (compact single row) ── */}
+        <View style={styles.section}>
+          <DraftBar />
+        </View>
+
+        {/* ── HEADLINES (merged Top Story + Story Clusters) ── */}
+        {!newsLoading && articles.length > 0 && (
           <View style={styles.section}>
-            <LeaguePulse allGames={allGames} />
+            <Headlines articles={articles} onArticlePress={handleArticlePress} />
           </View>
         )}
 
-        {/* TOP STORY */}
-        {!newsLoading && heroArticle && (
-          <View style={styles.section}>
-            <SectionHeading label="Top Story" accentColor={C.nba} />
-            <NewsCard article={heroArticle} hero onPress={() => handleArticlePress(heroArticle)} />
-          </View>
-        )}
-
-        {/* STORY CLUSTERS */}
-        {restArticles.length > 0 && !newsLoading && (
-          <View style={styles.section}>
-            <StoryClusters articles={restArticles} onArticlePress={handleArticlePress} />
-          </View>
-        )}
-
-        {/* AI RECAPS */}
+        {/* ── AI RECAPS ── */}
         {finishedGames.length > 0 && (
           <View style={styles.section}>
             <SectionHeading label="AI Recaps" badge={
@@ -1248,7 +784,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   scroll: { paddingHorizontal: 16, gap: 4 },
 
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingTop: 16, paddingBottom: 20 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingTop: 16, paddingBottom: 16 },
   greeting: { fontSize: 14, color: C.textTertiary, fontFamily: "Inter_400Regular" },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
   name: { fontSize: 30, fontWeight: "900", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
@@ -1261,12 +797,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 9, borderRadius: 22,
   },
   searchPillText: { color: C.accent, fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
-  livePill: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: C.live, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10,
-  },
-  headerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#fff" },
-  livePillText: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.3 },
 
   heroSection: { marginHorizontal: -16 },
   heroScroll: { paddingHorizontal: 16 },
