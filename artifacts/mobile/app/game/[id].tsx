@@ -43,8 +43,10 @@ const PLAYER_STAT_COLS: Record<string, string[]> = {
   EPL:   ["MIN", "G", "A", "SHT"],
   UCL:   ["MIN", "G", "A", "SHT"],
   LIGA:  ["MIN", "G", "A", "SHT"],
-  NHL:   ["G", "A", "PTS", "SOG", "TOI"],
+  NHL:   ["G", "A", "+/-", "S", "TOI", "PIM"],
 };
+
+const NHL_GOALIE_STAT_COLS = ["SV", "GA", "SA", "SV%", "TOI"];
 
 function getSportVenueGradient(league: string): [string, string, string, string] {
   const map: Record<string, [string, string, string, string]> = {
@@ -268,8 +270,30 @@ export default function GameDetailScreen() {
               <View style={s.tabSection}>
                 {(data.homePlayerStats?.length || data.awayPlayerStats?.length) ? (
                   <>
-                    <PlayerBoxscore teamName={game.awayTeam} teamLogo={game.awayTeamLogo} players={data.awayPlayerStats ?? []} league={game.league} dc={dc} />
-                    <PlayerBoxscore teamName={game.homeTeam} teamLogo={game.homeTeamLogo} players={data.homePlayerStats ?? []} league={game.league} dc={dc} />
+                    {game.league === "NHL" ? (
+                      <>
+                        {[
+                          { team: game.awayTeam, logo: game.awayTeamLogo, players: data.awayPlayerStats ?? [] },
+                          { team: game.homeTeam, logo: game.homeTeamLogo, players: data.homePlayerStats ?? [] },
+                        ].map(({ team, logo, players }) => {
+                          const skaters = players.filter((p: any) => p.stats?.role !== "G");
+                          const goalies = players.filter((p: any) => p.stats?.role === "G");
+                          return (
+                            <View key={team}>
+                              <PlayerBoxscore teamName={team} teamLogo={logo} players={skaters} league={game.league} dc={dc} />
+                              {goalies.length > 0 && (
+                                <PlayerBoxscore teamName={team} teamLogo={logo} players={goalies} league={game.league} dc={dc} overrideCols={NHL_GOALIE_STAT_COLS} sectionLabel="Goalies" />
+                              )}
+                            </View>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      <>
+                        <PlayerBoxscore teamName={game.awayTeam} teamLogo={game.awayTeamLogo} players={data.awayPlayerStats ?? []} league={game.league} dc={dc} />
+                        <PlayerBoxscore teamName={game.homeTeam} teamLogo={game.homeTeamLogo} players={data.homePlayerStats ?? []} league={game.league} dc={dc} />
+                      </>
+                    )}
                   </>
                 ) : (
                   <Text style={s.empty}>Box score not yet available</Text>
@@ -608,12 +632,13 @@ function TeamStatsSection({ homeTeam, awayTeam, homeStats, awayStats, dc, league
 }
 
 // ─── Player boxscore ──────────────────────────────────────────────────────────
-function PlayerBoxscore({ teamName, teamLogo, players, league, dc }: {
+function PlayerBoxscore({ teamName, teamLogo, players, league, dc, overrideCols, sectionLabel }: {
   teamName: string; teamLogo?: string | null;
   players: PlayerStatLine[]; league: string; dc: string;
+  overrideCols?: string[]; sectionLabel?: string;
 }) {
   if (players.length === 0) return null;
-  const cols = PLAYER_STAT_COLS[league] ?? ["PTS", "REB", "AST"];
+  const cols = overrideCols ?? PLAYER_STAT_COLS[league] ?? ["PTS", "REB", "AST"];
   const availCols = cols.filter(c => players.some(p => p.stats[c] != null));
   if (availCols.length === 0) return null;
 
@@ -621,7 +646,7 @@ function PlayerBoxscore({ teamName, teamLogo, players, league, dc }: {
     <View style={s.boxCard}>
       <Pressable style={s.boxTeamHeader} onPress={() => goToTeam(teamName, league)}>
         <TeamLogo uri={teamLogo} name={teamName} size={28} borderColor={`${dc}44`} />
-        <Text style={[s.boxTeamName, { color: dc }]}>{teamName}</Text>
+        <Text style={[s.boxTeamName, { color: dc }]}>{teamName}{sectionLabel ? ` — ${sectionLabel}` : ""}</Text>
       </Pressable>
       <View style={[s.boxRow, s.boxHeaderRow]}>
         <Text style={[s.boxPlayer, s.boxHeaderText]}>PLAYER</Text>

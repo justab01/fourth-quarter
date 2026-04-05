@@ -390,6 +390,33 @@ function extractPlayerStats(
     });
 }
 
+function extractPlayerStatsByLabel(
+  group: EspnStatisticsGroup,
+  wantedLabels: string[],
+  labelAliases?: Record<string, string>,
+): PlayerStatLine[] {
+  const rawLabels = group.labels;
+  const rawNames = group.names;
+  const espnLabels: string[] = (rawLabels && rawLabels.length > 0) ? rawLabels : (rawNames ?? []);
+
+  const labelToIdx: Record<string, number> = {};
+  espnLabels.forEach((l, i) => { labelToIdx[l] = i; });
+
+  return group.athletes
+    .filter((a) => !a.didNotPlay && !a.ejected)
+    .map((a) => {
+      const statsObj: Record<string, string> = {};
+      for (const key of wantedLabels) {
+        const espnLabel = labelAliases?.[key] ?? key;
+        const idx = labelToIdx[espnLabel];
+        if (idx !== undefined && a.stats[idx] != null) {
+          statsObj[key] = a.stats[idx];
+        }
+      }
+      return { name: a.athlete.displayName, starter: a.starter, stats: statsObj };
+    });
+}
+
 // ─── Team aggregate stats from boxscore.teams ────────────────────────────────
 function getTeamStat(team: EspnTeamStats, name: string): string {
   return team.statistics.find((s) => s.name === name)?.displayValue ?? "—";
@@ -497,13 +524,13 @@ function extractBoxscore(
   const isSoccer = ["MLS", "EPL", "UCL", "LIGA"].includes(leagueKey);
   const isBasketball = ["NBA", "WNBA", "NCAAB"].includes(leagueKey);
 
-  // Stat keys to show per-player
   const NBA_PLAYER_KEYS  = ["MIN", "PTS", "FG", "3PT", "FT", "REB", "AST", "TO", "STL", "BLK"];
   const NFL_PLAYER_KEYS  = ["POS", "C/ATT", "YDS", "TD", "INT"];
   const MLB_BATTING_KEYS = ["H-AB", "R", "H", "RBI", "HR", "BB", "K"];
   const MLB_PITCHING_KEYS = ["IP", "H", "R", "ER", "BB", "K"];
   const MLS_PLAYER_KEYS  = ["MIN", "G", "A", "SHT", "SV"];
-  const NHL_PLAYER_KEYS  = ["G", "A", "PTS", "+/-", "PIM", "SOG", "TOI"];
+  const NHL_SKATER_LABELS = ["G", "A", "+/-", "S", "HT", "BS", "TOI", "PIM", "FO%"];
+  const NHL_GOALIE_LABELS = ["SV", "GA", "SA", "SV%", "TOI"];
 
   let homeStats: Record<string, string | number> = {};
   let awayStats: Record<string, string | number> = {};
@@ -544,17 +571,30 @@ function extractBoxscore(
         awayPlayerStats = lines;
         awayStats = buildMLBTeamStatsFromGroups(playerEntry.statistics);
       }
+    } else if (isNHL) {
+      const lines: PlayerStatLine[] = [];
+      for (const sg of playerEntry.statistics) {
+        if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
+        const espnLabels = sg.labels ?? sg.names ?? [];
+        const isGoalieGroup = espnLabels.includes("GA") || espnLabels.includes("SA") || espnLabels.includes("SV%");
+        if (isGoalieGroup) {
+          const goalies = extractPlayerStatsByLabel(sg, NHL_GOALIE_LABELS);
+          goalies.forEach(g => { g.stats["role"] = "G"; });
+          lines.push(...goalies);
+        } else {
+          lines.push(...extractPlayerStatsByLabel(sg, NHL_SKATER_LABELS));
+        }
+      }
+      if (isHome) homePlayerStats = lines;
+      else awayPlayerStats = lines;
     } else {
-      // NBA / WNBA / NCAAB / NFL / NCAAF / MLS / NHL / soccer — single stats group
       const sg = playerEntry.statistics[0];
       if (!sg) continue;
       let statKeys: string[];
       if (isBasketball) statKeys = NBA_PLAYER_KEYS;
       else if (isSoccer) statKeys = MLS_PLAYER_KEYS;
-      else if (isNHL) statKeys = NHL_PLAYER_KEYS;
-      else statKeys = NFL_PLAYER_KEYS; // NFL + NCAAF share same ESPN stat keys
-      const sgNames: string[] = sg.names ?? [];
-      const lines = extractPlayerStats(sg, statKeys.filter((k) => sgNames.includes(k)));
+      else statKeys = NFL_PLAYER_KEYS;
+      const lines = extractPlayerStatsByLabel(sg, statKeys);
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
     }

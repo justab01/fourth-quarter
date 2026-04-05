@@ -51,6 +51,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - **Player Tabs:** Only functional tabs shown: Overview, Stats, Bio, Game Log. News and Splits hidden until implemented.
     - **Standings Loading:** Skeleton rows replace ActivityIndicator for consistent loading states.
     - **Context Chips:** Importance tags on game cards (OT, CLOSE, RIVALRY, PLAYOFF RACE, etc.).
+    - **Box Score Engine:** `extractPlayerStatsByLabel` uses index-based label lookup (not positional mapping) for reliable stat extraction across all sports. NHL splits skaters/goalies into separate stat groups with sport-specific columns (skaters: G/A/+/-/S/TOI/PIM; goalies: SV/GA/SA/SV%/TOI). ESPN uses `labels` for NHL (not `names`); fallback: `labels.length > 0 ? labels : names`.
 - **API Server Routes:**
     - `GET /api/sports/games?league=`: Live ESPN scoreboard.
     - `GET /api/sports/game/:id`: Live ESPN game detail with DB ingestion.
