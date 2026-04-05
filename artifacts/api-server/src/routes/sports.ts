@@ -682,13 +682,26 @@ function extractBoxscore(
       }
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
-    } else if (isCombat || isTennis) {
-      // ESPN summary API returns no boxscore.players data for combat sports (UFC/Boxing)
-      // or tennis (ATP/WTA). These sports use fundamentally different ESPN data structures:
-      // - UFC: fight cards with win/loss only (no per-round statistics in API)
-      // - Tennis: tournament brackets with set scores (no player stat tables)
-      // The boxscore.players array is empty/undefined for these leagues,
-      // so this branch ensures they don't fall through to NFL stat keys.
+    } else if (isCombat) {
+      const COMBAT_LABELS = ["SIG. STR.", "SIG. STR. %", "TD", "TD %", "SUB. ATT", "CTRL", "KD"];
+      for (const sg of playerEntry.statistics) {
+        if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
+        const lines = extractPlayerStatsByLabel(sg, COMBAT_LABELS);
+        if (lines.length > 0) {
+          if (isHome) homePlayerStats.push(...lines);
+          else awayPlayerStats.push(...lines);
+        }
+      }
+    } else if (isTennis) {
+      const TENNIS_LABELS = ["ACES", "DOUBLE FAULTS", "1ST SERVE %", "WIN % 1ST", "WIN % 2ND", "BREAK PTS WON"];
+      for (const sg of playerEntry.statistics) {
+        if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
+        const lines = extractPlayerStatsByLabel(sg, TENNIS_LABELS);
+        if (lines.length > 0) {
+          if (isHome) homePlayerStats.push(...lines);
+          else awayPlayerStats.push(...lines);
+        }
+      }
     } else {
       const sg = playerEntry.statistics[0];
       if (!sg) continue;
