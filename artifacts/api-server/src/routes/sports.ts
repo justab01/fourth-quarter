@@ -471,6 +471,18 @@ const ESPN_LABEL_ALIASES: Record<string, string[]> = {
   "YDS":  ["yards", "Yards"],
   "TD":   ["touchdowns"],
   "INT":  ["interceptions"],
+  "SLM":  ["SIG. STR.", "sigStrikes", "Sig. Str."],
+  "SLA":  ["SIG. STR. %", "sigStrikesPct", "Sig. Str. %"],
+  "TD%":  ["TD %", "takedownPct"],
+  "SUB":  ["SUB. ATT", "subAttempts", "Sub. Att"],
+  "CTRL": ["CTRL", "control", "Control"],
+  "KD":   ["KD", "knockdowns", "Knockdowns"],
+  "DF":   ["DOUBLE FAULTS", "doubleFaults", "Double Faults"],
+  "1ST%": ["1ST SERVE %", "firstServePct", "1st Serve %"],
+  "W1ST%":["WIN % 1ST", "winPct1st", "Win % 1st"],
+  "W2ND%":["WIN % 2ND", "winPct2nd", "Win % 2nd"],
+  "BP":   ["BREAK PTS WON", "breakPointsWon", "Break Pts Won"],
+  "ACES": ["ACES", "aces", "Aces"],
 };
 
 function extractPlayerStatsByLabel(
@@ -683,7 +695,7 @@ function extractBoxscore(
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
     } else if (isCombat) {
-      const COMBAT_LABELS = ["SIG. STR.", "SIG. STR. %", "TD", "TD %", "SUB. ATT", "CTRL", "KD"];
+      const COMBAT_LABELS = ["SLM", "SLA", "TD", "TD%", "SUB", "CTRL", "KD"];
       for (const sg of playerEntry.statistics) {
         if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
         const lines = extractPlayerStatsByLabel(sg, COMBAT_LABELS);
@@ -693,7 +705,7 @@ function extractBoxscore(
         }
       }
     } else if (isTennis) {
-      const TENNIS_LABELS = ["ACES", "DOUBLE FAULTS", "1ST SERVE %", "WIN % 1ST", "WIN % 2ND", "BREAK PTS WON"];
+      const TENNIS_LABELS = ["ACES", "DF", "1ST%", "W1ST%", "W2ND%", "BP"];
       for (const sg of playerEntry.statistics) {
         if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
         const lines = extractPlayerStatsByLabel(sg, TENNIS_LABELS);
