@@ -56,14 +56,51 @@ function searchPlayerToPlayer(sp: SearchPlayer): Player {
 const ALL_LEAGUE_PREFIXES = "nba|nfl|mlb|mls|nhl|wnba|ncaab|ncaaf|epl|ucl|liga|atp|wta|ufc|boxing|olympics|xgames";
 const LEAGUE_PREFIX_RE = new RegExp(`^(${ALL_LEAGUE_PREFIXES})-`);
 
+function normalizeSlug(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function buildFallbackTeam(id: string): TeamData | null {
   const leagueMatch = id.match(new RegExp(`^(${ALL_LEAGUE_PREFIXES})`));
   const league = leagueMatch?.[0]?.toUpperCase() as any;
   const nameSlug = id.replace(LEAGUE_PREFIX_RE, "");
-  const searchTeam = ALL_TEAMS.find(t =>
-    slugify(t.name) === nameSlug || slugify(t.name).replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") === nameSlug
-  );
-  if (!searchTeam) return null;
+  const normalizedInput = normalizeSlug(nameSlug);
+  const searchTeam = ALL_TEAMS.find(t => {
+    const ts = slugify(t.name);
+    if (ts === nameSlug) return true;
+    if (normalizeSlug(ts) === normalizedInput) return true;
+    if (t.abbr.toLowerCase() === normalizedInput) return true;
+    const lastWord = t.name.split(" ").pop()?.toLowerCase() ?? "";
+    if (lastWord === normalizedInput) return true;
+    return false;
+  });
+  if (!searchTeam) {
+    if (league) {
+      const displayName = nameSlug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const abbr = displayName.split(" ").map(w => w[0]).join("").substring(0, 3).toUpperCase();
+      return {
+        id,
+        name: displayName,
+        shortName: displayName.split(" ").pop() ?? displayName,
+        abbr,
+        league,
+        division: "—",
+        color: "#4A90D9",
+        colorSecondary: "#666666",
+        logoUrl: null,
+        record: "—",
+        standing: "—",
+        coach: "—",
+        stadium: "—",
+        city: displayName.split(" ").slice(0, -1).join(" ") || displayName,
+        founded: 0,
+        roster: [],
+        recentGames: [],
+        stats: [],
+      };
+    }
+    return null;
+  }
   const [primary, secondary] = teamColor(nameSlug);
   const players = ALL_PLAYERS
     .filter(p => p.team === searchTeam.name)

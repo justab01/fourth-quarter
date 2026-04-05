@@ -222,7 +222,7 @@ export default function NewsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { paddingHorizontal: 20, gap: 4 },
+  scroll: { paddingHorizontal: 16, gap: 4 },
 
   header: {
     paddingTop: 16,

@@ -11,7 +11,6 @@ import Colors from "@/constants/colors";
 import { useSearch } from "@/context/SearchContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import { api } from "@/utils/api";
-import { TEAM_NAME_TO_ID } from "@/constants/teamData";
 import { ALL_TEAMS, ALL_PLAYERS, type SearchTeam, type SearchPlayer } from "@/constants/allPlayers";
 
 const C = Colors.dark;
@@ -199,7 +198,7 @@ export function SearchModal() {
       const id = slugify(team.name);
       router.push({ pathname: "/player/[id]", params: { id } } as any);
     } else {
-      const id = TEAM_NAME_TO_ID[team.name] ?? teamSlug(team);
+      const id = teamSlug(team);
       router.push({ pathname: "/team/[id]", params: { id } } as any);
     }
   };

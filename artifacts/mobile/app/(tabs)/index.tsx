@@ -494,7 +494,17 @@ function BiggestMovers({ allGames }: { allGames: Game[] }) {
     movers.push({ icon: "time-outline", label: `${upcomingCount} coming up`, detail: "Still to tip off", color: C.accent });
   }
 
-  if (movers.length === 0) return null;
+  if (movers.length === 0) {
+    return (
+      <View style={{ gap: 12 }}>
+        <SectionHeading label="Biggest Movers" accentColor={C.accentGold} />
+        <View style={moverStyles.emptyCard}>
+          <Ionicons name="pulse-outline" size={20} color={C.textTertiary} />
+          <Text style={moverStyles.emptyText}>No major swings right now</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={{ gap: 12 }}>
@@ -519,6 +529,12 @@ const moverStyles = StyleSheet.create({
   iconBg: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   label: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold" },
   detail: { color: C.textTertiary, fontSize: 11, fontFamily: "Inter_400Regular" },
+  emptyCard: {
+    backgroundColor: C.card, borderRadius: 14, padding: 16, gap: 8,
+    borderWidth: 1, borderColor: C.cardBorder, alignItems: "center", justifyContent: "center",
+    minHeight: 60, flexDirection: "row",
+  },
+  emptyText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
 });
 
 // ─── Draft Center ────────────────────────────────────────────────────────────
@@ -577,7 +593,17 @@ const draftStyles = StyleSheet.create({
 // ─── Tonight's Watchlist ─────────────────────────────────────────────────────
 function TonightsWatchlist({ allGames, myTeams }: { allGames: Game[]; myTeams: string[] }) {
   const upcoming = allGames.filter(g => g.status === "upcoming");
-  if (upcoming.length === 0) return null;
+  if (upcoming.length === 0) {
+    return (
+      <View style={{ gap: 12 }}>
+        <SectionHeading label="Tonight's Watchlist" accentColor={C.accent} />
+        <View style={watchlistStyles.emptyCard}>
+          <Ionicons name="moon-outline" size={20} color={C.textTertiary} />
+          <Text style={watchlistStyles.emptyText}>No upcoming games on the schedule</Text>
+        </View>
+      </View>
+    );
+  }
 
   const RIVAL_PAIRS = [
     ["Los Angeles Lakers", "Boston Celtics"], ["New York Yankees", "Boston Red Sox"],
@@ -643,6 +669,12 @@ const watchlistStyles = StyleSheet.create({
   league: { color: C.textTertiary, fontSize: 10, fontWeight: "600" },
   matchup: { color: C.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
   myTag: { color: C.accent, fontSize: 10, fontWeight: "700", marginTop: 2 },
+  emptyCard: {
+    backgroundColor: C.card, borderRadius: 14, padding: 16, gap: 8,
+    borderWidth: 1, borderColor: C.cardBorder, alignItems: "center", justifyContent: "center",
+    minHeight: 60, flexDirection: "row",
+  },
+  emptyText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
 });
 
 // ─── League Pulse ─────────────────────────────────────────────────────────────
@@ -669,7 +701,17 @@ function LeaguePulse({ allGames }: { allGames: Game[] }) {
     }))
     .slice(0, 6);
 
-  if (pulseItems.length === 0) return null;
+  if (pulseItems.length === 0) {
+    return (
+      <View style={{ gap: 12 }}>
+        <SectionHeading label="League Pulse" accentColor={C.textTertiary} onSeeAll={() => router.push("/(tabs)/live" as any)} />
+        <View style={pulseStyles.emptyCard}>
+          <Ionicons name="globe-outline" size={20} color={C.textTertiary} />
+          <Text style={pulseStyles.emptyText}>No league action right now</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={{ gap: 12 }}>
@@ -734,6 +776,12 @@ const pulseStyles = StyleSheet.create({
   matchup: { color: C.textSecondary, fontSize: 12, fontWeight: "600", marginTop: 4 },
   score: { color: C.textTertiary, fontSize: 14, fontWeight: "800", fontFamily: "Inter_700Bold" },
   more: { color: C.textTertiary, fontSize: 10 },
+  emptyCard: {
+    backgroundColor: C.card, borderRadius: 14, padding: 16, gap: 8,
+    borderWidth: 1, borderColor: C.cardBorder, alignItems: "center", justifyContent: "center",
+    minHeight: 60, flexDirection: "row",
+  },
+  emptyText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
 });
 
 // ─── Sport tab pill ───────────────────────────────────────────────────────────
@@ -993,11 +1041,18 @@ export default function HubScreen() {
     staleTime: 60000,
   });
 
+  const { refetch: refetchIOB } = useQuery({
+    queryKey: ["in-one-breath"],
+    queryFn: () => api.getInOneBreath(),
+    staleTime: 120_000,
+    refetchInterval: 120_000,
+  });
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchGames(), refetchNews()]);
+    await Promise.all([refetchGames(), refetchNews(), refetchIOB()]);
     setRefreshing(false);
-  }, [refetchGames, refetchNews]);
+  }, [refetchGames, refetchNews, refetchIOB]);
 
   const allGames = gamesData?.games ?? [];
   const myTeams = preferences.favoriteTeams;
@@ -1065,18 +1120,18 @@ export default function HubScreen() {
             <ScrollView
               horizontal pagingEnabled showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={e => {
-                const idx = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_W - 40));
+                const idx = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_W - 32));
                 setHeroDot(idx);
               }}
               style={styles.heroScroll}
-              snapToInterval={SCREEN_W - 40}
+              snapToInterval={SCREEN_W - 32}
               decelerationRate="fast"
             >
               {heroGames.map(game => {
                 const ctx = getGameContext(game, myTeams);
                 const playoff = getPlayoffImplication(game);
                 return (
-                  <View key={game.id} style={{ width: SCREEN_W - 40, gap: 6 }}>
+                  <View key={game.id} style={{ width: SCREEN_W - 32, gap: 6 }}>
                     <GameCard game={game} variant="hero" onPress={() => handleGamePress(game)} />
                     {ctx && (
                       <View style={styles.heroContext}>
@@ -1191,7 +1246,7 @@ export default function HubScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { paddingHorizontal: 20, gap: 4 },
+  scroll: { paddingHorizontal: 16, gap: 4 },
 
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingTop: 16, paddingBottom: 20 },
   greeting: { fontSize: 14, color: C.textTertiary, fontFamily: "Inter_400Regular" },
@@ -1213,18 +1268,18 @@ const styles = StyleSheet.create({
   headerDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#fff" },
   livePillText: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 0.3 },
 
-  heroSection: { marginHorizontal: -20 },
-  heroScroll: { paddingHorizontal: 20 },
+  heroSection: { marginHorizontal: -16 },
+  heroScroll: { paddingHorizontal: 16 },
   heroDots: { flexDirection: "row", justifyContent: "center", gap: 5, paddingTop: 8 },
   heroDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.textTertiary },
   heroDotActive: { width: 16, backgroundColor: C.accent },
   heroContext: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    marginHorizontal: 20, marginTop: 6, marginBottom: 2,
+    marginHorizontal: 16, marginTop: 6, marginBottom: 2,
   },
   heroContextText: { color: C.accent, fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
-  section: { paddingVertical: 14, gap: 12 },
+  section: { paddingVertical: 12, gap: 12 },
   cardList: { gap: 10 },
   recapBadge: {
     backgroundColor: `${C.accentGold}22`, padding: 4, borderRadius: 8,

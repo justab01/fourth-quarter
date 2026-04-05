@@ -22,6 +22,7 @@ import {
   type XGamesProfile, type OlympicsProfile,
 } from "@/constants/athleteProfiles";
 import { api, type AthleteProfile as LiveProfile, type AthleteGameLog, type GameLogEntry, type GameLogSection, type GameLogCategory, type GameLogSectionType } from "@/utils/api";
+import { usePreferences } from "@/context/PreferencesContext";
 
 // ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
 const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|EPL|UCL|LIGA|ATP|WTA|UFC|BOXING|OLYMPICS|XGAMES)-(\d+)$/i;
@@ -34,7 +35,7 @@ function parseLiveId(id: string): { league: string; athleteId: string } | null {
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
 
-const PLAYER_TABS = ["Overview", "News", "Stats", "Bio", "Splits", "Game Log"] as const;
+const PLAYER_TABS = ["Overview", "Stats", "Bio", "Game Log"] as const;
 type PlayerTab = (typeof PLAYER_TABS)[number];
 
 // ─── ESPN stats fetch + parse ─────────────────────────────────────────────────
@@ -1908,8 +1909,8 @@ const indS = StyleSheet.create({
 export default function PlayerScreen() {
   const { id, athleteId: paramAthleteId, league: paramLeague } = useLocalSearchParams<{ id: string; athleteId?: string; league?: string }>();
   const insets = useSafeAreaInsets();
+  const { preferences, savePreferences } = usePreferences();
   const [activeTab, setActiveTab] = useState<PlayerTab>("Overview");
-  const [followed, setFollowed] = useState(false);
   const [headshotError, setHeadshotError] = useState(false);
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
 
@@ -2008,6 +2009,22 @@ export default function PlayerScreen() {
     roster: [], recentGames: [], stats: [],
   } : null as any);
 
+  const canonicalKey = liveProfile?.espnId && effectiveLeague
+    ? `${effectiveLeague}-${liveProfile.espnId}`
+    : liveIdParsed ? `${liveIdParsed.league}-${liveIdParsed.athleteId}` : (id ?? "");
+  const followed = preferences.favoritePlayers.includes(canonicalKey);
+  const toggleFollow = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    let next = followed
+      ? preferences.favoritePlayers.filter(p => p !== canonicalKey)
+      : [...preferences.favoritePlayers, canonicalKey];
+    const rawId = id ?? "";
+    if (rawId !== canonicalKey) {
+      next = next.filter(p => p !== rawId);
+    }
+    savePreferences({ ...preferences, favoritePlayers: next });
+  };
+
   // Fetch live ESPN stats when player page opens (for overview stat cards)
   useEffect(() => {
     if (!player || !team) return;
@@ -2086,15 +2103,6 @@ export default function PlayerScreen() {
   const renderTab = () => {
     switch (activeTab) {
       case "Overview": return renderOverview();
-      case "News": return (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
-          <Ionicons name="newspaper-outline" size={44} color={C.textTertiary} />
-          <Text style={{ color: "#AEAEB2", fontSize: 16, fontFamily: "Inter_600SemiBold" }}>News</Text>
-          <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>
-            Athlete-specific news is coming soon. Check the News tab in the Home screen for latest headlines.
-          </Text>
-        </View>
-      );
       case "Stats": return (
         <CareerStatsTab
           liveProfile={liveProfile ?? null}
@@ -2143,15 +2151,6 @@ export default function PlayerScreen() {
             <Text style={bioTab.bioText}>{player.bio}</Text>
           )}
         </ScrollView>
-      );
-      case "Splits": return (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
-          <Ionicons name="pie-chart-outline" size={44} color={C.textTertiary} />
-          <Text style={{ color: "#AEAEB2", fontSize: 16, fontFamily: "Inter_600SemiBold" }}>Splits</Text>
-          <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>
-            Home/away, monthly, and situational splits coming soon
-          </Text>
-        </View>
       );
       case "Game Log": return liveAthleteId && liveLeague ? (
         <LiveGameLogTab
@@ -2235,10 +2234,7 @@ export default function PlayerScreen() {
               <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
             </View>
             <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setFollowed(f => !f);
-              }}
+              onPress={toggleFollow}
               style={[styles.followBtn, followed && { backgroundColor: team.color }]}
             >
               <Ionicons name={followed ? "checkmark" : "add"} size={16} color="#fff" />
@@ -2252,10 +2248,7 @@ export default function PlayerScreen() {
                 <Ionicons name="arrow-back" size={22} color="#fff" />
               </Pressable>
               <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setFollowed(f => !f);
-                }}
+                onPress={toggleFollow}
                 style={[styles.followBtn, followed && { backgroundColor: team.color }]}
               >
                 <Ionicons name={followed ? "checkmark" : "add"} size={16} color="#fff" />

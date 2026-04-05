@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Platform, ActivityIndicator, Animated, Image
+  Platform, Animated, Image
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -473,7 +473,15 @@ export default function StandingsScreen() {
 
         {isLoading ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={leagueMeta.color} size="large" />
+            {[0, 1, 2, 3, 4, 5].map(i => (
+              <View key={i} style={styles.skeletonRow}>
+                <View style={[styles.skeletonBox, { width: 24, height: 14 }]} />
+                <View style={[styles.skeletonBox, { width: 24, height: 24, borderRadius: 12 }]} />
+                <View style={[styles.skeletonBox, { flex: 1, height: 14 }]} />
+                <View style={[styles.skeletonBox, { width: 30, height: 14 }]} />
+                <View style={[styles.skeletonBox, { width: 30, height: 14 }]} />
+              </View>
+            ))}
           </View>
         ) : (
           <>
@@ -761,7 +769,7 @@ const legendS = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { paddingHorizontal: 20, gap: 4 },
+  scroll: { paddingHorizontal: 16, gap: 4 },
 
   header: {
     paddingTop: 16, paddingBottom: 8,
@@ -779,7 +787,16 @@ const styles = StyleSheet.create({
   },
   chipText: { color: C.textSecondary, fontSize: 13, fontWeight: "800", letterSpacing: 0.4 },
 
-  loading: { paddingVertical: 80, alignItems: "center" },
+  loading: { paddingVertical: 24, gap: 2 },
+  skeletonRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
+  },
+  skeletonBox: {
+    backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 6,
+    height: 14,
+  },
 
   table: {
     backgroundColor: C.card, borderRadius: 18, overflow: "hidden",

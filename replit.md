@@ -32,7 +32,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
 - **Build System:** esbuild for CJS bundling.
 - **Real-time Updates:** WebSocket server (`WS /ws`) for pushing live game scores and specific game updates, triggering React Query cache invalidation.
 - **AI Integration:** GROQ AI for "In One Breath" sports summaries and OpenAI `gpt-4o-mini` for article/game summaries and postgame recaps.
-- **Mobile State Management:** `PreferencesContext` for user preferences, persisted to AsyncStorage and synced with the backend.
+- **Mobile State Management:** `PreferencesContext` for user preferences (favoriteTeams, favoritePlayers, favoriteLeagues, mode), persisted to AsyncStorage and synced with the backend. Player follow uses canonical `LEAGUE-espnId` keys for consistency across navigation paths.
 - **Universal Sports Model (Database):** Includes `user_preferences`, `sport_game_events` (universal event table for historical data), and `sport_game_states` (live game snapshots).
 
 **Feature Specifications:**
@@ -47,6 +47,9 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - **Draft Center:** Multi-sport draft hub (NFL/NBA/NHL/MLB/WNBA) accessible from Home tab. Draft screen (`/draft/[league]`) with 3 tabs: Pick Tracker (round-filtered pick cards with team logos, athlete headshots, OTC badges, trade indicators), Prospects (ranked prospect cards with ESPN grades, headshots, position/school), Team Needs (team cards with positional need pills, next pick info). Sport-themed headers with league accent colors. Supports live draft OTC highlighting.
     - **Team Future Tab:** Draft-enabled team pages (NFL/NBA/NHL/MLB/WNBA) show a "Future" tab with total/acquired/original pick counts, team needs pills, draft picks list with trade indicators, and link to full Draft Center. Non-draft leagues (MLS, EPL, etc.) show contextual "Transfers & Rumors" or "Future Pipeline" coming-soon states.
     - **Sport Route Fallback:** `/sport/[id]` resolves both category IDs (e.g., "football") and league keys (e.g., "NFL") via `getSportByLeague` fallback, preventing dead-end screens.
+    - **Team Route Fallback:** `/team/[id]` resolves any team via robust `buildFallbackTeam` (fuzzy slug/abbr/last-word matching) + ESPN API live fetch. Search always uses `teamSlug()` format (`{league}-{slugified-name}`), bypassing the limited `TEAM_NAME_TO_ID` registry.
+    - **Player Tabs:** Only functional tabs shown: Overview, Stats, Bio, Game Log. News and Splits hidden until implemented.
+    - **Standings Loading:** Skeleton rows replace ActivityIndicator for consistent loading states.
     - **Context Chips:** Importance tags on game cards (OT, CLOSE, RIVALRY, PLAYOFF RACE, etc.).
 - **API Server Routes:**
     - `GET /api/sports/games?league=`: Live ESPN scoreboard.
