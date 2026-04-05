@@ -527,6 +527,7 @@ const DRAFT_LEAGUES = [
   { league: "NBA", emoji: "\uD83C\uDFC0", color: C.nba, label: "NBA Draft" },
   { league: "NHL", emoji: "\uD83C\uDFD2", color: C.accentBlue, label: "NHL Draft" },
   { league: "MLB", emoji: "\u26BE", color: C.mlb, label: "MLB Draft" },
+  { league: "WNBA", emoji: "\uD83C\uDFC0", color: "#E91E8C", label: "WNBA Draft" },
 ];
 
 function DraftCenterSection() {

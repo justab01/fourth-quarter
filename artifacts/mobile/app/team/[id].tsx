@@ -13,7 +13,7 @@ import Colors from "@/constants/colors";
 import { getTeamById, teamColor, type TeamData, type Player } from "@/constants/teamData";
 import { ALL_TEAMS, ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { usePreferences } from "@/context/PreferencesContext";
-import { api, type EspnTeamInfo } from "@/utils/api";
+import { api, type EspnTeamInfo, type DraftData, type DraftPick, type DraftTeam } from "@/utils/api";
 import { TeamLogo } from "@/components/GameCard";
 
 function slugify(s: string) {
@@ -156,8 +156,10 @@ function espnTeamToTeamData(info: EspnTeamInfo): TeamData {
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
 
-const TABS = ["Scores", "News", "Standings", "Stats", "Roster", "Depth Chart"] as const;
-type Tab = (typeof TABS)[number];
+const DRAFT_LEAGUES = new Set(["NFL", "NBA", "NHL", "MLB", "WNBA"]);
+const TABS_DRAFT = ["Scores", "News", "Standings", "Stats", "Roster", "Depth Chart", "Future"] as const;
+const TABS_NO_DRAFT = ["Scores", "News", "Standings", "Stats", "Roster", "Depth Chart"] as const;
+type Tab = (typeof TABS_DRAFT)[number];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const GROUP_ORDER: string[] = [
@@ -461,6 +463,179 @@ function NewsTabPlaceholder({ team }: { team: TeamData }) {
   );
 }
 
+function FutureTab({ team }: { team: TeamData }) {
+  const league = team.league?.toUpperCase() ?? "";
+  const { data: draftData, isLoading } = useQuery({
+    queryKey: ["draft", league],
+    queryFn: () => api.getDraft(league),
+    staleTime: 120_000,
+    enabled: DRAFT_LEAGUES.has(league),
+  });
+
+  if (!DRAFT_LEAGUES.has(league)) {
+    const isSoccer = ["EPL", "UCL", "LIGA", "MLS"].includes(league);
+    return (
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16 }}>
+        <View style={futureStyles.emptyCard}>
+          <Ionicons name={isSoccer ? "swap-horizontal" : "rocket-outline"} size={40} color={C.textTertiary} />
+          <Text style={futureStyles.emptyTitle}>
+            {isSoccer ? "Transfers & Rumors" : "Future Pipeline"}
+          </Text>
+          <Text style={futureStyles.emptyText}>
+            {isSoccer
+              ? "Transfer window tracking coming soon for this league."
+              : "Future pipeline tracking is not available for this league yet."}
+          </Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 40 }}>
+        <ActivityIndicator size="large" color={team.color} />
+        <Text style={{ color: C.textSecondary, fontSize: 13 }}>Loading draft data...</Text>
+      </View>
+    );
+  }
+
+  if (!draftData) {
+    return (
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
+        <View style={futureStyles.emptyCard}>
+          <Ionicons name="alert-circle-outline" size={40} color={C.textTertiary} />
+          <Text style={futureStyles.emptyTitle}>No Draft Data</Text>
+          <Text style={futureStyles.emptyText}>Draft data is not available for {league} right now.</Text>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  const teamName = team.name.toLowerCase();
+  const teamAbbr = (team.abbr ?? "").toUpperCase();
+  const matchPick = (p: DraftPick) => {
+    if (!p.team) return false;
+    const pickName = p.team.name.toLowerCase();
+    const pickAbbr = p.team.abbreviation?.toUpperCase() ?? "";
+    return pickName === teamName || pickName.includes(teamName) || teamName.includes(pickName) ||
+      pickAbbr === teamAbbr;
+  };
+
+  const ownedPicks = draftData.picks.filter(matchPick);
+  const tradedIn = ownedPicks.filter((p) => p.traded && p.tradeNote);
+  const nonTraded = ownedPicks.filter((p) => !p.traded);
+
+  const teamNeeds = draftData.teams?.find(
+    (t) => {
+      const tl = t.name.toLowerCase();
+      const ta = t.abbreviation?.toUpperCase() ?? "";
+      return tl === teamName || tl.includes(teamName) || teamName.includes(tl) || ta === teamAbbr;
+    }
+  );
+
+  return (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}>
+      <View style={futureStyles.summaryRow}>
+        <View style={[futureStyles.summaryCard, { borderColor: `${team.color}40` }]}>
+          <Text style={[futureStyles.summaryNum, { color: team.color }]}>{ownedPicks.length}</Text>
+          <Text style={futureStyles.summaryLabel}>Total Picks</Text>
+        </View>
+        <View style={[futureStyles.summaryCard, { borderColor: "#48ADA940" }]}>
+          <Text style={[futureStyles.summaryNum, { color: "#48ADA9" }]}>{tradedIn.length}</Text>
+          <Text style={futureStyles.summaryLabel}>Acquired</Text>
+        </View>
+        <View style={[futureStyles.summaryCard, { borderColor: `${team.color}40` }]}>
+          <Text style={[futureStyles.summaryNum, { color: team.color }]}>{nonTraded.length}</Text>
+          <Text style={futureStyles.summaryLabel}>Original</Text>
+        </View>
+      </View>
+
+      {teamNeeds && teamNeeds.needs && teamNeeds.needs.length > 0 && (
+        <View style={futureStyles.section}>
+          <Text style={futureStyles.sectionTitle}>TEAM NEEDS</Text>
+          <View style={futureStyles.needsWrap}>
+            {teamNeeds.needs.filter((n) => !n.met).map((need, i) => (
+              <View key={i} style={[futureStyles.needPill, { backgroundColor: `${team.color}20`, borderColor: `${team.color}40` }]}>
+                <Text style={[futureStyles.needText, { color: team.color }]}>{need.position}</Text>
+              </View>
+            ))}
+          </View>
+          {teamNeeds.nextPick && (
+            <Text style={futureStyles.nextPickText}>
+              Next pick: #{teamNeeds.nextPick}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {ownedPicks.length > 0 && (
+        <View style={futureStyles.section}>
+          <Text style={futureStyles.sectionTitle}>DRAFT PICKS</Text>
+          {ownedPicks.map((pick, i) => (
+            <View key={i} style={futureStyles.pickRow}>
+              <View style={[futureStyles.pickBadge, { backgroundColor: pick.traded ? "rgba(72,173,169,0.15)" : `${team.color}25` }]}>
+                <Text style={[futureStyles.pickNum, { color: pick.traded ? "#48ADA9" : team.color }]}>#{pick.overall}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={futureStyles.pickRound}>Round {pick.round}, Pick {pick.pick}</Text>
+                {pick.traded && pick.tradeNote ? (
+                  <Text style={futureStyles.pickNote}>{pick.tradeNote}</Text>
+                ) : null}
+                {pick.athlete && (
+                  <Text style={futureStyles.pickPlayer}>{pick.athlete.name} — {pick.athlete.position}</Text>
+                )}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <Pressable
+        style={[futureStyles.draftLink, { backgroundColor: `${team.color}15`, borderColor: `${team.color}35` }]}
+        onPress={() => router.push(`/draft/${league}` as any)}
+      >
+        <Ionicons name="trophy-outline" size={18} color={team.color} />
+        <Text style={[futureStyles.draftLinkText, { color: team.color }]}>View Full {league} Draft Center</Text>
+        <Ionicons name="chevron-forward" size={16} color={team.color} />
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+const futureStyles = StyleSheet.create({
+  summaryRow: { flexDirection: "row", gap: 10 },
+  summaryCard: {
+    flex: 1, backgroundColor: C.card, borderRadius: 14, padding: 14,
+    borderWidth: 1, alignItems: "center", gap: 4,
+  },
+  summaryNum: { fontSize: 28, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  summaryLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
+  section: { backgroundColor: C.card, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: C.cardBorder, gap: 10 },
+  sectionTitle: { color: C.textTertiary, fontSize: 11, fontWeight: "800", letterSpacing: 1.1 },
+  needsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  needPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+  needText: { fontSize: 13, fontWeight: "700" },
+  nextPickText: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 4 },
+  pickRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  pickBadge: { width: 48, height: 36, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  pickNum: { fontSize: 14, fontWeight: "800" },
+  pickRound: { color: C.text, fontSize: 14, fontFamily: "Inter_500Medium" },
+  pickNote: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  pickPlayer: { color: C.accent, fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 2 },
+  draftLink: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, paddingVertical: 14, borderRadius: 14, borderWidth: 1,
+  },
+  draftLinkText: { fontSize: 14, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  emptyCard: {
+    backgroundColor: C.card, borderRadius: 14, padding: 32, borderWidth: 1,
+    borderColor: C.cardBorder, alignItems: "center", gap: 12,
+  },
+  emptyTitle: { color: C.text, fontSize: 18, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  emptyText: { color: C.textTertiary, fontSize: 14, textAlign: "center", lineHeight: 20 },
+});
+
 function StandingsTabPlaceholder({ team }: { team: TeamData }) {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
@@ -571,6 +746,8 @@ export default function TeamScreen() {
     );
   }
 
+  const TABS = DRAFT_LEAGUES.has(team.league?.toUpperCase() ?? "") ? TABS_DRAFT : TABS_NO_DRAFT;
+
   const renderTab = () => {
     switch (activeTab) {
       case "Scores": return <ScoresTab team={team} />;
@@ -579,6 +756,7 @@ export default function TeamScreen() {
       case "Stats": return <StatsTab team={team} />;
       case "Roster": return <RosterTab team={team} teamColor={team.color} isLoading={rosterIsLoading} />;
       case "Depth Chart": return <DepthChartTab team={team} teamColor={team.color} />;
+      case "Future": return <FutureTab team={team} />;
     }
   };
 

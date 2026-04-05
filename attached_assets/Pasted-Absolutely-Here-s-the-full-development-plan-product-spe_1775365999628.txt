@@ -1,0 +1,1207 @@
+Absolutely. Here’s the full development plan + product spec for how to move this app forward based on everything seen across the app, not just the NFL draft module. The brand/voice foundation is already clear from your uploaded line, “This is where every play, stat, and moment… counts. No warm-ups needed! The Fourth Quarter… starts NOW.”  ￼
+
+⸻
+
+THE FOURTH QUARTER
+
+Full Development Plan + Product Specs
+
+1. Product mission
+
+Build The Fourth Quarter into a true mobile-first Sports OS:
+	•	live scores
+	•	player tracking
+	•	game logs
+	•	standings
+	•	news
+	•	draft ecosystems
+	•	team futures
+	•	postseason structure
+	•	cross-sport logic
+
+The app should feel like:
+	•	ESPN in coverage depth
+	•	Sofascore in speed
+	•	Bleacher Report in discoverability
+	•	your own product in design, organization, and future-building features
+
+Right now the app has a solid shell, but it is still operating like a partially connected prototype rather than a finished product system.
+
+⸻
+
+2. What exists right now
+
+Working / partially working
+	•	home screen with sports content and some live cards
+	•	sports browsing page
+	•	football hub
+	•	player pages
+	•	some game logs
+	•	some draft pages, especially NFL
+	•	some real player/team data
+	•	dark mode visual language
+	•	tab structure on player pages
+	•	logo/headshot usage in some areas
+
+Weak / broken / incomplete
+	•	route stability
+	•	league drill-down logic
+	•	missing athlete pages
+	•	missing sport pages
+	•	missing draft pages for several sports
+	•	game logs still look like squeezed spreadsheets
+	•	no true postseason/tournament segmentation
+	•	no team draft assets
+	•	no universal cross-sport architecture
+	•	inconsistent loading states
+	•	draft only partly fleshed out
+	•	no complete mobile hierarchy system
+	•	not enough depth per feature once user taps in
+
+⸻
+
+3. Core product problems to solve
+
+Problem 1: Structure is there, but depth is shallow
+
+A lot of pages exist, but they stop one layer too early.
+
+Example:
+	•	football page exists
+	•	player page exists
+	•	game log exists
+but the log is not premium, segmented, or mobile-optimized
+
+Problem 2: Routing is unreliable
+
+Some taps lead to dead screens, “not found,” or incomplete destinations.
+
+Problem 3: Features are not systemized
+
+Draft, game logs, player pages, sports hubs, and team views do not yet feel like parts of one unified architecture.
+
+Problem 4: Mobile hierarchy is weak
+
+Some views are too dense, too flat, or too banner-heavy.
+
+Problem 5: Cross-sport logic is inconsistent
+
+NFL draft has more thought than the rest, but the app must be equally intelligent for NBA, MLB, NHL, soccer, golf, tennis, combat, etc.
+
+⸻
+
+4. Product vision going forward
+
+You need to rebuild the app around 5 master pillars:
+
+Pillar A — Home / discovery
+
+What matters right now
+
+Pillar B — Sport / league operating system
+
+Everything happening in a sport
+
+Pillar C — Team intelligence
+
+Roster, needs, standings, future, schedule
+
+Pillar D — Player intelligence
+
+Stats, logs, splits, news, history, achievements
+
+Pillar E — Future pipeline
+
+Drafts, prospects, assets, transfers, recruitment
+
+That is the real product.
+
+⸻
+
+5. Development phases
+
+Phase 1 — Stabilize the foundation
+
+Goal: make the current app reliable and coherent
+
+Must do
+	•	fix broken routes
+	•	fix dead screens
+	•	ensure every tappable card resolves correctly
+	•	create graceful empty states
+	•	create graceful loading states
+	•	create graceful error states
+	•	audit every tab and page for existence
+	•	verify all player links
+	•	verify all team links
+	•	verify all sport links
+	•	verify all draft links
+	•	unify navigation behavior
+
+Deliverable
+
+A stable app where nothing important breaks when tapped.
+
+⸻
+
+Phase 2 — Rebuild the main page systems
+
+Goal: make the core surfaces feel premium
+
+Rebuild these screens first
+	•	Home
+	•	Sports hub
+	•	League/sport hub
+	•	Team page
+	•	Player page
+	•	Game page
+	•	Draft page
+
+Deliverable
+
+All major pages share one design language and one interaction philosophy.
+
+⸻
+
+Phase 3 — Build the real data architecture
+
+Goal: make everything live, current, structured, and trustworthy
+
+Must do
+	•	normalized sports data model
+	•	source IDs for players/teams/games/picks
+	•	live refresh jobs
+	•	change reconciliation
+	•	no synthetic production data
+	•	no stale ghost records
+	•	reliable player matching
+	•	reliable opponent mapping
+	•	competition/stage tagging
+
+Deliverable
+
+Real-time, real-life sports data backbone.
+
+⸻
+
+Phase 4 — Add deep feature intelligence
+
+Goal: make the app smarter than a plain scoreboard app
+
+Must do
+	•	competition segmentation
+	•	round/stage grouping
+	•	team future assets
+	•	draft boards
+	•	team needs
+	•	better player logs
+	•	trend views
+	•	“best available” views
+	•	prospect pages
+	•	achievement badges
+	•	series summaries
+	•	championship context
+
+Deliverable
+
+This is where the app starts feeling like a real Sports OS.
+
+⸻
+
+Phase 5 — Expand across all sports
+
+Goal: universal product architecture
+
+Must do
+	•	NBA
+	•	NFL
+	•	MLB
+	•	NHL
+	•	soccer
+	•	tennis
+	•	golf
+	•	combat
+	•	track
+	•	college sports
+	•	WNBA
+	•	MLS
+
+Deliverable
+
+One unified product system, many sport-specific skins.
+
+⸻
+
+6. New app architecture
+
+Main bottom navigation
+
+Keep it clean:
+	•	Home
+	•	Scores
+	•	Sports
+	•	Standings
+	•	News
+
+Optional later:
+	•	Watchlist
+	•	Me/Profile
+
+This is already close to what you have, but it needs stronger screen logic inside each tab.
+
+⸻
+
+7. Home page spec
+
+Objective
+
+Show the user:
+	•	what’s live
+	•	what’s important
+	•	what they care about
+	•	what’s next
+
+Sections
+
+A. Hero live carousel
+	•	biggest live or marquee games
+	•	league badge
+	•	score
+	•	game state
+	•	tap into game center
+
+B. My teams / my players rail
+	•	followed teams
+	•	followed players
+	•	next games
+	•	breaking updates
+
+C. Trending now
+	•	stories
+	•	injuries
+	•	trades
+	•	performances
+
+D. By sport quick rails
+	•	NBA
+	•	NFL
+	•	MLB
+	•	NHL
+	•	etc.
+
+E. Draft / future rail
+
+seasonal
+	•	top prospects
+	•	draft order
+	•	lottery
+	•	mock movement
+
+F. Today / tonight schedule
+
+scrollable by sport
+
+Needed improvements
+	•	stronger hierarchy
+	•	fewer dead-end cards
+	•	cleaner card density
+	•	more consistent imagery
+	•	better loading skeletons
+
+⸻
+
+8. Sports hub spec
+
+Objective
+
+Let the user enter a sport and understand the full ecosystem quickly.
+
+Each sport card should lead to:
+	•	overview
+	•	scores
+	•	teams
+	•	standings
+	•	players
+	•	news
+	•	future pipeline
+
+Sports supported
+	•	Basketball
+	•	Football
+	•	Baseball
+	•	Hockey
+	•	Soccer
+	•	Tennis
+	•	Golf
+	•	Combat
+	•	Track & Field
+	•	College
+	•	WNBA
+	•	MLS
+	•	Formula 1 / motorsports later
+
+Needed improvements
+	•	some current sports appear visually, but deeper pages are weak
+	•	all sport entries must have completed league pages underneath
+	•	no sport card should lead to a thin stub
+
+⸻
+
+9. League / sport page spec
+
+Example: Football, Basketball, Baseball
+
+Top structure
+	•	back button
+	•	sport title
+	•	filter chips for league/subleague
+	•	search
+
+Sections
+
+A. Games / scoreboard
+	•	live
+	•	upcoming
+	•	recent
+
+B. Top athletes
+	•	horizontally scrollable
+	•	real players only
+	•	tap to profile
+
+C. Teams
+	•	alphabetical or conference/division
+
+D. Standings
+	•	top 5 preview + see all
+
+E. News
+	•	top headlines
+	•	rumors
+	•	injuries
+	•	trending
+
+F. Future pipeline
+	•	draft / prospects / transfers / recruiting depending on sport
+
+Must fix
+	•	league buttons must work
+	•	“NFL” row cannot be a dead card
+	•	same for college, MLB, NHL, etc.
+
+⸻
+
+10. Team page spec
+
+This page is underbuilt right now and needs to become one of the strongest surfaces.
+
+Team page tabs
+	•	Overview
+	•	Roster
+	•	Schedule
+	•	Standings
+	•	Stats
+	•	News
+	•	Future
+
+Overview
+	•	logo
+	•	record
+	•	rank
+	•	streak
+	•	conference/division position
+	•	next game
+	•	key injuries
+	•	recent form
+
+Roster
+	•	grouped by position
+	•	player headshots
+	•	status
+	•	quick stats
+
+Schedule
+	•	upcoming games
+	•	recent results
+	•	month grouping
+	•	postseason stage if relevant
+
+Standings
+	•	division/conference table
+	•	playoff race context
+
+Stats
+	•	team-level offense/defense
+	•	leaders
+	•	splits
+
+News
+	•	team-specific stories
+
+Future
+
+This is big.
+For draft leagues:
+	•	owned picks
+	•	traded picks
+	•	team needs
+	•	recent draft history
+	•	projected selection
+
+For transfer leagues:
+	•	incoming rumors
+	•	outgoing rumors
+	•	academy pipeline
+
+For college:
+	•	recruiting / portal
+
+⸻
+
+11. Player page spec
+
+This page exists, but it needs heavy refinement.
+
+Current problem
+
+The giant hero is cool, but the real content is weak underneath.
+Game log tab especially is not built correctly yet.
+
+New player header
+
+Compact hero for tabs like Game Log / Splits / Stats
+	•	player headshot
+	•	name
+	•	team + league
+	•	position
+	•	jersey #
+	•	follow button
+	•	subtle team gradient
+
+Do not keep giant hero at full height on every tab.
+
+Tabs
+	•	Overview
+	•	News
+	•	Stats
+	•	Bio
+	•	Splits
+	•	Game Log
+	•	Advanced
+
+Optional later:
+	•	Awards
+	•	Highlights
+
+⸻
+
+12. Player overview spec
+
+Sections
+	•	season summary card
+	•	last game
+	•	season averages
+	•	team role
+	•	latest news
+	•	achievements
+	•	next game
+	•	stat trend mini-chart
+
+Improve
+	•	cleaner stat modules
+	•	fewer empty cards
+	•	less dead vertical space
+
+⸻
+
+13. Player bio spec
+
+Show
+	•	height
+	•	weight
+	•	age
+	•	birthplace
+	•	college / club / school
+	•	draft info
+	•	handedness / shoots / throws if relevant
+	•	experience
+	•	position history
+	•	achievements
+
+Improve
+	•	add badges
+	•	add team and league history later
+
+⸻
+
+14. Player splits spec
+
+Show
+	•	home/away
+	•	wins/losses
+	•	month splits
+	•	opponent splits
+	•	starter/bench if relevant
+	•	playoff vs regular season
+
+This is useful, but only after game logs are fixed.
+
+⸻
+
+15. Player game log spec
+
+This is the biggest design and engineering redo needed.
+
+Current state
+	•	compressed spreadsheet
+	•	weak hierarchy
+	•	no monthly averages
+	•	no round grouping
+	•	no opponent logos
+	•	little mobile polish
+
+New architecture
+
+Season selector
+	•	2025
+	•	2024
+	•	2023
+	•	career
+
+Competition selector
+	•	regular season
+	•	playoffs
+	•	cup
+	•	play-in
+	•	finals
+	•	all
+
+Grouping logic
+
+Regular season
+group by month
+
+Postseason / tournaments
+group by round or stage
+
+Row layout
+
+Line 1
+	•	date
+	•	opponent logo
+	•	opponent abbreviation
+	•	result pill
+
+Line 2
+	•	sport-specific quick stats
+
+Expand behavior
+
+tap to expand:
+	•	full stat line
+	•	advanced stats
+	•	game info
+	•	links to game center / highlights later
+
+Add
+	•	monthly average cards
+	•	series summary cards
+	•	round headers
+	•	championship badges
+	•	finals badges
+	•	OT badge
+	•	double-double / hat trick / PR / clean sheet depending on sport
+
+⸻
+
+16. Universal competition segmentation engine
+
+This is missing and must be built centrally.
+
+Master logic
+
+Season/Year
+→ Competition Type
+→ Stage / Round / Month
+→ Individual event row
+
+Basketball
+	•	preseason
+	•	regular season
+	•	cup
+	•	play-in
+	•	playoffs
+	•	finals
+
+Football
+	•	preseason
+	•	regular season
+	•	wild card
+	•	divisional
+	•	conference championship
+	•	super bowl
+
+Baseball
+	•	spring training
+	•	regular season
+	•	wild card
+	•	division series
+	•	league championship
+	•	world series
+
+Hockey
+	•	preseason
+	•	regular season
+	•	playoffs
+	•	stanley cup final
+
+Soccer
+	•	league
+	•	cup
+	•	continental
+	•	international
+	•	knockout stages
+
+Tennis
+	•	tournament
+	•	round
+
+Golf
+	•	tournament
+	•	rounds 1–4
+
+Combat
+	•	promotion
+	•	event
+	•	fight
+
+Track
+	•	meet
+	•	event
+	•	heat/semis/final
+
+This engine is what makes the app truly intelligent.
+
+⸻
+
+17. Draft / future pipeline spec
+
+This is another huge system.
+
+Draft-enabled sports
+	•	NFL
+	•	NBA
+	•	WNBA
+	•	MLB
+	•	NHL
+	•	MLS
+
+Draft section tabs
+	•	Overview
+	•	Order
+	•	Prospects
+	•	Team Needs
+	•	Tracker
+	•	History
+
+Overview
+	•	next draft date
+	•	current order
+	•	top prospects
+	•	latest movement
+	•	news
+	•	combine/lottery where relevant
+
+Order
+	•	all picks
+	•	original owner
+	•	current owner
+	•	pick notes
+	•	traded flag
+
+Prospects
+	•	ranked board
+	•	filters by position, school, country, archetype
+	•	height/weight/age
+	•	projection
+	•	scouting summary
+
+Team Needs
+	•	every team
+	•	next pick
+	•	needs
+	•	likely fits
+
+Tracker
+	•	live draft night mode
+	•	on the clock
+	•	recent picks
+	•	available board
+	•	trade alerts later
+
+History
+	•	past draft classes
+	•	by year
+	•	by team
+	•	by player
+
+⸻
+
+18. Team draft assets spec
+
+This does not exist yet and needs to.
+
+On team page > Future tab
+
+Show:
+	•	owned picks
+	•	missing picks
+	•	incoming picks
+	•	projected draft slot
+	•	recent draft history
+	•	team needs
+	•	cap/roster context later
+
+This is important because fans care about future assets, not just the live draft night.
+
+⸻
+
+19. Non-draft sports future pipeline spec
+
+Do not force draft onto every sport.
+
+Soccer
+	•	Transfers
+	•	Rumors
+	•	Academy
+
+Tennis
+	•	Prospects / rising players
+
+Golf
+	•	young stars / amateur pipeline
+
+Combat
+	•	contender pipeline
+	•	signed upcoming fights
+
+College
+	•	recruiting
+	•	transfer portal
+
+That should all live under the same Future product philosophy.
+
+⸻
+
+20. Scores page spec
+
+Objective
+
+Fast daily scoreboard across all sports.
+
+Features
+	•	date selector
+	•	sport filter
+	•	live / upcoming / final filters
+	•	score cards
+	•	tap into game center
+
+Needed improvements
+	•	easier date navigation
+	•	stronger league grouping
+	•	cleaner live state hierarchy
+	•	better load handling
+
+⸻
+
+21. Game center spec
+
+This needs to exist as the central destination for a single game.
+
+Tabs
+	•	Overview
+	•	Box Score
+	•	Play-by-Play
+	•	Leaders
+	•	Odds later if desired
+	•	Highlights later
+
+Overview
+	•	score
+	•	time/status
+	•	venue
+	•	leaders
+	•	storylines
+
+Box score
+	•	team stats
+	•	player stats
+	•	sortable
+
+Play-by-play
+	•	live event feed
+
+Leaders
+	•	key performers
+
+This page is critical because player pages and score pages should both connect into it.
+
+⸻
+
+22. Standings page spec
+
+By league
+	•	division
+	•	conference
+	•	wildcard / playoff spots
+	•	games behind
+	•	streak
+	•	last 10 if relevant
+
+Needed improvements
+	•	make it easier to switch leagues
+	•	add playoff race context
+	•	add sort controls
+
+⸻
+
+23. News page spec
+
+Sections
+	•	top stories
+	•	by sport
+	•	by team
+	•	by player
+	•	draft/news
+	•	injury wire
+	•	rumor wire later
+
+Improve
+	•	article cards
+	•	source labels
+	•	timestamps
+	•	sharing
+	•	save/bookmark later
+
+⸻
+
+24. Search spec
+
+Current app needs much better object discovery.
+
+Search should find
+	•	players
+	•	teams
+	•	leagues
+	•	prospects
+	•	games
+	•	articles
+
+Search result groups
+	•	Players
+	•	Teams
+	•	Leagues
+	•	Prospects
+	•	News
+
+Improve
+	•	typeahead
+	•	fuzzy matching
+	•	no dead result links
+	•	prospect results distinct from active pro players
+
+⸻
+
+25. Data architecture spec
+
+This is non-negotiable.
+
+Rules
+	•	no fake production players
+	•	no generated prospects in production
+	•	no synthetic draft boards in production mode
+	•	every entity must come from a verified source
+	•	every record gets source ID
+	•	every screen must know freshness
+
+Core entities
+	•	teams
+	•	players
+	•	games
+	•	leagues
+	•	standings
+	•	game logs
+	•	competitions
+	•	stages
+	•	draft prospects
+	•	draft picks
+	•	team assets
+	•	articles
+
+Freshness fields
+	•	source_name
+	•	source_id
+	•	last_synced_at
+	•	source_updated_at
+
+⸻
+
+26. Backend development plan
+
+Stack
+	•	Node.js
+	•	TypeScript
+	•	Express or Fastify
+	•	PostgreSQL
+	•	Prisma
+	•	Redis
+	•	scheduled workers / cron
+	•	Expo / React Native front-end
+
+Backend services
+
+ingestion
+	•	schedules
+	•	players
+	•	standings
+	•	draft data
+	•	articles
+
+normalization
+	•	unify data format across sports
+
+reconciliation
+	•	detect updates
+	•	prevent duplicates
+	•	merge stale records
+
+serving layer
+	•	your app reads your DB, not raw providers
+
+⸻
+
+27. Frontend development plan
+
+Component systems to build
+	•	app shell
+	•	navigation shell
+	•	sport card
+	•	team card
+	•	player card
+	•	news card
+	•	score card
+	•	standings table
+	•	game log row
+	•	month header
+	•	stage header
+	•	average summary card
+	•	draft pick row
+	•	prospect card
+	•	team need card
+	•	empty state
+	•	loading skeleton
+	•	error card
+
+Reusable patterns
+	•	tab bars
+	•	section headers
+	•	cards
+	•	pills/chips
+	•	filters
+	•	expandable rows
+	•	list virtualization
+
+⸻
+
+28. Design system plan
+
+Visual foundation
+	•	dark mode first
+	•	accent by sport/team
+	•	controlled use of color
+	•	clear typography hierarchy
+	•	generous spacing
+	•	rounded cards but not overdone
+	•	subtle borders
+	•	light gradients
+
+Typography levels
+	•	page title
+	•	section title
+	•	card title
+	•	body text
+	•	metadata
+	•	pills/badges
+
+Core UI rules
+	•	44px touch targets
+	•	sticky tabs where useful
+	•	compact headers for data-heavy tabs
+	•	no desktop table behavior shoved into mobile
+	•	scan-first layouts
+
+⸻
+
+29. QA and testing plan
+
+Manual QA checklist
+	•	every route loads
+	•	every tap target resolves
+	•	no dead player/team links
+	•	every sport tab functions
+	•	every draft tab functions
+	•	game logs load correctly
+	•	scores update correctly
+	•	empty states show when needed
+	•	no broken images
+	•	no overlapping text
+	•	no clipped headers
+	•	no infinite spinners
+	•	no duplicate players
+
+Device testing
+	•	iPhone sizes
+	•	Android mid-size
+	•	tablet later
+
+Data QA
+	•	player names accurate
+	•	logos accurate
+	•	schedules accurate
+	•	standings accurate
+	•	prospect class year accurate
+	•	pick order accurate
+
+⸻
+
+30. Prioritized build order
+
+Sprint 1 — Foundation repair
+	•	fix routes
+	•	fix dead links
+	•	fix error handling
+	•	fix missing player resolution
+	•	stabilize sport pages
+
+Sprint 2 — Player + team page rebuild
+	•	compact player headers
+	•	team page tab system
+	•	better overview pages
+	•	consistent tabs
+
+Sprint 3 — Game log overhaul
+	•	new row design
+	•	month grouping
+	•	round grouping
+	•	average cards
+	•	opponent logos
+	•	sport-specific templates
+
+Sprint 4 — Draft system expansion
+	•	NFL cleanup
+	•	NBA draft
+	•	WNBA draft
+	•	MLB draft
+	•	NHL draft
+	•	MLS draft
+	•	team assets
+
+Sprint 5 — Future pipeline for non-draft sports
+	•	soccer transfers
+	•	recruiting
+	•	prospects pipeline
+
+Sprint 6 — Game center + deeper stats
+	•	game pages
+	•	play-by-play
+	•	leaders
+	•	better standings integration
+
+Sprint 7 — Polishing and growth layer
+	•	watchlists
+	•	notifications
+	•	bookmarks
+	•	sharing
+	•	personalization
+
+⸻
+
+31. MVP v2 definition
+
+If you want the next real milestone, this is it:
+
+MVP v2 must include
+	•	stable routing
+	•	real functioning sport hubs
+	•	rebuilt player pages
+	•	rebuilt team pages
+	•	modern game logs
+	•	competition segmentation
+	•	NFL + NBA + MLB + NHL + WNBA + MLS draft centers
+	•	team draft assets
+	•	better scores + game center
+	•	real loading/error/empty states
+
+If those are done, the app stops feeling like a prototype and starts feeling like a product.
+
+⸻
+
+32. Long-term expansion plan
+
+After MVP v2
+	•	betting context layer
+	•	watchlists
+	•	alerts
+	•	fantasy layer
+	•	deeper advanced stats
+	•	highlights/video
+	•	compare players
+	•	trend analysis
+	•	predictive insights
+	•	community features later
+
+⸻
+
+33. Direct dev command version
+
+Here is the clearest possible build command:
+
+Rebuild The Fourth Quarter as a stable, mobile-first, cross-sport sports operating system with five master product pillars: discovery, sport hubs, team intelligence, player intelligence, and future pipeline. Prioritize route stability, modern player/team pages, true competition-segmented game logs, fully built multi-league draft centers, team future assets, and a live-data backend with no synthetic production records.
+
+⸻
+
+34. Hard truth
+
+Right now, the app has:
+	•	good ambition
+	•	some real data
+	•	some nice visuals
+	•	some legit direction
+
+But it still lacks:
+	•	depth
+	•	cohesion
+	•	system architecture
+	•	product completeness
+
+The move now is not random feature adding.
+
+The move is:
+turn the app into a system.
+
+That means:
+	•	every page has a role
+	•	every tap goes somewhere meaningful
+	•	every sport follows a logic
+	•	every player/team/game exists inside a shared architecture
+	•	future-facing features are just as strong as current scores
+
+That is how The Fourth Quarter becomes what the name promises.  ￼
+
+If you want, next I’ll turn this into a full Replit-ready build blueprint with:
+	•	folder structure
+	•	routes
+	•	screen list
+	•	DB models
+	•	component names
+	•	sprint tickets

@@ -2338,6 +2338,7 @@ const DRAFT_SPORT_PATH: Record<string, string> = {
   NBA: "basketball/nba",
   NHL: "hockey/nhl",
   MLB: "baseball/mlb",
+  WNBA: "basketball/wnba",
 };
 
 const POSITION_MAP: Record<string, string> = {

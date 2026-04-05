@@ -15,7 +15,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
-import { getSportById, type SportCategory } from "@/constants/sportCategories";
+import { getSportById, getSportByLeague, type SportCategory } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
@@ -120,7 +120,7 @@ export default function SportBoardScreen() {
   const insets = useSafeAreaInsets();
   const { openSearch } = useSearch();
 
-  const sport = getSportById(id ?? "");
+  const sport = getSportById(id ?? "") ?? getSportByLeague((id ?? "").toUpperCase());
   const [activeLeague, setActiveLeague] = useState<string>("all");
 
   const sportId = sport?.id ?? id ?? "";

@@ -27,6 +27,8 @@ const LEAGUE_COLORS: Record<string, string> = {
   NBA: "#EF7828",
   NHL: "#4A90D9",
   MLB: "#E8162B",
+  WNBA: "#E91E8C",
+  MLS: "#27AE60",
 };
 
 const LEAGUE_EMOJI: Record<string, string> = {
@@ -34,6 +36,8 @@ const LEAGUE_EMOJI: Record<string, string> = {
   NBA: "\uD83C\uDFC0",
   NHL: "\uD83C\uDFD2",
   MLB: "\u26BE",
+  WNBA: "\uD83C\uDFC0",
+  MLS: "\u26BD",
 };
 
 type DraftTab = "picks" | "prospects" | "teams";

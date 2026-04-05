@@ -1,0 +1,72 @@
+Below is a full, end‑to‑end assessment of the Fourth Quarter mobile web app as it exists today.  This audit covers the entire app (home page, scores, sports sections, player/team pages, news, game logs and draft centre) rather than focusing only on the NFL draft module.  The report uses the screenshots and pages I accessed earlier; citations point to those views to support each observation.
+
+⸻
+
+1. Overall navigation and experience
+	•	Entry point & routing: The app loads into a sports‑content hub rather than a specific sport.  A top nav bar links to “Sports,” “Teams,” “Scores” and “News.”  Each of those entries then opens lists of categories (e.g., Football, Basketball, Baseball) or news carousels.  The navigation is clear but there are occasional broken links; for example, selecting the NFL entry in the football section returns “This screen doesn’t exist,” forcing the user to backtrack.  Similarly, some player names (e.g., Marvin Harrison Jr.) return “Athlete not found.”  These routing issues disrupt the experience.
+	•	Responsiveness & load time: Pages generally load quickly, and images (player headshots, team logos) are crisp.  However, there is no offline caching or skeleton loader, so when data fails to load the user is left with a blank space rather than a graceful fallback message.
+	•	Data freshness: The home page features up‑to‑date match scores and trending players.  For example, the NFL draft centre lists the correct 257‑pick order for the 2026 draft and real prospects like Ohio State linebacker Arvell Reese and Indiana quarterback Fernando Mendoza.  Real players and teams are shown rather than fictional ones, fulfilling the “no fake players” requirement.
+
+⸻
+
+2. Home page and sports sections
+	•	Home page content: The home page combines top headlines, a carousel of featured athletes and live scores.  Each card is tappable and opens a deeper page (e.g., a news article or player profile).  The design is clean with large images; however, the first view is very long, requiring a lot of vertical scrolling.
+	•	Sports tabs: Tapping “Sports” opens a grid listing sports (e.g., Football, Basketball, MLB, NHL, Soccer).  Selecting a sport displays a mixture of league standings, top players and trending stories.  For example, the football hub includes “Top Athletes,” “News,” “Teams” and “Scoreboard.”  The scoreboard shows recent NFL games with final scores and key players; team logos and colors are used for quick recognition.  Similar layouts exist for other sports (e.g., NBA, MLB), but some sports (e.g., soccer) feel underpopulated or lack a dedicated hub.
+	•	Team pages: From the sports hub you can drill into team pages.  Team pages include a summary card (team record and logo), a schedule list with upcoming games, a roster and a news feed.  There is no section for draft assets or future picks, so users cannot see which draft picks their team owns, despite this being a requirement in the design spec.
+
+⸻
+
+3. Player profile pages
+	•	Hero layout: Each player page opens with a large hero banner containing the player’s photo, name, team and position.  This banner is visually appealing but occupies nearly half the screen on mobile, pushing the useful tabs (Overview, News, Stats, Bio, Splits, Game Log) far down the page.
+	•	Tabs and content:
+	•	Overview: Shows season averages, an accolades list (e.g., Pro Bowl, All‑NBA) and quick links to news and stats.
+	•	News: Lists recent articles about the player with images and headlines; tapping opens the full article.
+	•	Stats / Splits: Provide season‑by‑season box‑score averages and per‑game splits.
+	•	Bio: Contains height, weight, birthplace, college and draft info.
+	•	Game Log: Displays individual game lines.  Critically, the game log remains a dense, unsegmented table: date, opponent abbreviation, result, minutes, yards, touchdowns, receptions, etc., are presented in a single row with no monthly grouping or round segmentation.  There is no sticky left column, no opponent logos and no monthly averages.  It is essentially a desktop spreadsheet squeezed onto mobile, contradicting the mobile‑first design we discussed.
+	•	Missing features: There is no interactive shot chart or deeper advanced stats.  The “Bio” tab lacks dynamic badges (e.g., “Rookie of the Year”), and there is no link to draft position except for a line in the biography.  The game logs do not differentiate regular‑season games from playoffs or in‑season tournaments.
+
+⸻
+
+4. News and content pages
+	•	Articles: Tapping a news card opens an article page with the headline, author, timestamp and full text.  Articles load in the same webview style as the rest of the app.  The interface is basic but readable; however, there is no ability to save articles or share them from within the app.
+	•	Video integration: I saw no embedded video highlights; everything is text‑based.  The design spec described a need for highlight links on player pages, but this has not been implemented.
+
+⸻
+
+5. Scores and standings
+	•	Scores hub: The “Scores” tab lists recent games across sports.  Each entry shows the teams, final score, date and time.  Tapping a game opens a box‑score page with more detail (scoring summary, key stats).  The design uses team logos and color coding for wins and losses.  There is no ability to filter by date beyond scrolling.
+	•	Standings: League standings tables are accessible from each sport hub.  They list team record, win percentage, and games behind the division leader.  There is no power‑ranking or playoff‑picture view.
+
+⸻
+
+6. Draft centre (all leagues)
+	•	NFL: The NFL draft module is the most complete.  It has four tabs: Pick Tracker, Prospects, Team Needs and Draft History.  Pick Tracker lists all seven rounds and 257 picks with the correct order, current owner and original owner.  Prospects displays player cards with names, schools, positions, height, weight and a grade.  Team Needs shows each franchise’s next pick and positional needs (e.g., QB, WR, EDGE).  The module uses real data and updates as picks happen, but there is no interactive mock‑draft simulator or live trade alerts.
+	•	Other leagues: There are draft pages for NBA, WNBA, MLB, NHL and MLS, but most are stubbed out or not fully implemented.  For example, the NBA draft page returns “This screen doesn’t exist,” and the MLB page is blank.  There is no universal design for draft order, combine stats or expansion drafts.  Prospects for non‑NFL sports are missing, meaning users cannot view cross‑sport draft info at all.
+	•	Missing features vs. spec: There is no dedicated team‑draft‑assets section on each team page, and there is no ability to filter draft order by traded vs. original picks or to view live pick trades.  The mock‑draft feature and lottery simulation (for NBA and WNBA) discussed in the design specification are absent.  No expansions or alternate player‑acquisition views (e.g., transfers for soccer) exist.
+
+⸻
+
+7. Competition and tournament segmentation
+	•	Lack of segmentation: One of the major design requirements was to segment game logs and season pages by competition type—regular season, tournaments/cups, play‑in, playoffs, championship—then group regular‑season logs by month and postseason logs by round.  This segmentation is not implemented anywhere.  Game logs remain flat tables.  Season summaries do not show separate lines for preseason, in‑season tournament, playoffs or finals.  There is no trophy icon, champion badge or finals MVP tag.  This omission makes postseason runs invisible to casual users.
+	•	Cross‑sport architecture: There is no universal segmentation across sports; each sport appears siloed.  For example, soccer (if accessible) does not show league vs. cup vs. continental breakdown.  Tennis, golf, combat sports or track are not supported at all, despite plans for a universal event/stage grouping.
+
+⸻
+
+8. Recommendations
+
+Based on the audit, here are the key areas to address:
+	1.	Fix routing and missing pages: Ensure every navigation link leads somewhere meaningful—no more “screen doesn’t exist.”  Add missing player pages so search results do not return 404s.
+	2.	Implement mobile‑first game logs: Replace the spreadsheet view with a two‑line per game format, add month headers and averages, freeze the date/opponent columns, and use opponent logos for quick scanning.
+	3.	Add competition segmentation: Modify the data model to tag games by regular season, cup, play‑in, playoffs and finals.  Group regular‑season logs by month and postseason logs by stage; display series results and championship badges.
+	4.	Expand Draft Centre: Build fully featured draft modules for NBA, WNBA, MLB, NHL and MLS.  Include draft order, prospects, combine metrics, team assets, and mock‑draft simulations.  Add a “Team Draft Assets” card on each team page.
+	5.	Create an acquisition layer for non‑draft sports: For soccer and international leagues, add a “Transfers” or “Prospects” tab rather than leaving draft blank.  For college sports, build a “Recruiting” tab.
+	6.	Add team‑need and salary context: The team pages should include a module showing current draft picks owned, traded picks, team needs and roster composition.
+	7.	Incorporate interactive features: Add share buttons for articles, highlight videos on player pages, and filters for scores and standings.  Implement a watchlist/follow feature for teams and players.
+	8.	Improve accessibility & reliability: Provide descriptive alt text on images, ensure color contrast meets accessibility guidelines, and implement robust error handling with user‑friendly messages.
+
+⸻
+
+Conclusion
+
+The Fourth Quarter app offers a functional foundation: real scores, news articles, player pages and a working NFL draft centre built with accurate 2026 data.  However, the app still feels like a proof of concept rather than a polished product.  The biggest gaps include the absence of a modern mobile game‑log layout, lack of postseason/tournament segmentation, incomplete draft support for leagues beyond the NFL, missing team assets and mock‑draft features, and occasional broken navigation.  Addressing these gaps and adhering to the design specifications described earlier would transform the app into the comprehensive, cross‑sport “Sports OS” envisioned.
