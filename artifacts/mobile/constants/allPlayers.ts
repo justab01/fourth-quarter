@@ -16,6 +16,7 @@ export type SearchPlayer = {
   position: string;
   stat: string;
   number?: string;
+  headshotUrl?: string;
 };
 
 // ─── ALL NBA TEAMS ────────────────────────────────────────────────────────────
@@ -1644,12 +1645,12 @@ export const MLS_PLAYERS: SearchPlayer[] = [
 export const ATP_SEARCH_PLAYERS: SearchPlayer[] = [
   { name: "Jannik Sinner",     team: "Italy",     league: "ATP", position: "Pro", stat: "#1 ATP — 2024 US Open & AO Champ"   },
   { name: "Carlos Alcaraz",    team: "Spain",     league: "ATP", position: "Pro", stat: "#2 ATP — 2x Wimbledon, 2x RG Champ" },
-  { name: "Novak Djokovic",    team: "Serbia",    league: "ATP", position: "Pro", stat: "#3 ATP — 24x Grand Slam Champ"      },
+  { name: "Novak Djokovic",    team: "Serbia",    league: "ATP", position: "Pro", stat: "#3 ATP — 24x Grand Slam Champ",      headshotUrl: "https://a.espncdn.com/i/headshots/tennis/players/full/598.png" },
   { name: "Daniil Medvedev",   team: "Russia",    league: "ATP", position: "Pro", stat: "#4 ATP — 2021 US Open Champ"       },
   { name: "Alexander Zverev",  team: "Germany",   league: "ATP", position: "Pro", stat: "#5 ATP — 2024 French Open Champ"   },
   { name: "Casper Ruud",       team: "Norway",    league: "ATP", position: "Pro", stat: "#6 ATP"                            },
   { name: "Andrey Rublev",     team: "Russia",    league: "ATP", position: "Pro", stat: "#7 ATP"                            },
-  { name: "Hubert Hurkacz",    team: "Poland",    league: "ATP", position: "Pro", stat: "#8 ATP"                            },
+  { name: "Hubert Hurkacz",    team: "Poland",    league: "ATP", position: "Pro", stat: "#8 ATP",                            headshotUrl: "https://a.espncdn.com/i/headshots/tennis/players/full/3018.png" },
   { name: "Taylor Fritz",      team: "USA",       league: "ATP", position: "Pro", stat: "#9 ATP — 2024 US Open finalist"    },
   { name: "Grigor Dimitrov",   team: "Bulgaria",  league: "ATP", position: "Pro", stat: "#10 ATP"                           },
   { name: "Ben Shelton",       team: "USA",       league: "ATP", position: "Pro", stat: "Rising star"                       },
@@ -1662,7 +1663,7 @@ export const WTA_SEARCH_PLAYERS: SearchPlayer[] = [
   { name: "Aryna Sabalenka",    team: "Belarus",    league: "WTA", position: "Pro", stat: "#1 WTA — 3x Grand Slam Champ"       },
   { name: "Iga Swiatek",        team: "Poland",     league: "WTA", position: "Pro", stat: "#2 WTA — 5x Grand Slam Champ"       },
   { name: "Coco Gauff",         team: "USA",        league: "WTA", position: "Pro", stat: "#3 WTA — 2023 US Open Champ"        },
-  { name: "Jessica Pegula",     team: "USA",        league: "WTA", position: "Pro", stat: "#4 WTA"                             },
+  { name: "Jessica Pegula",     team: "USA",        league: "WTA", position: "Pro", stat: "#4 WTA",                             headshotUrl: "https://a.espncdn.com/i/headshots/tennis/players/full/2498.png" },
   { name: "Elena Rybakina",     team: "Kazakhstan", league: "WTA", position: "Pro", stat: "#5 WTA — 2022 Wimbledon Champ"      },
   { name: "Madison Keys",       team: "USA",        league: "WTA", position: "Pro", stat: "#6 WTA — 2025 AO Champ"             },
   { name: "Barbora Krejcikova", team: "Czechia",    league: "WTA", position: "Pro", stat: "#7 WTA — 2024 Wimbledon Champ"      },
@@ -2117,6 +2118,48 @@ export const NCAAB_PLAYERS: SearchPlayer[] = [
   { name: "Chet Holmgren", team: "Thunder", league: "NCAAB", position: "C", stat: "2022 Gonzaga — #2 pick" },
 ];
 
+export const PGA_PLAYERS: SearchPlayer[] = [
+  { name: "Scottie Scheffler", team: "USA", league: "PGA", position: "Golf", stat: "#1 World Ranking — Masters champion", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/9478.png" },
+  { name: "Rory McIlroy", team: "N. Ireland", league: "PGA", position: "Golf", stat: "4x Major champion — #3 World", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/3470.png" },
+  { name: "Jon Rahm", team: "Spain", league: "LIV", position: "Golf", stat: "2x Major champion — LIV Golf", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/9780.png" },
+  { name: "Xander Schauffele", team: "USA", league: "PGA", position: "Golf", stat: "2024 PGA & Open champion" },
+  { name: "Collin Morikawa", team: "USA", league: "PGA", position: "Golf", stat: "2x Major champion — elite iron play", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/11098.png" },
+  { name: "Viktor Hovland", team: "Norway", league: "PGA", position: "Golf", stat: "FedEx Cup champion", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/11099.png" },
+  { name: "Wyndham Clark", team: "USA", league: "PGA", position: "Golf", stat: "2023 US Open champion" },
+  { name: "Brooks Koepka", team: "USA", league: "LIV", position: "Golf", stat: "5x Major champion — LIV Golf", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/6798.png" },
+  { name: "Jordan Spieth", team: "USA", league: "PGA", position: "Golf", stat: "3x Major champion — career Grand Slam chase", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/5467.png" },
+  { name: "Ludvig Åberg", team: "Sweden", league: "PGA", position: "Golf", stat: "Rising star — top-5 World Ranking", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/11382.png" },
+  { name: "Patrick Cantlay", team: "USA", league: "PGA", position: "Golf", stat: "FedEx Cup champion — clutch putter" },
+  { name: "Sahith Theegala", team: "USA", league: "PGA", position: "Golf", stat: "Fan favorite — multiple PGA wins" },
+  { name: "Bryson DeChambeau", team: "USA", league: "LIV", position: "Golf", stat: "2x US Open champion — LIV Golf", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/9261.png" },
+  { name: "Cameron Smith", team: "Australia", league: "LIV", position: "Golf", stat: "2022 Open champion — LIV Golf", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/9131.png" },
+  { name: "Dustin Johnson", team: "USA", league: "LIV", position: "Golf", stat: "2x Major champion — LIV Golf captain", headshotUrl: "https://a.espncdn.com/i/headshots/golf/players/full/3448.png" },
+];
+
+export const F1_DRIVERS: SearchPlayer[] = [
+  { name: "Max Verstappen", team: "Red Bull Racing", league: "F1", position: "Driver", stat: "4x World Champion — dominant era", headshotUrl: "https://a.espncdn.com/i/headshots/rpm/players/full/4665.png" },
+  { name: "Lewis Hamilton", team: "Ferrari", league: "F1", position: "Driver", stat: "7x World Champion — Ferrari move 2025" },
+  { name: "Lando Norris", team: "McLaren", league: "F1", position: "Driver", stat: "Race winner — title contender" },
+  { name: "Charles Leclerc", team: "Ferrari", league: "F1", position: "Driver", stat: "Race winner — Monaco specialist" },
+  { name: "Oscar Piastri", team: "McLaren", league: "F1", position: "Driver", stat: "Rising star — multiple GP wins" },
+  { name: "Carlos Sainz", team: "Williams", league: "F1", position: "Driver", stat: "Race winner — moved to Williams 2025" },
+  { name: "George Russell", team: "Mercedes", league: "F1", position: "Driver", stat: "Race winner — team leader at Mercedes" },
+  { name: "Fernando Alonso", team: "Aston Martin", league: "F1", position: "Driver", stat: "2x World Champion — 40+ years old legend", headshotUrl: "https://a.espncdn.com/i/headshots/rpm/players/full/4374.png" },
+  { name: "Pierre Gasly", team: "Alpine", league: "F1", position: "Driver", stat: "Race winner — consistent midfielder" },
+  { name: "Yuki Tsunoda", team: "RB", league: "F1", position: "Driver", stat: "Japanese star — rapid improvement" },
+];
+
+export const NASCAR_DRIVERS: SearchPlayer[] = [
+  { name: "Kyle Larson", team: "Hendrick Motorsports", league: "NASCAR", position: "Driver", stat: "2021 Cup champion — versatile racer" },
+  { name: "William Byron", team: "Hendrick Motorsports", league: "NASCAR", position: "Driver", stat: "Multiple Cup wins — championship contender", headshotUrl: "https://a.espncdn.com/i/headshots/rpm/players/full/4601.png" },
+  { name: "Denny Hamlin", team: "Joe Gibbs Racing", league: "NASCAR", position: "Driver", stat: "3x Daytona 500 winner — 23XI co-owner" },
+  { name: "Christopher Bell", team: "Joe Gibbs Racing", league: "NASCAR", position: "Driver", stat: "Playoff regular — multiple wins" },
+  { name: "Ryan Blaney", team: "Team Penske", league: "NASCAR", position: "Driver", stat: "2023 Cup champion", headshotUrl: "https://a.espncdn.com/i/headshots/rpm/players/full/4463.png" },
+  { name: "Chase Elliott", team: "Hendrick Motorsports", league: "NASCAR", position: "Driver", stat: "2020 Cup champion — most popular driver" },
+  { name: "Tyler Reddick", team: "23XI Racing", league: "NASCAR", position: "Driver", stat: "Championship contender — aggressive racer" },
+  { name: "Martin Truex Jr.", team: "Joe Gibbs Racing", league: "NASCAR", position: "Driver", stat: "2017 Cup champion — veteran" },
+];
+
 export const ALL_PLAYERS: SearchPlayer[] = [
   ...NBA_PLAYERS,
   ...NFL_PLAYERS,
@@ -2134,5 +2177,8 @@ export const ALL_PLAYERS: SearchPlayer[] = [
   ...BOXING_SEARCH_PLAYERS,
   ...XGAMES_ATHLETES,
   ...OLYMPICS_ATHLETES,
+  ...PGA_PLAYERS,
+  ...F1_DRIVERS,
+  ...NASCAR_DRIVERS,
 ];
 

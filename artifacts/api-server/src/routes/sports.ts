@@ -121,6 +121,7 @@ interface EspnEvent {
   id: string;
   date: string;
   name: string;
+  shortName?: string;
   status: EspnStatus;
   competitions: EspnCompetition[];
 }
@@ -414,16 +415,41 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   const awayScore = away?.score != null && away.score !== "" ? parseInt(away.score) : null;
 
   const isIndividual = archetype === "tennis" || archetype === "combat";
+  const getDisplayNameInner = (c: typeof home) =>
+    c?.team?.displayName ?? c?.athlete?.displayName ?? (c as any)?.displayName ?? null;
+  const getEntityIdInner = (c: typeof home) =>
+    c?.team?.id ?? c?.athlete?.id;
+
+  const isEventSport = archetype === "golf" || archetype === "racing";
+  const eventName = (ev.name ?? (ev as any).shortName ?? "").trim() || null;
+
+  let homeName = getDisplayNameInner(home);
+  let awayName = getDisplayNameInner(away);
+
+  if (isEventSport) {
+    const fallbackEvent = eventName ?? leagueKey;
+    if (!homeName && !awayName) {
+      homeName = fallbackEvent;
+      awayName = comp.venue?.fullName ?? leagueKey;
+    } else if (!homeName) {
+      homeName = fallbackEvent;
+    } else if (!awayName) {
+      awayName = fallbackEvent;
+    }
+  } else {
+    homeName = homeName ?? "Unknown";
+    awayName = awayName ?? "Unknown";
+  }
 
   return {
     id: `${leagueKey.toLowerCase()}-${ev.id}`,
     sport: cfg.displaySport,
     league: leagueKey,
     sportArchetype: archetype,
-    homeTeam: normalizeTeamName(getDisplayName(home)),
-    awayTeam: normalizeTeamName(getDisplayName(away)),
-    homeTeamId: getEntityId(home),
-    awayTeamId: getEntityId(away),
+    homeTeam: normalizeTeamName(homeName),
+    awayTeam: normalizeTeamName(awayName),
+    homeTeamId: getEntityIdInner(home),
+    awayTeamId: getEntityIdInner(away),
     homeScore: status === "upcoming" ? null : homeScore,
     awayScore: status === "upcoming" ? null : awayScore,
     status,
@@ -433,10 +459,10 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     venue: comp?.venue?.fullName ?? null,
     homeTeamLogo: isIndividual ? getHeadshot(home) : (home?.team?.logo ?? null),
     awayTeamLogo: isIndividual ? getHeadshot(away) : (away?.team?.logo ?? null),
-    eventTitle: archetype !== "team" ? ev.name : null,
-    round: (archetype === "tennis" || archetype === "combat") ? (comp?.type?.text ?? comp?.type?.abbreviation ?? null) : null,
-    seed1: archetype === "tennis" ? (away?.seed != null ? Number(away.seed) : null) : null,
-    seed2: archetype === "tennis" ? (home?.seed != null ? Number(home.seed) : null) : null,
+    eventTitle: archetype !== "team" ? (eventName || ev.name || null) : null,
+    round: (archetype === "tennis" || archetype === "combat") ? ((comp as any)?.type?.text ?? (comp as any)?.type?.abbreviation ?? null) : null,
+    seed1: archetype === "tennis" ? (away?.seed != null ? Number(away.seed) : (away as any)?.seed != null ? Number((away as any).seed) : null) : null,
+    seed2: archetype === "tennis" ? (home?.seed != null ? Number(home.seed) : (home as any)?.seed != null ? Number((home as any).seed) : null) : null,
   };
 }
 
@@ -2390,8 +2416,8 @@ router.get("/sports/upcoming/:sport", async (req, res) => {
             venue: e.competitions?.[0]?.venue?.fullName ?? null,
             source: "ESPN",
             status: e.status?.type?.shortDetail ?? null,
-            homeTeam: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "home")?.team?.displayName ?? null,
-            awayTeam: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "away")?.team?.displayName ?? null,
+            homeTeam: (() => { const c = e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "home"); return c?.team?.displayName ?? c?.athlete?.displayName ?? (c as any)?.displayName ?? null; })(),
+            awayTeam: (() => { const c = e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "away"); return c?.team?.displayName ?? c?.athlete?.displayName ?? (c as any)?.displayName ?? null; })(),
             homeScore: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "home")?.score ?? null,
             awayScore: e.competitions?.[0]?.competitors?.find((c: any) => c.homeAway === "away")?.score ?? null,
           };
@@ -2449,12 +2475,81 @@ router.get("/sports/upcoming/:sport", async (req, res) => {
       }
     }
 
-    const response = { events };
+    const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    const filtered = events.filter((e) => {
+      if (e.type !== "result") return true;
+      const d = new Date(e.date).getTime();
+      return !isNaN(d) && d >= twoWeeksAgo;
+    });
+
+    const response = { events: filtered };
     setCached(cacheKey, response, 300_000); // 5 min
     res.json(response);
   } catch (err) {
     console.error("Upcoming events error:", err);
     res.json({ events: [] });
+  }
+});
+
+// ─── Golf Leaderboard ────────────────────────────────────────────────────────
+
+interface LeaderboardEntry {
+  position: number | null;
+  name: string;
+  score: string;
+  thru: string;
+  today: string;
+  country: string;
+  headshotUrl: string | null;
+}
+
+router.get("/sports/golf/leaderboard", async (_req, res) => {
+  const cacheKey = "golf-leaderboard";
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    const url = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
+    const json = await espnFetch(url) as any;
+    const events = json.events ?? [];
+
+    let tournamentName = "";
+    let venue = "";
+    let status = "upcoming";
+    const entries: LeaderboardEntry[] = [];
+
+    const activeEvent = events.find((e: any) => e.status?.type?.state === "in")
+      ?? events.find((e: any) => e.status?.type?.state === "post")
+      ?? events[0];
+
+    if (activeEvent) {
+      tournamentName = activeEvent.name ?? "";
+      const comp = activeEvent.competitions?.[0];
+      venue = comp?.venue?.fullName ?? "";
+      const state = activeEvent.status?.type?.state;
+      status = state === "in" ? "live" : state === "post" ? "completed" : "upcoming";
+
+      const competitors = comp?.competitors ?? [];
+      for (const c of competitors.slice(0, 10)) {
+        const athlete = c.athlete ?? c;
+        entries.push({
+          position: c.order ?? c.sortOrder ?? null,
+          name: athlete.displayName ?? c.team?.displayName ?? "Unknown",
+          score: c.score ?? c.linescores?.map((l: any) => l.value).join(", ") ?? "E",
+          thru: c.status?.thru?.toString() ?? c.linescores?.length?.toString() ?? "-",
+          today: c.statistics?.[0]?.displayValue ?? c.linescores?.[c.linescores.length - 1]?.value?.toString() ?? "-",
+          country: athlete.flag?.href ? athlete.flag.alt ?? "" : "",
+          headshotUrl: athlete.headshot?.href ?? null,
+        });
+      }
+    }
+
+    const response = { tournament: tournamentName, venue, status, leaderboard: entries };
+    setCached(cacheKey, response, 120_000);
+    res.json(response);
+  } catch (err) {
+    console.error("Golf leaderboard error:", err);
+    res.json({ tournament: "", venue: "", status: "unknown", leaderboard: [] });
   }
 });
 

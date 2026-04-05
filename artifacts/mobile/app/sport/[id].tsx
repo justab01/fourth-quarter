@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { getSportById, getSportByLeague, type SportCategory } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
-import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch } from "@/utils/api";
+import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
@@ -509,12 +509,19 @@ export default function SportBoardScreen() {
     enabled: !!drawLeague,
   });
 
+  const { data: leaderboardData, refetch: refetchLeaderboard } = useQuery({
+    queryKey: ["golf-leaderboard"],
+    queryFn: () => api.getGolfLeaderboard(),
+    staleTime: 120_000,
+    enabled: archetype === "golf",
+  });
+
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw()]);
+    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw(), refetchLeaderboard()]);
     setRefreshing(false);
-  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw]);
+  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard]);
 
   const sportLeagueKeys = useMemo(
     () => new Set(sport?.leagues.map((l) => l.key) ?? []),
@@ -537,16 +544,7 @@ export default function SportBoardScreen() {
 
   const sportNews: SportNewsArticle[] = sportNewsData?.articles ?? [];
 
-  const upcomingEvents: UpcomingEvent[] = useMemo(() => {
-    const events = upcomingData?.events ?? [];
-    const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-    return events.filter(ev => {
-      if (ev.type === "result" && ev.date) {
-        return new Date(ev.date).getTime() > twoWeeksAgo;
-      }
-      return true;
-    });
-  }, [upcomingData]);
+  const upcomingEvents: UpcomingEvent[] = upcomingData?.events ?? [];
 
   const topAthletes = useMemo(() => {
     const leagueFilter =
@@ -561,6 +559,16 @@ export default function SportBoardScreen() {
 
   const liveCount = filteredGames.filter((g) => g.status === "live").length;
   const accentColor = sport?.color ?? C.accent;
+
+  const scheduleSectionTitle = useMemo(() => {
+    switch (archetype) {
+      case "tennis": return "Tournaments & Matches";
+      case "golf": return "Tournament Schedule";
+      case "racing": return "Race Schedule & Results";
+      case "combat": return "Fight Cards & Results";
+      default: return filteredGames.length === 0 ? "Schedule & Results" : "Upcoming & Recent";
+    }
+  }, [archetype, filteredGames.length]);
 
   if (!sport) {
     return (
@@ -601,6 +609,50 @@ export default function SportBoardScreen() {
           />
         ))
       )}
+    </View>
+  ) : null;
+
+  const lbEntries = leaderboardData?.leaderboard ?? [];
+  const ApiLeaderboardSection = archetype === "golf" && lbEntries.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Leaderboard</Text>
+        {leaderboardData?.status === "live" && (
+          <View style={[styles.liveDot, { backgroundColor: accentColor }]} />
+        )}
+      </View>
+      {leaderboardData?.tournament ? (
+        <Text style={styles.leaderboardTourName}>{leaderboardData.tournament}</Text>
+      ) : null}
+      <View style={[styles.leaderboardCard, { borderColor: accentColor + "33" }]}>
+        <View style={styles.leaderboardHeader}>
+          <Text style={[styles.lbHeaderCell, { flex: 0.4 }]}>Pos</Text>
+          <Text style={[styles.lbHeaderCell, { flex: 2, textAlign: "left" }]}>Player</Text>
+          <Text style={[styles.lbHeaderCell, { flex: 0.7 }]}>Score</Text>
+          <Text style={[styles.lbHeaderCell, { flex: 0.6 }]}>Thru</Text>
+        </View>
+        {lbEntries.map((entry: GolfLeaderboardEntry, idx: number) => (
+          <View key={entry.name + idx} style={[styles.leaderboardRow, idx % 2 === 0 && styles.leaderboardRowAlt]}>
+            <Text style={[styles.lbCell, { flex: 0.4, fontWeight: "700", color: idx < 3 ? accentColor : C.textSecondary }]}>
+              {entry.position != null ? `T${entry.position}` : "-"}
+            </Text>
+            <View style={{ flex: 2, flexDirection: "row", alignItems: "center", gap: 6 }}>
+              {entry.headshotUrl ? (
+                <Image source={{ uri: entry.headshotUrl }} style={styles.lbAvatar} />
+              ) : (
+                <View style={[styles.lbAvatarPlaceholder, { backgroundColor: accentColor + "22" }]}>
+                  <Text style={{ fontSize: 9, color: accentColor, fontWeight: "700" }}>
+                    {entry.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+                  </Text>
+                </View>
+              )}
+              <Text style={styles.lbPlayerName} numberOfLines={1}>{entry.name}</Text>
+            </View>
+            <Text style={[styles.lbCell, { flex: 0.7, fontWeight: "600", color: C.text }]}>{entry.score}</Text>
+            <Text style={[styles.lbCell, { flex: 0.6 }]}>{entry.thru}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   ) : null;
 
@@ -814,6 +866,7 @@ export default function SportBoardScreen() {
       case "golf":
         return (
           <>
+            {ApiLeaderboardSection}
             {GolfLeaderboardSection}
             {RankingsSection}
             {RankingsAthletesSection ?? AthletesSection}
@@ -1284,5 +1337,86 @@ const styles = StyleSheet.create({
   rankExpandText: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
+  },
+
+  lbLiveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  leaderboardTourName: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    marginBottom: 2,
+  },
+  leaderboardVenue: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    marginBottom: 10,
+  },
+  leaderboardTourName: {
+    color: C.text,
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  leaderboardCard: {
+    backgroundColor: C.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  leaderboardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: C.separator,
+  },
+  lbHeaderCell: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: C.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
+  leaderboardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  leaderboardRowAlt: {
+    backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  lbCell: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    textAlign: "center",
+  },
+  lbAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  lbAvatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lbPlayerName: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: C.text,
+    flex: 1,
   },
 });

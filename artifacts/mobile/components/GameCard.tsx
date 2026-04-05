@@ -25,6 +25,7 @@ function getLeagueColor(league: string): string {
     UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
     PGA: "#00704A", LIV: "#D71920", F1: "#E10600", NASCAR: "#FFD659",
     OLYMPICS: C.olympics, XGAMES: C.xgames,
+    PGA: C.pga, LIV: C.liv, F1: C.f1, NASCAR: C.nascar,
   };
   return map[league] ?? C.accent;
 }
@@ -46,6 +47,10 @@ function getSportVenueGradient(league: string): [string, string, string, string]
     WTA:    ["#200014", "#10000A", "#080005", "#0F0F0F"],
     UFC:    ["#1A0800", "#0D0400", "#060200", "#0F0F0F"],
     BOXING: ["#200000", "#100000", "#080000", "#0F0F0F"],
+    PGA:    ["#002A0A", "#001505", "#000A03", "#0F0F0F"],
+    LIV:    ["#001A2A", "#000D15", "#00060A", "#0F0F0F"],
+    F1:     ["#2A0000", "#150000", "#0A0000", "#0F0F0F"],
+    NASCAR: ["#1A1000", "#0D0800", "#060400", "#0F0F0F"],
   };
   return map[league] ?? ["#16091E", "#0D0512", "#060209", "#0F0F0F"];
 }
@@ -204,6 +209,9 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
   const archetype  = getSportArchetype(game.league);
   const isTennis   = archetype === "tennis";
   const isCombat   = archetype === "combat";
+  const isGolf     = archetype === "golf";
+  const isMotor    = archetype === "motorsports";
+  const isEventSport = isGolf || isMotor;
   const sportEmoji = SPORT_EMOJI[game.league] ?? "🏆";
 
   const scale = useRef(new Animated.Value(1)).current;
@@ -261,23 +269,27 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               {/* Away team / player */}
               <Pressable
                 style={hero.teamCol}
-                onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
+                onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.awayTeam, game.league); }}
                 hitSlop={8}
               >
-                {(isTennis || isCombat) ? (
+                {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={80} color={leagueColor} />
                 ) : (
                   <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={80} borderColor={`${leagueColor}55`} />
                 )}
                 <Text style={hero.teamName} numberOfLines={2}>
-                  {(isTennis || isCombat) ? shortAthleteName(game.awayTeam) : game.awayTeam}
+                  {isEventSport ? (game.eventTitle ?? game.awayTeam) : (isTennis || isCombat) ? shortAthleteName(game.awayTeam) : game.awayTeam}
                 </Text>
                 <Text style={hero.teamLabel}>{awayLabel}</Text>
               </Pressable>
 
               {/* Center: score or VS */}
               <View style={hero.centerCol}>
-                {(isLive || isFinished) ? (
+                {isEventSport ? (
+                  <>
+                    <Text style={hero.vsText}>{isLive ? "LIVE" : isFinished ? "DONE" : "VS"}</Text>
+                  </>
+                ) : (isLive || isFinished) ? (
                   <>
                     {isCombat && !combatAwayWin && !combatHomeWin ? (
                       <Text style={hero.vsText}>—</Text>
@@ -319,16 +331,16 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               {/* Home team / player */}
               <Pressable
                 style={[hero.teamCol, { alignItems: "flex-end" }]}
-                onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
+                onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.homeTeam, game.league); }}
                 hitSlop={8}
               >
-                {(isTennis || isCombat) ? (
+                {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={80} color={leagueColor} />
                 ) : (
                   <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={80} borderColor={`${leagueColor}55`} />
                 )}
                 <Text style={[hero.teamName, { textAlign: "right" }]} numberOfLines={2}>
-                  {(isTennis || isCombat) ? shortAthleteName(game.homeTeam) : game.homeTeam}
+                  {isEventSport ? (game.venue ?? game.homeTeam) : (isTennis || isCombat) ? shortAthleteName(game.homeTeam) : game.homeTeam}
                 </Text>
                 <Text style={[hero.teamLabel, { textAlign: "right" }]}>{homeLabel}</Text>
               </Pressable>
@@ -343,10 +355,10 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 />
                 <Text style={[hero.ctaPillText, { color: leagueColor }]}>
                   {isLive
-                    ? (isTennis ? "Live Match" : isCombat ? "Live Fight" : "Watch Live")
+                    ? (isTennis ? "Live Match" : isCombat ? "Live Fight" : isGolf ? "Live Leaderboard" : isMotor ? "Live Race" : "Watch Live")
                     : isFinished
-                    ? (isCombat ? "Fight Result" : "Full Recap")
-                    : (isTennis ? "Match Preview" : isCombat ? "Fight Card" : "Match Preview")}
+                    ? (isCombat ? "Fight Result" : isGolf ? "Final Results" : isMotor ? "Race Result" : "Full Recap")
+                    : (isTennis ? "Match Preview" : isCombat ? "Fight Card" : isGolf ? "Tournament Info" : isMotor ? "Race Preview" : "Match Preview")}
                 </Text>
                 <Text style={[hero.ctaChevron, { color: leagueColor }]}>›</Text>
               </View>
@@ -392,17 +404,17 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               )}
 
               {/* Away row */}
-              <Pressable style={cpt.row} onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }} hitSlop={4}>
-                {(isTennis || isCombat) ? (
+              <Pressable style={cpt.row} onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.awayTeam, game.league); }} hitSlop={4}>
+                {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={22} color={leagueColor} />
                 ) : (
                   <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={22} />
                 )}
                 <Text style={[cpt.teamName, isFinished && !awayWin && !combatAwayWin && cpt.teamDim]} numberOfLines={1}>
-                  {(isTennis || isCombat) ? shortAthleteName(game.awayTeam) : game.awayTeam}
+                  {isEventSport ? (game.eventTitle ?? game.awayTeam) : (isTennis || isCombat) ? shortAthleteName(game.awayTeam) : game.awayTeam}
                 </Text>
                 {isCombat && isFinished && combatAwayWin && <Ionicons name="checkmark-circle" size={12} color="#22C55E" />}
-                {!isCombat && (isLive || isFinished) && (
+                {!isCombat && !isEventSport && (isLive || isFinished) && (
                   <Text style={[cpt.score, isFinished && !awayWin && cpt.scoreDim]}>
                     {isTennis ? (game.awayScore ?? 0) : game.awayScore}
                   </Text>
@@ -412,17 +424,17 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               <View style={cpt.divider} />
 
               {/* Home row */}
-              <Pressable style={cpt.row} onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }} hitSlop={4}>
-                {(isTennis || isCombat) ? (
+              <Pressable style={cpt.row} onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.homeTeam, game.league); }} hitSlop={4}>
+                {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={22} color={leagueColor} />
                 ) : (
                   <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={22} />
                 )}
                 <Text style={[cpt.teamName, isFinished && !homeWin && !combatHomeWin && cpt.teamDim]} numberOfLines={1}>
-                  {(isTennis || isCombat) ? shortAthleteName(game.homeTeam) : game.homeTeam}
+                  {isEventSport ? (game.venue ?? game.homeTeam) : (isTennis || isCombat) ? shortAthleteName(game.homeTeam) : game.homeTeam}
                 </Text>
                 {isCombat && isFinished && combatHomeWin && <Ionicons name="checkmark-circle" size={12} color="#22C55E" />}
-                {!isCombat && (isLive || isFinished) && (
+                {!isCombat && !isEventSport && (isLive || isFinished) && (
                   <Text style={[cpt.score, isFinished && !homeWin && cpt.scoreDim]}>
                     {isTennis ? (game.homeScore ?? 0) : game.homeScore}
                   </Text>
@@ -592,7 +604,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
 
   // ── GOLF default ──────────────────────────────────────────────────────────
   if (archetype === "golf") {
-    const lb = game.leaderboard ?? [];
+    const lb = (game as any).leaderboard ?? [];
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
@@ -610,7 +622,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 <Text style={{ fontSize: 10, color: leagueColor, fontFamily: "Inter_700Bold" }}>{game.league}</Text>
               </View>
 
-              {lb.slice(0, 5).map((entry, i) => (
+              {lb.slice(0, 5).map((entry: any, i: number) => (
                 <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 3 }}>
                   <Text style={{ color: i === 0 ? leagueColor : C.textSecondary, fontSize: 11, fontFamily: "Inter_700Bold", width: 20, textAlign: "right" }}>
                     {entry.position}
@@ -637,14 +649,25 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
 
   // ── RACING default ──────────────────────────────────────────────────────────
   if (archetype === "racing") {
+    const eventLabel = game.eventTitle ?? game.homeTeam ?? game.league;
+    const venueLabel = (game as any).circuitName ?? game.venue ?? game.awayTeam ?? "";
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={[dflt.card, grouped && dflt.cardGrouped]}>
+          <View style={[dflt.card, grouped && dflt.cardGrouped, isLive && !grouped && { borderColor: `${leagueColor}30` }]}>
+            {isLive && (
+              <LinearGradient
+                colors={[`${leagueColor}08`, "transparent"]}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              />
+            )}
+
             <View style={dflt.statusCol}>
               {isLive ? (
                 <>
                   <View style={dflt.liveBadge}><Text style={dflt.liveBadgeText}>LIVE</Text></View>
+                  {game.quarter && <Text style={[dflt.quarterText, { color: leagueColor, fontWeight: "700" }]} numberOfLines={1}>{game.quarter}</Text>}
                 </>
               ) : isFinished ? (
                 <Text style={dflt.ftText}>FINAL</Text>
@@ -655,22 +678,25 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
 
             <View style={dflt.vSep} />
 
-            <View style={dflt.teamsCol}>
-              <View style={dflt.teamRow}>
+            <View style={[dflt.teamsCol, { justifyContent: "center", paddingVertical: 4 }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <SportBadge emoji={sportEmoji} size={28} color={leagueColor} />
                 <View style={{ flex: 1 }}>
-                  <Text style={dflt.teamName} numberOfLines={1}>{game.eventTitle ?? game.homeTeam}</Text>
-                  {game.circuitName && (
-                    <Text style={{ color: C.textSecondary, fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1 }} numberOfLines={1}>
-                      {game.circuitName}
-                    </Text>
-                  )}
+                  <Text style={dflt.teamName} numberOfLines={2}>{eventLabel}</Text>
+                  {venueLabel ? (
+                    <Text style={{ fontSize: 11, color: "#AEAEB2", marginTop: 2 }} numberOfLines={1}>{venueLabel}</Text>
+                  ) : null}
                 </View>
               </View>
             </View>
 
             <View style={dflt.rightCol}>
-              <Text style={{ color: leagueColor, fontSize: 9, fontFamily: "Inter_700Bold" }}>{game.league}</Text>
+              {isFavorite && (
+                <View style={dflt.starBadge}>
+                  <Ionicons name="star" size={10} color={C.accent} />
+                </View>
+              )}
+              <Text style={{ color: leagueColor, fontSize: 9, fontFamily: "Inter_700Bold", position: "absolute", top: 10, right: 12 }}>{game.league}</Text>
               <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
             </View>
           </View>

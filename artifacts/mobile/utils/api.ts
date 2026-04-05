@@ -79,6 +79,9 @@ export const api = {
   getUpcomingEvents: (sport: string) =>
     apiFetch<{ events: UpcomingEvent[] }>(`/sports/upcoming/${encodeURIComponent(sport)}`),
 
+  getGolfLeaderboard: () =>
+    apiFetch<GolfLeaderboardResponse>("/sports/golf/leaderboard"),
+
   getInOneBreath: () =>
     apiFetch<{ summary: string; generated: string }>("/sports/in-one-breath"),
 
@@ -202,6 +205,23 @@ export interface SportNewsArticle {
   imageUrl: string | null;
   publishedAt: string;
   leagues: string[];
+}
+
+export interface GolfLeaderboardEntry {
+  position: number | null;
+  name: string;
+  score: string;
+  thru: string;
+  today: string;
+  country: string;
+  headshotUrl: string | null;
+}
+
+export interface GolfLeaderboardResponse {
+  tournament: string;
+  venue: string;
+  status: string;
+  leaderboard: GolfLeaderboardEntry[];
 }
 
 export interface UpcomingEvent {

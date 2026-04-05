@@ -74,5 +74,9 @@ export default {
     boxing:   "#B91C1C",   // Deep crimson — Boxing
     olympics: "#D4A843",   // Gold — Olympics
     xgames:   "#3B82F6",   // Electric blue — X Games / Extreme
+    pga:      "#2ECC71",   // Green — PGA Golf
+    liv:      "#00D4FF",   // Cyan — LIV Golf
+    f1:       "#E10600",   // F1 Red
+    nascar:   "#F39C12",   // NASCAR Gold/Orange
   },
 };
