@@ -800,9 +800,11 @@ export default function HubScreen() {
         </View>
 
         {/* ── DRAFT BAR (compact single row, conditional on draft season) ── */}
-        <View style={styles.section}>
-          <DraftBar />
-        </View>
+        {isDraftRelevant() && (
+          <View style={styles.section}>
+            <DraftBar />
+          </View>
+        )}
 
         {/* ── HEADLINES (merged Top Story + Story Clusters) ── */}
         {!newsLoading && articles.length > 0 && (
@@ -831,7 +833,7 @@ export default function HubScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
-  scroll: { paddingHorizontal: 16, gap: 4 },
+  scroll: { paddingHorizontal: 16, gap: 0 },
 
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingTop: 16, paddingBottom: 16 },
   greeting: { fontSize: 14, color: C.textTertiary, fontFamily: "Inter_400Regular" },
