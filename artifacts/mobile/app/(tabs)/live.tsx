@@ -333,40 +333,23 @@ const secH = StyleSheet.create({
   gameCount: { color: C.textTertiary, fontSize: 12, fontWeight: "600" },
 });
 
-type ChipType = "league" | "filter";
-interface FilterChip {
-  key: string;
-  label: string;
-  type: ChipType;
-  color: string;
-  icon?: string;
-  emoji?: string;
-}
-
-const FILTER_CHIPS: FilterChip[] = [
-  { key: "All", label: "All", type: "league", color: C.accent },
-  { key: "My Teams", label: "My Teams", type: "filter", color: C.accent, icon: "star" },
-  { key: "close", label: "Close", type: "filter", color: C.live, icon: "flame" },
-  { key: "rivalry", label: "Rivalry", type: "filter", color: C.accentGold, icon: "flash" },
+type SmartFilterKey = "none" | "my-teams" | "close" | "rivalry";
+const SMART_FILTERS: { key: SmartFilterKey; label: string; icon: string; color: string }[] = [
+  { key: "none", label: "All Games", icon: "grid", color: C.textSecondary },
+  { key: "my-teams", label: "My Teams", icon: "star", color: C.accent },
+  { key: "close", label: "Close Games", icon: "flame", color: C.live },
+  { key: "rivalry", label: "Rivalry", icon: "flash", color: C.accentGold },
 ];
 
-const LEAGUE_CHIPS: FilterChip[] = LEAGUE_KEYS.map(l => ({
-  key: l,
-  label: l,
-  type: "league" as ChipType,
-  color: LEAGUE_META[l]?.color ?? C.accent,
-  emoji: LEAGUE_META[l]?.emoji,
-}));
-
-const ALL_CHIPS: FilterChip[] = [
-  ...FILTER_CHIPS,
-  ...LEAGUE_CHIPS,
-];
+const LEAGUES_WITH_ALL = ["All", ...LEAGUE_KEYS] as const;
+type LeagueFilter = typeof LEAGUES_WITH_ALL[number];
 
 export default function LiveScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
-  const [activeChip, setActiveChip] = useState("All");
+  const [activeLeague, setActiveLeague] = useState<LeagueFilter>("All");
+  const [smartFilter, setSmartFilter] = useState<SmartFilterKey>("none");
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [dateOffset, setDateOffset] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [compactMode, setCompactMode] = useState(false);
@@ -394,24 +377,21 @@ export default function LiveScreen() {
   const isFav = (g: Game) => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam);
   const totalLive = all.filter(g => g.status === "live").length;
 
-  const isFilterChip = activeChip === "My Teams" || activeChip === "close" || activeChip === "rivalry";
+  let filteredBase: Game[] = activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
 
-  let filteredBase: Game[];
-  if (activeChip === "My Teams") {
-    filteredBase = all.filter(g => isFav(g));
-  } else if (activeChip === "close") {
-    filteredBase = all.filter(g => g.status === "live" && Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) <= 5);
-  } else if (activeChip === "rivalry") {
-    filteredBase = all.filter(g => isRivalry(g.homeTeam, g.awayTeam));
-  } else if (activeChip === "All") {
-    filteredBase = all;
-  } else {
-    filteredBase = all.filter(g => g.league === activeChip);
+  if (smartFilter === "my-teams") {
+    filteredBase = filteredBase.filter(g => isFav(g));
+  } else if (smartFilter === "close") {
+    filteredBase = filteredBase.filter(g => g.status === "live" && Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) <= 5);
+  } else if (smartFilter === "rivalry") {
+    filteredBase = filteredBase.filter(g => isRivalry(g.homeTeam, g.awayTeam));
   }
 
-  const leagueList = (isFilterChip || activeChip === "All")
+  const leagueList = activeLeague === "All"
     ? LEAGUE_KEYS as readonly string[]
-    : [activeChip];
+    : [activeLeague as string];
+
+  const activeSmartMeta = SMART_FILTERS.find(f => f.key === smartFilter)!;
 
   const leagueSections = leagueList
     .map(league => ({
@@ -477,53 +457,82 @@ export default function LiveScreen() {
         {/* ── CALENDAR DATE STRIP ── */}
         <CalendarStrip offset={dateOffset} onChange={setDateOffset} liveToday={totalLive} />
 
-        {/* ── UNIFIED FILTER BAR (smart filters + league chips in one row) ── */}
-        <ScrollView
-          horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow} style={styles.filterScroll}
-        >
-          {ALL_CHIPS.map((chip, idx) => {
-            const active = activeChip === chip.key;
-            const color = chip.color;
-            const count = chip.key === "All" ? all.length
-              : chip.key === "My Teams" ? all.filter(g => isFav(g)).length
-              : chip.key === "close" ? all.filter(g => g.status === "live" && Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) <= 5).length
-              : chip.key === "rivalry" ? all.filter(g => isRivalry(g.homeTeam, g.awayTeam)).length
-              : all.filter(g => g.league === chip.key).length;
-            const liveCount = chip.type === "league" && chip.key !== "All"
-              ? all.filter(g => g.league === chip.key && g.status === "live").length
-              : chip.key === "All" ? totalLive
-              : 0;
+        {/* ── FILTER ROW: dropdown button + league chip bar ── */}
+        <View style={styles.filterArea}>
+          <View style={styles.filterDropdownWrap}>
+            <Pressable
+              style={[styles.filterBtn, smartFilter !== "none" && { borderColor: activeSmartMeta.color, backgroundColor: `${activeSmartMeta.color}1A` }]}
+              onPress={() => setFilterMenuOpen(v => !v)}
+            >
+              <Ionicons name={activeSmartMeta.icon as any} size={13} color={smartFilter !== "none" ? activeSmartMeta.color : C.textSecondary} />
+              <Text style={[styles.filterBtnText, smartFilter !== "none" && { color: activeSmartMeta.color }]}>
+                {smartFilter === "none" ? "Filter" : activeSmartMeta.label}
+              </Text>
+              <Ionicons name={filterMenuOpen ? "chevron-up" : "chevron-down"} size={12} color={smartFilter !== "none" ? activeSmartMeta.color : C.textTertiary} />
+            </Pressable>
+            {filterMenuOpen && (
+              <View style={styles.filterMenu}>
+                {SMART_FILTERS.map(f => {
+                  const isActive = smartFilter === f.key;
+                  return (
+                    <Pressable
+                      key={f.key}
+                      style={[styles.filterMenuItem, isActive && { backgroundColor: `${f.color}18` }]}
+                      onPress={() => { setSmartFilter(f.key); setFilterMenuOpen(false); }}
+                    >
+                      <Ionicons name={f.icon as any} size={14} color={isActive ? f.color : C.textSecondary} />
+                      <Text style={[styles.filterMenuText, isActive && { color: f.color }]}>{f.label}</Text>
+                      {isActive && <Ionicons name="checkmark" size={14} color={f.color} style={{ marginLeft: "auto" }} />}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </View>
 
-            const showDivider = idx === FILTER_CHIPS.length;
+          <ScrollView
+            horizontal showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+            style={styles.filterChipScroll}
+          >
+            {LEAGUES_WITH_ALL.map(league => {
+              const active = activeLeague === league;
+              const meta = LEAGUE_META[league as string];
+              const color = league === "All" ? C.accent : (meta?.color ?? C.accent);
+              const count = league === "All" ? all.length : all.filter(g => g.league === league).length;
+              const liveCount = league === "All" ? totalLive : all.filter(g => g.league === league && g.status === "live").length;
 
-            return (
-              <React.Fragment key={chip.key}>
-                {showDivider && <View style={styles.chipDivider} />}
-                <Pressable onPress={() => setActiveChip(chip.key)}>
+              if (league !== "All" && count === 0) return null;
+
+              return (
+                <Pressable key={league} onPress={() => setActiveLeague(league)}>
                   <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}1A` }]}>
-                    {chip.icon ? (
-                      <Ionicons name={chip.icon as any} size={11} color={active ? color : C.textTertiary} />
-                    ) : chip.emoji ? (
-                      <Text style={styles.chipEmoji}>{chip.emoji}</Text>
+                    {meta?.emoji ? (
+                      <Text style={styles.chipEmoji}>{meta.emoji}</Text>
+                    ) : league === "All" ? (
+                      <Ionicons name="grid" size={11} color={active ? color : C.textTertiary} />
                     ) : null}
-                    <Text style={[styles.chipText, active && { color }]}>{chip.label}</Text>
+                    <Text style={[styles.chipText, active && { color }]}>{league}</Text>
                     {liveCount > 0 ? (
                       <View style={[styles.chipLive, active && { backgroundColor: `${color}40` }]}>
                         <View style={[styles.chipLiveDot, { backgroundColor: active ? color : C.live }]} />
                         <Text style={[styles.chipLiveText, active && { color }]}>{liveCount}</Text>
                       </View>
-                    ) : count > 0 && chip.key !== "All" ? (
+                    ) : count > 0 && league !== "All" ? (
                       <View style={[styles.chipCount, active && { backgroundColor: `${color}30` }]}>
                         <Text style={[styles.chipCountText, active && { color }]}>{count}</Text>
                       </View>
                     ) : null}
                   </View>
                 </Pressable>
-              </React.Fragment>
-            );
-          })}
-        </ScrollView>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {filterMenuOpen && (
+          <Pressable style={styles.filterOverlay} onPress={() => setFilterMenuOpen(false)} />
+        )}
 
         {/* ── GAME SECTIONS ── */}
         {isLoading ? (
@@ -534,11 +543,11 @@ export default function LiveScreen() {
           <View style={styles.empty}>
             <Ionicons name={isFutureDay ? "calendar-outline" : "tv-outline"} size={52} color={C.textTertiary} />
             <Text style={styles.emptyTitle}>
-              {isFutureDay ? "Nothing Scheduled" : isPastDay ? "No Games Played" : isFilterChip ? "No Matches" : "No Games Today"}
+              {isFutureDay ? "Nothing Scheduled" : isPastDay ? "No Games Played" : smartFilter !== "none" ? "No Matches" : "No Games Today"}
             </Text>
             <Text style={styles.emptyText}>
-              {isFilterChip
-                ? `No games match the "${ALL_CHIPS.find(c => c.key === activeChip)?.label}" filter`
+              {smartFilter !== "none"
+                ? `No games match the "${activeSmartMeta.label}" filter`
                 : isFutureDay
                   ? "No events are scheduled for this day yet"
                   : isPastDay
@@ -616,9 +625,31 @@ const styles = StyleSheet.create({
   modeToggleActive: { borderColor: `${C.accent}55`, backgroundColor: `${C.accent}10` },
   modeLabel: { color: C.textSecondary, fontSize: 12, fontWeight: "700" },
 
-  filterScroll: { marginBottom: 12 },
+  filterArea: { marginBottom: 12, zIndex: 10 },
+  filterDropdownWrap: { zIndex: 20, marginBottom: 8 },
+  filterBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start",
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 10, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.cardBorder,
+  },
+  filterBtnText: { color: C.textSecondary, fontSize: 13, fontWeight: "700" },
+  filterMenu: {
+    position: "absolute", top: 42, left: 0, zIndex: 30,
+    backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder,
+    paddingVertical: 4, minWidth: 180,
+    ...Platform.select({
+      web: { boxShadow: "0 8px 24px rgba(0,0,0,0.5)" },
+      default: {},
+    }),
+  },
+  filterMenuItem: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingHorizontal: 14, paddingVertical: 10,
+  },
+  filterMenuText: { color: C.textSecondary, fontSize: 14, fontWeight: "600" },
+  filterOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 },
+  filterChipScroll: {},
   filterRow: { gap: 7, paddingRight: 16 },
-  chipDivider: { width: 1, height: 24, backgroundColor: C.separator, marginHorizontal: 2, alignSelf: "center" },
   chip: {
     flexDirection: "row", alignItems: "center", gap: 5,
     paddingHorizontal: 12, paddingVertical: 7,
