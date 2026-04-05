@@ -171,10 +171,12 @@ interface PlayerStatLine {
   stats: Record<string, string>;
 }
 
-type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
+type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
 function getArchetype(league: string): SportArchetype {
   if (league === "ATP" || league === "WTA") return "tennis";
   if (league === "UFC" || league === "BOXING") return "combat";
+  if (league === "PGA" || league === "LIV") return "golf";
+  if (league === "F1" || league === "NASCAR") return "racing";
   if (league === "OLYMPICS" || league === "XGAMES") return "multi_event";
   return "team";
 }
@@ -198,6 +200,11 @@ interface GameShape {
   homeTeamLogo: string | null;
   awayTeamLogo: string | null;
   eventTitle?: string | null;
+  leaderboard?: Array<{ position: number; name: string; score: string; headshot?: string | null }>;
+  circuitName?: string | null;
+  round?: string | null;
+  seed1?: number | null;
+  seed2?: number | null;
 }
 
 interface GameDetailShape {
@@ -297,27 +304,91 @@ function normalizeTeamName(name: string): string {
 function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   const comp = ev.competitions[0];
   const competitors = comp?.competitors ?? [];
-  // Tennis events use "competitor" array with no homeAway — treat first as "away", second as "home"
-  const home = competitors.find((c) => c.homeAway === "home") ?? competitors[1];
-  const away = competitors.find((c) => c.homeAway === "away") ?? competitors[0];
   const cfg = LEAGUE_CONFIG[leagueKey];
-  const statusType = ev.status?.type ?? comp.status?.type;
+  const statusType = ev.status?.type ?? comp?.status?.type;
   const state: string = statusType?.state ?? "pre";
   const status = mapStatus(state);
   const { quarter, timeRemaining } = parseDetail(statusType?.detail ?? statusType?.shortDetail, state, leagueKey);
   const archetype = getArchetype(leagueKey);
 
-  // For individual sports, scores = sets won (tennis) or bout result (combat)
-  // Null out scores for upcoming individual sport events
+  const getDisplayName = (c: any) =>
+    c?.team?.displayName ?? c?.athlete?.displayName ?? c?.athlete?.fullName ?? (c as any)?.displayName ?? "Unknown";
+  const getEntityId = (c: any) =>
+    c?.team?.id ?? c?.athlete?.id;
+  const getHeadshot = (c: any) =>
+    c?.athlete?.headshot?.href ?? c?.athlete?.flag?.href ?? c?.team?.logo ?? null;
+
+  if (archetype === "golf") {
+    const sorted = [...competitors].sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
+    const leader = sorted[0];
+    const leaderName = leader?.athlete?.displayName ?? leader?.athlete?.fullName ?? "TBD";
+    const leaderScore = leader?.score ?? "";
+    const leaderboard = sorted.slice(0, 10).map((c: any, i: number) => ({
+      position: c.order ?? i + 1,
+      name: c.athlete?.displayName ?? c.athlete?.fullName ?? "Unknown",
+      score: String(c.score ?? ""),
+      headshot: c.athlete?.headshot?.href ?? c.athlete?.flag?.href ?? null,
+    }));
+
+    return {
+      id: `${leagueKey.toLowerCase()}-${ev.id}`,
+      sport: cfg.displaySport,
+      league: leagueKey,
+      sportArchetype: archetype,
+      homeTeam: leaderName,
+      awayTeam: `${competitors.length} golfers`,
+      homeTeamId: getEntityId(leader),
+      awayTeamId: undefined,
+      homeScore: null,
+      awayScore: null,
+      status,
+      startTime: ev.date ?? comp?.startDate ?? new Date().toISOString(),
+      quarter: status === "finished" ? "Final" : quarter,
+      timeRemaining: status === "finished" ? null : (leaderScore ? `Leader: ${leaderScore}` : timeRemaining),
+      venue: comp?.venue?.fullName ?? null,
+      homeTeamLogo: null,
+      awayTeamLogo: null,
+      eventTitle: ev.name,
+      leaderboard,
+    };
+  }
+
+  if (archetype === "racing") {
+    const circuitName = (ev as any).circuit?.fullName ?? (ev as any).circuit?.shortName ?? null;
+    const raceComp = ev.competitions?.find((c: any) => c.type?.abbreviation === "Race") ?? comp;
+    const raceStatus = raceComp?.status?.type ?? statusType;
+    const raceState = raceStatus?.state ?? state;
+
+    return {
+      id: `${leagueKey.toLowerCase()}-${ev.id}`,
+      sport: cfg.displaySport,
+      league: leagueKey,
+      sportArchetype: archetype,
+      homeTeam: ev.name ?? "Race",
+      awayTeam: circuitName ?? leagueKey,
+      homeTeamId: undefined,
+      awayTeamId: undefined,
+      homeScore: null,
+      awayScore: null,
+      status: mapStatus(raceState),
+      startTime: ev.date ?? raceComp?.startDate ?? new Date().toISOString(),
+      quarter: raceState === "post" ? "Final" : null,
+      timeRemaining: null,
+      venue: circuitName ?? comp?.venue?.fullName ?? null,
+      homeTeamLogo: null,
+      awayTeamLogo: null,
+      eventTitle: ev.name,
+      circuitName,
+    };
+  }
+
+  const home = competitors.find((c) => c.homeAway === "home") ?? competitors[1];
+  const away = competitors.find((c) => c.homeAway === "away") ?? competitors[0];
+
   const homeScore = home?.score != null && home.score !== "" ? parseInt(home.score) : null;
   const awayScore = away?.score != null && away.score !== "" ? parseInt(away.score) : null;
 
-  // Helper: ESPN uses team.displayName for teams, athlete.displayName for individual sports (UFC/Tennis)
-  // Some UFC competitor objects also expose displayName directly
-  const getDisplayName = (c: typeof home) =>
-    c?.team?.displayName ?? c?.athlete?.displayName ?? (c as any)?.displayName ?? "Unknown";
-  const getEntityId = (c: typeof home) =>
-    c?.team?.id ?? c?.athlete?.id;
+  const isIndividual = archetype === "tennis" || archetype === "combat";
 
   return {
     id: `${leagueKey.toLowerCase()}-${ev.id}`,
@@ -331,13 +402,16 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     homeScore: status === "upcoming" ? null : homeScore,
     awayScore: status === "upcoming" ? null : awayScore,
     status,
-    startTime: ev.date ?? comp.startDate ?? new Date().toISOString(),
+    startTime: ev.date ?? comp?.startDate ?? new Date().toISOString(),
     quarter,
     timeRemaining,
-    venue: comp.venue?.fullName ?? null,
-    homeTeamLogo: archetype === "team" ? (home?.team?.logo ?? null) : null,
-    awayTeamLogo: archetype === "team" ? (away?.team?.logo ?? null) : null,
+    venue: comp?.venue?.fullName ?? null,
+    homeTeamLogo: isIndividual ? getHeadshot(home) : (home?.team?.logo ?? null),
+    awayTeamLogo: isIndividual ? getHeadshot(away) : (away?.team?.logo ?? null),
     eventTitle: archetype !== "team" ? ev.name : null,
+    round: (archetype === "tennis" || archetype === "combat") ? (comp?.type?.text ?? comp?.type?.abbreviation ?? null) : null,
+    seed1: archetype === "tennis" ? (away?.seed != null ? Number(away.seed) : null) : null,
+    seed2: archetype === "tennis" ? (home?.seed != null ? Number(home.seed) : null) : null,
   };
 }
 
@@ -2532,6 +2606,234 @@ router.get("/sports/draft/:league", async (req, res) => {
   } catch (err) {
     console.error("Draft API error:", err);
     res.status(500).json({ error: "Failed to fetch draft data" });
+  }
+});
+
+// ─── Rankings endpoint ────────────────────────────────────────────────────────
+const RANKINGS_LEAGUES: Record<string, { url: string; type: "rankings" | "standings" }> = {
+  ATP:    { url: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/rankings", type: "rankings" },
+  WTA:    { url: "https://site.api.espn.com/apis/site/v2/sports/tennis/wta/rankings", type: "rankings" },
+  UFC:    { url: "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/rankings", type: "rankings" },
+  F1:     { url: "https://site.api.espn.com/apis/v2/sports/racing/f1/standings", type: "standings" },
+  NASCAR: { url: "https://site.api.espn.com/apis/v2/sports/racing/nascar/standings", type: "standings" },
+  PGA:    { url: "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard", type: "standings" },
+};
+
+interface RankingEntry {
+  rank: number;
+  name: string;
+  points: string | null;
+  record: string | null;
+  trend: string | null;
+  headshot: string | null;
+  country: string | null;
+  division?: string;
+}
+
+interface RankingsGroup {
+  title: string;
+  entries: RankingEntry[];
+}
+
+router.get("/sports/rankings/:league", async (req, res) => {
+  const league = (req.params.league ?? "").toUpperCase();
+  const cfg = RANKINGS_LEAGUES[league];
+  if (!cfg) {
+    return res.status(400).json({ error: `Rankings not available for ${league}` });
+  }
+
+  const cacheKey = `rankings-${league}`;
+  const cached = getCached<{ groups: RankingsGroup[] }>(cacheKey);
+  if (cached) return res.json(cached);
+
+  try {
+    const data = await espnFetch(cfg.url) as any;
+    const groups: RankingsGroup[] = [];
+
+    if (league === "PGA") {
+      const ev = data.events?.[0];
+      if (ev) {
+        const comp = ev.competitions?.[0];
+        const sorted = [...(comp?.competitors ?? [])].sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
+        groups.push({
+          title: ev.name ?? "PGA Leaderboard",
+          entries: sorted.slice(0, 30).map((c: any) => ({
+            rank: c.order ?? 0,
+            name: c.athlete?.displayName ?? c.athlete?.fullName ?? "Unknown",
+            points: String(c.score ?? ""),
+            record: c.linescores?.map((l: any) => l.displayValue ?? l.value).join(", ") ?? null,
+            trend: null,
+            headshot: c.athlete?.headshot?.href ?? c.athlete?.flag?.href ?? null,
+            country: null,
+          })),
+        });
+      }
+    } else if (cfg.type === "rankings") {
+      const rankings = data.rankings ?? [];
+      for (const group of rankings) {
+        const ranks = group.ranks ?? group.entries ?? [];
+        if (ranks.length === 0) continue;
+        groups.push({
+          title: group.name ?? group.shortName ?? "Rankings",
+          entries: ranks.slice(0, 25).map((e: any) => ({
+            rank: e.current ?? 0,
+            name: e.athlete?.displayName ?? e.athlete?.fullName ?? "Unknown",
+            points: e.points != null ? String(e.points) : (e.stats?.find((s: any) => s.name === "points")?.displayValue ?? null),
+            record: e.recordSummary ?? e.record ?? null,
+            trend: e.trend ?? null,
+            headshot: e.athlete?.headshot?.href ?? null,
+            country: e.athlete?.flag?.alt ?? null,
+            division: group.name,
+          })),
+        });
+      }
+    } else if (cfg.type === "standings") {
+      const children = data.children ?? [];
+      for (const child of children) {
+        const entries = child.standings?.entries ?? [];
+        if (entries.length === 0) continue;
+        groups.push({
+          title: child.name ?? "Standings",
+          entries: entries.slice(0, 25).map((e: any) => {
+            const rankStat = e.stats?.find((s: any) => s.name === "rank");
+            const ptsStat = e.stats?.find((s: any) => s.name === "points");
+            const winsStat = e.stats?.find((s: any) => s.name === "wins");
+            return {
+              rank: rankStat?.value ?? 0,
+              name: e.athlete?.displayName ?? e.team?.displayName ?? "Unknown",
+              points: ptsStat?.displayValue ?? null,
+              record: winsStat ? `${winsStat.displayValue} wins` : null,
+              trend: null,
+              headshot: e.athlete?.headshot?.href ?? e.team?.logos?.[0]?.href ?? null,
+              country: null,
+            };
+          }),
+        });
+      }
+    }
+
+    const result = { groups };
+    setCached(cacheKey, result, 600_000);
+    res.json(result);
+  } catch (err) {
+    console.error(`Rankings fetch error for ${league}:`, err);
+    res.status(500).json({ error: "Failed to fetch rankings" });
+  }
+});
+
+const ROUND_ORDER: Record<string, number> = {
+  "Final": 1, "Finals": 1,
+  "Semifinals": 2, "Semi-Finals": 2, "SF": 2,
+  "Quarterfinals": 3, "Quarter-Finals": 3, "QF": 3,
+  "4th Round": 4, "Round of 16": 4, "R16": 4,
+  "3rd Round": 5, "Round of 32": 5, "R32": 5,
+  "2nd Round": 6, "Round of 64": 6, "R64": 6,
+  "1st Round": 7, "Round of 128": 7, "R128": 7,
+  "Qualifying": 8,
+};
+
+function getRoundOrder(round: string): number {
+  return ROUND_ORDER[round] ?? 9;
+}
+
+router.get("/sports/tennis/draw/:league", async (req, res) => {
+  const league = (req.params.league ?? "").toUpperCase();
+  if (league !== "ATP" && league !== "WTA") {
+    return res.status(400).json({ error: "Only ATP and WTA supported" });
+  }
+
+  const cacheKey = `tennis-draw-${league}`;
+  const cached = getCached<any>(cacheKey);
+  if (cached) return res.json(cached);
+
+  try {
+    const cfg = LEAGUE_CONFIG[league];
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard`;
+    const data = await espnFetch(url) as any;
+    const events = data.events ?? [];
+
+    const tournaments: Array<{
+      id: string;
+      name: string;
+      status: string;
+      date: string;
+      venue: string | null;
+      rounds: Array<{
+        name: string;
+        order: number;
+        matches: Array<{
+          id: string;
+          player1: string;
+          player2: string;
+          seed1: number | null;
+          seed2: number | null;
+          score1: number | null;
+          score2: number | null;
+          winner: number | null;
+          status: string;
+          round: string;
+          headshot1: string | null;
+          headshot2: string | null;
+          setScores: string | null;
+        }>;
+      }>;
+    }> = [];
+
+    for (const ev of events) {
+      const evStatus = ev.status?.type?.name ?? "STATUS_SCHEDULED";
+      const comps = ev.competitions ?? [];
+
+      const roundMap = new Map<string, any[]>();
+      for (const comp of comps) {
+        const roundName = comp.type?.text ?? comp.type?.abbreviation ?? "Unknown Round";
+        const competitors = comp.competitors ?? [];
+        const p1 = competitors.find((c: any) => c.homeAway === "away") ?? competitors[0];
+        const p2 = competitors.find((c: any) => c.homeAway === "home") ?? competitors[1];
+
+        const match = {
+          id: comp.id ?? `${ev.id}-${comp.uid ?? Math.random()}`,
+          player1: p1?.athlete?.displayName ?? "TBD",
+          player2: p2?.athlete?.displayName ?? "TBD",
+          seed1: p1?.seed != null ? Number(p1.seed) : null,
+          seed2: p2?.seed != null ? Number(p2.seed) : null,
+          score1: p1?.score != null ? Number(p1.score) : null,
+          score2: p2?.score != null ? Number(p2.score) : null,
+          winner: p1?.winner ? 1 : p2?.winner ? 2 : null,
+          status: mapStatus(comp.status?.type?.state ?? "pre"),
+          round: roundName,
+          headshot1: p1?.athlete?.headshot?.href ?? p1?.athlete?.flag?.href ?? null,
+          headshot2: p2?.athlete?.headshot?.href ?? p2?.athlete?.flag?.href ?? null,
+          setScores: comp.status?.type?.detail ?? null,
+        };
+
+        if (!roundMap.has(roundName)) roundMap.set(roundName, []);
+        roundMap.get(roundName)!.push(match);
+      }
+
+      const rounds = Array.from(roundMap.entries())
+        .map(([name, matches]) => ({
+          name,
+          order: getRoundOrder(name),
+          matches,
+        }))
+        .sort((a, b) => a.order - b.order);
+
+      tournaments.push({
+        id: ev.id,
+        name: ev.name ?? "Tournament",
+        status: evStatus === "STATUS_FINAL" ? "completed" : evStatus === "STATUS_IN_PROGRESS" ? "live" : "upcoming",
+        date: ev.date ?? new Date().toISOString(),
+        venue: ev.competitions?.[0]?.venue?.fullName ?? null,
+        rounds,
+      });
+    }
+
+    const result = { league, tournaments };
+    setCached(cacheKey, result, 300_000);
+    res.json(result);
+  } catch (err) {
+    console.error(`Tennis draw fetch error for ${league}:`, err);
+    res.status(500).json({ error: "Failed to fetch tennis draw" });
   }
 });
 

@@ -86,9 +86,15 @@ export const api = {
     const params = year ? `?year=${year}` : "";
     return apiFetch<DraftData>(`/sports/draft/${encodeURIComponent(league)}${params}`);
   },
+
+  getRankings: (league: string) =>
+    apiFetch<{ groups: RankingsGroup[] }>(`/sports/rankings/${encodeURIComponent(league)}`),
+
+  getTennisDraw: (league: string) =>
+    apiFetch<TennisDrawData>(`/sports/tennis/draw/${encodeURIComponent(league)}`),
 };
 
-export type SportArchetype = "team" | "tennis" | "combat" | "multi_event";
+export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
 
 export interface Game {
   id: string;
@@ -107,6 +113,11 @@ export interface Game {
   homeTeamLogo: string | null;
   awayTeamLogo: string | null;
   eventTitle?: string | null;
+  leaderboard?: Array<{ position: number; name: string; score: string; headshot?: string | null }>;
+  circuitName?: string | null;
+  round?: string | null;
+  seed1?: number | null;
+  seed2?: number | null;
 }
 
 export interface PlayerStatLine {
@@ -393,4 +404,56 @@ export interface DraftData {
   teams: DraftTeam[];
   prospects: DraftProspect[];
   positions: { id: string; abbreviation: string }[];
+}
+
+export interface RankingEntry {
+  rank: number;
+  name: string;
+  points: string | null;
+  record: string | null;
+  trend: string | null;
+  headshot: string | null;
+  country: string | null;
+  division?: string;
+}
+
+export interface RankingsGroup {
+  title: string;
+  entries: RankingEntry[];
+}
+
+export interface TennisDrawMatch {
+  id: string;
+  player1: string;
+  player2: string;
+  seed1: number | null;
+  seed2: number | null;
+  score1: number | null;
+  score2: number | null;
+  winner: number | null;
+  status: string;
+  round: string;
+  headshot1: string | null;
+  headshot2: string | null;
+  setScores: string | null;
+}
+
+export interface TennisDrawRound {
+  name: string;
+  order: number;
+  matches: TennisDrawMatch[];
+}
+
+export interface TennisTournament {
+  id: string;
+  name: string;
+  status: string;
+  date: string;
+  venue: string | null;
+  rounds: TennisDrawRound[];
+}
+
+export interface TennisDrawData {
+  league: string;
+  tournaments: TennisTournament[];
 }

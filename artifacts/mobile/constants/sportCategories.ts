@@ -195,8 +195,37 @@ export const SPORT_CATEGORIES: SportCategory[] = [
   },
 ];
 
+const SPORT_ALIASES: Record<string, string> = {
+  mma: "combat",
+  ufc: "combat",
+  boxing: "combat",
+  fighting: "combat",
+  f1: "motorsports",
+  nascar: "motorsports",
+  racing: "motorsports",
+  pga: "golf",
+  liv: "golf",
+  atp: "tennis",
+  wta: "tennis",
+  nba: "basketball",
+  wnba: "basketball",
+  ncaab: "basketball",
+  nfl: "football",
+  ncaaf: "football",
+  mlb: "baseball",
+  nhl: "hockey",
+  mls: "soccer",
+  epl: "soccer",
+  ucl: "soccer",
+  liga: "soccer",
+};
+
 export function getSportById(id: string): SportCategory | undefined {
-  return SPORT_CATEGORIES.find((s) => s.id === id);
+  const direct = SPORT_CATEGORIES.find((s) => s.id === id);
+  if (direct) return direct;
+  const aliased = SPORT_ALIASES[id.toLowerCase()];
+  if (aliased) return SPORT_CATEGORIES.find((s) => s.id === aliased);
+  return undefined;
 }
 
 export function getSportByLeague(leagueKey: string): SportCategory | undefined {

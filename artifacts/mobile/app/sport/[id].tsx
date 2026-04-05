@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Dimensions,
   StatusBar,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,15 +18,15 @@ import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { getSportById, getSportByLeague, type SportCategory } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
-import type { Game, SportNewsArticle, UpcomingEvent } from "@/utils/api";
+import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
 import { goToTeam } from "@/utils/navHelpers";
 import { useSearch } from "@/context/SearchContext";
+import { getSportArchetype, type SportArchetype } from "@/utils/sportArchetype";
 
-// Sports without real-time ESPN game data — explain to user why board may be empty
 const SPORT_DATA_NOTE: Record<string, string> = {
   golf:        "Live leaderboards appear during PGA Tour & LIV events. Tap Search to find golfers.",
   motorsports: "Race results appear during F1 and NASCAR race weekends. Tap Search to find drivers.",
@@ -35,24 +36,27 @@ const SPORT_DATA_NOTE: Record<string, string> = {
   college:     "College scores appear during the regular season. Tap Search to find players.",
 };
 
+const RANKINGS_LEAGUES = new Set(["ATP", "WTA", "UFC", "PGA", "F1", "NASCAR"]);
+
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
-// ─── Player card in sport board ───────────────────────────────────────────────
 function AthleteChip({
   name,
   position,
   team,
   league,
   accentColor,
+  headshot,
 }: {
   name: string;
   position?: string;
   team: string;
   league: string;
   accentColor: string;
+  headshot?: string | null;
 }) {
   const initials = name
     .split(" ")
@@ -72,7 +76,11 @@ function AthleteChip({
       }
     >
       <View style={[styles.athleteAvatar, { backgroundColor: accentColor + "33" }]}>
-        <Text style={[styles.athleteInitials, { color: accentColor }]}>{initials}</Text>
+        {headshot ? (
+          <Image source={{ uri: headshot }} style={{ width: 44, height: 44, borderRadius: 22 }} />
+        ) : (
+          <Text style={[styles.athleteInitials, { color: accentColor }]}>{initials}</Text>
+        )}
       </View>
       <Text style={styles.athleteName} numberOfLines={1}>{name}</Text>
       {position && (
@@ -82,7 +90,6 @@ function AthleteChip({
   );
 }
 
-// ─── League chip ──────────────────────────────────────────────────────────────
 function LeagueChip({
   label,
   active,
@@ -114,7 +121,342 @@ function LeagueChip({
   );
 }
 
-// ─── Main Screen ─────────────────────────────────────────────────────────────
+function RankingsTable({
+  group,
+  accentColor,
+  limit = 10,
+}: {
+  group: RankingsGroup;
+  accentColor: string;
+  limit?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const entries = expanded ? group.entries : group.entries.slice(0, limit);
+
+  return (
+    <View style={styles.rankingsCard}>
+      <Text style={styles.rankingsGroupTitle} numberOfLines={1}>{group.title}</Text>
+      {entries.map((entry, i) => (
+        <View key={`${entry.rank}-${entry.name}`} style={[styles.rankRow, i === 0 && { borderTopWidth: 0 }]}>
+          <Text style={[styles.rankNum, i < 3 && { color: accentColor }]}>{entry.rank}</Text>
+          {entry.headshot ? (
+            <Image source={{ uri: entry.headshot }} style={styles.rankHeadshot} />
+          ) : (
+            <View style={[styles.rankHeadshot, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
+              <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold" }}>
+                {entry.name.charAt(0)}
+              </Text>
+            </View>
+          )}
+          <View style={{ flex: 1, marginLeft: 8 }}>
+            <Text style={styles.rankName} numberOfLines={1}>{entry.name}</Text>
+            {entry.record && (
+              <Text style={styles.rankSub} numberOfLines={1}>{entry.record}</Text>
+            )}
+          </View>
+          {entry.points && (
+            <Text style={styles.rankPoints}>{entry.points}</Text>
+          )}
+          {entry.trend && entry.trend !== "-" && (
+            <View style={{ marginLeft: 6 }}>
+              <Ionicons
+                name={entry.trend.startsWith("+") || entry.trend === "up" ? "arrow-up" : entry.trend.startsWith("-") || entry.trend === "down" ? "arrow-down" : "remove"}
+                size={10}
+                color={entry.trend.startsWith("+") || entry.trend === "up" ? "#22C55E" : entry.trend.startsWith("-") || entry.trend === "down" ? "#EF4444" : C.textTertiary}
+              />
+            </View>
+          )}
+        </View>
+      ))}
+      {group.entries.length > limit && (
+        <Pressable onPress={() => setExpanded(!expanded)} style={styles.rankExpandBtn}>
+          <Text style={[styles.rankExpandText, { color: accentColor }]}>
+            {expanded ? "Show less" : `Show all ${group.entries.length}`}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function GolfLeaderboard({
+  game,
+  accentColor,
+}: {
+  game: Game;
+  accentColor: string;
+}) {
+  const lb = game.leaderboard ?? [];
+  if (lb.length === 0) return null;
+
+  return (
+    <View style={styles.rankingsCard}>
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8, gap: 8 }}>
+        <View style={[styles.eventTypeBadge, {
+          backgroundColor: game.status === "live" ? "#E53935" : game.status === "finished" ? C.textTertiary + "33" : accentColor + "33",
+        }]}>
+          <Text style={[styles.eventTypeText, {
+            color: game.status === "live" ? "#fff" : game.status === "finished" ? C.textSecondary : accentColor,
+          }]}>{game.status === "live" ? "LIVE" : game.status === "finished" ? "FINAL" : "UPCOMING"}</Text>
+        </View>
+        <Text style={styles.rankingsGroupTitle} numberOfLines={1}>{game.eventTitle ?? "Tournament"}</Text>
+      </View>
+      {lb.map((entry, i) => (
+        <View key={`${entry.position}-${entry.name}`} style={[styles.rankRow, i === 0 && { borderTopWidth: 0 }]}>
+          <Text style={[styles.rankNum, i < 3 && { color: accentColor }]}>{entry.position}</Text>
+          {entry.headshot ? (
+            <Image source={{ uri: entry.headshot }} style={styles.rankHeadshot} />
+          ) : (
+            <View style={[styles.rankHeadshot, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
+              <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold" }}>
+                {entry.name.charAt(0)}
+              </Text>
+            </View>
+          )}
+          <Text style={[styles.rankName, { flex: 1, marginLeft: 8 }]} numberOfLines={1}>{entry.name}</Text>
+          <Text style={[styles.rankPoints, i === 0 && { color: accentColor }]}>{entry.score}</Text>
+        </View>
+      ))}
+      {game.venue && (
+        <Text style={{ color: C.textTertiary, fontSize: 10, marginTop: 6 }}>{game.venue}</Text>
+      )}
+    </View>
+  );
+}
+
+function TournamentDraw({
+  tournament,
+  accentColor,
+}: {
+  tournament: TennisTournament;
+  accentColor: string;
+}) {
+  const [expandedRound, setExpandedRound] = useState<string | null>(null);
+
+  if (tournament.rounds.length === 0) {
+    return (
+      <View style={styles.rankingsCard}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <View style={[styles.eventTypeBadge, {
+            backgroundColor: tournament.status === "live" ? "#E53935"
+              : tournament.status === "completed" ? C.textTertiary + "33"
+              : accentColor + "33",
+          }]}>
+            <Text style={[styles.eventTypeText, {
+              color: tournament.status === "live" ? "#fff"
+                : tournament.status === "completed" ? C.textSecondary
+                : accentColor,
+            }]}>
+              {tournament.status === "live" ? "LIVE" : tournament.status === "completed" ? "COMPLETED" : "UPCOMING"}
+            </Text>
+          </View>
+          <Text style={styles.rankingsGroupTitle} numberOfLines={1}>{tournament.name}</Text>
+        </View>
+        <Text style={{ color: C.textTertiary, fontSize: 12, textAlign: "center", paddingVertical: 16 }}>
+          {tournament.status === "completed" ? "Tournament completed" : "Draw will appear when matches begin"}
+        </Text>
+        {tournament.venue && (
+          <Text style={{ color: C.textTertiary, fontSize: 10, marginTop: 4 }}>{tournament.venue}</Text>
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.rankingsCard}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <View style={[styles.eventTypeBadge, {
+          backgroundColor: tournament.status === "live" ? "#E53935" : accentColor + "33",
+        }]}>
+          <Text style={[styles.eventTypeText, {
+            color: tournament.status === "live" ? "#fff" : accentColor,
+          }]}>
+            {tournament.status === "live" ? "LIVE" : "DRAW"}
+          </Text>
+        </View>
+        <Text style={styles.rankingsGroupTitle} numberOfLines={1}>{tournament.name}</Text>
+      </View>
+
+      {tournament.rounds.map((round) => {
+        const isExpanded = expandedRound === round.name;
+        const showByDefault = round.matches.some(m => m.status === "live") || round.order <= 3;
+        const show = isExpanded || showByDefault;
+
+        return (
+          <View key={round.name} style={{ marginBottom: 6 }}>
+            <Pressable
+              onPress={() => setExpandedRound(isExpanded ? null : round.name)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 8,
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: C.separator,
+              }}
+            >
+              <View style={{
+                backgroundColor: round.matches.some(m => m.status === "live") ? "#E53935" : accentColor + "22",
+                borderRadius: 6,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+              }}>
+                <Text style={{
+                  color: round.matches.some(m => m.status === "live") ? "#fff" : accentColor,
+                  fontSize: 10,
+                  fontFamily: "Inter_700Bold",
+                  letterSpacing: 0.5,
+                }}>
+                  {round.name.toUpperCase()}
+                </Text>
+              </View>
+              <Text style={{ color: C.textSecondary, fontSize: 11, marginLeft: 8 }}>
+                {round.matches.length} {round.matches.length === 1 ? "match" : "matches"}
+              </Text>
+              <View style={{ flex: 1 }} />
+              <Ionicons
+                name={show ? "chevron-up" : "chevron-down"}
+                size={14}
+                color={C.textSecondary}
+              />
+            </Pressable>
+
+            {show && round.matches.map((match) => (
+              <DrawMatchCard key={match.id} match={match} accentColor={accentColor} />
+            ))}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function DrawMatchCard({
+  match,
+  accentColor,
+}: {
+  match: TennisDrawMatch;
+  accentColor: string;
+}) {
+  const isLive = match.status === "live";
+  const isFinished = match.status === "finished";
+  const p1Won = match.winner === 1;
+  const p2Won = match.winner === 2;
+
+  return (
+    <View style={{
+      backgroundColor: C.background,
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 4,
+      borderWidth: isLive ? 1 : 0,
+      borderColor: isLive ? "#E53935" + "44" : "transparent",
+    }}>
+      <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 3 }}>
+        {match.seed1 != null && (
+          <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold", width: 20, textAlign: "right" }}>
+            [{match.seed1}]
+          </Text>
+        )}
+        {match.seed1 == null && <View style={{ width: 20 }} />}
+        {match.headshot1 ? (
+          <Image source={{ uri: match.headshot1 }} style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6 }} />
+        ) : (
+          <View style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6, backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: accentColor, fontSize: 8, fontFamily: "Inter_700Bold" }}>{match.player1.charAt(0)}</Text>
+          </View>
+        )}
+        <Text
+          style={{
+            flex: 1,
+            marginLeft: 6,
+            fontSize: 12,
+            fontFamily: p1Won ? "Inter_700Bold" : "Inter_400Regular",
+            color: isFinished && !p1Won ? C.textTertiary : C.text,
+          }}
+          numberOfLines={1}
+        >
+          {match.player1}
+        </Text>
+        {(isLive || isFinished) && match.score1 != null && (
+          <Text style={{
+            fontSize: 13,
+            fontFamily: "Inter_700Bold",
+            color: p1Won ? C.text : C.textTertiary,
+            minWidth: 20,
+            textAlign: "right",
+          }}>
+            {match.score1}
+          </Text>
+        )}
+        {p1Won && <Ionicons name="checkmark-circle" size={12} color="#22C55E" style={{ marginLeft: 4 }} />}
+      </View>
+
+      <View style={{ height: 1, backgroundColor: C.separator, marginVertical: 3, marginLeft: 46 }} />
+
+      <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 3 }}>
+        {match.seed2 != null && (
+          <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold", width: 20, textAlign: "right" }}>
+            [{match.seed2}]
+          </Text>
+        )}
+        {match.seed2 == null && <View style={{ width: 20 }} />}
+        {match.headshot2 ? (
+          <Image source={{ uri: match.headshot2 }} style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6 }} />
+        ) : (
+          <View style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6, backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: accentColor, fontSize: 8, fontFamily: "Inter_700Bold" }}>{match.player2.charAt(0)}</Text>
+          </View>
+        )}
+        <Text
+          style={{
+            flex: 1,
+            marginLeft: 6,
+            fontSize: 12,
+            fontFamily: p2Won ? "Inter_700Bold" : "Inter_400Regular",
+            color: isFinished && !p2Won ? C.textTertiary : C.text,
+          }}
+          numberOfLines={1}
+        >
+          {match.player2}
+        </Text>
+        {(isLive || isFinished) && match.score2 != null && (
+          <Text style={{
+            fontSize: 13,
+            fontFamily: "Inter_700Bold",
+            color: p2Won ? C.text : C.textTertiary,
+            minWidth: 20,
+            textAlign: "right",
+          }}>
+            {match.score2}
+          </Text>
+        )}
+        {p2Won && <Ionicons name="checkmark-circle" size={12} color="#22C55E" style={{ marginLeft: 4 }} />}
+      </View>
+
+      {isLive && match.setScores && (
+        <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_600SemiBold", textAlign: "center", marginTop: 4 }}>
+          {match.setScores}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function getArchetypeForSport(sport: SportCategory | undefined, activeLeague: string): SportArchetype {
+  if (activeLeague !== "all") return getSportArchetype(activeLeague);
+  if (!sport) return "team";
+  const firstLeague = sport.leagues[0]?.key;
+  if (firstLeague) return getSportArchetype(firstLeague);
+  return "team";
+}
+
+function getRankingsLeague(sport: SportCategory | undefined, activeLeague: string): string | null {
+  if (activeLeague !== "all") return RANKINGS_LEAGUES.has(activeLeague) ? activeLeague : null;
+  if (!sport) return null;
+  const rl = sport.leagues.find(l => RANKINGS_LEAGUES.has(l.key));
+  return rl?.key ?? null;
+}
+
 export default function SportBoardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -124,6 +466,8 @@ export default function SportBoardScreen() {
   const [activeLeague, setActiveLeague] = useState<string>("all");
 
   const sportId = sport?.id ?? id ?? "";
+  const archetype = getArchetypeForSport(sport, activeLeague);
+  const rankingsLeague = getRankingsLeague(sport, activeLeague);
 
   const { data: gamesData, isLoading: gamesLoading, refetch: refetchGames } = useQuery({
     queryKey: ["games"],
@@ -145,12 +489,27 @@ export default function SportBoardScreen() {
     enabled: !!sportId,
   });
 
+  const { data: rankingsData, isLoading: rankingsLoading, refetch: refetchRankings } = useQuery({
+    queryKey: ["rankings", rankingsLeague],
+    queryFn: () => api.getRankings(rankingsLeague!),
+    staleTime: 600_000,
+    enabled: !!rankingsLeague,
+  });
+
+  const drawLeague = archetype === "tennis" ? (activeLeague !== "all" ? activeLeague : "ATP") : null;
+  const { data: drawData, refetch: refetchDraw } = useQuery({
+    queryKey: ["tennis-draw", drawLeague],
+    queryFn: () => api.getTennisDraw(drawLeague!),
+    staleTime: 300_000,
+    enabled: !!drawLeague,
+  });
+
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming()]);
+    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw()]);
     setRefreshing(false);
-  }, [refetchGames, refetchNews, refetchUpcoming]);
+  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw]);
 
   const sportLeagueKeys = useMemo(
     () => new Set(sport?.leagues.map((l) => l.key) ?? []),
@@ -168,8 +527,21 @@ export default function SportBoardScreen() {
       .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
   }, [gamesData, sportLeagueKeys, activeLeague]);
 
+  const golfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype === "golf"), [filteredGames]);
+  const nonGolfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype !== "golf"), [filteredGames]);
+
   const sportNews: SportNewsArticle[] = sportNewsData?.articles ?? [];
-  const upcomingEvents: UpcomingEvent[] = upcomingData?.events ?? [];
+
+  const upcomingEvents: UpcomingEvent[] = useMemo(() => {
+    const events = upcomingData?.events ?? [];
+    const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    return events.filter(ev => {
+      if (ev.type === "result" && ev.date) {
+        return new Date(ev.date).getTime() > twoWeeksAgo;
+      }
+      return true;
+    });
+  }, [upcomingData]);
 
   const topAthletes = useMemo(() => {
     const leagueFilter =
@@ -178,6 +550,9 @@ export default function SportBoardScreen() {
         : [activeLeague];
     return ALL_PLAYERS.filter((p) => leagueFilter.includes(p.league)).slice(0, 20);
   }, [sportLeagueKeys, activeLeague]);
+
+  const rankingsGroups: RankingsGroup[] = rankingsData?.groups ?? [];
+  const tennisTournaments: TennisTournament[] = drawData?.tournaments ?? [];
 
   const liveCount = filteredGames.filter((g) => g.status === "live").length;
   const accentColor = sport?.color ?? C.accent;
@@ -195,11 +570,301 @@ export default function SportBoardScreen() {
     );
   }
 
+  const GamesSection = (gamesLoading || nonGolfGames.length > 0) ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {archetype === "racing" ? "Races" : archetype === "combat" ? "Fights" : archetype === "tennis" ? "Matches" : "Games"}
+        </Text>
+        <Pressable onPress={() => router.push("/(tabs)/live" as any)} style={styles.seeAllBtn}>
+          <Text style={[styles.seeAllText, { color: accentColor }]}>See all</Text>
+        </Pressable>
+      </View>
+      {gamesLoading ? (
+        <>
+          <GameCardSkeleton />
+          <GameCardSkeleton />
+        </>
+      ) : (
+        nonGolfGames.slice(0, 5).map((game) => (
+          <GameCard
+            key={game.id}
+            game={game}
+            onPress={() =>
+              router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)
+            }
+          />
+        ))
+      )}
+    </View>
+  ) : null;
+
+  const GolfLeaderboardSection = golfGames.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Leaderboard</Text>
+      </View>
+      {golfGames.map((game) => (
+        <GolfLeaderboard key={game.id} game={game} accentColor={accentColor} />
+      ))}
+    </View>
+  ) : null;
+
+  const RankingsSection = rankingsGroups.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {archetype === "racing" ? "Standings" : archetype === "golf" ? "Leaderboard" : "World Rankings"}
+        </Text>
+      </View>
+      {rankingsGroups.slice(0, archetype === "combat" ? 3 : 2).map((group, i) => (
+        <RankingsTable key={group.title} group={group} accentColor={accentColor} limit={archetype === "combat" ? 5 : 10} />
+      ))}
+    </View>
+  ) : null;
+
+  const AthletesSection = topAthletes.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Top Athletes</Text>
+        <Pressable onPress={() => openSearch()} style={styles.seeAllBtn}>
+          <Text style={[styles.seeAllText, { color: accentColor }]}>Search</Text>
+        </Pressable>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.athleteRow}
+      >
+        {topAthletes.map((player) => (
+          <AthleteChip
+            key={player.name + player.team}
+            name={player.name}
+            position={player.position}
+            team={player.team}
+            league={player.league}
+            accentColor={accentColor}
+          />
+        ))}
+      </ScrollView>
+    </View>
+  ) : null;
+
+  const RankingsAthletesSection = rankingsGroups.length > 0 && topAthletes.length === 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Top Athletes</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.athleteRow}
+      >
+        {rankingsGroups[0].entries.slice(0, 15).map((entry) => (
+          <AthleteChip
+            key={entry.name}
+            name={entry.name}
+            team={entry.record ?? ""}
+            league={rankingsLeague ?? ""}
+            accentColor={accentColor}
+            headshot={entry.headshot}
+          />
+        ))}
+      </ScrollView>
+    </View>
+  ) : null;
+
+  const TournamentDrawSection = tennisTournaments.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Tournament Draw</Text>
+      </View>
+      {tennisTournaments.map((tournament) => (
+        <TournamentDraw key={tournament.id} tournament={tournament} accentColor={accentColor} />
+      ))}
+    </View>
+  ) : null;
+
+  const LeagueLinksSection = sport.leagues.length > 1 ? (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Leagues</Text>
+      <View style={styles.leagueLinks}>
+        {sport.leagues.map((l) => (
+          <Pressable
+            key={l.key}
+            style={({ pressed }) => [
+              styles.leagueLinkRow,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => setActiveLeague(l.key)}
+          >
+            <View style={[styles.leagueDot, { backgroundColor: accentColor }]} />
+            <Text style={styles.leagueLinkLabel}>{l.label}</Text>
+            <Ionicons name="chevron-forward" size={16} color={C.textSecondary} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  ) : null;
+
+  const ScheduleSection = (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {archetype === "racing" ? "Race Calendar" : archetype === "combat" ? "Fight Schedule" : "Schedule & Results"}
+        </Text>
+      </View>
+      {upcomingEvents.length > 0 ? (
+        upcomingEvents.slice(0, 10).map((ev) => (
+          <View key={ev.id} style={styles.eventRow}>
+            <View style={[styles.eventTypeBadge, {
+              backgroundColor: ev.type === "live" ? "#E53935" : ev.type === "result" ? C.textTertiary + "33" : accentColor + "33",
+            }]}>
+              <Text style={[styles.eventTypeText, {
+                color: ev.type === "live" ? "#fff" : ev.type === "result" ? C.textSecondary : accentColor,
+              }]}>{ev.type === "live" ? "LIVE" : ev.type === "result" ? "FINAL" : "UPCOMING"}</Text>
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.eventName} numberOfLines={2}>{ev.name}</Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+                <Text style={styles.eventMeta}>
+                  {ev.date ? new Date(ev.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                </Text>
+                {ev.venue && <Text style={styles.eventMeta} numberOfLines={1}>{ev.venue}</Text>}
+                <Text style={[styles.eventMeta, { color: accentColor }]}>{ev.league}</Text>
+              </View>
+            </View>
+            {ev.homeScore != null && ev.awayScore != null && (
+              <Text style={styles.eventScore}>{ev.homeScore}-{ev.awayScore}</Text>
+            )}
+          </View>
+        ))
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
+          <Text style={styles.emptyCardTitle}>No events scheduled right now</Text>
+          <Text style={styles.emptyCardSub}>
+            {SPORT_DATA_NOTE[sport.id] ??
+              `${sport.leagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  const NewsSection = (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Latest News</Text>
+      </View>
+      {newsLoading ? (
+        <>
+          <NewsCardSkeleton />
+          <NewsCardSkeleton />
+        </>
+      ) : sportNews.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyCardSub}>No news right now — check back soon</Text>
+        </View>
+      ) : (
+        sportNews.map((article) => (
+          <Pressable
+            key={article.id}
+            style={({ pressed }) => [styles.newsRow, { opacity: pressed ? 0.75 : 1 }]}
+          >
+            <View style={styles.newsRowDot} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.newsRowText} numberOfLines={2}>{article.title}</Text>
+              <Text style={styles.newsRowMeta} numberOfLines={1}>
+                {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""} · {article.leagues?.join(", ")}
+              </Text>
+            </View>
+          </Pressable>
+        ))
+      )}
+    </View>
+  );
+
+  const StandingsShortcut = (
+    <Pressable
+      style={({ pressed }) => [
+        styles.standingsCard,
+        { opacity: pressed ? 0.8 : 1, borderColor: accentColor + "44" },
+      ]}
+      onPress={() => router.push("/(tabs)/standings" as any)}
+    >
+      <Ionicons name="bar-chart-outline" size={22} color={accentColor} />
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={styles.standingsCardTitle}>Standings</Text>
+        <Text style={styles.standingsCardSub}>
+          View {sport.name} standings & rankings
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={C.textSecondary} />
+    </Pressable>
+  );
+
+  const renderSections = () => {
+    switch (archetype) {
+      case "golf":
+        return (
+          <>
+            {GolfLeaderboardSection}
+            {RankingsSection}
+            {RankingsAthletesSection ?? AthletesSection}
+            {ScheduleSection}
+            {NewsSection}
+          </>
+        );
+      case "racing":
+        return (
+          <>
+            {RankingsSection}
+            {GamesSection}
+            {RankingsAthletesSection ?? AthletesSection}
+            {ScheduleSection}
+            {NewsSection}
+          </>
+        );
+      case "tennis":
+        return (
+          <>
+            {RankingsSection}
+            {TournamentDrawSection}
+            {GamesSection}
+            {RankingsAthletesSection ?? AthletesSection}
+            {ScheduleSection}
+            {NewsSection}
+          </>
+        );
+      case "combat":
+        return (
+          <>
+            {RankingsSection}
+            {GamesSection}
+            {RankingsAthletesSection ?? AthletesSection}
+            {ScheduleSection}
+            {NewsSection}
+          </>
+        );
+      default:
+        return (
+          <>
+            {GamesSection}
+            {AthletesSection}
+            {LeagueLinksSection}
+            {ScheduleSection}
+            {NewsSection}
+            {StandingsShortcut}
+          </>
+        );
+    }
+  };
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" />
 
-      {/* ── Hero Header ───────────────────────────────────────────────── */}
       <LinearGradient
         colors={[accentColor + "22", "transparent"]}
         start={{ x: 0, y: 0 }}
@@ -223,7 +888,6 @@ export default function SportBoardScreen() {
           <SearchButton />
         </View>
 
-        {/* ── League filter chips ────────────────────────────────────── */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -248,7 +912,6 @@ export default function SportBoardScreen() {
         </ScrollView>
       </LinearGradient>
 
-      {/* ── Content ───────────────────────────────────────────────────── */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -260,184 +923,7 @@ export default function SportBoardScreen() {
         }
         contentContainerStyle={styles.content}
       >
-        {/* ── Games (only when loading or have games) ──────────────── */}
-        {(gamesLoading || filteredGames.length > 0) && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Games</Text>
-              <Pressable
-                onPress={() => router.push("/(tabs)/live" as any)}
-                style={styles.seeAllBtn}
-              >
-                <Text style={[styles.seeAllText, { color: accentColor }]}>See all →</Text>
-              </Pressable>
-            </View>
-
-            {gamesLoading ? (
-              <>
-                <GameCardSkeleton />
-                <GameCardSkeleton />
-              </>
-            ) : (
-              filteredGames.slice(0, 5).map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  onPress={() =>
-                    router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)
-                  }
-                />
-              ))
-            )}
-          </View>
-        )}
-
-        {/* ── Top Athletes ──────────────────────────────────────────── */}
-        {topAthletes.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Top Athletes</Text>
-              <Pressable onPress={() => openSearch()} style={styles.seeAllBtn}>
-                <Text style={[styles.seeAllText, { color: accentColor }]}>Search →</Text>
-              </Pressable>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.athleteRow}
-            >
-              {topAthletes.map((player) => (
-                <AthleteChip
-                  key={player.name + player.team}
-                  name={player.name}
-                  position={player.position}
-                  team={player.team}
-                  league={player.league}
-                  accentColor={accentColor}
-                />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* ── League Links ───────────────────────────────────────────── */}
-        {sport.leagues.length > 1 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Leagues</Text>
-            <View style={styles.leagueLinks}>
-              {sport.leagues.map((l) => (
-                <Pressable
-                  key={l.key}
-                  style={({ pressed }) => [
-                    styles.leagueLinkRow,
-                    { opacity: pressed ? 0.7 : 1 },
-                  ]}
-                  onPress={() => setActiveLeague(l.key)}
-                >
-                  <View style={[styles.leagueDot, { backgroundColor: accentColor }]} />
-                  <Text style={styles.leagueLinkLabel}>{l.label}</Text>
-                  <Ionicons name="chevron-forward" size={16} color={C.textSecondary} />
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* ── Schedule & Results (always visible) ────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {filteredGames.length === 0 ? "Schedule & Results" : "Upcoming & Recent"}
-            </Text>
-          </View>
-          {upcomingEvents.length > 0 ? (
-            upcomingEvents.slice(0, 10).map((ev) => (
-              <View key={ev.id} style={styles.eventRow}>
-                <View style={[styles.eventTypeBadge, {
-                  backgroundColor: ev.type === "live" ? "#E53935" : ev.type === "result" ? C.textTertiary + "33" : accentColor + "33",
-                }]}>
-                  <Text style={[styles.eventTypeText, {
-                    color: ev.type === "live" ? "#fff" : ev.type === "result" ? C.textSecondary : accentColor,
-                  }]}>{ev.type === "live" ? "LIVE" : ev.type === "result" ? "FINAL" : "UPCOMING"}</Text>
-                </View>
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={styles.eventName} numberOfLines={2}>{ev.name}</Text>
-                  <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
-                    <Text style={styles.eventMeta}>
-                      {ev.date ? new Date(ev.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
-                    </Text>
-                    {ev.venue && <Text style={styles.eventMeta} numberOfLines={1}>📍 {ev.venue}</Text>}
-                    <Text style={[styles.eventMeta, { color: accentColor }]}>{ev.league}</Text>
-                  </View>
-                </View>
-                {ev.homeScore != null && ev.awayScore != null && (
-                  <Text style={styles.eventScore}>{ev.homeScore}-{ev.awayScore}</Text>
-                )}
-              </View>
-            ))
-          ) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
-              <Text style={styles.emptyCardTitle}>No events scheduled right now</Text>
-              <Text style={styles.emptyCardSub}>
-                {SPORT_DATA_NOTE[sport.id] ??
-                  `${sport.leagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* ── Latest News ────────────────────────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Latest News</Text>
-          </View>
-
-          {newsLoading ? (
-            <>
-              <NewsCardSkeleton />
-              <NewsCardSkeleton />
-            </>
-          ) : sportNews.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyCardSub}>No news right now — check back soon</Text>
-            </View>
-          ) : (
-            sportNews.map((article) => (
-              <Pressable
-                key={article.id}
-                style={({ pressed }) => [styles.newsRow, { opacity: pressed ? 0.75 : 1 }]}
-              >
-                <View style={styles.newsRowDot} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.newsRowText} numberOfLines={2}>{article.title}</Text>
-                  <Text style={styles.newsRowMeta} numberOfLines={1}>
-                    {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""} · {article.leagues?.join(", ")}
-                  </Text>
-                </View>
-              </Pressable>
-            ))
-          )}
-        </View>
-
-        {/* ── Standings shortcut ────────────────────────────────────── */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.standingsCard,
-            { opacity: pressed ? 0.8 : 1, borderColor: accentColor + "44" },
-          ]}
-          onPress={() => router.push("/(tabs)/standings" as any)}
-        >
-          <Ionicons name="bar-chart-outline" size={22} color={accentColor} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.standingsCardTitle}>Standings</Text>
-            <Text style={styles.standingsCardSub}>
-              View {sport.name} standings & rankings
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={C.textSecondary} />
-        </Pressable>
-
+        {renderSections()}
         <View style={{ height: 32 }} />
       </ScrollView>
     </View>
@@ -450,7 +936,6 @@ const styles = StyleSheet.create({
     backgroundColor: C.background,
   },
 
-  // Header / hero
   heroGradient: {
     paddingBottom: 0,
   },
@@ -503,7 +988,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     color: C.live,
   },
-  // League chips
   chipScroll: {
     marginBottom: 0,
   },
@@ -526,12 +1010,10 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
   },
 
-  // Content
   content: {
     paddingTop: 8,
   },
 
-  // Section
   section: {
     marginBottom: 8,
     paddingTop: 16,
@@ -554,7 +1036,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
 
-  // Athlete chips
   athleteRow: {
     gap: 10,
     paddingRight: 16,
@@ -573,6 +1054,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   athleteInitials: {
     fontSize: 16,
@@ -591,7 +1073,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // League links
   leagueLinks: {
     backgroundColor: C.card,
     borderRadius: 14,
@@ -618,7 +1099,6 @@ const styles = StyleSheet.create({
     color: C.text,
   },
 
-  // News rows
   newsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -641,8 +1121,13 @@ const styles = StyleSheet.create({
     color: C.text,
     lineHeight: 20,
   },
+  newsRowMeta: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    marginTop: 2,
+  },
 
-  // Standings card
   standingsCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -665,7 +1150,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Empty states
   emptyCard: {
     backgroundColor: C.card,
     borderRadius: 14,
@@ -735,10 +1219,65 @@ const styles = StyleSheet.create({
     color: C.text,
     marginLeft: 8,
   },
-  newsRowMeta: {
-    fontSize: 11,
+
+  rankingsCard: {
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+  },
+  rankingsGroupTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    flex: 1,
+  },
+  rankRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.separator,
+  },
+  rankNum: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: C.textSecondary,
+    width: 24,
+    textAlign: "right",
+  },
+  rankHeadshot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginLeft: 10,
+    backgroundColor: C.separator,
+    overflow: "hidden",
+  },
+  rankName: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+  },
+  rankSub: {
+    fontSize: 10,
     fontFamily: "Inter_400Regular",
     color: C.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
+  },
+  rankPoints: {
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+    color: C.textSecondary,
+    minWidth: 40,
+    textAlign: "right",
+  },
+  rankExpandBtn: {
+    paddingTop: 10,
+    alignItems: "center",
+  },
+  rankExpandText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
   },
 });

@@ -9,6 +9,7 @@ import type { Game } from "@/utils/api";
 import { goToTeam } from "@/utils/navHelpers";
 import {
   getSportArchetype, isTennisLeague, isCombatLeague,
+  isGolfLeague, isRacingLeague,
   shortAthleteName, SPORT_EMOJI,
 } from "@/utils/sportArchetype";
 
@@ -22,6 +23,7 @@ function getLeagueColor(league: string): string {
     EPL: C.eplBright, UCL: C.ucl, LIGA: C.liga,
     NCAA: C.accentGold,
     UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
+    PGA: "#00704A", LIV: "#D71920", F1: "#E10600", NASCAR: "#FFD659",
     OLYMPICS: C.olympics, XGAMES: C.xgames,
   };
   return map[league] ?? C.accent;
@@ -580,6 +582,95 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                   <Ionicons name="star" size={10} color={C.accent} />
                 </View>
               )}
+              <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
+            </View>
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  }
+
+  // ── GOLF default ──────────────────────────────────────────────────────────
+  if (archetype === "golf") {
+    const lb = game.leaderboard ?? [];
+    return (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
+          <View style={[dflt.card, grouped && dflt.cardGrouped, { paddingVertical: 0, minHeight: 0 }]}>
+            <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                <View style={[dflt.liveBadge, { backgroundColor: isLive ? C.live : isFinished ? "#555" : `${leagueColor}22` }]}>
+                  <Text style={[dflt.liveBadgeText, { color: isLive ? "#fff" : isFinished ? "#ccc" : leagueColor }]}>
+                    {isLive ? "LIVE" : isFinished ? "FINAL" : formatTime(game.startTime)}
+                  </Text>
+                </View>
+                <Text style={{ color: C.text, fontSize: 13, fontFamily: "Inter_700Bold", marginLeft: 8, flex: 1 }} numberOfLines={1}>
+                  {game.eventTitle ?? "Tournament"}
+                </Text>
+                <Text style={{ fontSize: 10, color: leagueColor, fontFamily: "Inter_700Bold" }}>{game.league}</Text>
+              </View>
+
+              {lb.slice(0, 5).map((entry, i) => (
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 3 }}>
+                  <Text style={{ color: i === 0 ? leagueColor : C.textSecondary, fontSize: 11, fontFamily: "Inter_700Bold", width: 20, textAlign: "right" }}>
+                    {entry.position}
+                  </Text>
+                  <Text style={{ color: i === 0 ? C.text : C.textSecondary, fontSize: 12, fontFamily: i === 0 ? "Inter_700Bold" : "Inter_400Regular", marginLeft: 8, flex: 1 }} numberOfLines={1}>
+                    {entry.name}
+                  </Text>
+                  <Text style={{ color: i === 0 ? C.text : C.textSecondary, fontSize: 12, fontFamily: "Inter_700Bold", minWidth: 35, textAlign: "right" }}>
+                    {entry.score}
+                  </Text>
+                </View>
+              ))}
+
+              {game.venue && (
+                <Text style={{ color: C.textTertiary, fontSize: 10, marginTop: 4 }} numberOfLines={1}>{game.venue}</Text>
+              )}
+            </View>
+            <View style={[dflt.leagueAccent, { backgroundColor: leagueColor, position: "absolute", right: 0, top: 0, bottom: 0 }]} />
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  }
+
+  // ── RACING default ──────────────────────────────────────────────────────────
+  if (archetype === "racing") {
+    return (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
+          <View style={[dflt.card, grouped && dflt.cardGrouped]}>
+            <View style={dflt.statusCol}>
+              {isLive ? (
+                <>
+                  <View style={dflt.liveBadge}><Text style={dflt.liveBadgeText}>LIVE</Text></View>
+                </>
+              ) : isFinished ? (
+                <Text style={dflt.ftText}>FINAL</Text>
+              ) : (
+                <Text style={dflt.timeText}>{formatTime(game.startTime)}</Text>
+              )}
+            </View>
+
+            <View style={dflt.vSep} />
+
+            <View style={dflt.teamsCol}>
+              <View style={dflt.teamRow}>
+                <SportBadge emoji={sportEmoji} size={28} color={leagueColor} />
+                <View style={{ flex: 1 }}>
+                  <Text style={dflt.teamName} numberOfLines={1}>{game.eventTitle ?? game.homeTeam}</Text>
+                  {game.circuitName && (
+                    <Text style={{ color: C.textSecondary, fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1 }} numberOfLines={1}>
+                      {game.circuitName}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            <View style={dflt.rightCol}>
+              <Text style={{ color: leagueColor, fontSize: 9, fontFamily: "Inter_700Bold" }}>{game.league}</Text>
               <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
             </View>
           </View>
