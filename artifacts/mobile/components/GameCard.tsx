@@ -23,7 +23,6 @@ function getLeagueColor(league: string): string {
     EPL: C.eplBright, UCL: C.ucl, LIGA: C.liga,
     NCAA: C.accentGold,
     UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
-    PGA: "#00704A", LIV: "#D71920", F1: "#E10600", NASCAR: "#FFD659",
     OLYMPICS: C.olympics, XGAMES: C.xgames,
     PGA: C.pga, LIV: C.liv, F1: C.f1, NASCAR: C.nascar,
   };

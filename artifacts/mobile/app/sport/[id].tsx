@@ -1436,12 +1436,6 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     marginBottom: 10,
   },
-  leaderboardTourName: {
-    color: C.text,
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
   leaderboardCard: {
     backgroundColor: C.card,
     borderRadius: 12,
