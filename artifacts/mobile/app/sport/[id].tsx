@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { getSportById, getSportByLeague, type SportCategory } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
-import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry } from "@/utils/api";
+import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
@@ -30,7 +30,7 @@ import { getSportArchetype, type SportArchetype } from "@/utils/sportArchetype";
 
 const SPORT_DATA_NOTE: Record<string, string> = {
   golf:        "Live leaderboards appear during PGA Tour & LIV events. Tap Search to find golfers.",
-  motorsports: "Race results appear during F1 and NASCAR race weekends. Tap Search to find drivers.",
+  motorsports: "Race results appear during F1, NASCAR, and IndyCar race weekends. Tap Search to find drivers.",
   esports:     "Esports coverage coming soon. Tap Search to explore players.",
   track:       "Results appear during Diamond League and Olympic events. Tap Search to find athletes.",
   xgames:      "X Games coverage appears during live events. Tap Search to explore athletes.",
@@ -457,6 +457,16 @@ function DrawMatchCard({
   );
 }
 
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
 function getArchetypeForSport(sport: SportCategory | undefined, activeLeague: string): SportArchetype {
   if (activeLeague !== "all") return getSportArchetype(activeLeague);
   if (!sport) return "team";
@@ -553,12 +563,28 @@ export default function SportBoardScreen() {
     enabled: !!standingsLeague && archetype === "team",
   });
 
+  const racingLeague = archetype === "racing" ? (activeLeague !== "all" ? activeLeague : "F1") : null;
+  const { data: racingScheduleData, refetch: refetchRacingSchedule } = useQuery({
+    queryKey: ["racing-schedule", racingLeague],
+    queryFn: () => api.getRacingSchedule(racingLeague!),
+    staleTime: 300_000,
+    enabled: !!racingLeague,
+  });
+
+  const constructorLeague = archetype === "racing" && (activeLeague === "F1" || activeLeague === "all") ? "F1" : null;
+  const { data: constructorData, refetch: refetchConstructors } = useQuery({
+    queryKey: ["rankings", constructorLeague],
+    queryFn: () => api.getRankings(constructorLeague!),
+    staleTime: 600_000,
+    enabled: !!constructorLeague,
+  });
+
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw(), refetchLeaderboard(), refetchStandings()]);
+    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw(), refetchLeaderboard(), refetchStandings(), refetchRacingSchedule(), refetchConstructors()]);
     setRefreshing(false);
-  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchStandings]);
+  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchStandings, refetchRacingSchedule, refetchConstructors]);
 
   const sportLeagueKeys = useMemo(
     () => new Set(sport?.leagues.map((l) => l.key) ?? []),
@@ -629,6 +655,9 @@ export default function SportBoardScreen() {
   const rankingsGroups: RankingsGroup[] = rankingsData?.groups ?? [];
   const tennisTournaments: TennisTournament[] = drawData?.tournaments ?? [];
   const standingsEntries: StandingEntry[] = standingsData?.standings ?? [];
+  const nextRace: NextRace | null = racingScheduleData?.nextRace ?? null;
+  const raceCalendar: RaceEvent[] = racingScheduleData?.races ?? [];
+  const constructorGroups: RankingsGroup[] = constructorData?.groups ?? [];
 
   const liveCount = filteredGames.filter((g) => g.status === "live").length;
   const accentColor = sport?.color ?? C.accent;
@@ -740,14 +769,18 @@ export default function SportBoardScreen() {
     </View>
   ) : null;
 
-  const RankingsSection = rankingsGroups.length > 0 ? (
+  const driverRankingsGroups = archetype === "racing"
+    ? rankingsGroups.filter(g => !g.title.toLowerCase().includes("constructor") && !g.title.toLowerCase().includes("team"))
+    : rankingsGroups;
+
+  const RankingsSection = driverRankingsGroups.length > 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          {archetype === "racing" ? "Standings" : archetype === "golf" ? "World Rankings" : "World Rankings"}
+          {archetype === "racing" ? "Driver Standings" : archetype === "golf" ? "World Rankings" : "World Rankings"}
         </Text>
       </View>
-      {rankingsGroups.slice(0, archetype === "combat" ? 3 : 2).map((group, i) => (
+      {driverRankingsGroups.slice(0, archetype === "combat" ? 3 : 2).map((group, i) => (
         <RankingsTable key={group.title} group={group} accentColor={accentColor} limit={archetype === "combat" ? 5 : 10} />
       ))}
     </View>
@@ -812,6 +845,107 @@ export default function SportBoardScreen() {
       </View>
       {tennisTournaments.map((tournament) => (
         <TournamentDraw key={tournament.id} tournament={tournament} accentColor={accentColor} />
+      ))}
+    </View>
+  ) : null;
+
+  const NextRaceSection = nextRace ? (
+    <View style={styles.section}>
+      <View style={styles.rankingsCard}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <View style={[styles.eventTypeBadge, {
+            backgroundColor: nextRace.countdownMs === 0 ? "#E53935" : accentColor + "33",
+          }]}>
+            <Text style={[styles.eventTypeText, {
+              color: nextRace.countdownMs === 0 ? "#fff" : accentColor,
+            }]}>
+              {nextRace.countdownMs === 0 ? "LIVE" : "NEXT RACE"}
+            </Text>
+          </View>
+          <Text style={{ fontSize: 10, color: C.textSecondary, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5 }}>
+            {racingLeague ?? "F1"}
+          </Text>
+        </View>
+        <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: C.text, marginBottom: 4 }}>
+          {nextRace.name}
+        </Text>
+        {nextRace.circuit && (
+          <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: C.textSecondary, marginBottom: 2 }}>
+            {nextRace.circuit}
+          </Text>
+        )}
+        {nextRace.location && nextRace.location !== nextRace.circuit && (
+          <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textTertiary, marginBottom: 8 }}>
+            {nextRace.location}
+          </Text>
+        )}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+          <Ionicons name="calendar-outline" size={14} color={accentColor} />
+          <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: C.text }}>
+            {new Date(nextRace.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+          </Text>
+        </View>
+        {nextRace.countdownMs > 0 && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
+            <Ionicons name="time-outline" size={14} color={accentColor} />
+            <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: accentColor }}>
+              {formatCountdown(nextRace.countdownMs)}
+            </Text>
+          </View>
+        )}
+      </View>
+    </View>
+  ) : null;
+
+  const ConstructorStandingsSection = constructorGroups.length > 0 ? (() => {
+    const constructorGroup = constructorGroups.find(g =>
+      g.title.toLowerCase().includes("constructor") || g.title.toLowerCase().includes("team")
+    );
+    if (!constructorGroup) return null;
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Constructor Standings</Text>
+        </View>
+        <RankingsTable group={constructorGroup} accentColor={accentColor} limit={10} />
+      </View>
+    );
+  })() : null;
+
+  const RaceCalendarSection = raceCalendar.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Race Calendar</Text>
+      </View>
+      {raceCalendar.map((race) => (
+        <View key={race.id} style={styles.eventRow}>
+          <View style={[styles.eventTypeBadge, {
+            backgroundColor: race.status === "live" ? "#E53935" : race.status === "finished" ? C.textTertiary + "33" : accentColor + "33",
+          }]}>
+            <Text style={[styles.eventTypeText, {
+              color: race.status === "live" ? "#fff" : race.status === "finished" ? C.textSecondary : accentColor,
+            }]}>{race.status === "live" ? "LIVE" : race.status === "finished" ? "FINAL" : "UPCOMING"}</Text>
+          </View>
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.eventName} numberOfLines={2}>{race.name}</Text>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+              <Text style={styles.eventMeta}>
+                {new Date(race.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </Text>
+              {race.circuit && <Text style={styles.eventMeta} numberOfLines={1}>{race.circuit}</Text>}
+            </View>
+            {race.results.length > 0 && (
+              <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: accentColor, marginTop: 2 }}>
+                {"P1: "}{race.results[0].driver}{race.results.length > 1 ? ` · P2: ${race.results[1].driver}` : ""}
+              </Text>
+            )}
+            {race.qualifying && race.qualifying.length > 0 && race.results.length === 0 && (
+              <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: C.textSecondary, marginTop: 2 }}>
+                {"Pole: "}{race.qualifying[0].driver}
+              </Text>
+            )}
+          </View>
+        </View>
       ))}
     </View>
   ) : null;
@@ -1090,10 +1224,12 @@ export default function SportBoardScreen() {
       case "racing":
         return (
           <>
+            {NextRaceSection}
             {RankingsSection}
+            {ConstructorStandingsSection}
             {GamesSection}
+            {RaceCalendarSection ?? ScheduleSection}
             {RankingsAthletesSection ?? AthletesSection}
-            {ScheduleSection}
             {NewsSection}
           </>
         );

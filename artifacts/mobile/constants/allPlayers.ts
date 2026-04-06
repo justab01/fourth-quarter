@@ -2149,6 +2149,19 @@ export const F1_DRIVERS: SearchPlayer[] = [
   { name: "Yuki Tsunoda", team: "RB", league: "F1", position: "Driver", stat: "Japanese star — rapid improvement" },
 ];
 
+export const INDYCAR_DRIVERS: SearchPlayer[] = [
+  { name: "Alex Palou", team: "Chip Ganassi Racing", league: "IRL", position: "Driver", stat: "2x IndyCar champion — consistent frontrunner" },
+  { name: "Josef Newgarden", team: "Team Penske", league: "IRL", position: "Driver", stat: "2x champion — back-to-back Indy 500 winner" },
+  { name: "Scott Dixon", team: "Chip Ganassi Racing", league: "IRL", position: "Driver", stat: "6x champion — all-time great" },
+  { name: "Colton Herta", team: "Andretti Global", league: "IRL", position: "Driver", stat: "Youngest IndyCar winner — F1 prospect" },
+  { name: "Pato O'Ward", team: "Arrow McLaren", league: "IRL", position: "Driver", stat: "Multiple race winner — championship contender" },
+  { name: "Scott McLaughlin", team: "Team Penske", league: "IRL", position: "Driver", stat: "Race winner — former Supercars champion" },
+  { name: "Will Power", team: "Team Penske", league: "IRL", position: "Driver", stat: "2022 champion — Indy 500 winner" },
+  { name: "Marcus Ericsson", team: "Andretti Global", league: "IRL", position: "Driver", stat: "2022 Indy 500 champion — ex-F1 driver" },
+  { name: "Alexander Rossi", team: "Arrow McLaren", league: "IRL", position: "Driver", stat: "2016 Indy 500 winner — veteran" },
+  { name: "Kyle Kirkwood", team: "Andretti Global", league: "IRL", position: "Driver", stat: "Rising star — multiple wins" },
+];
+
 export const NASCAR_DRIVERS: SearchPlayer[] = [
   { name: "Kyle Larson", team: "Hendrick Motorsports", league: "NASCAR", position: "Driver", stat: "2021 Cup champion — versatile racer" },
   { name: "William Byron", team: "Hendrick Motorsports", league: "NASCAR", position: "Driver", stat: "Multiple Cup wins — championship contender", headshotUrl: "https://a.espncdn.com/i/headshots/rpm/players/full/4601.png" },
@@ -2179,6 +2192,7 @@ export const ALL_PLAYERS: SearchPlayer[] = [
   ...OLYMPICS_ATHLETES,
   ...PGA_PLAYERS,
   ...F1_DRIVERS,
+  ...INDYCAR_DRIVERS,
   ...NASCAR_DRIVERS,
 ];
 

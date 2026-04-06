@@ -214,6 +214,8 @@ const SPORT_ALIASES: Record<string, string> = {
   pfl: "combat",
   f1: "motorsports",
   nascar: "motorsports",
+  indycar: "motorsports",
+  irl: "motorsports",
   racing: "motorsports",
   indycar: "motorsports",
   irl: "motorsports",

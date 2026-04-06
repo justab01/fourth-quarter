@@ -2493,7 +2493,7 @@ const SPORT_ESPN_LEAGUES: Record<string, string[]> = {
   tennis: ["ATP", "WTA"],
   combat: ["UFC", "BOXING"],
   golf: ["PGA", "LIV"],
-  motorsports: ["F1", "NASCAR"],
+  motorsports: ["F1", "NASCAR", "IRL"],
   college: ["NCAAB", "NCAAF"],
   womens: ["WNBA", "WTA"],
   track: ["OLYMPICS"],
@@ -2622,6 +2622,217 @@ router.get("/sports/upcoming/:sport", async (req, res) => {
   } catch (err) {
     console.error("Upcoming events error:", err);
     res.json({ events: [] });
+  }
+});
+
+// ─── Racing Schedule / Next Race ─────────────────────────────────────────────
+
+interface RaceResultEntry {
+  position: number;
+  driver: string;
+  team: string | null;
+  time: string | null;
+  headshot: string | null;
+}
+
+interface RaceScheduleEntry {
+  id: string;
+  name: string;
+  date: string;
+  circuit: string | null;
+  location: string | null;
+  status: "upcoming" | "live" | "finished";
+  results: RaceResultEntry[];
+  qualifying: RaceResultEntry[];
+}
+
+interface NextRaceInfo {
+  name: string;
+  date: string;
+  circuit: string | null;
+  location: string | null;
+  countdownMs: number;
+}
+
+function extractCompetitorResults(competitors: any[], limit = 10): RaceResultEntry[] {
+  const sorted = [...competitors].sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
+  return sorted.slice(0, limit).map((c: any) => ({
+    position: c.order ?? 0,
+    driver: c.athlete?.displayName ?? c.team?.displayName ?? "Unknown",
+    team: c.team?.displayName ?? null,
+    time: c.linescores?.map((l: any) => l.displayValue ?? l.value).join(", ") ?? null,
+    headshot: c.athlete?.headshot?.href ?? c.athlete?.flag?.href ?? null,
+  }));
+}
+
+function parseEspnRacingEvents(events: any[]): { races: RaceScheduleEntry[]; nextRace: NextRaceInfo | null } {
+  const races: RaceScheduleEntry[] = [];
+  let nextRace: NextRaceInfo | null = null;
+  const now = Date.now();
+
+  for (const ev of events) {
+    const state = ev.status?.type?.state ?? "pre";
+    const raceStatus = mapStatus(state);
+    const circuit = ev.circuit?.fullName ?? ev.circuit?.shortName ?? null;
+    const venue = ev.competitions?.[0]?.venue?.fullName ?? null;
+    const raceDate = ev.date ?? new Date().toISOString();
+
+    let results: RaceResultEntry[] = [];
+    let qualifying: RaceResultEntry[] = [];
+
+    const raceComp = ev.competitions?.find((c: any) =>
+      c.type?.abbreviation === "Race"
+    ) ?? ev.competitions?.[ev.competitions.length - 1];
+    if (raceComp?.competitors && (raceComp.status?.type?.state === "post" || raceComp.status?.type?.state === "in")) {
+      results = extractCompetitorResults(raceComp.competitors);
+    }
+
+    const qualComp = ev.competitions?.find((c: any) =>
+      c.type?.abbreviation === "Qual" || c.type?.abbreviation === "QF"
+    );
+    if (qualComp?.competitors && qualComp.status?.type?.state === "post") {
+      qualifying = extractCompetitorResults(qualComp.competitors);
+    }
+
+    races.push({
+      id: ev.id,
+      name: ev.name ?? "Race",
+      date: raceDate,
+      circuit,
+      location: venue ?? circuit,
+      status: raceStatus,
+      results,
+      qualifying,
+    });
+
+    if (!nextRace && (raceStatus === "upcoming" || raceStatus === "live")) {
+      const raceTime = new Date(raceDate).getTime();
+      nextRace = {
+        name: ev.name ?? "Race",
+        date: raceDate,
+        circuit,
+        location: venue ?? circuit,
+        countdownMs: raceStatus === "live" ? 0 : Math.max(0, raceTime - now),
+      };
+    }
+  }
+
+  return { races, nextRace };
+}
+
+async function fetchNascarScheduleFallback(): Promise<{ races: RaceScheduleEntry[]; nextRace: NextRaceInfo | null }> {
+  const races: RaceScheduleEntry[] = [];
+  let nextRace: NextRaceInfo | null = null;
+  const now = Date.now();
+
+  const tsdIds = [4370];
+  for (const tsdId of tsdIds) {
+    try {
+      const [upcomingJson, pastJson] = await Promise.all([
+        espnFetch(`https://www.thesportsdb.com/api/v1/json/${TSD_KEY}/eventsnextleague.php?id=${tsdId}`) as Promise<any>,
+        espnFetch(`https://www.thesportsdb.com/api/v1/json/${TSD_KEY}/eventspastleague.php?id=${tsdId}`) as Promise<any>,
+      ]);
+
+      const isNascar = (e: any) =>
+        e.strLeague?.toLowerCase().includes("nascar") ||
+        e.strEvent?.toLowerCase().includes("nascar");
+
+      for (const e of (pastJson.events ?? []).filter(isNascar).slice(0, 10)) {
+        races.push({
+          id: `tsd-${e.idEvent}`,
+          name: e.strEvent ?? "Race",
+          date: e.dateEvent ?? "",
+          circuit: e.strVenue ?? null,
+          location: e.strCity ? `${e.strCity}, ${e.strCountry ?? ""}`.trim() : null,
+          status: "finished",
+          results: [],
+          qualifying: [],
+        });
+      }
+
+      for (const e of (upcomingJson.events ?? []).filter(isNascar)) {
+        const raceDate = e.dateEvent ?? "";
+        races.push({
+          id: `tsd-${e.idEvent}`,
+          name: e.strEvent ?? "Race",
+          date: raceDate,
+          circuit: e.strVenue ?? null,
+          location: e.strCity ? `${e.strCity}, ${e.strCountry ?? ""}`.trim() : null,
+          status: "upcoming",
+          results: [],
+          qualifying: [],
+        });
+
+        if (!nextRace && raceDate) {
+          const raceTime = new Date(raceDate).getTime();
+          if (raceTime > now) {
+            nextRace = {
+              name: e.strEvent ?? "Race",
+              date: raceDate,
+              circuit: e.strVenue ?? null,
+              location: e.strCity ? `${e.strCity}, ${e.strCountry ?? ""}`.trim() : null,
+              countdownMs: Math.max(0, raceTime - now),
+            };
+          }
+        }
+      }
+    } catch {
+    }
+  }
+
+  try {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/racing/nascar/scoreboard`;
+    const json = await espnFetch(url) as any;
+    const events = json.events ?? [];
+    if (events.length > 0) {
+      const parsed = parseEspnRacingEvents(events);
+      return parsed;
+    }
+  } catch {
+  }
+
+  races.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  return { races, nextRace };
+}
+
+router.get("/sports/racing/schedule/:league", async (req, res) => {
+  const league = (req.params.league ?? "").toUpperCase();
+  const cfg = LEAGUE_CONFIG[league];
+  if (!cfg || getArchetype(league) !== "racing") {
+    return res.status(400).json({ error: `Racing schedule not available for ${league}` });
+  }
+
+  const cacheKey = `racing-schedule-${league}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    let races: RaceScheduleEntry[] = [];
+    let nextRace: NextRaceInfo | null = null;
+
+    if (league === "NASCAR") {
+      const nascarData = await fetchNascarScheduleFallback();
+      races = nascarData.races;
+      nextRace = nascarData.nextRace;
+      if (races.length === 0) {
+        console.warn("NASCAR schedule: no data available from any source (ESPN API may be down)");
+      }
+    } else {
+      const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard`;
+      const json = await espnFetch(url) as any;
+      const events = json.events ?? [];
+      const parsed = parseEspnRacingEvents(events);
+      races = parsed.races;
+      nextRace = parsed.nextRace;
+    }
+
+    const result = { league, nextRace, races };
+    const hasLive = races.some(r => r.status === "live");
+    setCached(cacheKey, result, hasLive ? 30_000 : 300_000);
+    res.json(result);
+  } catch (err) {
+    console.error(`Racing schedule error for ${league}:`, err);
+    res.json({ league, nextRace: null, races: [] });
   }
 });
 
@@ -2990,7 +3201,7 @@ router.get("/sports/rankings/:league", async (req, res): Promise<void> => {
           title: child.name ?? "Standings",
           entries: entries.slice(0, 25).map((e: any) => {
             const rankStat = e.stats?.find((s: any) => s.name === "rank");
-            const ptsStat = e.stats?.find((s: any) => s.name === "points");
+            const ptsStat = e.stats?.find((s: any) => s.name === "points" || s.name === "championshipPts");
             const winsStat = e.stats?.find((s: any) => s.name === "wins");
             return {
               rank: rankStat?.value ?? 0,

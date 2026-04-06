@@ -95,6 +95,9 @@ export const api = {
 
   getTennisDraw: (league: string) =>
     apiFetch<TennisDrawData>(`/sports/tennis/draw/${encodeURIComponent(league)}`),
+
+  getRacingSchedule: (league: string) =>
+    apiFetch<RacingScheduleResponse>(`/sports/racing/schedule/${encodeURIComponent(league)}`),
 };
 
 export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
@@ -222,6 +225,39 @@ export interface GolfLeaderboardResponse {
   venue: string;
   status: string;
   leaderboard: GolfLeaderboardEntry[];
+}
+
+export interface RaceResult {
+  position: number;
+  driver: string;
+  team: string | null;
+  time: string | null;
+  headshot: string | null;
+}
+
+export interface RaceEvent {
+  id: string;
+  name: string;
+  date: string;
+  circuit: string | null;
+  location: string | null;
+  status: "upcoming" | "live" | "finished";
+  results: RaceResult[];
+  qualifying: RaceResult[];
+}
+
+export interface NextRace {
+  name: string;
+  date: string;
+  circuit: string | null;
+  location: string | null;
+  countdownMs: number;
+}
+
+export interface RacingScheduleResponse {
+  league: string;
+  nextRace: NextRace | null;
+  races: RaceEvent[];
 }
 
 export interface UpcomingEvent {
