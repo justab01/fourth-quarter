@@ -91,6 +91,38 @@ export const TEAMS_BY_LEAGUE: Record<string, string[]> = {
     "Real Sociedad", "Villarreal", "Athletic Club", "Valencia",
     "Real Betis", "Osasuna",
   ],
+  BUN: [
+    "Bayern Munich", "Borussia Dortmund", "RB Leipzig",
+    "Bayer Leverkusen", "VfB Stuttgart", "Eintracht Frankfurt",
+  ],
+  SERA: [
+    "Inter Milan", "AC Milan", "Juventus", "Napoli",
+    "AS Roma", "Atalanta", "Lazio", "Fiorentina",
+  ],
+  LIG1: [
+    "Paris Saint-Germain", "Marseille", "Monaco",
+    "Lyon", "Lille", "Nice",
+  ],
+  NWSL: [
+    "Portland Thorns", "Kansas City Current", "OL Reign",
+    "NJ/NY Gotham FC", "San Diego Wave", "Angel City FC",
+  ],
+  UEL: [
+    "Roma", "Ajax", "Lazio", "Athletic Club",
+    "Tottenham Hotspur", "Eintracht Frankfurt",
+  ],
+  UECL: [
+    "Fiorentina", "Chelsea", "Real Betis", "Olympiacos",
+  ],
+  FWCM: [
+    "Brazil", "France", "Argentina", "Germany", "England", "Spain",
+  ],
+  EURO: [
+    "France", "Germany", "Spain", "England", "Italy", "Portugal",
+  ],
+  COPA: [
+    "Argentina", "Brazil", "Uruguay", "Colombia", "Chile",
+  ],
   UFC: [
     "Jon Jones", "Islam Makhachev", "Alex Pereira", "Ilia Topuria",
     "Leon Edwards", "Dricus Du Plessis", "Merab Dvalishvili",
@@ -130,6 +162,15 @@ export const LEAGUE_COLORS: Record<string, string> = {
   EPL:      C.eplBright,
   UCL:      C.ucl,
   LIGA:     C.liga,
+  BUN:      "#D50000",
+  SERA:     "#009CDE",
+  LIG1:     "#091C3E",
+  UEL:      "#F68E1E",
+  UECL:     "#19A87A",
+  NWSL:     "#FF6F61",
+  FWCM:     "#5B3888",
+  EURO:     "#0056A0",
+  COPA:     "#1F5F2A",
   UFC:      C.ufc,
   NCAA:     C.accentGold,
   BOXING:   C.boxing,

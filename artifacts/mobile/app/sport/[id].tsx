@@ -16,7 +16,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
-import { getSportById, getSportByLeague, type SportCategory } from "@/constants/sportCategories";
+import { getSportById, getSportByLeague, type SportCategory, type LeagueGroup } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
@@ -747,6 +747,19 @@ export default function SportBoardScreen() {
 
   const sport = getSportById(id ?? "") ?? getSportByLeague((id ?? "").toUpperCase());
   const [activeLeague, setActiveLeague] = useState<string>("all");
+  const [activeGroup, setActiveGroup] = useState<LeagueGroup | "all">("all");
+
+  const isSoccerSport = sport?.id === "soccer";
+  const hasGroups = isSoccerSport && sport.leagues.some((l) => l.group);
+  const GROUP_LABELS: { key: LeagueGroup | "all"; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "domestic", label: "Domestic" },
+    { key: "cups", label: "Cups" },
+    { key: "international", label: "International" },
+  ];
+  const visibleLeagues = hasGroups && activeGroup !== "all"
+    ? sport.leagues.filter((l) => l.group === activeGroup)
+    : sport?.leagues ?? [];
 
   const sportId = sport?.id ?? id ?? "";
   const archetype = getArchetypeForSport(sport, activeLeague);
@@ -861,34 +874,51 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     return new Set([activeLeague]);
   }, [activeLeague]);
 
+  const groupLeagueKeys = useMemo(() => {
+    if (!hasGroups || activeGroup === "all") return sportLeagueKeys;
+    return new Set(
+      (sport?.leagues ?? []).filter((l) => l.group === activeGroup).map((l) => l.key)
+    );
+  }, [sport, hasGroups, activeGroup, sportLeagueKeys]);
+
   const filteredGames = useMemo(() => {
     const games: Game[] = (gamesData as any)?.games ?? [];
     return games
       .filter((g) => {
         if (!sportLeagueKeys.has(g.league)) return false;
         if (activeLeagueKeys && !activeLeagueKeys.has(g.league)) return false;
+        if (activeLeague === "all" && hasGroups && activeGroup !== "all" && !groupLeagueKeys.has(g.league)) return false;
         return true;
       })
       .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
-  }, [gamesData, sportLeagueKeys, activeLeagueKeys]);
+  }, [gamesData, sportLeagueKeys, activeLeagueKeys, activeLeague, hasGroups, activeGroup, groupLeagueKeys]);
 
   const golfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype === "golf"), [filteredGames]);
   const nonGolfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype !== "golf"), [filteredGames]);
 
   const sportNews: SportNewsArticle[] = sportNewsData?.articles ?? [];
 
-  const upcomingEvents: UpcomingEvent[] = upcomingData?.events ?? [];
+  const upcomingEvents: UpcomingEvent[] = useMemo(() => {
+    const all: UpcomingEvent[] = upcomingData?.events ?? [];
+    if (activeLeague !== "all") return all.filter((ev) => ev.league === activeLeague);
+    if (hasGroups && activeGroup !== "all") return all.filter((ev) => groupLeagueKeys.has(ev.league));
+    return all;
+  }, [upcomingData, activeLeague, hasGroups, activeGroup, groupLeagueKeys]);
 
   const topAthletes = useMemo(() => {
-    const leagueFilter =
-      activeLeague === "all"
-        ? sportLeagueKeys
-        : activeLeagueKeys ?? sportLeagueKeys;
-    return ALL_PLAYERS.filter((p) => leagueFilter.has(p.league)).slice(0, 20).map(p => ({
+    let filterSet: Set<string>;
+    if (activeLeague !== "all") {
+      filterSet = activeLeagueKeys ?? new Set([activeLeague]);
+    } else if (hasGroups && activeGroup !== "all") {
+      filterSet = groupLeagueKeys;
+    } else {
+      filterSet = sportLeagueKeys;
+    }
+    return ALL_PLAYERS.filter((p) => filterSet.has(p.league)).slice(0, 20).map(p => ({
       ...p,
       resolvedHeadshot: p.headshotUrl || getEspnHeadshotUrl(p.name, p.league) || undefined,
     }));
-  }, [sportLeagueKeys, activeLeague, activeLeagueKeys]);
+  }, [sportLeagueKeys, activeLeague, activeLeagueKeys, hasGroups, activeGroup, groupLeagueKeys]);
 
   const standingsGroups = useMemo(() => {
     const entries: StandingEntry[] = standingsData?.standings ?? [];
@@ -1380,10 +1410,57 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
               </View>
             </View>
           </View>
+        ))
+      ) : (() => {
+        const INTL_LEAGUES = new Set(["FWCM", "EURO", "COPA"]);
+        const isIntlLeague = INTL_LEAGUES.has(activeLeague);
+        const isIntlGroup = activeGroup === "international";
+        const isIntlContext = isIntlLeague || isIntlGroup;
+
+        const allUpcomingRaw: UpcomingEvent[] = upcomingData?.events ?? [];
+        const leagueUpcoming = (isIntlLeague
+          ? allUpcomingRaw.filter((ev) => ev.league === activeLeague && ev.type === "upcoming")
+          : isIntlGroup
+          ? allUpcomingRaw.filter((ev) => ["FWCM", "EURO", "COPA"].includes(ev.league) && ev.type === "upcoming")
+          : []
+        ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const nextDate = leagueUpcoming[0]?.date;
+        const nextDateStr = nextDate
+          ? new Date(nextDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+          : null;
+
+        const LEAGUE_DISPLAY: Record<string, string> = {
+          FWCM: "FIFA World Cup",
+          EURO: "Euro Championship",
+          COPA: "Copa América",
+        };
+        const leagueName = LEAGUE_DISPLAY[activeLeague] ?? "Tournament";
+
+        return (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
+            <Text style={styles.emptyCardTitle}>
+              {isIntlContext
+                ? (isIntlLeague ? "Tournament not active" : "No tournaments active")
+                : "No events scheduled right now"}
+            </Text>
+            <Text style={styles.emptyCardSub}>
+              {isIntlLeague
+                ? (nextDateStr
+                    ? `Next ${leagueName}: ${nextDateStr}`
+                    : `${leagueName} games will appear here when the tournament begins.`)
+                : isIntlGroup
+                ? (nextDateStr
+                    ? `Next tournament: ${nextDateStr}`
+                    : "International tournament games will appear here when competitions are active.")
+                : SPORT_DATA_NOTE[sport.id] ??
+                  `${visibleLeagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
+            </Text>
+          </View>
         );
-      })}
+      })()}
     </View>
-  ) : null;
+  );
 
   const ScheduleSection = (
     <View style={styles.section}>
@@ -1433,7 +1510,7 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
           <Text style={styles.emptyCardTitle}>No events scheduled right now</Text>
           <Text style={styles.emptyCardSub}>
             {SPORT_DATA_NOTE[sport.id] ??
-              `${sport.leagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
+              `${visibleLeagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
           </Text>
         </View>
       )}
@@ -1836,6 +1913,24 @@ const SeasonalEventsSection = seasonalEvents.length > 0 ? (
           <SearchButton />
         </View>
 
+        {hasGroups && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipScroll}
+            contentContainerStyle={styles.chipContent}
+          >
+            {GROUP_LABELS.map((g) => (
+              <LeagueChip
+                key={g.key}
+                label={g.label}
+                active={activeGroup === g.key}
+                accentColor={accentColor}
+                onPress={() => { setActiveGroup(g.key); setActiveLeague("all"); }}
+              />
+            ))}
+          </ScrollView>
+        )}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -1858,7 +1953,7 @@ const SeasonalEventsSection = seasonalEvents.length > 0 ? (
                   onPress={() => setActiveLeague(`cg:${group.label}`)}
                 />
               ))
-            : sport.leagues.map((l) => (
+            : visibleLeagues.map((l) => (
                 <LeagueChip
                   key={l.key}
                   label={l.label}

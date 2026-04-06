@@ -43,6 +43,15 @@ const PLAYER_STAT_COLS: Record<string, string[]> = {
   EPL:   ["MIN", "G", "A", "SHT"],
   UCL:   ["MIN", "G", "A", "SHT"],
   LIGA:  ["MIN", "G", "A", "SHT"],
+  BUN:   ["MIN", "G", "A", "SHT"],
+  SERA:  ["MIN", "G", "A", "SHT"],
+  LIG1:  ["MIN", "G", "A", "SHT"],
+  UEL:   ["MIN", "G", "A", "SHT"],
+  UECL:  ["MIN", "G", "A", "SHT"],
+  NWSL:  ["MIN", "G", "A", "SHT"],
+  FWCM:  ["MIN", "G", "A", "SHT"],
+  EURO:  ["MIN", "G", "A", "SHT"],
+  COPA:  ["MIN", "G", "A", "SHT"],
   NHL:   ["G", "A", "PTS", "+/-", "S", "TOI", "PIM"],
   UFC:   ["SLM", "SLA", "TD", "TD%", "SUB", "KD"],
   BOXING: ["SLM", "KD", "TD", "CTRL"],
@@ -51,6 +60,9 @@ const PLAYER_STAT_COLS: Record<string, string[]> = {
 };
 
 const NHL_GOALIE_STAT_COLS = ["SV", "GA", "SA", "SV%", "TOI"];
+const SOCCER_GK_STAT_COLS = ["MIN", "SV", "GA", "CS"];
+
+const SOCCER_LEAGUES = new Set(["MLS", "EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "UEL", "UECL", "NWSL", "FWCM", "EURO", "COPA"]);
 
 function getSportVenueGradient(league: string): [string, string, string, string] {
   const map: Record<string, [string, string, string, string]> = {
@@ -64,6 +76,15 @@ function getSportVenueGradient(league: string): [string, string, string, string]
     EPL:   ["#1A0028", "#0D0014", "#06000A", "#0F0F0F"],
     UCL:   ["#001040", "#000820", "#000410", "#0F0F0F"],
     LIGA:  ["#280505", "#140202", "#090101", "#0F0F0F"],
+    BUN:   ["#1A0008", "#0D0004", "#060002", "#0F0F0F"],
+    SERA:  ["#00101A", "#00080D", "#000406", "#0F0F0F"],
+    LIG1:  ["#001028", "#000814", "#00040A", "#0F0F0F"],
+    UEL:   ["#1A0F00", "#0D0800", "#060400", "#0F0F0F"],
+    UECL:  ["#001A0D", "#000D06", "#000603", "#0F0F0F"],
+    NWSL:  ["#0D1A28", "#060D14", "#03060A", "#0F0F0F"],
+    FWCM:  ["#140014", "#0A000A", "#050005", "#0F0F0F"],
+    EURO:  ["#001428", "#000A14", "#00050A", "#0F0F0F"],
+    COPA:  ["#0A1400", "#050A00", "#020500", "#0F0F0F"],
     NHL:   ["#040E1C", "#020711", "#010408", "#0F0F0F"],
   };
   return map[league] ?? ["#100914", "#08040A", "#040205", "#0F0F0F"];
@@ -287,6 +308,24 @@ export default function GameDetailScreen() {
                               <PlayerBoxscore teamName={team} teamLogo={logo} players={skaters} league={game.league} dc={dc} />
                               {goalies.length > 0 && (
                                 <PlayerBoxscore teamName={team} teamLogo={logo} players={goalies} league={game.league} dc={dc} overrideCols={NHL_GOALIE_STAT_COLS} sectionLabel="Goalies" />
+                              )}
+                            </View>
+                          );
+                        })}
+                      </>
+                    ) : SOCCER_LEAGUES.has(game.league) ? (
+                      <>
+                        {[
+                          { team: game.awayTeam, logo: game.awayTeamLogo, players: data.awayPlayerStats ?? [] },
+                          { team: game.homeTeam, logo: game.homeTeamLogo, players: data.homePlayerStats ?? [] },
+                        ].map(({ team, logo, players }) => {
+                          const outfield = players.filter((p) => p.stats?.role !== "GK");
+                          const goalkeepers = players.filter((p) => p.stats?.role === "GK");
+                          return (
+                            <View key={team}>
+                              <PlayerBoxscore teamName={team} teamLogo={logo} players={outfield} league={game.league} dc={dc} />
+                              {goalkeepers.length > 0 && (
+                                <PlayerBoxscore teamName={team} teamLogo={logo} players={goalkeepers} league={game.league} dc={dc} overrideCols={SOCCER_GK_STAT_COLS} sectionLabel="Goalkeepers" />
                               )}
                             </View>
                           );
@@ -656,15 +695,24 @@ function PlayerBoxscore({ teamName, teamLogo, players, league, dc, overrideCols,
         <Text style={[s.boxPlayer, s.boxHeaderText]}>PLAYER</Text>
         {availCols.map(c => <Text key={c} style={[s.boxStat, s.boxHeaderText]}>{c}</Text>)}
       </View>
-      {players.map(player => (
-        <Pressable key={player.name} style={s.boxRow} onPress={() => goToPlayer(player.name)}>
-          <View style={s.boxPlayerCell}>
-            {player.starter && <View style={[s.starterDot, { backgroundColor: dc }]} />}
-            <Text style={s.boxPlayer} numberOfLines={1}>{player.name}</Text>
-          </View>
-          {availCols.map(c => <Text key={c} style={s.boxStat}>{player.stats[c] ?? "—"}</Text>)}
-        </Pressable>
-      ))}
+      {players.map(player => {
+        const isGK = player.stats?.role === "GK";
+        const isGoalie = player.stats?.role === "G";
+        return (
+          <Pressable key={player.name} style={s.boxRow} onPress={() => goToPlayer(player.name)}>
+            <View style={s.boxPlayerCell}>
+              {player.starter && <View style={[s.starterDot, { backgroundColor: dc }]} />}
+              <Text style={s.boxPlayer} numberOfLines={1}>{player.name}</Text>
+              {(isGK || isGoalie) && (
+                <View style={{ backgroundColor: `${dc}22`, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1, marginLeft: 4 }}>
+                  <Text style={{ color: dc, fontSize: 9, fontWeight: "800", fontFamily: "Inter_700Bold" }}>{isGK ? "GK" : "G"}</Text>
+                </View>
+              )}
+            </View>
+            {availCols.map(c => <Text key={c} style={s.boxStat}>{player.stats[c] ?? "—"}</Text>)}
+          </Pressable>
+        );
+      })}
       <Text style={s.boxNote}>● Starter</Text>
     </View>
   );

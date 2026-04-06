@@ -66,7 +66,8 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - **Player Tabs:** Only functional tabs shown: Overview, Stats, Bio, Game Log. News and Splits hidden until implemented.
     - **Standings Loading:** Skeleton rows replace ActivityIndicator for consistent loading states.
     - **Context Chips:** Importance tags on game cards (OT, CLOSE, RIVALRY, PLAYOFF RACE, etc.).
-    - **Box Score Engine:** `extractPlayerStatsByLabel` uses index-based label lookup (not positional mapping) for reliable stat extraction across all sports. NHL splits skaters/goalies into separate stat groups with sport-specific columns (skaters: G/A/+/-/S/TOI/PIM; goalies: SV/GA/SA/SV%/TOI). ESPN uses `labels` for NHL (not `names`); fallback: `labels.length > 0 ? labels : names`.
+    - **Box Score Engine:** `extractPlayerStatsByLabel` uses index-based label lookup (not positional mapping) for reliable stat extraction across all sports. NHL splits skaters/goalies into separate stat groups with sport-specific columns (skaters: G/A/+/-/S/TOI/PIM; goalies: SV/GA/SA/SV%/TOI). Soccer splits outfield/GK players with GK-specific columns (MIN/SV/GA) and "GK" role badge. ESPN uses `labels` for NHL (not `names`); fallback: `labels.length > 0 ? labels : names`.
+    - **Soccer Hub:** Expanded from 4 leagues (EPL/UCL/La Liga/MLS) to 13 leagues organized in 3 groups: Domestic (EPL/La Liga/Bundesliga/Serie A/Ligue 1/MLS/NWSL), Cups (UCL/Europa League/Conference League), International (FIFA World Cup/Euro/Copa América). Sport page shows group filter row (All/Domestic/Cups/International) above individual league pills. Tournament leagues show games/standings when active via ESPN data.
 - **API Server Routes:**
     - `GET /api/sports/games?league=`: Live ESPN scoreboard.
     - `GET /api/sports/game/:id`: Live ESPN game detail with DB ingestion.

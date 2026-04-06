@@ -165,6 +165,20 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     ],
   },
   {
+    id: "womens",
+    name: "Women's Sports",
+    emoji: "⭐",
+    icon: "star-outline",
+    color: "#E91E8C",
+    gradient: ["#E91E8C", "#7B0E4B"],
+    tagline: "WNBA · WTA · NWSL · LPGA",
+    leagues: [
+      { key: "WNBA", label: "WNBA" },
+      { key: "WTA", label: "WTA" },
+      { key: "NWSL", label: "NWSL" },
+    ],
+  },
+  {
     id: "motorsports",
     name: "Motorsports",
     emoji: "🏎️",
@@ -265,16 +279,22 @@ const SPORT_ALIASES: Record<string, string> = {
   bundesliga: "soccer",
   bun: "soccer",
   "serie-a": "soccer",
+  "serie a": "soccer",
   sera: "soccer",
   "ligue-1": "soccer",
+  "ligue 1": "soccer",
   lig1: "soccer",
   uel: "soccer",
   uecl: "soccer",
   nwsl: "soccer",
   "world-cup": "soccer",
+  "world cup": "soccer",
   fwcm: "soccer",
   euro: "soccer",
   copa: "soccer",
+  "copa-america": "soccer",
+  "europa-league": "soccer",
+  "champions-league": "soccer",
   ncaab: "college",
   ncaaw: "college",
   ncaaf: "college",
@@ -311,6 +331,8 @@ export function getSportByLeague(leagueKey: string): SportCategory | undefined {
 export const LEAGUE_TO_SPORT: Record<string, string> = Object.fromEntries(
   SPORT_CATEGORIES.flatMap((s) => s.leagues.map((l) => [l.key, s.id]))
 );
+
+LEAGUE_TO_SPORT['NWSL'] = 'soccer';
 
 export const SOCCER_LEAGUE_GROUPS: Record<string, SportLeague[]> = {
   domestic: SPORT_CATEGORIES.find(s => s.id === "soccer")?.leagues.filter(l => l.group === "domestic") ?? [],

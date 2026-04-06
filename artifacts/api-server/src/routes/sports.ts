@@ -131,7 +131,7 @@ interface EspnScoreboard {
 }
 
 interface EspnAthleteEntry {
-  athlete: { id: string; displayName: string };
+  athlete: { id: string; displayName: string; position?: { abbreviation?: string } };
   active: boolean;
   starter: boolean;
   didNotPlay: boolean;
@@ -818,25 +818,69 @@ function extractBoxscore(
         }
       }
     } else if (isSoccer) {
-      const SOCCER_FIELD_KEYS = ["MIN", "G", "A", "SHT", "ST", "FK", "CK"];
-      const SOCCER_GK_KEYS = ["MIN", "SV", "GA", "SHT"];
+      const SOCCER_OUTFIELD_KEYS = ["MIN", "G", "A", "SHT"];
+      const SOCCER_GK_KEYS = ["MIN", "SV", "GA"];
       const lines: PlayerStatLine[] = [];
       for (const sg of playerEntry.statistics) {
         if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
-        const isGkGroup = (sg.type === "goalkeeping" || (sg as any).name === "goalkeeping" || (sg as any).text === "Goalkeepers");
-        const keys = isGkGroup ? SOCCER_GK_KEYS : SOCCER_FIELD_KEYS;
-        const extracted = extractPlayerStatsByLabel(sg, keys);
+        const espnLabels = (sg.labels && sg.labels.length > 0) ? sg.labels : (sg.names ?? []);
+        const isGkGroup = espnLabels.some((l: string) => l === "SV" || l === "saves" || l === "Saves");
         if (isGkGroup) {
-          extracted.forEach((p) => { p.stats["role"] = "GK"; });
+          const gks = extractPlayerStatsByLabel(sg, SOCCER_GK_KEYS);
+          gks.forEach(g => {
+            g.stats["role"] = "GK";
+            const gaRaw = g.stats["GA"];
+            const ga = gaRaw != null ? parseInt(gaRaw, 10) : NaN;
+            g.stats["CS"] = isNaN(ga) ? "—" : (ga === 0 ? "Yes" : "No");
+          });
+          lines.push(...gks);
+        } else {
+          const extracted = extractPlayerStatsByLabel(sg, [...SOCCER_OUTFIELD_KEYS, "SV", "GA"]);
+          for (const player of extracted) {
+            const posAbbr = sg.athletes.find(a => a.athlete.displayName === player.name)?.athlete?.position?.abbreviation;
+            const saves = parseInt(player.stats["SV"] ?? "0", 10);
+            if (posAbbr === "GK" || posAbbr === "G" || saves > 0) {
+              player.stats["role"] = "GK";
+              const gaRaw = player.stats["GA"];
+              const ga = gaRaw != null ? parseInt(gaRaw, 10) : NaN;
+              player.stats["CS"] = isNaN(ga) ? "—" : (ga === 0 ? "Yes" : "No");
+            }
+          }
+          lines.push(...extracted);
         }
-        lines.push(...extracted);
       }
       if (lines.length === 0) {
         const sg = playerEntry.statistics[0];
-        if (sg) lines.push(...extractPlayerStatsByLabel(sg, MLS_PLAYER_KEYS));
+        if (sg) {
+          const allLines = extractPlayerStatsByLabel(sg, [...SOCCER_OUTFIELD_KEYS, "SV", "GA"]);
+          for (const line of allLines) {
+            const posAbbr = sg.athletes.find(a => a.athlete.displayName === line.name)?.athlete?.position?.abbreviation;
+            const saves = parseInt(line.stats["SV"] ?? "0", 10);
+            if (posAbbr === "GK" || posAbbr === "G" || saves > 0) {
+              line.stats["role"] = "GK";
+              const gaRaw = line.stats["GA"];
+              const ga = gaRaw != null ? parseInt(gaRaw, 10) : NaN;
+              line.stats["CS"] = isNaN(ga) ? "—" : (ga === 0 ? "Yes" : "No");
+            }
+            lines.push(line);
+          }
+        }
       }
-      if (isHome) homePlayerStats = lines;
-      else awayPlayerStats = lines;
+      const seen = new Set<string>();
+      const deduped: PlayerStatLine[] = [];
+      for (const p of lines) {
+        if (seen.has(p.name)) {
+          if (p.stats["role"] === "GK") {
+            const idx = deduped.findIndex(d => d.name === p.name);
+            if (idx !== -1) deduped[idx] = p;
+          }
+          continue;
+        }
+        seen.add(p.name);
+        deduped.push(p);
+      }
+      if (isHome) homePlayerStats = deduped;
+      else awayPlayerStats = deduped;
     } else {
       const sg = playerEntry.statistics[0];
       if (!sg) continue;
@@ -938,6 +982,7 @@ router.get("/sports/games", async (req, res) => {
         "NBA", "WNBA", "NFL", "MLB", "NHL",
         "NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH",
         "EPL", "LIGA", "BUN", "SERA", "LIG1", "MLS", "NWSL", "UCL", "UEL", "UECL",
+        "FWCM", "EURO", "COPA",
         "ATP", "WTA", "UFC", "BELLATOR", "PFL", "BOXING",
         "PGA", "LPGA", "F1", "NASCAR", "IRL",
       ];
@@ -1577,7 +1622,7 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
       raw.sort((a, b) => b.winPct - a.winPct);
       entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
 
-    } else if (["EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "NWSL"].includes(league)) {
+    } else if (["EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "UEL", "UECL", "NWSL", "FWCM", "EURO", "COPA"].includes(league)) {
       const cfg = LEAGUE_CONFIG[league]!;
       const json = await espnFetch(
         `https://site.api.espn.com/apis/v2/sports/soccer/${cfg.espnPath.split("/")[1]}/standings`
@@ -2526,12 +2571,13 @@ const SPORT_ESPN_LEAGUES: Record<string, string[]> = {
   football: ["NFL", "NCAAF"],
   baseball: ["MLB", "NCAABB"],
   hockey: ["NHL", "NCAAHM", "NCAAHW"],
-  soccer: ["MLS", "EPL", "UCL", "LIGA", "NCAASM", "NCAASW"],
+  soccer: ["MLS", "EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "UEL", "UECL", "NWSL", "FWCM", "EURO", "COPA", "NCAASM", "NCAASW"],
   tennis: ["ATP", "WTA"],
   combat: ["UFC", "BOXING"],
   golf: ["PGA", "LPGA", "LIV"],
   motorsports: ["F1", "NASCAR", "IRL"],
   college: ["NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH"],
+  womens: ["WNBA", "WTA", "NWSL"],
   track: ["OLYMPICS"],
   xgames: ["XGAMES"],
   esports: [],

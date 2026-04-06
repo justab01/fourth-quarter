@@ -157,6 +157,83 @@ export const MLS_TEAMS: SearchTeam[] = [
   { name: "Vancouver Whitecaps", league: "MLS", abbr: "VAN", rank: "Western Conference" },
 ];
 
+export const BUN_TEAMS: SearchTeam[] = [
+  { name: "Bayern Munich", league: "BUN", abbr: "BAY", rank: "Bundesliga" },
+  { name: "Borussia Dortmund", league: "BUN", abbr: "BVB", rank: "Bundesliga" },
+  { name: "RB Leipzig", league: "BUN", abbr: "RBL", rank: "Bundesliga" },
+  { name: "Bayer Leverkusen", league: "BUN", abbr: "B04", rank: "Bundesliga" },
+  { name: "VfB Stuttgart", league: "BUN", abbr: "VFB", rank: "Bundesliga" },
+  { name: "Eintracht Frankfurt", league: "BUN", abbr: "SGE", rank: "Bundesliga" },
+];
+
+export const SERA_TEAMS: SearchTeam[] = [
+  { name: "Inter Milan", league: "SERA", abbr: "INT", rank: "Serie A" },
+  { name: "AC Milan", league: "SERA", abbr: "MIL", rank: "Serie A" },
+  { name: "Juventus", league: "SERA", abbr: "JUV", rank: "Serie A" },
+  { name: "Napoli", league: "SERA", abbr: "NAP", rank: "Serie A" },
+  { name: "AS Roma", league: "SERA", abbr: "ROM", rank: "Serie A" },
+  { name: "Atalanta", league: "SERA", abbr: "ATA", rank: "Serie A" },
+];
+
+export const LIG1_TEAMS: SearchTeam[] = [
+  { name: "Paris Saint-Germain", league: "LIG1", abbr: "PSG", rank: "Ligue 1" },
+  { name: "Marseille", league: "LIG1", abbr: "OM", rank: "Ligue 1" },
+  { name: "Monaco", league: "LIG1", abbr: "MON", rank: "Ligue 1" },
+  { name: "Lyon", league: "LIG1", abbr: "OL", rank: "Ligue 1" },
+  { name: "Lille", league: "LIG1", abbr: "LIL", rank: "Ligue 1" },
+];
+
+export const NWSL_TEAMS: SearchTeam[] = [
+  { name: "Portland Thorns", league: "NWSL", abbr: "POR", rank: "NWSL" },
+  { name: "Kansas City Current", league: "NWSL", abbr: "KC", rank: "NWSL" },
+  { name: "OL Reign", league: "NWSL", abbr: "OLR", rank: "NWSL" },
+  { name: "NJ/NY Gotham FC", league: "NWSL", abbr: "GOT", rank: "NWSL" },
+  { name: "San Diego Wave", league: "NWSL", abbr: "SD", rank: "NWSL" },
+  { name: "Angel City FC", league: "NWSL", abbr: "ANG", rank: "NWSL" },
+];
+
+const ALL_TEAMS_UEL: SearchTeam[] = [
+  { name: "Roma", league: "UEL", abbr: "ROM", rank: "UEL" },
+  { name: "Ajax", league: "UEL", abbr: "AJX", rank: "UEL" },
+  { name: "Lazio", league: "UEL", abbr: "LAZ", rank: "UEL" },
+  { name: "Athletic Club", league: "UEL", abbr: "ATH", rank: "UEL" },
+  { name: "Tottenham Hotspur", league: "UEL", abbr: "TOT", rank: "UEL" },
+  { name: "Eintracht Frankfurt", league: "UEL", abbr: "SGE", rank: "UEL" },
+];
+
+const ALL_TEAMS_UECL: SearchTeam[] = [
+  { name: "Fiorentina", league: "UECL", abbr: "FIO", rank: "UECL" },
+  { name: "Chelsea", league: "UECL", abbr: "CHE", rank: "UECL" },
+  { name: "Real Betis", league: "UECL", abbr: "BET", rank: "UECL" },
+  { name: "Olympiacos", league: "UECL", abbr: "OLY", rank: "UECL" },
+];
+
+const ALL_TEAMS_FWCM: SearchTeam[] = [
+  { name: "Brazil", league: "FWCM", abbr: "BRA", rank: "FWCM" },
+  { name: "France", league: "FWCM", abbr: "FRA", rank: "FWCM" },
+  { name: "Argentina", league: "FWCM", abbr: "ARG", rank: "FWCM" },
+  { name: "Germany", league: "FWCM", abbr: "GER", rank: "FWCM" },
+  { name: "England", league: "FWCM", abbr: "ENG", rank: "FWCM" },
+  { name: "Spain", league: "FWCM", abbr: "ESP", rank: "FWCM" },
+];
+
+const ALL_TEAMS_EURO: SearchTeam[] = [
+  { name: "France", league: "EURO", abbr: "FRA", rank: "EURO" },
+  { name: "Germany", league: "EURO", abbr: "GER", rank: "EURO" },
+  { name: "Spain", league: "EURO", abbr: "ESP", rank: "EURO" },
+  { name: "England", league: "EURO", abbr: "ENG", rank: "EURO" },
+  { name: "Italy", league: "EURO", abbr: "ITA", rank: "EURO" },
+  { name: "Portugal", league: "EURO", abbr: "POR", rank: "EURO" },
+];
+
+const ALL_TEAMS_COPA: SearchTeam[] = [
+  { name: "Argentina", league: "COPA", abbr: "ARG", rank: "COPA" },
+  { name: "Brazil", league: "COPA", abbr: "BRA", rank: "COPA" },
+  { name: "Uruguay", league: "COPA", abbr: "URU", rank: "COPA" },
+  { name: "Colombia", league: "COPA", abbr: "COL", rank: "COPA" },
+  { name: "Chile", league: "COPA", abbr: "CHI", rank: "COPA" },
+];
+
 // ─── ATP TOP PLAYERS (treated as "teams" for match following) ─────────────────
 export const ATP_PLAYERS: SearchTeam[] = [
   { name: "Jannik Sinner",     league: "ATP", abbr: "SIN", rank: "#1 ATP",  city: "Italy"     },
@@ -247,12 +324,21 @@ export const ALL_TEAMS: SearchTeam[] = [
   ...NFL_TEAMS,
   ...MLB_TEAMS,
   ...MLS_TEAMS,
+  ...BUN_TEAMS,
+  ...SERA_TEAMS,
+  ...LIG1_TEAMS,
+  ...NWSL_TEAMS,
   ...ATP_PLAYERS,
   ...WTA_PLAYERS,
   ...UFC_FIGHTERS,
   ...BOXING_FIGHTERS,
   ...XGAMES_TEAMS,
   ...OLYMPICS_TEAMS,
+  ...ALL_TEAMS_UEL,
+  ...ALL_TEAMS_UECL,
+  ...ALL_TEAMS_FWCM,
+  ...ALL_TEAMS_EURO,
+  ...ALL_TEAMS_COPA,
 ];
 
 // ─── ALL NBA PLAYERS ──────────────────────────────────────────────
