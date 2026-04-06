@@ -105,7 +105,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "flag-outline",
     color: "#2ECC71",
     gradient: ["#2ECC71", "#0E6B38"],
-    tagline: "PGA Tour · LPGA · LIV Golf",
+    tagline: "PGA Tour · LPGA Tour · LIV Golf · Majors",
     leagues: [
       { key: "PGA", label: "PGA Tour" },
       { key: "LPGA", label: "LPGA Tour" },

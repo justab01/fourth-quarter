@@ -3,7 +3,7 @@ export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "gol
 const TENNIS_LEAGUES = new Set(["ATP", "WTA"]);
 const COMBAT_LEAGUES = new Set(["UFC", "BOXING", "BELLATOR", "PFL"]);
 const MULTI_LEAGUES  = new Set(["OLYMPICS", "XGAMES"]);
-const GOLF_LEAGUES   = new Set(["PGA", "LIV", "LPGA"]);
+const GOLF_LEAGUES   = new Set(["PGA", "LPGA", "LIV"]);
 const RACING_LEAGUES = new Set(["F1", "NASCAR", "IRL"]);
 
 export function getSportArchetype(league: string): SportArchetype {
@@ -95,7 +95,7 @@ export const SPORT_EMOJI: Record<string, string> = {
   NCAASM: "⚽", NCAASW: "⚽",
   NCAALM: "🥍", NCAALW: "🥍",
   NCAAVW: "🏐", NCAAWP: "🤽", NCAAFH: "🏑",
-  PGA: "⛳", LIV: "⛳", LPGA: "⛳",
+  PGA: "⛳", LPGA: "⛳", LIV: "⛳",
   F1: "🏎️", NASCAR: "🏁", IRL: "🏁",
   OLYMPICS: "🏅", XGAMES: "🏂",
 };

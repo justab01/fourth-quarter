@@ -79,8 +79,8 @@ export const api = {
   getUpcomingEvents: (sport: string) =>
     apiFetch<{ events: UpcomingEvent[] }>(`/sports/upcoming/${encodeURIComponent(sport)}`),
 
-  getGolfLeaderboard: () =>
-    apiFetch<GolfLeaderboardResponse>("/sports/golf/leaderboard"),
+  getGolfLeaderboard: (league?: string) =>
+    apiFetch<GolfLeaderboardResponse>(`/sports/golf/leaderboard${league ? `?league=${encodeURIComponent(league)}` : ""}`),
 
   getInOneBreath: () =>
     apiFetch<{ summary: string; generated: string }>("/sports/in-one-breath"),
@@ -224,6 +224,7 @@ export interface GolfLeaderboardResponse {
   tournament: string;
   venue: string;
   status: string;
+  round: string;
   leaderboard: GolfLeaderboardEntry[];
 }
 

@@ -40,8 +40,46 @@ const COLLEGE_SPORT_GROUPS: { label: string; keys: string[] }[] = [
   { label: "Field Hockey", keys: ["NCAAFH"] },
 ];
 
+const GOLF_MAJORS = new Set([
+  "Masters Tournament", "The Masters",
+  "U.S. Open", "US Open",
+  "The Open Championship", "The Open",
+  "PGA Championship",
+]);
+
+const TENNIS_MAJORS = new Set([
+  "Australian Open",
+  "French Open", "Roland Garros", "Roland-Garros",
+  "Wimbledon", "The Championships, Wimbledon",
+  "US Open", "U.S. Open",
+]);
+
+function isMajorEvent(name: string, archetype: string): boolean {
+  if (archetype === "golf") {
+    for (const m of GOLF_MAJORS) {
+      if (name.toLowerCase().includes(m.toLowerCase())) return true;
+    }
+  }
+  if (archetype === "tennis") {
+    for (const m of TENNIS_MAJORS) {
+      if (name.toLowerCase().includes(m.toLowerCase())) return true;
+    }
+  }
+  return false;
+}
+
+function inferTennisSurface(name: string): string | null {
+  const n = name.toLowerCase();
+  if (n.includes("wimbledon")) return "Grass";
+  if (n.includes("roland") || n.includes("french open") || n.includes("clay")) return "Clay";
+  if (n.includes("australian open") || n.includes("us open") || n.includes("hard")) return "Hard";
+  if (n.includes("indian wells") || n.includes("miami") || n.includes("cincinnati") || n.includes("montreal") || n.includes("toronto")) return "Hard";
+  if (n.includes("rome") || n.includes("madrid") || n.includes("monte") || n.includes("barcelona") || n.includes("buenos aires")) return "Clay";
+  return null;
+}
+
 const SPORT_DATA_NOTE: Record<string, string> = {
-  golf:        "Live leaderboards appear during PGA Tour & LIV events. Tap Search to find golfers.",
+  golf:        "Live leaderboards appear during PGA Tour, LPGA Tour & LIV events. Tap Search to find golfers.",
   motorsports: "Race results appear during F1, NASCAR, and IndyCar race weekends. Tap Search to find drivers.",
   esports:     "Esports coverage coming soon. Tap Search to explore players.",
   track:       "Results appear during Diamond League and Olympic events. Tap Search to find athletes.",
@@ -555,11 +593,12 @@ export default function SportBoardScreen() {
     enabled: !!drawLeague,
   });
 
+  const golfLeaderboardLeague = archetype === "golf" ? (activeLeague !== "all" ? activeLeague : "PGA") : null;
   const { data: leaderboardData, refetch: refetchLeaderboard } = useQuery({
-    queryKey: ["golf-leaderboard"],
-    queryFn: () => api.getGolfLeaderboard(),
+    queryKey: ["golf-leaderboard", golfLeaderboardLeague],
+    queryFn: () => api.getGolfLeaderboard(golfLeaderboardLeague ?? undefined),
     staleTime: 120_000,
-    enabled: archetype === "golf",
+    enabled: archetype === "golf" && !!golfLeaderboardLeague,
   });
 
   const standingsLeague = useMemo(() => {
@@ -685,16 +724,6 @@ export default function SportBoardScreen() {
   const liveCount = filteredGames.filter((g) => g.status === "live").length;
   const accentColor = sport?.color ?? C.accent;
 
-  const scheduleSectionTitle = useMemo(() => {
-    switch (archetype) {
-      case "tennis": return "Tournaments & Matches";
-      case "golf": return "Tournament Schedule";
-      case "racing": return "Race Schedule & Results";
-      case "combat": return "Fight Cards & Results";
-      default: return filteredGames.length === 0 ? "Schedule & Results" : "Upcoming & Recent";
-    }
-  }, [archetype, filteredGames.length]);
-
   if (!sport) {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -747,8 +776,33 @@ export default function SportBoardScreen() {
         )}
       </View>
       {leaderboardData?.tournament ? (
-        <Text style={styles.leaderboardTourName}>{leaderboardData.tournament}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <Text style={styles.leaderboardTourName}>{leaderboardData.tournament}</Text>
+          {isMajorEvent(leaderboardData.tournament, "golf") && (
+            <View style={[styles.majorBadgeSmall, { backgroundColor: "#FFD700" }]}>
+              <Text style={styles.majorBadgeSmallText}>MAJOR</Text>
+            </View>
+          )}
+        </View>
       ) : null}
+      {(leaderboardData?.status || leaderboardData?.round) && leaderboardData.status !== "unknown" && (
+        <View style={{ flexDirection: "row", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+          {leaderboardData.status && (
+            <View style={[styles.eventTypeBadge, {
+              backgroundColor: leaderboardData.status === "live" ? "#E53935" : leaderboardData.status === "completed" ? C.textTertiary + "33" : accentColor + "33",
+            }]}>
+              <Text style={[styles.eventTypeText, {
+                color: leaderboardData.status === "live" ? "#fff" : leaderboardData.status === "completed" ? C.textSecondary : accentColor,
+              }]}>{leaderboardData.status === "live" ? "LIVE" : leaderboardData.status === "completed" ? "FINAL" : "UPCOMING"}</Text>
+            </View>
+          )}
+          {leaderboardData.round ? (
+            <View style={[styles.eventTypeBadge, { backgroundColor: accentColor + "22" }]}>
+              <Text style={[styles.eventTypeText, { color: accentColor }]}>{leaderboardData.round}</Text>
+            </View>
+          ) : null}
+        </View>
+      )}
       <View style={[styles.leaderboardCard, { borderColor: accentColor + "33" }]}>
         <View style={styles.leaderboardHeader}>
           <Text style={[styles.lbHeaderCell, { flex: 0.4 }]}>Pos</Text>
@@ -784,7 +838,7 @@ export default function SportBoardScreen() {
   const GolfLeaderboardSection = golfGames.length > 0 && lbEntries.length === 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Leaderboard</Text>
+        <Text style={styles.sectionTitle}>Tournament Scores</Text>
       </View>
       {golfGames.map((game) => (
         <GolfLeaderboard key={game.id} game={game} accentColor={accentColor} />
@@ -800,7 +854,7 @@ export default function SportBoardScreen() {
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          {archetype === "racing" ? "Driver Standings" : archetype === "golf" ? "World Rankings" : "World Rankings"}
+          {archetype === "racing" ? "Standings" : "World Rankings"}
         </Text>
       </View>
       {driverRankingsGroups.slice(0, archetype === "combat" ? 3 : 2).map((group, i) => (
@@ -995,25 +1049,120 @@ export default function SportBoardScreen() {
     </View>
   ) : null;
 
-  const ScheduleSection = (
+  const liveAndUpcomingTournaments = useMemo(() => {
+    return upcomingEvents
+      .filter(ev => (ev.type === "live" || ev.type === "upcoming") && (activeLeague === "all" || !ev.league || ev.league.toUpperCase() === activeLeague))
+      .slice(0, 5);
+  }, [upcomingEvents, activeLeague]);
+
+  const activeTournament = useMemo(() => {
+    const filtered = activeLeague === "all" ? upcomingEvents : upcomingEvents.filter(ev => !ev.league || ev.league.toUpperCase() === activeLeague);
+    return filtered.find(ev => ev.type === "live")
+      ?? filtered.find(ev => ev.type === "upcoming")
+      ?? null;
+  }, [upcomingEvents, activeLeague]);
+
+  const nextTennisTournament = useMemo(() => {
+    if (archetype !== "tennis") return null;
+    const filtered = activeLeague === "all" ? upcomingEvents : upcomingEvents.filter(ev => !ev.league || ev.league.toUpperCase() === activeLeague);
+    return filtered.find(ev => ev.type === "upcoming" && ev.id !== activeTournament?.id) ?? null;
+  }, [upcomingEvents, activeTournament, archetype, activeLeague]);
+
+  const ActiveTournamentSection = (archetype === "tennis" && activeTournament) ? (() => {
+    const surface = inferTennisSurface(activeTournament.name);
+    const isSlam = isMajorEvent(activeTournament.name, "tennis");
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>This Week</Text>
+          {activeTournament.type === "live" && (
+            <View style={[styles.liveDot, { backgroundColor: "#E53935" }]} />
+          )}
+        </View>
+        <View style={[styles.activeTournamentCard, { borderColor: isSlam ? "#FFD700" + "66" : accentColor + "44" }]}>
+          {isSlam && (
+            <View style={[styles.majorBadge, { backgroundColor: "#FFD700" }]}>
+              <Text style={styles.majorBadgeText}>GRAND SLAM</Text>
+            </View>
+          )}
+          <Text style={styles.activeTournamentName}>{activeTournament.name}</Text>
+          {activeTournament.venue && (
+            <Text style={styles.activeTournamentVenue}>{activeTournament.venue}</Text>
+          )}
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+            <Text style={[styles.eventMeta, { color: accentColor }]}>{activeTournament.league}</Text>
+            {surface && (
+              <Text style={[styles.eventMeta, { color: C.textSecondary }]}>{surface}</Text>
+            )}
+            <Text style={styles.eventMeta}>
+              {activeTournament.date ? new Date(activeTournament.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  })() : null;
+
+  const TennisUpcomingSection = (archetype === "tennis" && nextTennisTournament) ? (() => {
+    const surface = inferTennisSurface(nextTennisTournament.name);
+    const isSlam = isMajorEvent(nextTennisTournament.name, "tennis");
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Up Next</Text>
+        </View>
+        <View style={styles.eventRow}>
+          <View style={[styles.eventTypeBadge, { backgroundColor: accentColor + "33" }]}>
+            <Text style={[styles.eventTypeText, { color: accentColor }]}>UPCOMING</Text>
+          </View>
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text style={styles.eventName} numberOfLines={2}>{nextTennisTournament.name}</Text>
+              {isSlam && (
+                <View style={[styles.majorBadgeSmall, { backgroundColor: "#FFD700" }]}>
+                  <Text style={styles.majorBadgeSmallText}>SLAM</Text>
+                </View>
+              )}
+            </View>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 2, flexWrap: "wrap" }}>
+              <Text style={styles.eventMeta}>
+                {nextTennisTournament.date ? new Date(nextTennisTournament.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+              </Text>
+              {nextTennisTournament.venue && <Text style={styles.eventMeta} numberOfLines={1}>{nextTennisTournament.venue}</Text>}
+              {surface && <Text style={[styles.eventMeta, { color: accentColor }]}>{surface}</Text>}
+              <Text style={[styles.eventMeta, { color: C.textSecondary }]}>{nextTennisTournament.league}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  })() : null;
+
+  const UpcomingTournamentsSection = (archetype === "golf" && liveAndUpcomingTournaments.length > 0) ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
-          {archetype === "racing" ? "Race Calendar" : archetype === "combat" ? "Fight Schedule" : "Schedule & Results"}
-        </Text>
+        <Text style={styles.sectionTitle}>Upcoming Tournaments</Text>
       </View>
-      {upcomingEvents.length > 0 ? (
-        upcomingEvents.slice(0, 10).map((ev) => (
+      {liveAndUpcomingTournaments.map((ev) => {
+        const isMajor = isMajorEvent(ev.name, "golf");
+        return (
           <View key={ev.id} style={styles.eventRow}>
             <View style={[styles.eventTypeBadge, {
-              backgroundColor: ev.type === "live" ? "#E53935" : ev.type === "result" ? C.textTertiary + "33" : accentColor + "33",
+              backgroundColor: ev.type === "live" ? "#E53935" : accentColor + "33",
             }]}>
               <Text style={[styles.eventTypeText, {
-                color: ev.type === "live" ? "#fff" : ev.type === "result" ? C.textSecondary : accentColor,
-              }]}>{ev.type === "live" ? "LIVE" : ev.type === "result" ? "FINAL" : "UPCOMING"}</Text>
+                color: ev.type === "live" ? "#fff" : accentColor,
+              }]}>{ev.type === "live" ? "LIVE" : "UPCOMING"}</Text>
             </View>
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.eventName} numberOfLines={2}>{ev.name}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={styles.eventName} numberOfLines={2}>{ev.name}</Text>
+                {isMajor && (
+                  <View style={[styles.majorBadgeSmall, { backgroundColor: "#FFD700" }]}>
+                    <Text style={styles.majorBadgeSmallText}>MAJOR</Text>
+                  </View>
+                )}
+              </View>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
                 <Text style={styles.eventMeta}>
                   {ev.date ? new Date(ev.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
@@ -1022,11 +1171,54 @@ export default function SportBoardScreen() {
                 <Text style={[styles.eventMeta, { color: accentColor }]}>{ev.league}</Text>
               </View>
             </View>
-            {ev.homeScore != null && ev.awayScore != null && (
-              <Text style={styles.eventScore}>{ev.homeScore}-{ev.awayScore}</Text>
-            )}
           </View>
-        ))
+        );
+      })}
+    </View>
+  ) : null;
+
+  const ScheduleSection = (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {archetype === "racing" ? "Race Calendar" : archetype === "combat" ? "Fight Schedule" : archetype === "golf" ? "Tournament Schedule" : archetype === "tennis" ? "Tournaments & Matches" : "Schedule & Results"}
+        </Text>
+      </View>
+      {upcomingEvents.length > 0 ? (
+        upcomingEvents.slice(0, 10).map((ev) => {
+          const isMajor = isMajorEvent(ev.name, archetype);
+          return (
+            <View key={ev.id} style={styles.eventRow}>
+              <View style={[styles.eventTypeBadge, {
+                backgroundColor: ev.type === "live" ? "#E53935" : ev.type === "result" ? C.textTertiary + "33" : accentColor + "33",
+              }]}>
+                <Text style={[styles.eventTypeText, {
+                  color: ev.type === "live" ? "#fff" : ev.type === "result" ? C.textSecondary : accentColor,
+                }]}>{ev.type === "live" ? "LIVE" : ev.type === "result" ? "FINAL" : "UPCOMING"}</Text>
+              </View>
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={styles.eventName} numberOfLines={2}>{ev.name}</Text>
+                  {isMajor && (
+                    <View style={[styles.majorBadgeSmall, { backgroundColor: "#FFD700" }]}>
+                      <Text style={styles.majorBadgeSmallText}>{archetype === "tennis" ? "SLAM" : "MAJOR"}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+                  <Text style={styles.eventMeta}>
+                    {ev.date ? new Date(ev.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                  </Text>
+                  {ev.venue && <Text style={styles.eventMeta} numberOfLines={1}>{ev.venue}</Text>}
+                  <Text style={[styles.eventMeta, { color: accentColor }]}>{ev.league}</Text>
+                </View>
+              </View>
+              {ev.homeScore != null && ev.awayScore != null && (
+                <Text style={styles.eventScore}>{ev.homeScore}-{ev.awayScore}</Text>
+              )}
+            </View>
+          );
+        })
       ) : (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
@@ -1238,6 +1430,7 @@ export default function SportBoardScreen() {
           <>
             {ApiLeaderboardSection}
             {GolfLeaderboardSection}
+            {UpcomingTournamentsSection}
             {RankingsSection}
             {RankingsAthletesSection ?? AthletesSection}
             {ScheduleSection}
@@ -1259,9 +1452,11 @@ export default function SportBoardScreen() {
       case "tennis":
         return (
           <>
+            {ActiveTournamentSection}
             {RankingsSection}
             {TournamentDrawSection}
             {GamesSection}
+            {TennisUpcomingSection}
             {RankingsAthletesSection ?? AthletesSection}
             {ScheduleSection}
             {NewsSection}
@@ -1880,5 +2075,46 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: C.text,
     maxWidth: 120,
+  },
+  activeTournamentCard: {
+    backgroundColor: C.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    gap: 4,
+  },
+  activeTournamentName: {
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+  },
+  activeTournamentVenue: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+  },
+  majorBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
+  majorBadgeText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: "#1a1a1a",
+    letterSpacing: 0.8,
+  },
+  majorBadgeSmall: {
+    borderRadius: 3,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  majorBadgeSmallText: {
+    fontSize: 8,
+    fontFamily: "Inter_700Bold",
+    color: "#1a1a1a",
+    letterSpacing: 0.5,
   },
 });

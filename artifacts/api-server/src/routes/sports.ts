@@ -2527,7 +2527,7 @@ const SPORT_ESPN_LEAGUES: Record<string, string[]> = {
   soccer: ["MLS", "EPL", "UCL", "LIGA", "NCAASM", "NCAASW"],
   tennis: ["ATP", "WTA"],
   combat: ["UFC", "BOXING"],
-  golf: ["PGA", "LIV"],
+  golf: ["PGA", "LPGA", "LIV"],
   motorsports: ["F1", "NASCAR", "IRL"],
   college: ["NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH"],
   track: ["OLYMPICS"],
@@ -2882,13 +2882,16 @@ interface LeaderboardEntry {
   headshotUrl: string | null;
 }
 
-router.get("/sports/golf/leaderboard", async (_req, res) => {
-  const cacheKey = "golf-leaderboard";
+router.get("/sports/golf/leaderboard", async (req, res) => {
+  const league = ((req.query.league as string) ?? "PGA").toUpperCase();
+  const GOLF_ESPN_PATHS: Record<string, string> = { PGA: "golf/pga", LPGA: "golf/lpga", LIV: "golf/liv" };
+  const espnPath = GOLF_ESPN_PATHS[league] ?? "golf/pga";
+  const cacheKey = `golf-leaderboard-${league}`;
   const cached = getCached<unknown>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   try {
-    const url = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/scoreboard`;
     const json = await espnFetch(url) as any;
     const events = json.events ?? [];
 
@@ -2923,12 +2926,16 @@ router.get("/sports/golf/leaderboard", async (_req, res) => {
       }
     }
 
-    const response = { tournament: tournamentName, venue, status, leaderboard: entries };
+    const statusDesc = activeEvent?.status?.type?.description ?? activeEvent?.status?.type?.detail ?? "";
+    const roundNum = activeEvent?.competitions?.[0]?.competitors?.[0]?.linescores?.length ?? 0;
+    const roundDetail = status === "completed" ? "Final" : status === "live" ? (statusDesc || (roundNum > 0 ? `Round ${roundNum}` : "")) : (roundNum > 0 ? `Round ${roundNum}` : "");
+
+    const response = { tournament: tournamentName, venue, status, round: roundDetail, leaderboard: entries };
     setCached(cacheKey, response, 120_000);
     res.json(response);
   } catch (err) {
     console.error("Golf leaderboard error:", err);
-    res.json({ tournament: "", venue: "", status: "unknown", leaderboard: [] });
+    res.json({ tournament: "", venue: "", status: "unknown", round: "", leaderboard: [] });
   }
 });
 
@@ -3189,13 +3196,13 @@ router.get("/sports/rankings/:league", async (req, res): Promise<void> => {
     const data = await espnFetch(cfg.url) as any;
     const groups: RankingsGroup[] = [];
 
-    if (league === "PGA") {
+    if (league === "PGA" || league === "LPGA") {
       const ev = data.events?.[0];
       if (ev) {
         const comp = ev.competitions?.[0];
         const sorted = [...(comp?.competitors ?? [])].sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
         groups.push({
-          title: ev.name ?? "PGA Leaderboard",
+          title: ev.name ?? `${league} Leaderboard`,
           entries: sorted.slice(0, 30).map((c: any) => ({
             rank: c.order ?? 0,
             name: c.athlete?.displayName ?? c.athlete?.fullName ?? "Unknown",
