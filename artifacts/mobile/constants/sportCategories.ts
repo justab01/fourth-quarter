@@ -29,6 +29,8 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     leagues: [
       { key: "NBA", label: "NBA" },
       { key: "WNBA", label: "WNBA" },
+      { key: "NCAAB", label: "NCAA (M)" },
+      { key: "NCAAW", label: "NCAA (W)" },
     ],
   },
   {
@@ -53,6 +55,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     tagline: "MLB",
     leagues: [
       { key: "MLB", label: "MLB" },
+      { key: "NCAABB", label: "College" },
     ],
   },
   {
@@ -62,9 +65,11 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "disc-outline",
     color: "#4A90D9",
     gradient: ["#4A90D9", "#1E5293"],
-    tagline: "NHL",
+    tagline: "NHL · College Hockey",
     leagues: [
       { key: "NHL", label: "NHL" },
+      { key: "NCAAHM", label: "College (M)" },
+      { key: "NCAAHW", label: "College (W)" },
     ],
   },
   {
@@ -89,6 +94,8 @@ export const SPORT_CATEGORIES: SportCategory[] = [
       { key: "FWCM", label: "FIFA World Cup", group: "international" },
       { key: "EURO", label: "Euro", group: "international" },
       { key: "COPA", label: "Copa América", group: "international" },
+      { key: "NCAASM", label: "NCAA (M)" },
+      { key: "NCAASW", label: "NCAA (W)" },
     ],
   },
   {
@@ -140,7 +147,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "school-outline",
     color: "#5B3E96",
     gradient: ["#5B3E96", "#2E1F4D"],
-    tagline: "Basketball · Football · Baseball · Hockey · Soccer · Lacrosse",
+    tagline: "Basketball · Football · Baseball · Hockey · Soccer · Lacrosse · Volleyball · More",
     leagues: [
       { key: "NCAAB", label: "Men's Basketball" },
       { key: "NCAAW", label: "Women's Basketball" },
@@ -226,7 +233,20 @@ const SPORT_ALIASES: Record<string, string> = {
   wta: "tennis",
   nba: "basketball",
   wnba: "basketball",
+  ncaab: "college",
+  ncaaw: "college",
   nfl: "football",
+  ncaaf: "college",
+  ncaabb: "college",
+  ncaahm: "college",
+  ncaahw: "college",
+  ncaasm: "college",
+  ncaasw: "college",
+  ncaalm: "college",
+  ncaalw: "college",
+  ncaavw: "college",
+  ncaawp: "college",
+  ncaafh: "college",
   mlb: "baseball",
   nhl: "hockey",
   mls: "soccer",

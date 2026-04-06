@@ -28,6 +28,18 @@ import { goToTeam } from "@/utils/navHelpers";
 import { useSearch } from "@/context/SearchContext";
 import { getSportArchetype, type SportArchetype } from "@/utils/sportArchetype";
 
+const COLLEGE_SPORT_GROUPS: { label: string; keys: string[] }[] = [
+  { label: "Basketball", keys: ["NCAAB", "NCAAW"] },
+  { label: "Football", keys: ["NCAAF"] },
+  { label: "Baseball", keys: ["NCAABB"] },
+  { label: "Hockey", keys: ["NCAAHM", "NCAAHW"] },
+  { label: "Soccer", keys: ["NCAASM", "NCAASW"] },
+  { label: "Lacrosse", keys: ["NCAALM", "NCAALW"] },
+  { label: "Volleyball", keys: ["NCAAVW"] },
+  { label: "Water Polo", keys: ["NCAAWP"] },
+  { label: "Field Hockey", keys: ["NCAAFH"] },
+];
+
 const SPORT_DATA_NOTE: Record<string, string> = {
   golf:        "Live leaderboards appear during PGA Tour & LIV events. Tap Search to find golfers.",
   motorsports: "Race results appear during F1, NASCAR, and IndyCar race weekends. Tap Search to find drivers.",
@@ -468,6 +480,7 @@ function formatCountdown(ms: number): string {
 }
 
 function getArchetypeForSport(sport: SportCategory | undefined, activeLeague: string): SportArchetype {
+  if (activeLeague.startsWith("cg:")) return "team";
   if (activeLeague !== "all") return getSportArchetype(activeLeague);
   if (!sport) return "team";
   const firstLeague = sport.leagues[0]?.key;
@@ -591,16 +604,26 @@ export default function SportBoardScreen() {
     [sport]
   );
 
+  const activeLeagueKeys = useMemo(() => {
+    if (activeLeague === "all") return null;
+    if (activeLeague.startsWith("cg:")) {
+      const groupLabel = activeLeague.slice(3);
+      const group = COLLEGE_SPORT_GROUPS.find(g => g.label === groupLabel);
+      return group ? new Set(group.keys) : null;
+    }
+    return new Set([activeLeague]);
+  }, [activeLeague]);
+
   const filteredGames = useMemo(() => {
     const games: Game[] = (gamesData as any)?.games ?? [];
     return games
       .filter((g) => {
         if (!sportLeagueKeys.has(g.league)) return false;
-        if (activeLeague !== "all" && g.league !== activeLeague) return false;
+        if (activeLeagueKeys && !activeLeagueKeys.has(g.league)) return false;
         return true;
       })
       .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
-  }, [gamesData, sportLeagueKeys, activeLeague]);
+  }, [gamesData, sportLeagueKeys, activeLeagueKeys]);
 
   const golfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype === "golf"), [filteredGames]);
   const nonGolfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype !== "golf"), [filteredGames]);
@@ -612,13 +635,13 @@ export default function SportBoardScreen() {
   const topAthletes = useMemo(() => {
     const leagueFilter =
       activeLeague === "all"
-        ? [...sportLeagueKeys]
-        : [activeLeague];
-    return ALL_PLAYERS.filter((p) => leagueFilter.includes(p.league)).slice(0, 20).map(p => ({
+        ? sportLeagueKeys
+        : activeLeagueKeys ?? sportLeagueKeys;
+    return ALL_PLAYERS.filter((p) => leagueFilter.has(p.league)).slice(0, 20).map(p => ({
       ...p,
       resolvedHeadshot: p.headshotUrl || getEspnHeadshotUrl(p.name, p.league) || undefined,
     }));
-  }, [sportLeagueKeys, activeLeague]);
+  }, [sportLeagueKeys, activeLeague, activeLeagueKeys]);
 
   const standingsGroups = useMemo(() => {
     const entries: StandingEntry[] = standingsData?.standings ?? [];
@@ -1308,15 +1331,26 @@ export default function SportBoardScreen() {
             accentColor={accentColor}
             onPress={() => setActiveLeague("all")}
           />
-          {sport.leagues.map((l) => (
-            <LeagueChip
-              key={l.key}
-              label={l.label}
-              active={activeLeague === l.key}
-              accentColor={accentColor}
-              onPress={() => setActiveLeague(l.key)}
-            />
-          ))}
+          {sportId === "college"
+            ? COLLEGE_SPORT_GROUPS.map((group) => (
+                <LeagueChip
+                  key={group.label}
+                  label={group.label}
+                  active={activeLeague === `cg:${group.label}`}
+                  accentColor={accentColor}
+                  onPress={() => setActiveLeague(`cg:${group.label}`)}
+                />
+              ))
+            : sport.leagues.map((l) => (
+                <LeagueChip
+                  key={l.key}
+                  label={l.label}
+                  active={activeLeague === l.key}
+                  accentColor={accentColor}
+                  onPress={() => setActiveLeague(l.key)}
+                />
+              ))
+          }
         </ScrollView>
       </LinearGradient>
 

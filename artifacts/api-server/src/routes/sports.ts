@@ -318,7 +318,13 @@ const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
 const GAMELOG_PATH: Record<string, string> = {
   NBA: "basketball/nba", NFL: "football/nfl", MLB: "baseball/mlb", NHL: "hockey/nhl",
   MLS: "soccer/usa.1", WNBA: "basketball/wnba",
-  NCAAB: "basketball/mens-college-basketball", NCAAF: "football/college-football",
+  NCAAB: "basketball/mens-college-basketball", NCAAW: "basketball/womens-college-basketball",
+  NCAAF: "football/college-football", NCAABB: "baseball/college-baseball",
+  NCAAHM: "hockey/mens-college-hockey", NCAAHW: "hockey/womens-college-hockey",
+  NCAASM: "soccer/usa.ncaa.m.1", NCAASW: "soccer/usa.ncaa.w.1",
+  NCAALM: "lacrosse/mens-college-lacrosse", NCAALW: "lacrosse/womens-college-lacrosse",
+  NCAAVW: "volleyball/womens-college-volleyball", NCAAWP: "water-polo/mens-college-water-polo",
+  NCAAFH: "field-hockey/womens-college-field-hockey",
   EPL: "soccer/eng.1", UCL: "soccer/uefa.champions", LIGA: "soccer/esp.1",
   BUN: "soccer/ger.1", SERA: "soccer/ita.1", LIG1: "soccer/fra.1",
   UEL: "soccer/uefa.europa", UECL: "soccer/uefa.europa.conf",
@@ -718,8 +724,8 @@ function extractBoxscore(
   keyPlays: Array<{ time: string; description: string; team: string }>;
 } {
   const bs = json.boxscore;
-  const isMLB   = leagueKey === "MLB";
-  const isNHL   = leagueKey === "NHL";
+  const isMLB   = leagueKey === "MLB" || leagueKey === "NCAABB";
+  const isNHL   = leagueKey === "NHL" || leagueKey === "NCAAHM" || leagueKey === "NCAAHW";
   const isSoccer = SOCCER_SET.has(leagueKey);
   const isBasketball = BASKETBALL_SET.has(leagueKey);
 
@@ -928,6 +934,7 @@ router.get("/sports/games", async (req, res) => {
         : league.toUpperCase().split(",").filter((l) => l in LEAGUE_CONFIG))
     : [
         "NBA", "WNBA", "NFL", "MLB", "NHL",
+        "NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH",
         "EPL", "LIGA", "BUN", "SERA", "LIG1", "MLS", "NWSL", "UCL", "UEL", "UECL",
         "ATP", "WTA", "UFC", "BELLATOR", "PFL", "BOXING",
         "PGA", "LPGA", "F1", "NASCAR", "IRL",
@@ -1738,7 +1745,7 @@ router.get("/sports/in-one-breath", async (_req, res) => {
   if (cached) { res.json(cached); return; }
 
   try {
-    const defaultLeagues = ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING"];
+    const defaultLeagues = ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING"];
     const results = await Promise.all(defaultLeagues.map(l => fetchLeagueGames(l).catch(() => [])));
     const games = results.flat();
     const live = games.filter((g: any) => g.status === "live");
@@ -1913,7 +1920,13 @@ function coreApiBase(espnPath: string): string {
 const ESPN_LEAGUE_MAP: Record<string, string> = {
   nba: "NBA", nfl: "NFL", mlb: "MLB", nhl: "NHL", wnba: "WNBA",
   "usa.1": "MLS", "eng.1": "EPL", "uefa.champions": "UCL", "esp.1": "LIGA",
-  "mens-college-basketball": "NCAAB", "college-football": "NCAAF",
+  "mens-college-basketball": "NCAAB", "womens-college-basketball": "NCAAW",
+  "college-football": "NCAAF", "college-baseball": "NCAABB",
+  "mens-college-hockey": "NCAAHM", "womens-college-hockey": "NCAAHW",
+  "usa.ncaa.m.1": "NCAASM", "usa.ncaa.w.1": "NCAASW",
+  "mens-college-lacrosse": "NCAALM", "womens-college-lacrosse": "NCAALW",
+  "womens-college-volleyball": "NCAAVW", "mens-college-water-polo": "NCAAWP",
+  "womens-college-field-hockey": "NCAAFH",
   atp: "ATP", wta: "WTA", ufc: "UFC", boxing: "BOXING",
 };
 
@@ -1921,7 +1934,13 @@ const ESPN_LEAGUE_MAP: Record<string, string> = {
 const ESPN_DISPLAY_MAP: Record<string, string> = {
   "NBA": "NBA", "NFL": "NFL", "MLB": "MLB", "NHL": "NHL", "WNBA": "WNBA",
   "MLS": "MLS", "EPL": "EPL", "UCL": "UCL", "LIGA": "LIGA",
-  "Men's College Basketball": "NCAAB", "College Football": "NCAAF",
+  "Men's College Basketball": "NCAAB", "Women's College Basketball": "NCAAW",
+  "College Football": "NCAAF", "College Baseball": "NCAABB",
+  "Men's College Hockey": "NCAAHM", "Women's College Hockey": "NCAAHW",
+  "NCAA Men's Soccer": "NCAASM", "NCAA Women's Soccer": "NCAASW",
+  "Men's College Lacrosse": "NCAALM", "Women's College Lacrosse": "NCAALW",
+  "Women's College Volleyball": "NCAAVW", "Men's College Water Polo": "NCAAWP",
+  "Women's College Field Hockey": "NCAAFH",
   "ATP": "ATP", "WTA": "WTA", "UFC": "UFC", "Boxing": "BOXING",
   "Tennis": "ATP",
 };
@@ -2364,11 +2383,20 @@ const SPORT_NEWS_MAP: Record<string, { path: string; league: string }[]> = {
     { path: "football/nfl", league: "NFL" },
     { path: "football/college-football", league: "NCAAF" },
   ],
-  baseball: [{ path: "baseball/mlb", league: "MLB" }],
-  hockey: [{ path: "hockey/nhl", league: "NHL" }],
+  baseball: [
+    { path: "baseball/mlb", league: "MLB" },
+    { path: "baseball/college-baseball", league: "NCAABB" },
+  ],
+  hockey: [
+    { path: "hockey/nhl", league: "NHL" },
+    { path: "hockey/mens-college-hockey", league: "NCAAHM" },
+    { path: "hockey/womens-college-hockey", league: "NCAAHW" },
+  ],
   soccer: [
     { path: "soccer/eng.1", league: "EPL" },
     { path: "soccer/usa.1", league: "MLS" },
+    { path: "soccer/usa.ncaa.m.1", league: "NCAASM" },
+    { path: "soccer/usa.ncaa.w.1", league: "NCAASW" },
   ],
   tennis: [
     { path: "tennis/atp", league: "ATP" },
@@ -2383,11 +2411,18 @@ const SPORT_NEWS_MAP: Record<string, { path: string; league: string }[]> = {
   ],
   college: [
     { path: "basketball/mens-college-basketball", league: "NCAAB" },
+    { path: "basketball/womens-college-basketball", league: "NCAAW" },
     { path: "football/college-football", league: "NCAAF" },
-  ],
-  womens: [
-    { path: "basketball/wnba", league: "WNBA" },
-    { path: "tennis/wta", league: "WTA" },
+    { path: "baseball/college-baseball", league: "NCAABB" },
+    { path: "hockey/mens-college-hockey", league: "NCAAHM" },
+    { path: "hockey/womens-college-hockey", league: "NCAAHW" },
+    { path: "soccer/usa.ncaa.m.1", league: "NCAASM" },
+    { path: "soccer/usa.ncaa.w.1", league: "NCAASW" },
+    { path: "lacrosse/mens-college-lacrosse", league: "NCAALM" },
+    { path: "lacrosse/womens-college-lacrosse", league: "NCAALW" },
+    { path: "volleyball/womens-college-volleyball", league: "NCAAVW" },
+    { path: "water-polo/mens-college-water-polo", league: "NCAAWP" },
+    { path: "field-hockey/womens-college-field-hockey", league: "NCAAFH" },
   ],
   track: [],
   xgames: [],
@@ -2485,17 +2520,16 @@ const TSD_LEAGUE_IDS: Record<string, { id: number; name: string }[]> = {
 };
 
 const SPORT_ESPN_LEAGUES: Record<string, string[]> = {
-  basketball: ["NBA", "WNBA", "NCAAB"],
+  basketball: ["NBA", "WNBA", "NCAAB", "NCAAW"],
   football: ["NFL", "NCAAF"],
-  baseball: ["MLB"],
-  hockey: ["NHL"],
-  soccer: ["MLS", "EPL", "UCL", "LIGA"],
+  baseball: ["MLB", "NCAABB"],
+  hockey: ["NHL", "NCAAHM", "NCAAHW"],
+  soccer: ["MLS", "EPL", "UCL", "LIGA", "NCAASM", "NCAASW"],
   tennis: ["ATP", "WTA"],
   combat: ["UFC", "BOXING"],
   golf: ["PGA", "LIV"],
   motorsports: ["F1", "NASCAR", "IRL"],
-  college: ["NCAAB", "NCAAF"],
-  womens: ["WNBA", "WTA"],
+  college: ["NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH"],
   track: ["OLYMPICS"],
   xgames: ["XGAMES"],
   esports: [],
