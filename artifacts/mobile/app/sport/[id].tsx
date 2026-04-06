@@ -23,6 +23,7 @@ import { GameCard } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
+import { getEspnHeadshotUrl } from "@/constants/espnAthleteIds";
 import { goToTeam } from "@/utils/navHelpers";
 import { useSearch } from "@/context/SearchContext";
 import { getSportArchetype, type SportArchetype } from "@/utils/sportArchetype";
@@ -39,6 +40,18 @@ const SPORT_DATA_NOTE: Record<string, string> = {
 const RANKINGS_LEAGUES = new Set(["ATP", "WTA", "UFC", "PGA", "F1", "NASCAR", "IRL", "BELLATOR", "PFL", "LPGA"]);
 
 const STANDINGS_LEAGUES = new Set(["NBA", "NFL", "MLB", "NHL", "WNBA", "MLS", "EPL", "LIGA", "BUN", "SERA", "LIG1", "NWSL"]);
+
+const TEAM_STANDINGS_LEAGUES = new Set(["NBA", "WNBA", "NFL", "MLB", "NHL", "NCAAB"]);
+
+const LEAGUE_SEASON_INFO: Record<string, { start: string; end: string; label: string }> = {
+  NBA:   { start: "October",   end: "June",      label: "NBA season starts in October" },
+  WNBA:  { start: "May",       end: "October",   label: "WNBA season starts in May" },
+  NFL:   { start: "September", end: "February",   label: "NFL season starts in September" },
+  MLB:   { start: "March",     end: "November",   label: "MLB season starts in March" },
+  NHL:   { start: "October",   end: "June",       label: "NHL season starts in October" },
+  NCAAB: { start: "November",  end: "April",      label: "NCAA season starts in November" },
+  NCAAF: { start: "August",    end: "January",    label: "College football starts in August" },
+};
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -526,7 +539,14 @@ export default function SportBoardScreen() {
     enabled: archetype === "golf",
   });
 
-  const { data: standingsData, refetch: refetchStandings } = useQuery({
+  const standingsLeague = useMemo(() => {
+    if (activeLeague !== "all" && TEAM_STANDINGS_LEAGUES.has(activeLeague)) return activeLeague;
+    if (!sport) return null;
+    const sl = sport.leagues.find(l => TEAM_STANDINGS_LEAGUES.has(l.key));
+    return sl?.key ?? null;
+  }, [activeLeague, sport]);
+
+  const { data: standingsData, isLoading: standingsLoading, refetch: refetchStandings } = useQuery({
     queryKey: ["sport-standings", standingsLeague],
     queryFn: () => api.getStandings(standingsLeague!),
     staleTime: 300_000,
@@ -568,8 +588,43 @@ export default function SportBoardScreen() {
       activeLeague === "all"
         ? [...sportLeagueKeys]
         : [activeLeague];
-    return ALL_PLAYERS.filter((p) => leagueFilter.includes(p.league)).slice(0, 20);
+    return ALL_PLAYERS.filter((p) => leagueFilter.includes(p.league)).slice(0, 20).map(p => ({
+      ...p,
+      resolvedHeadshot: p.headshotUrl || getEspnHeadshotUrl(p.name, p.league) || undefined,
+    }));
   }, [sportLeagueKeys, activeLeague]);
+
+  const standingsGroups = useMemo(() => {
+    const entries: StandingEntry[] = standingsData?.standings ?? [];
+    if (entries.length === 0) return [];
+    const groups: { title: string; entries: StandingEntry[] }[] = [];
+    const hasDivisions = entries.some(e => e.division != null);
+    const groupKey = (e: StandingEntry) => hasDivisions ? (e.division || e.conference || "All") : (e.conference || "All");
+    const byGroup = new Map<string, StandingEntry[]>();
+    for (const e of entries) {
+      const key = groupKey(e);
+      if (!byGroup.has(key)) byGroup.set(key, []);
+      byGroup.get(key)!.push(e);
+    }
+    for (const [title, items] of byGroup) {
+      items.sort((a, b) => a.rank - b.rank);
+      groups.push({ title, entries: items });
+    }
+    return groups;
+  }, [standingsData]);
+
+  const isOffSeason = useMemo(() => {
+    if (gamesLoading || standingsLoading) return false;
+    if (filteredGames.length > 0) return false;
+    if (archetype === "team" && standingsData?.standings?.length > 0) return false;
+    return true;
+  }, [gamesLoading, standingsLoading, filteredGames.length, archetype, standingsData]);
+
+  const offSeasonMessage = useMemo(() => {
+    const league = standingsLeague ?? (sport?.leagues[0]?.key ?? "");
+    const info = LEAGUE_SEASON_INFO[league];
+    return info?.label ?? null;
+  }, [standingsLeague, sport]);
 
   const rankingsGroups: RankingsGroup[] = rankingsData?.groups ?? [];
   const tennisTournaments: TennisTournament[] = drawData?.tournaments ?? [];
@@ -719,6 +774,7 @@ export default function SportBoardScreen() {
             team={player.team}
             league={player.league}
             accentColor={accentColor}
+            headshot={player.resolvedHeadshot}
           />
         ))}
       </ScrollView>
@@ -939,6 +995,85 @@ export default function SportBoardScreen() {
     </Pressable>
   );
 
+  const OffSeasonBanner = isOffSeason && offSeasonMessage ? (
+    <View style={styles.section}>
+      <View style={styles.offSeasonCard}>
+        <Text style={styles.offSeasonEmoji}>{sport.emoji}</Text>
+        <Text style={styles.offSeasonTitle}>{offSeasonMessage}</Text>
+        {standingsGroups.length > 0 && (
+          <Text style={styles.offSeasonSub}>{"Showing last season's final standings below"}</Text>
+        )}
+      </View>
+    </View>
+  ) : null;
+
+  const InlineStandingsSection = standingsGroups.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Standings</Text>
+        <Pressable onPress={() => router.push("/(tabs)/standings" as any)} style={styles.seeAllBtn}>
+          <Text style={[styles.seeAllText, { color: accentColor }]}>Full Standings</Text>
+        </Pressable>
+      </View>
+      {standingsGroups.map((group) => (
+        <View key={group.title} style={styles.inlineStandingsCard}>
+          <Text style={styles.inlineStandingsGroupTitle}>{group.title}</Text>
+          <View style={styles.inlineStandingsHeader}>
+            <Text style={[styles.inlineStandingsHeaderCell, { flex: 0.3 }]}>#</Text>
+            <Text style={[styles.inlineStandingsHeaderCell, { flex: 2, textAlign: "left" }]}>Team</Text>
+            <Text style={styles.inlineStandingsHeaderCell}>W</Text>
+            <Text style={styles.inlineStandingsHeaderCell}>L</Text>
+            {standingsLeague !== "NFL" && (
+              <Text style={styles.inlineStandingsHeaderCell}>PCT</Text>
+            )}
+            <Text style={[styles.inlineStandingsHeaderCell, { flex: 0.7 }]}>GB</Text>
+          </View>
+          {group.entries.slice(0, 8).map((entry, idx) => (
+            <View key={entry.teamName + idx} style={[styles.inlineStandingsRow, idx % 2 === 0 && styles.inlineStandingsRowAlt]}>
+              <Text style={[styles.inlineStandingsCell, { flex: 0.3, fontFamily: "Inter_700Bold", color: idx < 6 ? C.text : C.textTertiary }]}>
+                {entry.playoffSeed ?? entry.rank}
+                {entry.clinched ? ` ${entry.clinched}` : ""}
+              </Text>
+              <View style={{ flex: 2, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                {entry.logoUrl ? (
+                  <Image source={{ uri: entry.logoUrl }} style={styles.inlineStandingsLogo} />
+                ) : (
+                  <View style={[styles.inlineStandingsLogo, { backgroundColor: accentColor + "22" }]} />
+                )}
+                <Pressable onPress={() => goToTeam(entry.teamName, standingsLeague ?? "")}>
+                  <Text style={styles.inlineStandingsTeam} numberOfLines={1}>{entry.teamName}</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.inlineStandingsCell}>{entry.wins}</Text>
+              <Text style={styles.inlineStandingsCell}>{entry.losses}</Text>
+              {standingsLeague !== "NFL" && (
+                <Text style={styles.inlineStandingsCell}>
+                  {entry.winPct != null ? entry.winPct.toFixed(3).replace(/^0/, "") : "-"}
+                </Text>
+              )}
+              <Text style={[styles.inlineStandingsCell, { flex: 0.7 }]}>
+                {entry.gamesBack != null ? (entry.gamesBack === 0 ? "-" : entry.gamesBack.toString()) : "-"}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  ) : standingsLoading ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Standings</Text>
+      </View>
+      <View style={styles.inlineStandingsCard}>
+        {[1, 2, 3, 4, 5].map(i => (
+          <View key={i} style={[styles.inlineStandingsRow, { height: 36 }]}>
+            <View style={{ flex: 1, backgroundColor: C.separator, borderRadius: 4, height: 12, marginHorizontal: 12 }} />
+          </View>
+        ))}
+      </View>
+    </View>
+  ) : null;
+
   const renderSections = () => {
     switch (archetype) {
       case "golf":
@@ -986,13 +1121,13 @@ export default function SportBoardScreen() {
       default:
         return (
           <>
+            {OffSeasonBanner}
             {GamesSection}
             {InlineStandingsSection}
             {AthletesSection}
             {LeagueLinksSection}
             {ScheduleSection}
             {NewsSection}
-            {!InlineStandingsSection && StandingsShortcut}
           </>
         );
     }
@@ -1491,5 +1626,89 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     color: C.text,
     flex: 1,
+  },
+
+  offSeasonCard: {
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 24,
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: C.separator,
+  },
+  offSeasonEmoji: {
+    fontSize: 32,
+  },
+  offSeasonTitle: {
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    textAlign: "center",
+  },
+  offSeasonSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    textAlign: "center",
+  },
+
+  inlineStandingsCard: {
+    backgroundColor: C.card,
+    borderRadius: 14,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  inlineStandingsGroupTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  inlineStandingsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: C.separator,
+  },
+  inlineStandingsHeaderCell: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: C.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    textAlign: "center",
+    flex: 0.5,
+  },
+  inlineStandingsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  inlineStandingsRowAlt: {
+    backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  inlineStandingsCell: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    textAlign: "center",
+    flex: 0.5,
+  },
+  inlineStandingsLogo: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  inlineStandingsTeam: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    maxWidth: 120,
   },
 });

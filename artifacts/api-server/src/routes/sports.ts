@@ -1402,23 +1402,70 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
 
     } else if (league === "NFL") {
       const json = await espnFetch(
-        "https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings" +
-        "?region=us&lang=en&contentorigin=espn&type=1&level=1&sort=winpercent%3Adesc&limit=500"
+        "https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings?level=3"
       ) as EspnStandingsResponse;
-      const raw = (json.standings?.entries ?? []).map((e) => {
-        const stats = e.stats ?? [];
-        const wins = Number(getStat(stats, "wins")?.value ?? 0);
-        const losses = Number(getStat(stats, "losses")?.value ?? 0);
-        const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
-        const gbVal = getStat(stats, "gamesBehind")?.value;
-        const gamesBack = gbVal != null ? Number(gbVal) : null;
-        const streak = getStat(stats, "streak")?.displayValue ?? null;
-        const logoUrl = e.team.logos?.[0]?.href ?? null;
-        const ext = extractExtendedStats(stats);
-        return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null, ...ext };
-      });
-      raw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
-      entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
+      const allEntries: StandingEntry[] = [];
+      for (const conf of json.children ?? []) {
+        const confName = conf.name ?? null;
+        for (const div of conf.children ?? []) {
+          const divName = div.name ?? null;
+          const divEntries = div.standings?.entries ?? [];
+          divEntries.forEach((e: any) => {
+            const stats = e.stats ?? [];
+            const wins = Number(getStat(stats, "wins")?.value ?? 0);
+            const losses = Number(getStat(stats, "losses")?.value ?? 0);
+            const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+            const gbVal = getStat(stats, "gamesBehind")?.value;
+            const gamesBack = gbVal != null ? Number(gbVal) : null;
+            const streak = getStat(stats, "streak")?.displayValue ?? null;
+            const logoUrl = e.team.logos?.[0]?.href ?? null;
+            const ext = extractExtendedStats(stats);
+            allEntries.push({
+              rank: 0, teamName: e.team.displayName, logoUrl, wins, losses, winPct,
+              gamesBack, streak, conference: confName, division: divName, rankChange: null,
+              ...ext, playoffSeed: null, clinched: null,
+            });
+          });
+        }
+        if (!conf.children?.length) {
+          const confEntries = conf.standings?.entries ?? [];
+          confEntries.forEach((e: any) => {
+            const stats = e.stats ?? [];
+            const wins = Number(getStat(stats, "wins")?.value ?? 0);
+            const losses = Number(getStat(stats, "losses")?.value ?? 0);
+            const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+            const logoUrl = e.team.logos?.[0]?.href ?? null;
+            const ext = extractExtendedStats(stats);
+            allEntries.push({
+              rank: 0, teamName: e.team.displayName, logoUrl, wins, losses, winPct,
+              gamesBack: null, streak: null, conference: confName, division: null, rankChange: null,
+              ...ext, playoffSeed: null, clinched: null,
+            });
+          });
+        }
+      }
+      if (allEntries.length === 0) {
+        const flat = (json.standings?.entries ?? []).map((e: any) => {
+          const stats = e.stats ?? [];
+          const wins = Number(getStat(stats, "wins")?.value ?? 0);
+          const losses = Number(getStat(stats, "losses")?.value ?? 0);
+          const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+          const logoUrl = e.team.logos?.[0]?.href ?? null;
+          const ext = extractExtendedStats(stats);
+          return { teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack: null as number|null, streak: null as string|null, conference: null as string|null, division: null as string|null, rankChange: null as number|null, ...ext, playoffSeed: null, clinched: null };
+        });
+        flat.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+        flat.forEach((e, i) => allEntries.push({ ...e, rank: i + 1 }));
+      } else {
+        const divGroups = [...new Set(allEntries.map(e => e.division ?? e.conference))];
+        for (const group of divGroups) {
+          let rank = 1;
+          const groupTeams = allEntries.filter(e => (e.division ?? e.conference) === group);
+          groupTeams.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+          groupTeams.forEach(e => { e.rank = rank++; });
+        }
+      }
+      entries = allEntries;
 
     } else if (league === "MLB") {
       const json = await espnFetch(
@@ -1443,20 +1490,49 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
 
     } else if (league === "NHL") {
       const json = await espnFetch(
-        "https://site.web.api.espn.com/apis/v2/sports/hockey/nhl/standings" +
-        "?region=us&lang=en&contentorigin=espn&type=1&level=1&sort=winpercent%3Adesc&limit=500"
+        "https://site.web.api.espn.com/apis/v2/sports/hockey/nhl/standings"
       ) as EspnStandingsResponse;
-      entries = (json.standings?.entries ?? []).map((e, i) => {
-        const stats = e.stats ?? [];
-        const wins   = Number(getStat(stats, "wins")?.value ?? 0);
-        const losses = Number(getStat(stats, "losses")?.value ?? 0);
-        const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
-        const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
-        const streak = getStat(stats, "streak")?.displayValue ?? null;
-        const logoUrl = e.team.logos?.[0]?.href ?? null;
-        const ext = extractExtendedStats(stats);
-        return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null, division: null, rankChange: null, ...ext };
-      });
+      const allEntries: StandingEntry[] = [];
+      for (const child of json.children ?? []) {
+        const confName = child.name ?? null;
+        const confEntries = child.standings?.entries ?? [];
+        confEntries.forEach((e: any) => {
+          const stats = e.stats ?? [];
+          const wins   = Number(getStat(stats, "wins")?.value ?? 0);
+          const losses = Number(getStat(stats, "losses")?.value ?? 0);
+          const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+          const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
+          const streak = getStat(stats, "streak")?.displayValue ?? null;
+          const logoUrl = e.team.logos?.[0]?.href ?? null;
+          const ext = extractExtendedStats(stats);
+          allEntries.push({
+            rank: 0, teamName: e.team.displayName, logoUrl, wins, losses, winPct,
+            gamesBack, streak, conference: confName, division: null, rankChange: null,
+            ...ext, playoffSeed: null, clinched: null,
+          });
+        });
+      }
+      if (allEntries.length === 0) {
+        const flat = (json.standings?.entries ?? []).map((e: any, i: number) => {
+          const stats = e.stats ?? [];
+          const wins   = Number(getStat(stats, "wins")?.value ?? 0);
+          const losses = Number(getStat(stats, "losses")?.value ?? 0);
+          const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+          const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
+          const streak = getStat(stats, "streak")?.displayValue ?? null;
+          const logoUrl = e.team.logos?.[0]?.href ?? null;
+          const ext = extractExtendedStats(stats);
+          return { rank: i + 1, teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: null as string|null, division: null as string|null, rankChange: null as number|null, ...ext, playoffSeed: null, clinched: null };
+        });
+        allEntries.push(...flat);
+      } else {
+        for (const conf of [...new Set(allEntries.map(e => e.conference))]) {
+          const confTeams = allEntries.filter(e => e.conference === conf);
+          confTeams.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+          confTeams.forEach((e, i) => { e.rank = i + 1; });
+        }
+      }
+      entries = allEntries;
 
     } else if (league === "WNBA") {
       const json = await espnFetch(

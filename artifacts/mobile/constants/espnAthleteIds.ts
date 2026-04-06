@@ -4950,7 +4950,14 @@ export function getEspnAthleteId(name: string, league: string): string | undefin
 
 const HEADSHOT_SPORT: Record<string, string> = {
   NBA: "nba", NFL: "nfl", MLB: "mlb", MLS: "soccer",
+  NHL: "nhl", WNBA: "wnba",
 };
+
+export function getEspnHeadshotUrlById(espnId: string, league: string): string | null {
+  const sport = HEADSHOT_SPORT[league];
+  if (!sport) return null;
+  return `https://a.espncdn.com/combiner/i?img=/i/headshots/${sport}/players/full/${espnId}.png`;
+}
 
 export function getEspnHeadshotUrl(name: string, league: string): string | null {
   const id = getEspnAthleteId(name, league);

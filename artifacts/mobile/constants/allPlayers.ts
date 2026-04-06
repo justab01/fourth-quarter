@@ -1713,47 +1713,47 @@ export const NHL_PLAYERS: SearchPlayer[] = [
   { name: "Leo Carlsson", team: "Anaheim Ducks", league: "NHL", position: "C", stat: "22G, 38A — franchise cornerstone" },
   { name: "Mason McTavish", team: "Anaheim Ducks", league: "NHL", position: "C", stat: "25G, 35A — future star" },
   // Boston Bruins
-  { name: "David Pastrnak", team: "Boston Bruins", league: "NHL", position: "RW", stat: "47G, 45A — franchise superstar" },
-  { name: "Charlie McAvoy", team: "Boston Bruins", league: "NHL", position: "D", stat: "12G, 52A — top defenseman" },
+  { name: "David Pastrnak", team: "Boston Bruins", league: "NHL", position: "RW", stat: "47G, 45A — franchise superstar", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3114778.png" },
+  { name: "Charlie McAvoy", team: "Boston Bruins", league: "NHL", position: "D", stat: "12G, 52A — top defenseman", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4233535.png" },
   { name: "Brad Marchand", team: "Boston Bruins", league: "NHL", position: "LW", stat: "25G, 40A — veteran leader" },
   { name: "Jeremy Swayman", team: "Boston Bruins", league: "NHL", position: "G", stat: ".918 SV%, 2.54 GAA" },
   // Buffalo Sabres
-  { name: "Tage Thompson", team: "Buffalo Sabres", league: "NHL", position: "C", stat: "44G, 52A — franchise center" },
+  { name: "Tage Thompson", team: "Buffalo Sabres", league: "NHL", position: "C", stat: "44G, 52A — franchise center", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4024988.png" },
   { name: "JJ Peterka", team: "Buffalo Sabres", league: "NHL", position: "RW", stat: "32G, 38A — offensive breakout" },
-  { name: "Rasmus Dahlin", team: "Buffalo Sabres", league: "NHL", position: "D", stat: "15G, 65A — elite offensive D" },
+  { name: "Rasmus Dahlin", team: "Buffalo Sabres", league: "NHL", position: "D", stat: "15G, 65A — elite offensive D", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4233556.png" },
   // Calgary Flames
   { name: "Jonathan Huberdeau", team: "Calgary Flames", league: "NHL", position: "LW", stat: "22G, 58A — playmaker" },
   { name: "Nazem Kadri", team: "Calgary Flames", league: "NHL", position: "C", stat: "28G, 32A — veteran presence" },
   // Carolina Hurricanes
-  { name: "Sebastian Aho", team: "Carolina Hurricanes", league: "NHL", position: "C", stat: "36G, 50A — franchise player" },
-  { name: "Andrei Svechnikov", team: "Carolina Hurricanes", league: "NHL", position: "RW", stat: "30G, 42A — skilled winger" },
-  { name: "Martin Necas", team: "Carolina Hurricanes", league: "NHL", position: "C", stat: "28G, 48A — emerging star" },
+  { name: "Sebastian Aho", team: "Carolina Hurricanes", league: "NHL", position: "C", stat: "36G, 50A — franchise player", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3904173.png" },
+  { name: "Andrei Svechnikov", team: "Carolina Hurricanes", league: "NHL", position: "RW", stat: "30G, 42A — skilled winger", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4233561.png" },
+  { name: "Martin Necas", team: "Carolina Hurricanes", league: "NHL", position: "C", stat: "28G, 48A — emerging star", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4233560.png" },
   // Chicago Blackhawks
-  { name: "Connor Bedard", team: "Chicago Blackhawks", league: "NHL", position: "C", stat: "24G, 36A — 2023 #1 overall pick" },
+  { name: "Connor Bedard", team: "Chicago Blackhawks", league: "NHL", position: "C", stat: "24G, 36A — 2023 #1 overall pick", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/5149125.png" },
   { name: "Frank Nazar", team: "Chicago Blackhawks", league: "NHL", position: "C", stat: "Rookie — rebuild centerpiece" },
   // Colorado Avalanche
-  { name: "Nathan MacKinnon", team: "Colorado Avalanche", league: "NHL", position: "C", stat: "51G, 79A — 2024 MVP frontrunner" },
-  { name: "Cale Makar", team: "Colorado Avalanche", league: "NHL", position: "D", stat: "22G, 70A — best D in NHL" },
-  { name: "Mikko Rantanen", team: "Colorado Avalanche", league: "NHL", position: "RW", stat: "44G, 61A — Hart Trophy winner 2025" },
+  { name: "Nathan MacKinnon", team: "Colorado Avalanche", league: "NHL", position: "C", stat: "51G, 79A — 2024 MVP frontrunner", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3041969.png" },
+  { name: "Cale Makar", team: "Colorado Avalanche", league: "NHL", position: "D", stat: "22G, 70A — best D in NHL", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4233563.png" },
+  { name: "Mikko Rantanen", team: "Colorado Avalanche", league: "NHL", position: "RW", stat: "44G, 61A — Hart Trophy winner 2025", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3899938.png" },
   { name: "Valeri Nichushkin", team: "Colorado Avalanche", league: "NHL", position: "RW", stat: "25G, 30A — power forward" },
   // Columbus Blue Jackets
   { name: "Kirill Marchenko", team: "Columbus Blue Jackets", league: "NHL", position: "RW", stat: "28G, 30A — offensive threat" },
   { name: "Ivan Provorov", team: "Columbus Blue Jackets", league: "NHL", position: "D", stat: "8G, 35A — top defender" },
   // Dallas Stars
-  { name: "Jason Robertson", team: "Dallas Stars", league: "NHL", position: "LW", stat: "40G, 50A — elite sniper" },
+  { name: "Jason Robertson", team: "Dallas Stars", league: "NHL", position: "LW", stat: "40G, 50A — elite sniper", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4233875.png" },
   { name: "Roope Hintz", team: "Dallas Stars", league: "NHL", position: "C", stat: "32G, 40A — power center" },
-  { name: "Miro Heiskanen", team: "Dallas Stars", league: "NHL", position: "D", stat: "18G, 60A — Norris contender" },
+  { name: "Miro Heiskanen", team: "Dallas Stars", league: "NHL", position: "D", stat: "18G, 60A — Norris contender", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4233536.png" },
   { name: "Jake Oettinger", team: "Dallas Stars", league: "NHL", position: "G", stat: ".916 SV%, 2.60 GAA" },
   // Detroit Red Wings
   { name: "Dylan Larkin", team: "Detroit Red Wings", league: "NHL", position: "C", stat: "32G, 45A — franchise captain" },
   { name: "Lucas Raymond", team: "Detroit Red Wings", league: "NHL", position: "RW", stat: "28G, 42A — skilled youngster" },
   // Edmonton Oilers
-  { name: "Connor McDavid", team: "Edmonton Oilers", league: "NHL", position: "C", stat: "42G, 100A — best player on Earth" },
-  { name: "Leon Draisaitl", team: "Edmonton Oilers", league: "NHL", position: "C", stat: "52G, 70A — Hart Trophy winner" },
+  { name: "Connor McDavid", team: "Edmonton Oilers", league: "NHL", position: "C", stat: "42G, 100A — best player on Earth", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3895074.png" },
+  { name: "Leon Draisaitl", team: "Edmonton Oilers", league: "NHL", position: "C", stat: "52G, 70A — Hart Trophy winner", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3114727.png" },
   { name: "Zach Hyman", team: "Edmonton Oilers", league: "NHL", position: "LW", stat: "38G, 30A — power winger" },
   { name: "Stuart Skinner", team: "Edmonton Oilers", league: "NHL", position: "G", stat: ".910 SV%, 2.78 GAA" },
   // Florida Panthers
-  { name: "Aleksander Barkov", team: "Florida Panthers", league: "NHL", position: "C", stat: "30G, 62A — Selke + Lady Byng" },
+  { name: "Aleksander Barkov", team: "Florida Panthers", league: "NHL", position: "C", stat: "30G, 62A — Selke + Lady Byng", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3041970.png" },
   { name: "Sam Reinhart", team: "Florida Panthers", league: "NHL", position: "RW", stat: "57G, 44A — 2024 scoring leader" },
   { name: "Matthew Tkachuk", team: "Florida Panthers", league: "NHL", position: "LW", stat: "29G, 71A — elite playmaker" },
   { name: "Sergei Bobrovsky", team: "Florida Panthers", league: "NHL", position: "G", stat: ".912 SV%, 2.61 GAA" },
@@ -1765,7 +1765,7 @@ export const NHL_PLAYERS: SearchPlayer[] = [
   { name: "Anze Kopitar", team: "Los Angeles Kings", league: "NHL", position: "C", stat: "22G, 50A — legendary captain" },
   { name: "Kevin Fiala", team: "Los Angeles Kings", league: "NHL", position: "LW", stat: "28G, 42A — skilled winger" },
   // Minnesota Wild
-  { name: "Kirill Kaprizov", team: "Minnesota Wild", league: "NHL", position: "LW", stat: "42G, 56A — Art Ross contender" },
+  { name: "Kirill Kaprizov", team: "Minnesota Wild", league: "NHL", position: "LW", stat: "42G, 56A — Art Ross contender", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3942335.png" },
   { name: "Joel Eriksson Ek", team: "Minnesota Wild", league: "NHL", position: "C", stat: "24G, 38A — shutdown center" },
   // Montreal Canadiens
   { name: "Cole Caufield", team: "Montreal Canadiens", league: "NHL", position: "RW", stat: "35G, 42A — star sniper" },
@@ -1775,7 +1775,7 @@ export const NHL_PLAYERS: SearchPlayer[] = [
   { name: "Filip Forsberg", team: "Nashville Predators", league: "NHL", position: "LW", stat: "36G, 42A — franchise player" },
   { name: "Roman Josi", team: "Nashville Predators", league: "NHL", position: "D", stat: "18G, 62A — Norris Trophy winner" },
   // New Jersey Devils
-  { name: "Jack Hughes", team: "New Jersey Devils", league: "NHL", position: "C", stat: "38G, 62A — 2019 #1 overall" },
+  { name: "Jack Hughes", team: "New Jersey Devils", league: "NHL", position: "C", stat: "38G, 62A — 2019 #1 overall", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4996314.png" },
   { name: "Nico Hischier", team: "New Jersey Devils", league: "NHL", position: "C", stat: "32G, 48A — elite two-way C" },
   { name: "Timo Meier", team: "New Jersey Devils", league: "NHL", position: "RW", stat: "36G, 40A — power forward" },
   // New York Islanders
@@ -1786,7 +1786,7 @@ export const NHL_PLAYERS: SearchPlayer[] = [
   { name: "Chris Kreider", team: "New York Rangers", league: "NHL", position: "LW", stat: "30G, 30A — clutch power winger" },
   { name: "Mika Zibanejad", team: "New York Rangers", league: "NHL", position: "C", stat: "30G, 52A — franchise C" },
   { name: "Adam Fox", team: "New York Rangers", league: "NHL", position: "D", stat: "16G, 72A — 2021 Norris Trophy" },
-  { name: "Igor Shesterkin", team: "New York Rangers", league: "NHL", position: "G", stat: ".921 SV%, 2.45 GAA — elite" },
+  { name: "Igor Shesterkin", team: "New York Rangers", league: "NHL", position: "G", stat: ".921 SV%, 2.45 GAA — elite", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3151297.png" },
   // Ottawa Senators
   { name: "Brady Tkachuk", team: "Ottawa Senators", league: "NHL", position: "LW", stat: "32G, 38A — power forward captain" },
   { name: "Tim Stutzle", team: "Ottawa Senators", league: "NHL", position: "C", stat: "30G, 55A — offensive star" },
@@ -1794,7 +1794,7 @@ export const NHL_PLAYERS: SearchPlayer[] = [
   { name: "Travis Konecny", team: "Philadelphia Flyers", league: "NHL", position: "RW", stat: "40G, 50A — team leader" },
   { name: "Sean Couturier", team: "Philadelphia Flyers", league: "NHL", position: "C", stat: "22G, 38A — Selke finalist" },
   // Pittsburgh Penguins
-  { name: "Sidney Crosby", team: "Pittsburgh Penguins", league: "NHL", position: "C", stat: "42G, 58A — GOAT of his era" },
+  { name: "Sidney Crosby", team: "Pittsburgh Penguins", league: "NHL", position: "C", stat: "42G, 58A — GOAT of his era", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3114.png" },
   { name: "Evgeni Malkin", team: "Pittsburgh Penguins", league: "NHL", position: "C", stat: "28G, 52A — 3x Stanley Cup" },
   { name: "Rickard Rakell", team: "Pittsburgh Penguins", league: "NHL", position: "LW", stat: "24G, 32A — clutch scorer" },
   // San Jose Sharks
@@ -1808,12 +1808,12 @@ export const NHL_PLAYERS: SearchPlayer[] = [
   { name: "Jordan Kyrou", team: "St. Louis Blues", league: "NHL", position: "RW", stat: "32G, 42A — speedy scorer" },
   { name: "David Perron", team: "St. Louis Blues", league: "NHL", position: "RW", stat: "24G, 38A — veteran presence" },
   // Tampa Bay Lightning
-  { name: "Nikita Kucherov", team: "Tampa Bay Lightning", league: "NHL", position: "RW", stat: "42G, 100A+ — Hart Trophy" },
+  { name: "Nikita Kucherov", team: "Tampa Bay Lightning", league: "NHL", position: "RW", stat: "42G, 100A+ — Hart Trophy", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/2563060.png" },
   { name: "Brayden Point", team: "Tampa Bay Lightning", league: "NHL", position: "C", stat: "40G, 52A — clutch performer" },
   { name: "Victor Hedman", team: "Tampa Bay Lightning", league: "NHL", position: "D", stat: "15G, 65A — Norris Trophy winner" },
-  { name: "Andrei Vasilevskiy", team: "Tampa Bay Lightning", league: "NHL", position: "G", stat: ".919 SV%, 2.54 GAA — elite" },
+  { name: "Andrei Vasilevskiy", team: "Tampa Bay Lightning", league: "NHL", position: "G", stat: ".919 SV%, 2.54 GAA — elite", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/2976847.png" },
   // Toronto Maple Leafs
-  { name: "Auston Matthews", team: "Toronto Maple Leafs", league: "NHL", position: "C", stat: "69G! — 2024 Maurice Richard" },
+  { name: "Auston Matthews", team: "Toronto Maple Leafs", league: "NHL", position: "C", stat: "69G! — 2024 Maurice Richard", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/4024123.png" },
   { name: "Mitch Marner", team: "Toronto Maple Leafs", league: "NHL", position: "RW", stat: "26G, 80A — elite playmaker" },
   { name: "John Tavares", team: "Toronto Maple Leafs", league: "NHL", position: "C", stat: "28G, 52A — team captain" },
   { name: "William Nylander", team: "Toronto Maple Leafs", league: "NHL", position: "RW", stat: "40G, 60A — emerging star" },
@@ -1822,7 +1822,7 @@ export const NHL_PLAYERS: SearchPlayer[] = [
   { name: "Quinn Hughes", team: "Vancouver Canucks", league: "NHL", position: "D", stat: "22G, 80A — 2024 Norris Trophy" },
   { name: "Brock Boeser", team: "Vancouver Canucks", league: "NHL", position: "RW", stat: "36G, 48A — sniper" },
   // Washington Capitals
-  { name: "Alex Ovechkin", team: "Washington Capitals", league: "NHL", position: "LW", stat: "886 goals — all-time record" },
+  { name: "Alex Ovechkin", team: "Washington Capitals", league: "NHL", position: "LW", stat: "886 goals — all-time record", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/nhl/players/full/3101.png" },
   { name: "Dylan Strome", team: "Washington Capitals", league: "NHL", position: "C", stat: "34G, 52A — Ovechkin's center" },
   { name: "Tom Wilson", team: "Washington Capitals", league: "NHL", position: "RW", stat: "28G, 36A — power forward" },
   // Winnipeg Jets
@@ -1834,39 +1834,39 @@ export const NHL_PLAYERS: SearchPlayer[] = [
 // ─── WNBA PLAYERS ──────────────────────────────────────────────────────────────
 export const WNBA_PLAYERS: SearchPlayer[] = [
   // Atlanta Dream
-  { name: "Rhyne Howard", team: "Atlanta Dream", league: "WNBA", position: "G", stat: "19.2 PPG, 4.4 REB, 3.2 APG — 2022 ROY" },
+  { name: "Rhyne Howard", team: "Atlanta Dream", league: "WNBA", position: "G", stat: "19.2 PPG, 4.4 REB, 3.2 APG — 2022 ROY", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/4398674.png" },
   { name: "Tina Charles", team: "Atlanta Dream", league: "WNBA", position: "C", stat: "15.8 PPG, 8.6 REB — veteran star" },
   // Chicago Sky
-  { name: "Kahleah Copper", team: "Chicago Sky", league: "WNBA", position: "G", stat: "21.4 PPG, 4.2 REB — 2021 Finals MVP" },
+  { name: "Kahleah Copper", team: "Chicago Sky", league: "WNBA", position: "G", stat: "21.4 PPG, 4.2 REB — 2021 Finals MVP", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/2998938.png" },
   { name: "Marina Mabrey", team: "Chicago Sky", league: "WNBA", position: "G", stat: "17.8 PPG, 4.4 APG — scorer" },
   // Connecticut Sun
-  { name: "Alyssa Thomas", team: "Connecticut Sun", league: "WNBA", position: "F", stat: "14.8 PPG, 9.2 REB, 6.8 APG — triple double threat" },
+  { name: "Alyssa Thomas", team: "Connecticut Sun", league: "WNBA", position: "F", stat: "14.8 PPG, 9.2 REB, 6.8 APG — triple double threat", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/2529140.png" },
   { name: "DeWanna Bonner", team: "Connecticut Sun", league: "WNBA", position: "F", stat: "15.2 PPG, 7.1 REB — 2-time WNBA champ" },
   { name: "Brionna Jones", team: "Connecticut Sun", league: "WNBA", position: "C", stat: "14.2 PPG, 7.8 REB" },
   // Dallas Wings
-  { name: "Arike Ogunbowale", team: "Dallas Wings", league: "WNBA", position: "G", stat: "22.8 PPG — 2-time scoring champion" },
+  { name: "Arike Ogunbowale", team: "Dallas Wings", league: "WNBA", position: "G", stat: "22.8 PPG — 2-time scoring champion", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/3904577.png" },
   { name: "Natasha Howard", team: "Dallas Wings", league: "WNBA", position: "F", stat: "16.4 PPG, 7.2 REB — versatile forward" },
   // Indiana Fever
-  { name: "Caitlin Clark", team: "Indiana Fever", league: "WNBA", position: "G", stat: "19.2 PPG, 8.4 APG, 5.7 REB — 2024 ROY" },
-  { name: "Aliyah Boston", team: "Indiana Fever", league: "WNBA", position: "F", stat: "14.6 PPG, 7.8 REB — 2023 ROY" },
+  { name: "Caitlin Clark", team: "Indiana Fever", league: "WNBA", position: "G", stat: "19.2 PPG, 8.4 APG, 5.7 REB — 2024 ROY", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/4433403.png" },
+  { name: "Aliyah Boston", team: "Indiana Fever", league: "WNBA", position: "F", stat: "14.6 PPG, 7.8 REB — 2023 ROY", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/4432831.png" },
   { name: "Kelsey Mitchell", team: "Indiana Fever", league: "WNBA", position: "G", stat: "17.2 PPG — explosive scorer" },
   { name: "NaLyssa Smith", team: "Indiana Fever", league: "WNBA", position: "F", stat: "12.4 PPG, 8.2 REB — powerful forward" },
   // Las Vegas Aces
-  { name: "A'ja Wilson", team: "Las Vegas Aces", league: "WNBA", position: "F/C", stat: "26.4 PPG, 11.9 REB — 2024 MVP" },
-  { name: "Kelsey Plum", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "18.6 PPG, 4.8 APG — shooting guard" },
-  { name: "Jackie Young", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "19.4 PPG, 4.2 REB — 2-time champion" },
-  { name: "Chelsea Gray", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "13.2 PPG, 7.6 APG — floor general" },
+  { name: "A'ja Wilson", team: "Las Vegas Aces", league: "WNBA", position: "F/C", stat: "26.4 PPG, 11.9 REB — 2024 MVP", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/3149391.png" },
+  { name: "Kelsey Plum", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "18.6 PPG, 4.8 APG — shooting guard", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/3065570.png" },
+  { name: "Jackie Young", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "19.4 PPG, 4.2 REB — 2-time champion", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/4065870.png" },
+  { name: "Chelsea Gray", team: "Las Vegas Aces", league: "WNBA", position: "G", stat: "13.2 PPG, 7.6 APG — floor general", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/2529122.png" },
   // Los Angeles Sparks
   { name: "Dearica Hamby", team: "Los Angeles Sparks", league: "WNBA", position: "F", stat: "14.2 PPG, 8.6 REB" },
   { name: "Nneka Ogwumike", team: "Los Angeles Sparks", league: "WNBA", position: "F", stat: "18.4 PPG, 7.2 REB — 2016 MVP" },
   // Minnesota Lynx
-  { name: "Napheesa Collier", team: "Minnesota Lynx", league: "WNBA", position: "F", stat: "21.2 PPG, 9.6 REB — elite forward" },
+  { name: "Napheesa Collier", team: "Minnesota Lynx", league: "WNBA", position: "F", stat: "21.2 PPG, 9.6 REB — elite forward", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/3917450.png" },
   { name: "Courtney Williams", team: "Minnesota Lynx", league: "WNBA", position: "G", stat: "14.8 PPG, 5.2 APG" },
   // New York Liberty
-  { name: "Breanna Stewart", team: "New York Liberty", league: "WNBA", position: "F", stat: "21.8 PPG, 9.2 REB — 2023 MVP" },
-  { name: "Sabrina Ionescu", team: "New York Liberty", league: "WNBA", position: "G", stat: "18.6 PPG, 8.2 APG, 5.8 REB — triple double record holder" },
-  { name: "Jonquel Jones", team: "New York Liberty", league: "WNBA", position: "C", stat: "14.4 PPG, 8.6 REB — 2021 MVP" },
-  { name: "Courtney Vandersloot", team: "New York Liberty", league: "WNBA", position: "G", stat: "12.2 PPG, 9.4 APG — veteran leader" },
+  { name: "Breanna Stewart", team: "New York Liberty", league: "WNBA", position: "F", stat: "21.8 PPG, 9.2 REB — 2023 MVP", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/2998928.png" },
+  { name: "Sabrina Ionescu", team: "New York Liberty", league: "WNBA", position: "G", stat: "18.6 PPG, 8.2 APG, 5.8 REB — triple double record holder", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/4066533.png" },
+  { name: "Jonquel Jones", team: "New York Liberty", league: "WNBA", position: "C", stat: "14.4 PPG, 8.6 REB — 2021 MVP", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/2999101.png" },
+  { name: "Courtney Vandersloot", team: "New York Liberty", league: "WNBA", position: "G", stat: "12.2 PPG, 9.4 APG — veteran leader", headshotUrl: "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/981.png" },
   // Phoenix Mercury
   { name: "Diana Taurasi", team: "Phoenix Mercury", league: "WNBA", position: "G", stat: "14.8 PPG — all-time leading scorer" },
   { name: "Brittney Griner", team: "Phoenix Mercury", league: "WNBA", position: "C", stat: "18.2 PPG, 7.8 REB, 2.2 BLK" },
