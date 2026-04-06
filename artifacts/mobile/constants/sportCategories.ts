@@ -185,8 +185,11 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "timer-outline",
     color: "#FF6B35",
     gradient: ["#FF6B35", "#8B2A08"],
-    tagline: "Diamond League · World Championships · Olympics",
-    leagues: [],
+tagline: "Diamond League · World Championships",
+    leagues: [
+      { key: "DIAMOND_LEAGUE", label: "Diamond League" },
+      { key: "WORLD_ATHLETICS", label: "World Championships" },
+    ],
   },
   {
     id: "xgames",
@@ -197,7 +200,8 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     gradient: ["#00D4FF", "#005C7A"],
     tagline: "Skateboarding · Snowboarding · BMX",
     leagues: [
-      { key: "XGAMES", label: "X Games" },
+      { key: "XGAMES_SUMMER", label: "Summer" },
+      { key: "XGAMES_WINTER", label: "Winter" },
     ],
   },
   {
@@ -207,8 +211,13 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "game-controller-outline",
     color: "#9B59B6",
     gradient: ["#9B59B6", "#4A1F6B"],
-    tagline: "LoL · VALORANT · CS2 · Dota 2 · Overwatch",
-    leagues: [],
+tagline: "LoL · VALORANT · CS2 · Dota 2 · Overwatch",
+    leagues: [
+      { key: "ESPORTS_LOL", label: "LoL" },
+      { key: "ESPORTS_VAL", label: "Valorant" },
+      { key: "ESPORTS_CS", label: "CS2" },
+      { key: "ESPORTS_CDL", label: "CoD" },
+    ],
   },
 ];
 

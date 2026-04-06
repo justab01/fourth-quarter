@@ -58,7 +58,8 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
       - **Motorsports:** Next Race (countdown, circuit, date) → Driver Standings (F1 22 drivers, NASCAR, IndyCar with points) → Constructor Standings (F1 teams) → Races → Race Calendar (with results) → Top Athletes → News. League pills: All | Formula 1 | NASCAR | IndyCar
       - **College:** 13 NCAA sports (Basketball M/W, Football, Baseball, Hockey M/W, Soccer M/W, Lacrosse M/W, Volleyball, Water Polo, Field Hockey) with pill navigation + league list
       - **Soccer:** 13 leagues (EPL, La Liga, Bundesliga, Serie A, Ligue 1, MLS, NWSL, UCL, Europa, Conference, FIFA WC, Euro, Copa) with group metadata (domestic/cups/international). Soccer standings show PTS + GD columns.
-      - Rankings from ESPN API cached 10min. Golf leaderboard from live scoreboard data. Standings cached 5min.
+      - **Seasonal Sports (Track & Field, X Games, Esports):** "seasonal" archetype — Next Event countdown hero → Event Calendar (filterable by league chip) → Top Athletes (curated) → News. Data served from `GET /api/sports/seasonal/:sport` with curated event calendars (Diamond League, World Championships, X Games Summer/Winter, major esports tournaments). League chips filter events client-side.
+      - Rankings from ESPN API cached 10min. Golf leaderboard from live scoreboard data. Standings cached 5min. Seasonal data cached 1hr.
       - **Soccer Box Scores:** GK stat separation — goalkeepers show SV/GA/SHT columns, field players show MIN/G/A/SHT/ST/FK/CK.
       - **Women's Sports:** Integrated into parent categories (WNBA in Basketball, WTA in Tennis, NWSL in Soccer, LPGA in Golf).
     - **Team Route Fallback:** `/team/[id]` resolves any team via robust `buildFallbackTeam` (fuzzy slug/abbr/last-word matching) + ESPN API live fetch. Search always uses `teamSlug()` format (`{league}-{slugified-name}`), bypassing the limited `TEAM_NAME_TO_ID` registry.
@@ -74,6 +75,7 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - `GET /api/news?teams=&leagues=`: Live ESPN news.
     - `GET /api/sports/news/:sport`: Live ESPN sport-specific news.
     - `GET /api/sports/upcoming/:sport`: Live TheSportsDB + ESPN upcoming/recent events.
+    - `GET /api/sports/seasonal/:sport`: Curated event calendars for seasonal sports (track, xgames, esports) with athletes, countdown data.
     - `GET /api/sports/athlete/:league/:athleteId`: ESPN athlete profile (stats, draft, experience).
     - `GET /api/sports/athlete/:league/:athleteId/gamelog?season=YYYY`: Per-season game log with competition segmentation. Returns `sections[]` (type: regular/postseason/playin/preseason/allstar, displayName, categories[].games[]) AND flat `gameLogs[]` for backward compat. Postseason categories contain round names (NBA Finals, Conference Finals, etc.). Regular season categories contain months. Supports league-aware season defaults.
     - `GET /api/sports/draft/:league?year=YYYY`: Multi-sport draft center (NFL/NBA/NHL/MLB/WNBA). Returns picks (with team/athlete/grade), teams (with positional needs and next pick), top prospects (with grades/rankings/headshots), positions, and draft status (pre/in/post). Caches 30s during live draft, 5min otherwise. Infers OTC pick overall number for current-pick highlighting.

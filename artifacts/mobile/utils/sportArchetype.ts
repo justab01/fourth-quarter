@@ -1,10 +1,11 @@
-export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
+export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing" | "seasonal";
 
 const TENNIS_LEAGUES = new Set(["ATP", "WTA"]);
 const COMBAT_LEAGUES = new Set(["UFC", "BOXING", "BELLATOR", "PFL"]);
 const MULTI_LEAGUES  = new Set(["OLYMPICS", "XGAMES"]);
 const GOLF_LEAGUES   = new Set(["PGA", "LPGA", "LIV"]);
 const RACING_LEAGUES = new Set(["F1", "NASCAR", "IRL"]);
+const SEASONAL_LEAGUES = new Set(["DIAMOND_LEAGUE", "WORLD_ATHLETICS", "XGAMES_SUMMER", "XGAMES_WINTER", "ESPORTS_LOL", "ESPORTS_VAL", "ESPORTS_CS", "ESPORTS_CDL"]);
 
 export function getSportArchetype(league: string): SportArchetype {
   if (TENNIS_LEAGUES.has(league)) return "tennis";
@@ -12,6 +13,7 @@ export function getSportArchetype(league: string): SportArchetype {
   if (GOLF_LEAGUES.has(league))   return "golf";
   if (RACING_LEAGUES.has(league)) return "racing";
   if (MULTI_LEAGUES.has(league))  return "multi_event";
+  if (SEASONAL_LEAGUES.has(league)) return "seasonal";
   return "team";
 }
 
@@ -20,8 +22,9 @@ export const isCombatLeague    = (l: string) => COMBAT_LEAGUES.has(l);
 export const isGolfLeague      = (l: string) => GOLF_LEAGUES.has(l);
 export const isRacingLeague    = (l: string) => RACING_LEAGUES.has(l);
 export const isMultiEventLeague = (l: string) => MULTI_LEAGUES.has(l);
+export const isSeasonalLeague  = (l: string) => SEASONAL_LEAGUES.has(l);
 export const isIndividualSport = (l: string) => TENNIS_LEAGUES.has(l) || COMBAT_LEAGUES.has(l) || GOLF_LEAGUES.has(l) || RACING_LEAGUES.has(l);
-export const isTeamSport       = (l: string) => !isIndividualSport(l) && !MULTI_LEAGUES.has(l);
+export const isTeamSport       = (l: string) => !isIndividualSport(l) && !MULTI_LEAGUES.has(l) && !SEASONAL_LEAGUES.has(l);
 
 export function shortAthleteName(fullName: string): string {
   const parts = fullName.trim().split(/\s+/);
@@ -87,7 +90,7 @@ export const SPORT_EMOJI: Record<string, string> = {
   UFC: "🥋", BOXING: "🥊", BELLATOR: "🥋", PFL: "🥋",
   NBA: "🏀", NFL: "🏈", MLB: "⚾", NHL: "🏒",
   MLS: "⚽", EPL: "⚽", UCL: "⚽", LIGA: "⚽",
-  BUN: "⚽", SERA: "⚽", LIG1: "⚽", UEL: "⚽", UECL: "⚽",
+BUN: "⚽", SERA: "⚽", LIG1: "⚽", UEL: "⚽", UECL: "⚽",
   NWSL: "⚽", FWCM: "⚽", EURO: "⚽", COPA: "⚽",
   WNBA: "🏀", NCAAB: "🏀", NCAAW: "🏀",
   NCAAF: "🏈", NCAABB: "⚾",
@@ -98,4 +101,7 @@ export const SPORT_EMOJI: Record<string, string> = {
   PGA: "⛳", LPGA: "⛳", LIV: "⛳",
   F1: "🏎️", NASCAR: "🏁", IRL: "🏁",
   OLYMPICS: "🏅", XGAMES: "🏂",
+  DIAMOND_LEAGUE: "🏃", WORLD_ATHLETICS: "🏃",
+  XGAMES_SUMMER: "🛹", XGAMES_WINTER: "🏂",
+  ESPORTS_LOL: "🎮", ESPORTS_VAL: "🎮", ESPORTS_CS: "🎮", ESPORTS_CDL: "🎮",
 };

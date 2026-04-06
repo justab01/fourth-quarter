@@ -197,7 +197,7 @@ interface PlayerStatLine {
   stats: Record<string, string>;
 }
 
-type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
+type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing" | "seasonal";
 const TENNIS_SET = new Set(["ATP", "WTA"]);
 const COMBAT_SET = new Set(["UFC", "BOXING", "BELLATOR", "PFL"]);
 const GOLF_SET   = new Set(["PGA", "LIV", "LPGA"]);
@@ -211,6 +211,8 @@ function getArchetype(league: string): SportArchetype {
   if (GOLF_SET.has(league))   return "golf";
   if (RACING_SET.has(league)) return "racing";
   if (league === "OLYMPICS" || league === "XGAMES") return "multi_event";
+  if (league === "DIAMOND_LEAGUE" || league === "WORLD_ATHLETICS" || league === "XGAMES_SUMMER" || league === "XGAMES_WINTER") return "seasonal";
+  if (league.startsWith("ESPORTS_")) return "seasonal";
   return "team";
 }
 
@@ -2535,6 +2537,182 @@ const SPORT_ESPN_LEAGUES: Record<string, string[]> = {
   esports: [],
 };
 
+interface SeasonalEvent {
+  id: string;
+  name: string;
+  date: string;
+  endDate?: string;
+  location: string;
+  venue?: string;
+  status: "upcoming" | "live" | "completed";
+  league: string;
+  description?: string;
+  disciplines?: string[];
+}
+
+interface SeasonalAthlete {
+  name: string;
+  country: string;
+  event: string;
+  achievement?: string;
+}
+
+interface SeasonalSportData {
+  sport: string;
+  title: string;
+  subtitle: string;
+  season: string;
+  events: SeasonalEvent[];
+  athletes: SeasonalAthlete[];
+  nextEvent: SeasonalEvent | null;
+}
+
+function buildTrackFieldData(): SeasonalSportData {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const events: SeasonalEvent[] = [
+    { id: "dl-xiamen", name: "Diamond League — Xiamen", date: `${year}-04-26`, location: "Xiamen, China", venue: "Egret Stadium", status: "upcoming", league: "Diamond League", disciplines: ["100m", "Long Jump", "Shot Put", "400m Hurdles"] },
+    { id: "dl-suzhou", name: "Diamond League — Suzhou", date: `${year}-05-03`, location: "Suzhou, China", venue: "Suzhou Olympic Sports Centre", status: "upcoming", league: "Diamond League", disciplines: ["200m", "High Jump", "Javelin", "5000m"] },
+    { id: "dl-doha", name: "Diamond League — Doha", date: `${year}-05-16`, location: "Doha, Qatar", venue: "Khalifa International Stadium", status: "upcoming", league: "Diamond League", disciplines: ["100m", "400m", "Pole Vault", "Triple Jump"] },
+    { id: "dl-rabat", name: "Diamond League — Rabat", date: `${year}-06-08`, location: "Rabat, Morocco", venue: "Prince Moulay Abdellah Stadium", status: "upcoming", league: "Diamond League", disciplines: ["800m", "1500m", "Discus", "110m Hurdles"] },
+    { id: "dl-oslo", name: "Diamond League — Oslo", date: `${year}-06-12`, location: "Oslo, Norway", venue: "Bislett Stadium", status: "upcoming", league: "Diamond League", disciplines: ["Dream Mile", "400m", "High Jump"] },
+    { id: "dl-stockholm", name: "Diamond League — Stockholm", date: `${year}-06-15`, location: "Stockholm, Sweden", venue: "Stockholm Olympic Stadium", status: "upcoming", league: "Diamond League", disciplines: ["100m", "Pole Vault", "800m", "Javelin"] },
+    { id: "dl-paris", name: "Diamond League — Paris", date: `${year}-06-28`, location: "Paris, France", venue: "Stade Charléty", status: "upcoming", league: "Diamond League", disciplines: ["200m", "Shot Put", "3000m SC", "Long Jump"] },
+    { id: "dl-lausanne", name: "Diamond League — Lausanne", date: `${year}-07-10`, location: "Lausanne, Switzerland", venue: "Stade Olympique de la Pontaise", status: "upcoming", league: "Diamond League", disciplines: ["100m", "1500m", "Triple Jump", "400m Hurdles"] },
+    { id: "dl-london", name: "Diamond League — London", date: `${year}-07-19`, location: "London, UK", venue: "London Stadium", status: "upcoming", league: "Diamond League", disciplines: ["100m", "200m", "High Jump", "5000m"] },
+    { id: "dl-monaco", name: "Diamond League — Monaco", date: `${year}-07-25`, location: "Monaco", venue: "Stade Louis II", status: "upcoming", league: "Diamond League", disciplines: ["800m", "Dream Mile", "Pole Vault", "Javelin"] },
+    { id: "wc-tokyo", name: "World Athletics Championships", date: `${year}-09-13`, endDate: `${year}-09-21`, location: "Tokyo, Japan", venue: "National Stadium", status: "upcoming", league: "World Championships", disciplines: ["All Events"], description: "The pinnacle of track and field — the world's best compete for gold." },
+    { id: "dl-final", name: "Diamond League Final", date: `${year}-09-04`, endDate: `${year}-09-05`, location: "Zurich, Switzerland", venue: "Letzigrund", status: "upcoming", league: "Diamond League", disciplines: ["All Diamond League events"], description: "Season-ending championship event." },
+  ];
+
+  events.forEach(ev => {
+    const evDate = new Date(ev.date);
+    const evEnd = ev.endDate ? new Date(ev.endDate) : evDate;
+    if (now > evEnd) ev.status = "completed";
+    else if (now >= evDate && now <= evEnd) ev.status = "live";
+  });
+
+  events.sort((a, b) => {
+    const order = { live: 0, upcoming: 1, completed: 2 };
+    const od = order[a.status] - order[b.status];
+    if (od !== 0) return od;
+    return new Date(a.date).getTime() - new Date(b.date).getTime();
+  });
+
+  const nextEvent = events.find(e => e.status === "upcoming" || e.status === "live") ?? null;
+
+  const athletes: SeasonalAthlete[] = [
+    { name: "Noah Lyles", country: "USA", event: "100m / 200m", achievement: "Olympic Champion" },
+    { name: "Mondo Duplantis", country: "Sweden", event: "Pole Vault", achievement: "World Record Holder (6.26m)" },
+    { name: "Sydney McLaughlin-Levrone", country: "USA", event: "400m Hurdles", achievement: "World Record Holder" },
+    { name: "Faith Kipyegon", country: "Kenya", event: "1500m", achievement: "3x Olympic Champion" },
+    { name: "Jakob Ingebrigtsen", country: "Norway", event: "1500m / 5000m", achievement: "Olympic Champion" },
+    { name: "Sha'Carri Richardson", country: "USA", event: "100m", achievement: "World Champion" },
+    { name: "Joshua Cheptegei", country: "Uganda", event: "5000m / 10000m", achievement: "Olympic Champion" },
+    { name: "Yulimar Rojas", country: "Venezuela", event: "Triple Jump", achievement: "World Record Holder (15.74m)" },
+    { name: "Ryan Crouser", country: "USA", event: "Shot Put", achievement: "2x Olympic Champion" },
+    { name: "Femke Bol", country: "Netherlands", event: "400m / 400m Hurdles", achievement: "World Champion" },
+  ];
+
+  return {
+    sport: "track",
+    title: "Track & Field",
+    subtitle: `${year} Diamond League & World Championships`,
+    season: `${year} Outdoor Season`,
+    events,
+    athletes,
+    nextEvent,
+  };
+}
+
+function buildXGamesData(): SeasonalSportData {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const events: SeasonalEvent[] = [
+    { id: "xg-ventura", name: "X Games California", date: `${year}-06-20`, endDate: `${year}-06-22`, location: "Ventura, CA", venue: "Ventura County Fairgrounds", status: "upcoming", league: "X Games Summer", disciplines: ["Skateboard Street", "Skateboard Vert", "BMX Park", "BMX Street", "Moto X"], description: "Summer X Games featuring the world's best action sports athletes." },
+    { id: "xg-winter", name: "X Games Aspen", date: `${year + 1}-01-24`, endDate: `${year + 1}-01-26`, location: "Aspen, CO", venue: "Buttermilk Mountain", status: "upcoming", league: "X Games Winter", disciplines: ["Snowboard SuperPipe", "Snowboard Slopestyle", "Ski SuperPipe", "Ski Slopestyle", "Snow BikeCross"], description: "Winter X Games on the slopes of Buttermilk Mountain." },
+  ];
+
+  events.forEach(ev => {
+    const evDate = new Date(ev.date);
+    const evEnd = ev.endDate ? new Date(ev.endDate) : evDate;
+    if (now > evEnd) ev.status = "completed";
+    else if (now >= evDate && now <= evEnd) ev.status = "live";
+  });
+
+  events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const nextEvent = events.find(e => e.status === "upcoming" || e.status === "live") ?? null;
+
+  const athletes: SeasonalAthlete[] = [
+    { name: "Nyjah Huston", country: "USA", event: "Skateboard Street", achievement: "Most X Games medals in skateboarding" },
+    { name: "Chloe Kim", country: "USA", event: "Snowboard SuperPipe", achievement: "2x Olympic Gold Medalist" },
+    { name: "Jagger Eaton", country: "USA", event: "Skateboard Street", achievement: "Olympic Medalist" },
+    { name: "Eileen Gu", country: "China", event: "Ski SuperPipe / Slopestyle", achievement: "Olympic Gold Medalist" },
+    { name: "Tony Hawk", country: "USA", event: "Skateboard Vert", achievement: "Legend — 16 X Games Gold" },
+    { name: "Rayssa Leal", country: "Brazil", event: "Skateboard Street", achievement: "Olympic Silver Medalist" },
+  ];
+
+  return {
+    sport: "xgames",
+    title: "X Games",
+    subtitle: "Action Sports at Their Finest",
+    season: events.some(e => e.status === "live") ? "X Games Live Now" : `Next: ${nextEvent?.name ?? "TBA"}`,
+    events,
+    athletes,
+    nextEvent,
+  };
+}
+
+function buildEsportsData(): SeasonalSportData {
+  const now = new Date();
+  const year = now.getFullYear();
+
+  const events: SeasonalEvent[] = [
+    { id: "es-worlds-lol", name: "League of Legends World Championship", date: `${year}-10-01`, endDate: `${year}-11-02`, location: "London, UK", venue: "O2 Arena", status: "upcoming", league: "LoL Esports", description: "The biggest event in League of Legends esports." },
+    { id: "es-valorant-champs", name: "Valorant Champions", date: `${year}-08-03`, endDate: `${year}-08-24`, location: "Seoul, South Korea", venue: "COEX Convention Center", status: "upcoming", league: "Valorant", description: "Valorant's premier global championship." },
+    { id: "es-major-cs", name: "CS2 Major Championship", date: `${year}-05-10`, endDate: `${year}-05-25`, location: "Copenhagen, Denmark", venue: "Royal Arena", status: "upcoming", league: "CS2", description: "The premier Counter-Strike 2 tournament." },
+    { id: "es-cdl-champs", name: "Call of Duty League Championship", date: `${year}-07-17`, endDate: `${year}-07-20`, location: "Dallas, TX", venue: "Esports Stadium Arlington", status: "upcoming", league: "CDL", description: "The Call of Duty League's championship weekend." },
+    { id: "es-ti-dota", name: "The International (Dota 2)", date: `${year}-09-15`, endDate: `${year}-09-29`, location: "TBA", status: "upcoming", league: "Dota 2", description: "Dota 2's most prestigious tournament." },
+    { id: "es-evo", name: "EVO Championship Series", date: `${year}-07-18`, endDate: `${year}-07-20`, location: "Las Vegas, NV", venue: "Las Vegas Convention Center", status: "upcoming", league: "FGC", description: "The world's largest fighting game tournament." },
+  ];
+
+  events.forEach(ev => {
+    const evDate = new Date(ev.date);
+    const evEnd = ev.endDate ? new Date(ev.endDate) : evDate;
+    if (now > evEnd) ev.status = "completed";
+    else if (now >= evDate && now <= evEnd) ev.status = "live";
+  });
+
+  events.sort((a, b) => {
+    const order = { live: 0, upcoming: 1, completed: 2 };
+    const od = order[a.status] - order[b.status];
+    if (od !== 0) return od;
+    return new Date(a.date).getTime() - new Date(b.date).getTime();
+  });
+
+  const nextEvent = events.find(e => e.status === "upcoming" || e.status === "live") ?? null;
+
+  const athletes: SeasonalAthlete[] = [
+    { name: "Faker", country: "South Korea", event: "League of Legends", achievement: "4x World Champion" },
+    { name: "s1mple", country: "Ukraine", event: "CS2", achievement: "Greatest CS player of all time" },
+    { name: "TenZ", country: "Canada", event: "Valorant", achievement: "Valorant Champions winner" },
+    { name: "Tokido", country: "Japan", event: "Street Fighter", achievement: "EVO Champion" },
+    { name: "Shotzzy", country: "USA", event: "Call of Duty", achievement: "CDL MVP" },
+  ];
+
+  return {
+    sport: "esports",
+    title: "Esports",
+    subtitle: "Competitive Gaming's Biggest Stages",
+    season: `${year} Tournament Circuit`,
+    events,
+    athletes,
+    nextEvent,
+  };
+}
+
 const TSD_KEY = process.env.TSD_API_KEY ?? "123";
 
 router.get("/sports/upcoming/:sport", async (req, res) => {
@@ -3382,6 +3560,32 @@ router.get("/sports/tennis/draw/:league", async (req, res): Promise<void> => {
     console.error(`Tennis draw fetch error for ${league}:`, err);
     res.status(500).json({ error: "Failed to fetch tennis draw" });
   }
+});
+
+router.get("/sports/seasonal/:sport", async (req, res) => {
+  const sport = req.params.sport.toLowerCase();
+  const cacheKey = `seasonal-${sport}`;
+  const cached = getCached<SeasonalSportData>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  let data: SeasonalSportData;
+  switch (sport) {
+    case "track":
+      data = buildTrackFieldData();
+      break;
+    case "xgames":
+      data = buildXGamesData();
+      break;
+    case "esports":
+      data = buildEsportsData();
+      break;
+    default:
+      res.status(404).json({ error: `No seasonal data for sport: ${sport}` });
+      return;
+  }
+
+  setCached(cacheKey, data, 3600_000);
+  res.json(data);
 });
 
 export default router;

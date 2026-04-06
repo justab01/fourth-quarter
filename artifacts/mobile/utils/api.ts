@@ -96,11 +96,44 @@ export const api = {
   getTennisDraw: (league: string) =>
     apiFetch<TennisDrawData>(`/sports/tennis/draw/${encodeURIComponent(league)}`),
 
-  getRacingSchedule: (league: string) =>
+getRacingSchedule: (league: string) =>
     apiFetch<RacingScheduleResponse>(`/sports/racing/schedule/${encodeURIComponent(league)}`),
+
+  getSeasonalData: (sport: string) =>
+    apiFetch<SeasonalSportData>(`/sports/seasonal/${encodeURIComponent(sport)}`),
 };
 
-export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
+export interface SeasonalEvent {
+  id: string;
+  name: string;
+  date: string;
+  endDate?: string;
+  location: string;
+  venue?: string;
+  status: "upcoming" | "live" | "completed";
+  league: string;
+  description?: string;
+  disciplines?: string[];
+}
+
+export interface SeasonalAthlete {
+  name: string;
+  country: string;
+  event: string;
+  achievement?: string;
+}
+
+export interface SeasonalSportData {
+  sport: string;
+  title: string;
+  subtitle: string;
+  season: string;
+  events: SeasonalEvent[];
+  athletes: SeasonalAthlete[];
+  nextEvent: SeasonalEvent | null;
+}
+
+export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing" | "seasonal";
 
 export interface Game {
   id: string;

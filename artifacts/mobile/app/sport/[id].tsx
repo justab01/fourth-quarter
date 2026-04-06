@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { getSportById, getSportByLeague, type SportCategory } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
-import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace } from "@/utils/api";
+import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
@@ -86,6 +86,8 @@ const SPORT_DATA_NOTE: Record<string, string> = {
   xgames:      "X Games coverage appears during live events. Tap Search to explore athletes.",
   college:     "College scores appear during the regular season. Tap Search to find players.",
 };
+
+const SEASONAL_SPORTS = new Set(["track", "xgames", "esports"]);
 
 const RANKINGS_LEAGUES = new Set(["ATP", "WTA", "UFC", "PGA", "F1", "NASCAR", "IRL", "BELLATOR", "PFL", "LPGA"]);
 
@@ -517,8 +519,206 @@ function formatCountdown(ms: number): string {
   return `${minutes}m`;
 }
 
+function CountdownTimer({ targetDate, accentColor }: { targetDate: string; accentColor: string }) {
+  const [now, setNow] = React.useState(new Date());
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const target = new Date(targetDate);
+  const diff = target.getTime() - now.getTime();
+
+  if (diff <= 0) return null;
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  const segments = [
+    { value: days, label: "DAYS" },
+    { value: hours, label: "HRS" },
+    { value: minutes, label: "MIN" },
+  ];
+
+  return (
+    <View style={{ flexDirection: "row", justifyContent: "center", gap: 12 }}>
+      {segments.map((s) => (
+        <View key={s.label} style={{ alignItems: "center" }}>
+          <View style={{
+            backgroundColor: accentColor + "22",
+            borderRadius: 10,
+            width: 56,
+            height: 56,
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <Text style={{
+              fontSize: 22,
+              fontFamily: "Inter_700Bold",
+              color: accentColor,
+            }}>{s.value}</Text>
+          </View>
+          <Text style={{
+            fontSize: 9,
+            fontFamily: "Inter_600SemiBold",
+            color: C.textTertiary,
+            marginTop: 4,
+            letterSpacing: 0.5,
+          }}>{s.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function SeasonalEventCard({
+  event,
+  accentColor,
+}: {
+  event: SeasonalEvent;
+  accentColor: string;
+}) {
+  const evDate = new Date(event.date);
+  const endDate = event.endDate ? new Date(event.endDate) : null;
+  const dateStr = evDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const endStr = endDate ? ` — ${endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "";
+
+  return (
+    <View style={{
+      backgroundColor: C.card,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 8,
+      borderWidth: event.status === "live" ? 1 : 0,
+      borderColor: event.status === "live" ? "#E53935" + "55" : "transparent",
+    }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <View style={[styles.eventTypeBadge, {
+          backgroundColor: event.status === "live" ? "#E53935"
+            : event.status === "completed" ? C.textTertiary + "33"
+            : accentColor + "33",
+        }]}>
+          <Text style={[styles.eventTypeText, {
+            color: event.status === "live" ? "#fff"
+              : event.status === "completed" ? C.textSecondary
+              : accentColor,
+          }]}>
+            {event.status === "live" ? "LIVE" : event.status === "completed" ? "COMPLETED" : "UPCOMING"}
+          </Text>
+        </View>
+        <Text style={{
+          fontSize: 11,
+          fontFamily: "Inter_600SemiBold",
+          color: accentColor,
+        }}>{event.league}</Text>
+      </View>
+
+      <Text style={{
+        fontSize: 15,
+        fontFamily: "Inter_700Bold",
+        color: C.text,
+        marginBottom: 4,
+      }}>{event.name}</Text>
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+        <Ionicons name="calendar-outline" size={12} color={C.textSecondary} />
+        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textSecondary }}>
+          {dateStr}{endStr}
+        </Text>
+      </View>
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: event.disciplines ? 8 : 0 }}>
+        <Ionicons name="location-outline" size={12} color={C.textSecondary} />
+        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textSecondary }}>
+          {event.location}{event.venue ? ` — ${event.venue}` : ""}
+        </Text>
+      </View>
+
+      {event.description && (
+        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textTertiary, marginTop: 4 }}>
+          {event.description}
+        </Text>
+      )}
+
+      {event.disciplines && event.disciplines.length > 0 && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+          {event.disciplines.slice(0, 6).map((d) => (
+            <View key={d} style={{
+              backgroundColor: accentColor + "15",
+              borderRadius: 6,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+            }}>
+              <Text style={{ fontSize: 10, fontFamily: "Inter_600SemiBold", color: accentColor }}>{d}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function SeasonalAthleteChip({
+  athlete,
+  accentColor,
+}: {
+  athlete: SeasonalAthlete;
+  accentColor: string;
+}) {
+  const initials = athlete.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const flag = getFlagForCountry(athlete.country);
+
+  return (
+    <View style={{
+      backgroundColor: C.card,
+      borderRadius: 12,
+      padding: 12,
+      width: 110,
+      gap: 6,
+      alignItems: "center",
+    }}>
+      <View style={{
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: accentColor + "22",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: accentColor }}>{initials}</Text>
+      </View>
+      <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: C.text, textAlign: "center" }} numberOfLines={1}>
+        {flag} {athlete.name.split(" ").slice(-1)[0]}
+      </Text>
+      <Text style={{ fontSize: 9, fontFamily: "Inter_400Regular", color: C.textSecondary, textAlign: "center" }} numberOfLines={1}>
+        {athlete.event}
+      </Text>
+      {athlete.achievement && (
+        <Text style={{ fontSize: 8, fontFamily: "Inter_600SemiBold", color: accentColor, textAlign: "center" }} numberOfLines={1}>
+          {athlete.achievement}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function getFlagForCountry(country: string): string {
+  const flags: Record<string, string> = {
+    USA: "🇺🇸", "United States": "🇺🇸",
+    Sweden: "🇸🇪", Kenya: "🇰🇪", Norway: "🇳🇴",
+    Venezuela: "🇻🇪", Netherlands: "🇳🇱", Uganda: "🇺🇬",
+    Brazil: "🇧🇷", China: "🇨🇳",
+    "South Korea": "🇰🇷", Ukraine: "🇺🇦",
+    Canada: "🇨🇦", Japan: "🇯🇵",
+  };
+  return flags[country] ?? "🌐";
+}
+
 function getArchetypeForSport(sport: SportCategory | undefined, activeLeague: string): SportArchetype {
   if (activeLeague.startsWith("cg:")) return "team";
+  if (sport && SEASONAL_SPORTS.has(sport.id)) return "seasonal";
   if (activeLeague !== "all") return getSportArchetype(activeLeague);
   if (!sport) return "team";
   const firstLeague = sport.leagues[0]?.key;
@@ -585,6 +785,14 @@ export default function SportBoardScreen() {
     enabled: !!rankingsLeague,
   });
 
+  const isSeasonal = SEASONAL_SPORTS.has(sportId);
+  const { data: seasonalData, isLoading: seasonalLoading, refetch: refetchSeasonal } = useQuery({
+    queryKey: ["seasonal", sportId],
+    queryFn: () => api.getSeasonalData(sportId),
+    staleTime: 600_000,
+    enabled: isSeasonal,
+  });
+
   const drawLeague = archetype === "tennis" ? (activeLeague !== "all" ? activeLeague : "ATP") : null;
   const { data: drawData, refetch: refetchDraw } = useQuery({
     queryKey: ["tennis-draw", drawLeague],
@@ -634,9 +842,9 @@ export default function SportBoardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw(), refetchLeaderboard(), refetchStandings(), refetchRacingSchedule(), refetchConstructors()]);
+await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw(), refetchLeaderboard(), refetchStandings(), refetchRacingSchedule(), refetchConstructors(), refetchSeasonal()]);
     setRefreshing(false);
-  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchStandings, refetchRacingSchedule, refetchConstructors]);
+  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchStandings, refetchRacingSchedule, refetchConstructors, refetchSeasonal]);
 
   const sportLeagueKeys = useMemo(
     () => new Set(sport?.leagues.map((l) => l.key) ?? []),
@@ -1344,7 +1552,7 @@ export default function SportBoardScreen() {
     </Pressable>
   );
 
-  const OffSeasonBanner = isOffSeason && offSeasonMessage ? (
+const OffSeasonBanner = isOffSeason && offSeasonMessage ? (
     <View style={styles.section}>
       <View style={styles.offSeasonCard}>
         <Text style={styles.offSeasonEmoji}>{sport.emoji}</Text>
@@ -1352,11 +1560,69 @@ export default function SportBoardScreen() {
         {standingsGroups.length > 0 && (
           <Text style={styles.offSeasonSub}>{"Showing last season's final standings below"}</Text>
         )}
+
+const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
+    DIAMOND_LEAGUE: ["Diamond League"],
+    WORLD_ATHLETICS: ["World Championships"],
+    XGAMES_SUMMER: ["X Games Summer"],
+    XGAMES_WINTER: ["X Games Winter"],
+    ESPORTS_LOL: ["LoL Esports"],
+    ESPORTS_VAL: ["Valorant"],
+    ESPORTS_CS: ["CS2"],
+    ESPORTS_CDL: ["CDL"],
+  };
+
+  const allSeasonalEvents = seasonalData?.events ?? [];
+  const seasonalEvents = useMemo(() => {
+    if (activeLeague === "all") return allSeasonalEvents;
+    const matchLeagues = LEAGUE_CHIP_TO_SEASONAL_LEAGUE[activeLeague];
+    if (!matchLeagues) return allSeasonalEvents;
+    return allSeasonalEvents.filter(e => matchLeagues.some(ml => e.league.includes(ml)));
+  }, [allSeasonalEvents, activeLeague]);
+
+  const seasonalAthletes = seasonalData?.athletes ?? [];
+  const nextEvent = useMemo(() => {
+    return seasonalEvents.find(e => e.status === "upcoming" || e.status === "live") ?? null;
+  }, [seasonalEvents]);
+
+  const SeasonalNextEventSection = nextEvent ? (
+    <View style={styles.section}>
+      <View style={{
+        backgroundColor: C.card,
+        borderRadius: 16,
+        padding: 20,
+        alignItems: "center",
+        gap: 12,
+        borderWidth: 1,
+        borderColor: accentColor + "33",
+      }}>
+        <Text style={{
+          fontSize: 10,
+          fontFamily: "Inter_700Bold",
+          color: accentColor,
+          letterSpacing: 1,
+        }}>NEXT EVENT</Text>
+        <Text style={{
+          fontSize: 17,
+          fontFamily: "Inter_700Bold",
+          color: C.text,
+          textAlign: "center",
+        }}>{nextEvent.name}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Ionicons name="location-outline" size={13} color={C.textSecondary} />
+          <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: C.textSecondary }}>
+            {nextEvent.location}
+          </Text>
+        </View>
+        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: C.textSecondary }}>
+          {new Date(nextEvent.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+        </Text>
+        <CountdownTimer targetDate={nextEvent.date} accentColor={accentColor} />
       </View>
     </View>
   ) : null;
 
-  const InlineStandingsSection = standingsGroups.length > 0 ? (
+const InlineStandingsSection = standingsGroups.length > 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Standings</Text>
@@ -1420,11 +1686,67 @@ export default function SportBoardScreen() {
           </View>
         ))}
       </View>
+
+const SeasonalEventsSection = seasonalEvents.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Event Calendar</Text>
+        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: C.textSecondary }}>
+          {seasonalData?.season}
+        </Text>
+      </View>
+      {seasonalEvents.map((event) => (
+        <SeasonalEventCard key={event.id} event={event} accentColor={accentColor} />
+      ))}
+    </View>
+  ) : seasonalLoading ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Event Calendar</Text>
+      </View>
+      <GameCardSkeleton />
+      <GameCardSkeleton />
+    </View>
+  ) : (
+    <View style={styles.section}>
+      <View style={styles.emptyCard}>
+        <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
+        <Text style={styles.emptyCardTitle}>Season Not Active</Text>
+        <Text style={styles.emptyCardSub}>
+          Check back soon for upcoming {sport.name} events
+        </Text>
+      </View>
+    </View>
+  );
+
+  const SeasonalAthletesSection = seasonalAthletes.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Top Athletes</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 10, paddingRight: 16 }}
+      >
+        {seasonalAthletes.map((athlete) => (
+          <SeasonalAthleteChip key={athlete.name} athlete={athlete} accentColor={accentColor} />
+        ))}
+      </ScrollView>
     </View>
   ) : null;
 
   const renderSections = () => {
     switch (archetype) {
+      case "seasonal":
+        return (
+          <>
+            {SeasonalNextEventSection}
+            {SeasonalEventsSection}
+            {SeasonalAthletesSection}
+            {NewsSection}
+          </>
+        );
       case "golf":
         return (
           <>
