@@ -198,11 +198,18 @@ interface PlayerStatLine {
 }
 
 type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
+const TENNIS_SET = new Set(["ATP", "WTA"]);
+const COMBAT_SET = new Set(["UFC", "BOXING", "BELLATOR", "PFL"]);
+const GOLF_SET   = new Set(["PGA", "LIV", "LPGA"]);
+const RACING_SET = new Set(["F1", "NASCAR", "IRL"]);
+const SOCCER_SET = new Set(["MLS", "EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "UEL", "UECL", "NWSL", "FWCM", "EURO", "COPA", "NCAASM", "NCAASW"]);
+const BASKETBALL_SET = new Set(["NBA", "WNBA", "NCAAB", "NCAAW"]);
+
 function getArchetype(league: string): SportArchetype {
-  if (league === "ATP" || league === "WTA") return "tennis";
-  if (league === "UFC" || league === "BOXING") return "combat";
-  if (league === "PGA" || league === "LIV") return "golf";
-  if (league === "F1" || league === "NASCAR") return "racing";
+  if (TENNIS_SET.has(league)) return "tennis";
+  if (COMBAT_SET.has(league)) return "combat";
+  if (GOLF_SET.has(league))   return "golf";
+  if (RACING_SET.has(league)) return "racing";
   if (league === "OLYMPICS" || league === "XGAMES") return "multi_event";
   return "team";
 }
@@ -248,39 +255,79 @@ interface GameDetailShape {
 // ─── League config ────────────────────────────────────────────────────────────
 interface LeagueConfig { espnPath: string; displaySport: string }
 const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
+  // ── Basketball ────────────────────────────────────────────────────────────
   NBA:      { espnPath: "basketball/nba",                     displaySport: "Basketball" },
-  MLB:      { espnPath: "baseball/mlb",                       displaySport: "Baseball"   },
-  NFL:      { espnPath: "football/nfl",                       displaySport: "Football"   },
-  MLS:      { espnPath: "soccer/usa.1",                       displaySport: "Soccer"     },
-  NHL:      { espnPath: "hockey/nhl",                         displaySport: "Hockey"     },
   WNBA:     { espnPath: "basketball/wnba",                    displaySport: "Basketball" },
-  NCAAB:    { espnPath: "basketball/mens-college-basketball",  displaySport: "Basketball" },
-  NCAAF:    { espnPath: "football/college-football",          displaySport: "Football"   },
+  // ── Football ──────────────────────────────────────────────────────────────
+  NFL:      { espnPath: "football/nfl",                       displaySport: "Football"   },
+  // ── Baseball ──────────────────────────────────────────────────────────────
+  MLB:      { espnPath: "baseball/mlb",                       displaySport: "Baseball"   },
+  // ── Hockey ────────────────────────────────────────────────────────────────
+  NHL:      { espnPath: "hockey/nhl",                         displaySport: "Hockey"     },
+  // ── Soccer — Domestic ─────────────────────────────────────────────────────
   EPL:      { espnPath: "soccer/eng.1",                       displaySport: "Soccer"     },
-  UCL:      { espnPath: "soccer/uefa.champions",              displaySport: "Soccer"     },
   LIGA:     { espnPath: "soccer/esp.1",                       displaySport: "Soccer"     },
-  // ── Individual / combat sports ─────────────────────────────────────────────
+  BUN:      { espnPath: "soccer/ger.1",                       displaySport: "Soccer"     },
+  SERA:     { espnPath: "soccer/ita.1",                       displaySport: "Soccer"     },
+  LIG1:     { espnPath: "soccer/fra.1",                       displaySport: "Soccer"     },
+  MLS:      { espnPath: "soccer/usa.1",                       displaySport: "Soccer"     },
+  NWSL:     { espnPath: "soccer/usa.nwsl",                    displaySport: "Soccer"     },
+  // ── Soccer — European Cups ────────────────────────────────────────────────
+  UCL:      { espnPath: "soccer/uefa.champions",              displaySport: "Soccer"     },
+  UEL:      { espnPath: "soccer/uefa.europa",                 displaySport: "Soccer"     },
+  UECL:     { espnPath: "soccer/uefa.europa.conf",            displaySport: "Soccer"     },
+  // ── Soccer — International ────────────────────────────────────────────────
+  FWCM:     { espnPath: "soccer/fifa.world",                  displaySport: "Soccer"     },
+  EURO:     { espnPath: "soccer/uefa.euro",                   displaySport: "Soccer"     },
+  COPA:     { espnPath: "soccer/conmebol.america",            displaySport: "Soccer"     },
+  // ── Tennis ────────────────────────────────────────────────────────────────
   ATP:      { espnPath: "tennis/atp",                         displaySport: "Tennis"     },
   WTA:      { espnPath: "tennis/wta",                         displaySport: "Tennis"     },
+  // ── Combat ────────────────────────────────────────────────────────────────
   UFC:      { espnPath: "mma/ufc",                            displaySport: "MMA"        },
+  BELLATOR: { espnPath: "mma/bellator",                       displaySport: "MMA"        },
+  PFL:      { espnPath: "mma/pfl",                            displaySport: "MMA"        },
   BOXING:   { espnPath: "boxing",                             displaySport: "Boxing"     },
-  // ── Golf, Racing ──────────────────────────────────────────────────────────
+  // ── Golf ──────────────────────────────────────────────────────────────────
   PGA:      { espnPath: "golf/pga",                           displaySport: "Golf"       },
+  LPGA:     { espnPath: "golf/lpga",                          displaySport: "Golf"       },
   LIV:      { espnPath: "golf/liv",                           displaySport: "Golf"       },
+  // ── Racing ────────────────────────────────────────────────────────────────
   F1:       { espnPath: "racing/f1",                          displaySport: "Racing"     },
   NASCAR:   { espnPath: "racing/nascar",                      displaySport: "Racing"     },
-  // ── Multi-sport events (toggle ON when active) ────────────────────────────
+  IRL:      { espnPath: "racing/irl",                         displaySport: "Racing"     },
+  // ── College ───────────────────────────────────────────────────────────────
+  NCAAB:    { espnPath: "basketball/mens-college-basketball",  displaySport: "Basketball" },
+  NCAAW:    { espnPath: "basketball/womens-college-basketball",displaySport: "Basketball" },
+  NCAAF:    { espnPath: "football/college-football",           displaySport: "Football"   },
+  NCAABB:   { espnPath: "baseball/college-baseball",           displaySport: "Baseball"   },
+  NCAAHM:   { espnPath: "hockey/mens-college-hockey",          displaySport: "Hockey"     },
+  NCAAHW:   { espnPath: "hockey/womens-college-hockey",        displaySport: "Hockey"     },
+  NCAASM:   { espnPath: "soccer/usa.ncaa.m.1",                displaySport: "Soccer"     },
+  NCAASW:   { espnPath: "soccer/usa.ncaa.w.1",                displaySport: "Soccer"     },
+  NCAALM:   { espnPath: "lacrosse/mens-college-lacrosse",      displaySport: "Lacrosse"   },
+  NCAALW:   { espnPath: "lacrosse/womens-college-lacrosse",    displaySport: "Lacrosse"   },
+  NCAAVW:   { espnPath: "volleyball/womens-college-volleyball",displaySport: "Volleyball" },
+  NCAAWP:   { espnPath: "water-polo/mens-college-water-polo",  displaySport: "Water Polo" },
+  NCAAFH:   { espnPath: "field-hockey/womens-college-field-hockey", displaySport: "Field Hockey" },
+  // ── Multi-sport events ────────────────────────────────────────────────────
   OLYMPICS: { espnPath: "olympics",                           displaySport: "Olympics"   },
   XGAMES:   { espnPath: "action-sports/xgames",              displaySport: "X Games"    },
 };
 
-// Web API v3 sport/league paths for gamelog (format: "sport/league")
 const GAMELOG_PATH: Record<string, string> = {
   NBA: "basketball/nba", NFL: "football/nfl", MLB: "baseball/mlb", NHL: "hockey/nhl",
   MLS: "soccer/usa.1", WNBA: "basketball/wnba",
   NCAAB: "basketball/mens-college-basketball", NCAAF: "football/college-football",
   EPL: "soccer/eng.1", UCL: "soccer/uefa.champions", LIGA: "soccer/esp.1",
+  BUN: "soccer/ger.1", SERA: "soccer/ita.1", LIG1: "soccer/fra.1",
+  UEL: "soccer/uefa.europa", UECL: "soccer/uefa.europa.conf",
+  NWSL: "soccer/usa.nwsl", FWCM: "soccer/fifa.world",
+  EURO: "soccer/uefa.euro", COPA: "soccer/conmebol.america",
   ATP: "tennis/atp", WTA: "tennis/wta", UFC: "mma/ufc",
+  BELLATOR: "mma/bellator", PFL: "mma/pfl",
+  PGA: "golf/pga", LPGA: "golf/lpga",
+  F1: "racing/f1", IRL: "racing/irl",
 };
 
 // ─── ESPN helpers ─────────────────────────────────────────────────────────────
@@ -295,7 +342,7 @@ function parseDetail(detail: string | undefined, state: string, leagueKey?: stri
   if (state !== "in" || !detail) return { quarter: null, timeRemaining: null };
 
   // Tennis: ESPN returns "40-30, 3rd Set" → quarter: "3rd Set", timeRemaining: "40-30"
-  if (leagueKey === "ATP" || leagueKey === "WTA") {
+  if (TENNIS_SET.has(leagueKey)) {
     const m = detail.match(/^(.+?),\s*(.+)$/);
     if (m) return { timeRemaining: m[1].trim(), quarter: m[2].trim() };
     return { quarter: detail, timeRemaining: null };
@@ -303,7 +350,7 @@ function parseDetail(detail: string | undefined, state: string, leagueKey?: stri
 
   // Combat: ESPN returns "Round 1 - 2:30" → quarter: "Round 1", timeRemaining: "2:30"
   // (reversed vs default team sports)
-  if (leagueKey === "UFC" || leagueKey === "BOXING") {
+  if (COMBAT_SET.has(leagueKey)) {
     const m = detail.match(/^(.+?)\s+-\s+(.+)$/);
     if (m) return { quarter: m[1].trim(), timeRemaining: m[2].trim() };
     return { quarter: detail, timeRemaining: null };
@@ -600,15 +647,6 @@ function buildNBATeamStats(team: EspnTeamStats): Record<string, string | number>
   };
 }
 
-function buildMLSTeamStats(team: EspnTeamStats): Record<string, string | number> {
-  return {
-    "Shots": getTeamStat(team, "shots"),
-    "On Target": getTeamStat(team, "shotsOnTarget"),
-    "Possession": getTeamStat(team, "possessionPct"),
-    "Corners": getTeamStat(team, "cornerKicks"),
-    "Fouls": getTeamStat(team, "fouls"),
-  };
-}
 
 function buildNHLTeamStats(team: EspnTeamStats): Record<string, string | number> {
   return {
@@ -686,8 +724,8 @@ function extractBoxscore(
   const bs = json.boxscore;
   const isMLB   = leagueKey === "MLB";
   const isNHL   = leagueKey === "NHL";
-  const isSoccer = ["MLS", "EPL", "UCL", "LIGA"].includes(leagueKey);
-  const isBasketball = ["NBA", "WNBA", "NCAAB"].includes(leagueKey);
+  const isSoccer = SOCCER_SET.has(leagueKey);
+  const isBasketball = BASKETBALL_SET.has(leagueKey);
 
   const NBA_PLAYER_KEYS  = ["MIN", "PTS", "FG", "3PT", "FT", "REB", "AST", "TO", "STL", "BLK"];
   const NFL_PLAYER_KEYS  = ["POS", "C/ATT", "YDS", "TD", "INT"];
@@ -696,8 +734,8 @@ function extractBoxscore(
   const MLS_PLAYER_KEYS  = ["MIN", "G", "A", "SHT", "SV"];
   const NHL_SKATER_LABELS = ["G", "A", "PTS", "+/-", "S", "HT", "BS", "TOI", "PIM", "FO%"];
   const NHL_GOALIE_LABELS = ["SV", "GA", "SA", "SV%", "TOI"];
-  const isCombat = ["UFC", "BOXING"].includes(leagueKey);
-  const isTennis = ["ATP", "WTA"].includes(leagueKey);
+  const isCombat = COMBAT_SET.has(leagueKey);
+  const isTennis = TENNIS_SET.has(leagueKey);
 
   let homeStats: Record<string, string | number> = {};
   let awayStats: Record<string, string | number> = {};
@@ -775,12 +813,31 @@ function extractBoxscore(
           else awayPlayerStats.push(...lines);
         }
       }
+    } else if (isSoccer) {
+      const SOCCER_FIELD_KEYS = ["MIN", "G", "A", "SHT", "ST", "FK", "CK"];
+      const SOCCER_GK_KEYS = ["MIN", "SV", "GA", "SHT"];
+      const lines: PlayerStatLine[] = [];
+      for (const sg of playerEntry.statistics) {
+        if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
+        const isGkGroup = (sg.type === "goalkeeping" || (sg as any).name === "goalkeeping" || (sg as any).text === "Goalkeepers");
+        const keys = isGkGroup ? SOCCER_GK_KEYS : SOCCER_FIELD_KEYS;
+        const extracted = extractPlayerStatsByLabel(sg, keys);
+        if (isGkGroup) {
+          extracted.forEach((p) => { p.stats["role"] = "GK"; });
+        }
+        lines.push(...extracted);
+      }
+      if (lines.length === 0) {
+        const sg = playerEntry.statistics[0];
+        if (sg) lines.push(...extractPlayerStatsByLabel(sg, MLS_PLAYER_KEYS));
+      }
+      if (isHome) homePlayerStats = lines;
+      else awayPlayerStats = lines;
     } else {
       const sg = playerEntry.statistics[0];
       if (!sg) continue;
       let statKeys: string[];
       if (isBasketball) statKeys = NBA_PLAYER_KEYS;
-      else if (isSoccer) statKeys = MLS_PLAYER_KEYS;
       else statKeys = NFL_PLAYER_KEYS;
       const lines = extractPlayerStatsByLabel(sg, statKeys);
       if (isHome) homePlayerStats = lines;
@@ -873,7 +930,12 @@ router.get("/sports/games", async (req, res) => {
     ? (league.toUpperCase() === "ALL"
         ? Object.keys(LEAGUE_CONFIG)
         : league.toUpperCase().split(",").filter((l) => l in LEAGUE_CONFIG))
-    : ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING", "PGA", "F1", "NASCAR"];
+    : [
+        "NBA", "WNBA", "NFL", "MLB", "NHL",
+        "EPL", "LIGA", "BUN", "SERA", "LIG1", "MLS", "NWSL", "UCL", "UEL", "UECL",
+        "ATP", "WTA", "UFC", "BELLATOR", "PFL", "BOXING",
+        "PGA", "LPGA", "F1", "NASCAR", "IRL",
+      ];
 
   try {
     const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l, espnDate)));
@@ -1434,7 +1496,7 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
       raw.sort((a, b) => b.winPct - a.winPct);
       entries = raw.map((e, i) => ({ ...e, rank: i + 1 }));
 
-    } else if (["EPL", "UCL", "LIGA"].includes(league)) {
+    } else if (["EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "NWSL"].includes(league)) {
       const cfg = LEAGUE_CONFIG[league]!;
       const json = await espnFetch(
         `https://site.api.espn.com/apis/v2/sports/soccer/${cfg.espnPath.split("/")[1]}/standings`
@@ -2766,12 +2828,16 @@ router.get("/sports/draft/:league", async (req, res) => {
 
 // ─── Rankings endpoint ────────────────────────────────────────────────────────
 const RANKINGS_LEAGUES: Record<string, { url: string; type: "rankings" | "standings" }> = {
-  ATP:    { url: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/rankings", type: "rankings" },
-  WTA:    { url: "https://site.api.espn.com/apis/site/v2/sports/tennis/wta/rankings", type: "rankings" },
-  UFC:    { url: "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/rankings", type: "rankings" },
-  F1:     { url: "https://site.api.espn.com/apis/v2/sports/racing/f1/standings", type: "standings" },
-  NASCAR: { url: "https://site.api.espn.com/apis/v2/sports/racing/nascar/standings", type: "standings" },
-  PGA:    { url: "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard", type: "standings" },
+  ATP:      { url: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/rankings", type: "rankings" },
+  WTA:      { url: "https://site.api.espn.com/apis/site/v2/sports/tennis/wta/rankings", type: "rankings" },
+  UFC:      { url: "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/rankings", type: "rankings" },
+  BELLATOR: { url: "https://site.api.espn.com/apis/site/v2/sports/mma/bellator/rankings", type: "rankings" },
+  PFL:      { url: "https://site.api.espn.com/apis/site/v2/sports/mma/pfl/rankings", type: "rankings" },
+  F1:       { url: "https://site.api.espn.com/apis/v2/sports/racing/f1/standings", type: "standings" },
+  NASCAR:   { url: "https://site.api.espn.com/apis/v2/sports/racing/nascar/standings", type: "standings" },
+  IRL:      { url: "https://site.api.espn.com/apis/v2/sports/racing/irl/standings", type: "standings" },
+  PGA:      { url: "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard", type: "standings" },
+  LPGA:     { url: "https://site.api.espn.com/apis/site/v2/sports/golf/lpga/scoreboard", type: "standings" },
 };
 
 interface RankingEntry {

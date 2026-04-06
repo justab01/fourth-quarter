@@ -1,10 +1,10 @@
 export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing";
 
 const TENNIS_LEAGUES = new Set(["ATP", "WTA"]);
-const COMBAT_LEAGUES = new Set(["UFC", "BOXING"]);
+const COMBAT_LEAGUES = new Set(["UFC", "BOXING", "BELLATOR", "PFL"]);
 const MULTI_LEAGUES  = new Set(["OLYMPICS", "XGAMES"]);
-const GOLF_LEAGUES   = new Set(["PGA", "LIV"]);
-const RACING_LEAGUES = new Set(["F1", "NASCAR"]);
+const GOLF_LEAGUES   = new Set(["PGA", "LIV", "LPGA"]);
+const RACING_LEAGUES = new Set(["F1", "NASCAR", "IRL"]);
 
 export function getSportArchetype(league: string): SportArchetype {
   if (TENNIS_LEAGUES.has(league)) return "tennis";
@@ -49,6 +49,14 @@ const FLAGS: Record<string, string> = {
   Cuba: "🇨🇺", "South Africa": "🇿🇦", "S. Africa": "🇿🇦",
   "Slovak Republic": "🇸🇰", Slovakia: "🇸🇰", Latvia: "🇱🇻",
   Estonia: "🇪🇪", Lithuania: "🇱🇹",
+  England: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", Scotland: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", Wales: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+  Peru: "🇵🇪", Chile: "🇨🇱", Uruguay: "🇺🇾", Ecuador: "🇪🇨",
+  Paraguay: "🇵🇾", Bolivia: "🇧🇴", Venezuela: "🇻🇪",
+  "Costa Rica": "🇨🇷", Honduras: "🇭🇳", Panama: "🇵🇦",
+  Senegal: "🇸🇳", Ghana: "🇬🇭", Cameroon: "🇨🇲",
+  Egypt: "🇪🇬", Algeria: "🇩🇿",
+  "Saudi Arabia": "🇸🇦", Qatar: "🇶🇦", Iran: "🇮🇷",
+  India: "🇮🇳", Thailand: "🇹🇭",
 };
 
 export function getCountryFlag(nationality: string): string {
@@ -61,6 +69,8 @@ const WEIGHT_CLASS_MAP: Record<string, string> = {
   BW:  "Bantamweight",      FLW: "Flyweight",
   SMW: "Super Middleweight", SWW: "Super Welterweight",
   SLW: "Super Lightweight",  SBW: "Super Bantamweight",
+  WSW: "Women's Strawweight", WFLW: "Women's Flyweight",
+  WBW: "Women's Bantamweight", WFW: "Women's Featherweight",
 };
 
 export function getWeightClassLabel(position: string): string {
@@ -74,11 +84,18 @@ export function extractRankingDisplay(stat: string): string {
 
 export const SPORT_EMOJI: Record<string, string> = {
   ATP: "🎾", WTA: "🎾",
-  UFC: "🥋", BOXING: "🥊",
+  UFC: "🥋", BOXING: "🥊", BELLATOR: "🥋", PFL: "🥋",
   NBA: "🏀", NFL: "🏈", MLB: "⚾", NHL: "🏒",
   MLS: "⚽", EPL: "⚽", UCL: "⚽", LIGA: "⚽",
-  WNBA: "🏀", NCAAB: "🏀", NCAAF: "🏈",
-  PGA: "⛳", LIV: "⛳",
-  F1: "🏎️", NASCAR: "🏁",
+  BUN: "⚽", SERA: "⚽", LIG1: "⚽", UEL: "⚽", UECL: "⚽",
+  NWSL: "⚽", FWCM: "⚽", EURO: "⚽", COPA: "⚽",
+  WNBA: "🏀", NCAAB: "🏀", NCAAW: "🏀",
+  NCAAF: "🏈", NCAABB: "⚾",
+  NCAAHM: "🏒", NCAAHW: "🏒",
+  NCAASM: "⚽", NCAASW: "⚽",
+  NCAALM: "🥍", NCAALW: "🥍",
+  NCAAVW: "🏐", NCAAWP: "🤽", NCAAFH: "🏑",
+  PGA: "⛳", LIV: "⛳", LPGA: "⛳",
+  F1: "🏎️", NASCAR: "🏁", IRL: "🏁",
   OLYMPICS: "🏅", XGAMES: "🏂",
 };

@@ -50,12 +50,17 @@ The project is structured as a pnpm workspace monorepo with separate packages fo
     - **Draft Center:** Multi-sport draft hub (NFL/NBA/NHL/MLB/WNBA) accessible from Home tab. Draft screen (`/draft/[league]`) with 3 tabs: Pick Tracker (round-filtered pick cards with team logos, athlete headshots, OTC badges, trade indicators), Prospects (ranked prospect cards with ESPN grades, headshots, position/school), Team Needs (team cards with positional need pills, next pick info). Sport-themed headers with league accent colors. Supports live draft OTC highlighting.
     - **Team Future Tab:** Draft-enabled team pages (NFL/NBA/NHL/MLB/WNBA) show a "Future" tab with total/acquired/original pick counts, team needs pills, draft picks list with trade indicators, and link to full Draft Center. Non-draft leagues (MLS, EPL, etc.) show contextual "Transfers & Rumors" or "Future Pipeline" coming-soon states.
     - **Sport Route Fallback:** `/sport/[id]` resolves category IDs (e.g., "football"), league keys (e.g., "NFL"), and common aliases (e.g., "mma"→"combat", "f1"→"motorsports", "pga"→"golf") via `getSportByLeague` + `SPORT_ALIASES` fallback, preventing dead-end screens.
-    - **Sport Boards Overhaul:** Non-basketball sport pages display sport-adaptive content with archetype-based section ordering:
+    - **Sport Boards Overhaul:** All sport pages display sport-adaptive content with archetype-based section ordering and inline standings:
+      - **Team Sports (Basketball/Football/Baseball/Hockey/Soccer):** Games → Inline Standings (top 8 with team logos, W/L/PCT or sport-specific: PTS for soccer/hockey, GD for soccer) → Top Athletes → Leagues → Schedule → News. "Full standings" link to dedicated standings tab.
       - **Tennis:** World Rankings (ATP/WTA with 150+ players, points, trend arrows) → Tournament Draw (collapsible bracket with seeds, match scores, live indicators) → Matches → Top Athletes → Schedule → News
-      - **Golf:** Live Leaderboard (top-10 with country flags, scores) → PGA Rankings → Top Athletes → Schedule → News
-      - **Combat/MMA:** World Rankings (UFC P4P with fighter records W-L-D, division titles) → Fights → Top Athletes → Fight Schedule → News
-      - **Motorsports:** Driver/Constructor Standings (F1 22 drivers, NASCAR) → Races → Top Athletes → Race Calendar → News
-      - Rankings from ESPN API cached 10min. Golf leaderboard from live scoreboard data.
+      - **Golf:** Live Leaderboard (PGA/LPGA/LIV, top-10 with country flags, scores, no duplicate headers) → World Rankings → Top Athletes → Schedule → News
+      - **Combat/MMA:** World Rankings (UFC/Bellator/PFL P4P with fighter records W-L-D, division titles) → Fights → Top Athletes → Fight Schedule → News
+      - **Motorsports:** Driver/Constructor Standings (F1/NASCAR/IndyCar) → Races → Top Athletes → Race Calendar → News
+      - **College:** 13 NCAA sports (Basketball M/W, Football, Baseball, Hockey M/W, Soccer M/W, Lacrosse M/W, Volleyball, Water Polo, Field Hockey) with pill navigation + league list
+      - **Soccer:** 13 leagues (EPL, La Liga, Bundesliga, Serie A, Ligue 1, MLS, NWSL, UCL, Europa, Conference, FIFA WC, Euro, Copa) with group metadata (domestic/cups/international). Soccer standings show PTS + GD columns.
+      - Rankings from ESPN API cached 10min. Golf leaderboard from live scoreboard data. Standings cached 5min.
+      - **Soccer Box Scores:** GK stat separation — goalkeepers show SV/GA/SHT columns, field players show MIN/G/A/SHT/ST/FK/CK.
+      - **Women's Sports:** Integrated into parent categories (WNBA in Basketball, WTA in Tennis, NWSL in Soccer, LPGA in Golf).
     - **Team Route Fallback:** `/team/[id]` resolves any team via robust `buildFallbackTeam` (fuzzy slug/abbr/last-word matching) + ESPN API live fetch. Search always uses `teamSlug()` format (`{league}-{slugified-name}`), bypassing the limited `TEAM_NAME_TO_ID` registry.
     - **Player Tabs:** Only functional tabs shown: Overview, Stats, Bio, Game Log. News and Splits hidden until implemented.
     - **Standings Loading:** Skeleton rows replace ActivityIndicator for consistent loading states.

@@ -1,0 +1,292 @@
+Yeah — for these sports, you need to stop thinking “ESPN or nothing” and build a **global sport-by-sport source map**.
+
+**Track & field is absolutely pullable.** World Athletics already publishes a global competition calendar/results database plus a stats zone with results, rankings/qualification-style data, records, and athlete/stat surfaces. So even though ESPN doesn’t give you a usable track endpoint, the sport itself does have official data surfaces you can build around. ([worldathletics.org][1])
+
+**Moto is also very workable.** MotoGP has official results/standings pages and an official app/product layer built around results, standings, and live timing coverage. MXGP/FIM similarly exposes official standings, results, categories, calendar, and rankings across the world championship ecosystem. ([The Official Home of MotoGP][2])
+
+**Deep boxing is doable too, but it has to be federated.** There is no single official boxing authority for everything, so your “truth layer” needs to combine sanctioning-body rankings and title status from WBA, WBC, IBF, and WBO. Those orgs all publish current ratings/champions/rankings on their official sites. ([World Boxing Association][3])
+
+So the move is this:
+
+## What your app should cover
+
+Build these as **first-class sports**, not edge-case tabs:
+
+* Boxing
+* MMA
+* Kickboxing / Muay Thai
+* Wrestling if you want amateur/Olympic later
+* MotoGP / Moto2 / Moto3
+* Motocross / MXGP / MX2 / feeder classes
+* Track & Field
+* Rugby Union
+* Rugby Sevens
+* Rugby League later if you want deeper global contact coverage
+* Combat-adjacent event ecosystems over time
+
+For MMA and global combat, the official source layer is strong enough to start with UFC rankings/athlete pages, PFL events/cards, and ONE Championship events/rankings/athletes. ([UFC][4])
+
+## Source hierarchy by sport
+
+### Track & Field
+
+Use this order:
+
+1. **World Athletics** for global calendar, official results, top lists, records, rankings/stats surfaces
+2. National federation pages later for country-specific meets
+3. Meet-specific pages later for Diamond League / NCAA / Olympics-style special handling
+
+What you can reliably pull:
+
+* meet calendar
+* event results
+* athlete results history
+* records
+* top lists
+* qualification / road-to style surfaces where exposed
+* country / discipline filters
+
+That’s because World Athletics’ calendar is explicitly the long-term competition database notified to World Athletics, and the stats zone exposes discipline/result/date-driven statistical views. ([worldathletics.org][1])
+
+### MotoGP
+
+Use:
+
+1. **MotoGP official** for results, classifications, standings, race weekend timing context, schedules, categories
+2. Dorna ecosystem pages later if you need deeper historical structure
+
+What you can pull:
+
+* race calendar
+* sessions
+* qualifying
+* sprint/race results
+* rider standings
+* team standings
+* class breakdowns (MotoGP, Moto2, Moto3)
+
+MotoGP’s official site already exposes 2026 GP results/standings pages, race schedules, and app/live-timing product messaging. ([The Official Home of MotoGP][2])
+
+### Motocross
+
+Use:
+
+1. **MXGP official**
+2. **FIM official**
+
+What you can pull:
+
+* championship standings
+* live results/result pages
+* class/category pages
+* official team lists
+* world championship calendar/rankings/news
+
+MXGP’s official pages expose standings, live results, classes, and season updates, while FIM’s championship page lists overview, calendar, rankings, documents, and news. ([MXGP][5])
+
+### Boxing
+
+Use:
+
+1. **WBA**
+2. **WBC**
+3. **IBF**
+4. **WBO**
+5. Event promoter pages later
+6. BoxRec-style historical reference later, but be careful with access/licensing
+
+What you can pull now from official bodies:
+
+* champions
+* divisional rankings
+* rating changes
+* title status rulings
+* sanctioning updates
+
+WBA, WBC, IBF, and WBO all publish current rankings/ratings/champion material on their official properties, so your app can build a serious boxing section even without ESPN. ([World Boxing Association][3])
+
+### MMA / striking combat
+
+Use:
+
+1. **UFC** for rankings, athlete profiles, event pages
+2. **PFL** for event schedule/cards/results
+3. **ONE Championship** for events, rankings, athletes, champions
+4. Add Glory / K-1 / Rizin later if you want true global kickboxing/MMA breadth
+
+UFC has official rankings and athlete divisions, PFL has official events/cards, and ONE has official events, athletes, rankings, and show structures. ([UFC][4])
+
+### Rugby
+
+If you really mean **globally recognized contact sports**, rugby belongs in there.
+Use:
+
+1. **World Rugby** for fixtures, results, tournaments, rankings/statistics
+2. Tournament pages like Six Nations / Nations Cup via World Rugby surfaces
+
+World Rugby already exposes global fixtures/results and tournament pages across men’s and women’s 15s and sevens. ([World Rugby][6])
+
+## How to build it so it doesn’t feel stitched together
+
+Do **not** build one “other sports” scraper.
+
+Build this:
+
+```txt
+Global Sports Orchestrator
+├── TrackFieldProvider
+├── MotoGPProvider
+├── MotocrossProvider
+├── BoxingProvider
+├── MMAProvider
+├── RugbyProvider
+└── Normalizer Layer
+```
+
+Then normalize everything into shared internal objects:
+
+* `Competition`
+* `Event`
+* `Match` or `Race` or `MeetResult`
+* `Athlete`
+* `Team`
+* `Standings`
+* `Rankings`
+* `Championship`
+* `Division`
+* `Session`
+* `Round`
+
+That lets your frontend treat a boxing division, a MotoGP weekend, and a track meet as different sport views built on one system instead of random JSON blobs.
+
+## What each sport should expose in the app
+
+### Track
+
+* today / this week meets
+* meet detail
+* event result pages
+* athlete pages
+* season bests
+* world leads
+* records
+* discipline filters
+* country filters
+
+### MotoGP / motocross
+
+* next event
+* weekend/session cards
+* qualifying
+* sprint/race results
+* rider standings
+* team/manufacturer standings
+* circuit pages later
+
+### Boxing
+
+* champions by division
+* top contenders
+* title status
+* upcoming fights
+* result archive
+* fighter profiles
+* promoter/event pages later
+
+### MMA
+
+* event cards
+* live/upcoming/completed
+* rankings
+* champions
+* fighter pages
+* promotion filters
+
+### Rugby
+
+* live/upcoming/results
+* tournament standings
+* match pages
+* team rankings
+* player pages later
+
+## Realistic MVP order
+
+I’d do this in this order:
+
+1. **Track & Field**
+2. **Boxing**
+3. **MotoGP**
+4. **MMA**
+5. **Motocross**
+6. **Rugby**
+
+Why? Because track and boxing are the biggest “you’d think we can’t do this, but we actually can” wins for the app.
+
+## Your backend should look like this
+
+```ts
+type GlobalSport =
+  | 'track-field'
+  | 'motogp'
+  | 'motocross'
+  | 'boxing'
+  | 'mma'
+  | 'rugby';
+
+interface SportProvider {
+  sport: GlobalSport;
+  getSchedule(args?: any): Promise<any[]>;
+  getEventById?(id: string): Promise<any | null>;
+  getAthleteById?(id: string): Promise<any | null>;
+  getStandings?(args?: any): Promise<any | null>;
+  getRankings?(args?: any): Promise<any | null>;
+}
+```
+
+Then routes like:
+
+```http
+GET /api/global/track/events
+GET /api/global/track/athletes/:id
+GET /api/global/track/rankings
+
+GET /api/global/motogp/events
+GET /api/global/motogp/standings
+
+GET /api/global/motocross/events
+GET /api/global/motocross/standings
+
+GET /api/global/boxing/divisions
+GET /api/global/boxing/rankings
+GET /api/global/boxing/fighters/:id
+
+GET /api/global/mma/events
+GET /api/global/mma/rankings
+
+GET /api/global/rugby/fixtures
+GET /api/global/rugby/standings
+```
+
+## The blunt truth
+
+You were right to push on this.
+
+These sports are **not unavailable**.
+They’re just **not conveniently packaged by ESPN**.
+
+* Track is available through World Athletics official results/stats surfaces. ([worldathletics.org][1])
+* MotoGP and motocross have official results/standings ecosystems. ([The Official Home of MotoGP][2])
+* Boxing has to be federated across sanctioning bodies, but the official ranking data is there. ([World Boxing Association][3])
+* MMA and rugby have enough official surfaces to build real coverage too. ([UFC][4])
+
+That means The Fourth Quarter can absolutely become the app that covers the sports other apps treat like leftovers.
+
+I can write the **actual TypeScript provider files and Express routes** for Track, Boxing, MotoGP, MMA, and Motocross next.
+
+[1]: https://worldathletics.org/competition/calendar-results?offset=500&utm_source=chatgpt.com "Events Calendar"
+[2]: https://www.motogp.com/en/gp-results/2026/tha/motogp/pr/classification?utm_source=chatgpt.com "Results - MotoGP™ Results and Standings | 2026"
+[3]: https://www.wbaboxing.com/wba-ranking?utm_source=chatgpt.com "World Boxing Association Ranking as of MARCH 2026"
+[4]: https://www.ufc.com/rankings?utm_source=chatgpt.com "Athlete Rankings"
+[5]: https://www.mxgp.com/results/standings?utm_source=chatgpt.com "Standings"
+[6]: https://www.world.rugby/tournaments/fixtures-results?utm_source=chatgpt.com "Fixtures and Results"

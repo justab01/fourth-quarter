@@ -1,6 +1,9 @@
+export type LeagueGroup = "domestic" | "cups" | "international" | "college";
+
 export type SportLeague = {
   key: string;
   label: string;
+  group?: LeagueGroup;
 };
 
 export type SportCategory = {
@@ -22,11 +25,10 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "basketball-outline",
     color: "#E8503A",
     gradient: ["#E8503A", "#9B2617"],
-    tagline: "NBA · WNBA · NCAA",
+    tagline: "NBA · WNBA",
     leagues: [
       { key: "NBA", label: "NBA" },
       { key: "WNBA", label: "WNBA" },
-      { key: "NCAAB", label: "NCAA" },
     ],
   },
   {
@@ -36,10 +38,9 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "american-football-outline",
     color: "#8B7355",
     gradient: ["#8B7355", "#52432F"],
-    tagline: "NFL · College Football",
+    tagline: "NFL",
     leagues: [
       { key: "NFL", label: "NFL" },
-      { key: "NCAAF", label: "College" },
     ],
   },
   {
@@ -49,7 +50,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "baseball-outline",
     color: "#3B6DB8",
     gradient: ["#3B6DB8", "#1E3D6B"],
-    tagline: "MLB · College Baseball",
+    tagline: "MLB",
     leagues: [
       { key: "MLB", label: "MLB" },
     ],
@@ -61,7 +62,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "disc-outline",
     color: "#4A90D9",
     gradient: ["#4A90D9", "#1E5293"],
-    tagline: "NHL · International",
+    tagline: "NHL",
     leagues: [
       { key: "NHL", label: "NHL" },
     ],
@@ -73,12 +74,21 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "football-outline",
     color: "#27AE60",
     gradient: ["#27AE60", "#145A32"],
-    tagline: "EPL · UCL · La Liga · MLS",
+    tagline: "EPL · La Liga · Bundesliga · Serie A · UCL · MLS",
     leagues: [
-      { key: "EPL", label: "Premier League" },
-      { key: "UCL", label: "Champions League" },
-      { key: "LIGA", label: "La Liga" },
-      { key: "MLS", label: "MLS" },
+      { key: "EPL", label: "Premier League", group: "domestic" },
+      { key: "LIGA", label: "La Liga", group: "domestic" },
+      { key: "BUN", label: "Bundesliga", group: "domestic" },
+      { key: "SERA", label: "Serie A", group: "domestic" },
+      { key: "LIG1", label: "Ligue 1", group: "domestic" },
+      { key: "MLS", label: "MLS", group: "domestic" },
+      { key: "NWSL", label: "NWSL", group: "domestic" },
+      { key: "UCL", label: "Champions League", group: "cups" },
+      { key: "UEL", label: "Europa League", group: "cups" },
+      { key: "UECL", label: "Conference League", group: "cups" },
+      { key: "FWCM", label: "FIFA World Cup", group: "international" },
+      { key: "EURO", label: "Euro", group: "international" },
+      { key: "COPA", label: "Copa América", group: "international" },
     ],
   },
   {
@@ -88,9 +98,10 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "flag-outline",
     color: "#2ECC71",
     gradient: ["#2ECC71", "#0E6B38"],
-    tagline: "PGA Tour · LIV Golf · Majors",
+    tagline: "PGA Tour · LPGA · LIV Golf",
     leagues: [
       { key: "PGA", label: "PGA Tour" },
+      { key: "LPGA", label: "LPGA Tour" },
       { key: "LIV", label: "LIV Golf" },
     ],
   },
@@ -114,9 +125,11 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "flame-outline",
     color: "#E74C3C",
     gradient: ["#E74C3C", "#7B241C"],
-    tagline: "UFC · Boxing",
+    tagline: "UFC · Bellator · PFL · Boxing",
     leagues: [
       { key: "UFC", label: "UFC" },
+      { key: "BELLATOR", label: "Bellator" },
+      { key: "PFL", label: "PFL" },
       { key: "BOXING", label: "Boxing" },
     ],
   },
@@ -127,23 +140,21 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "school-outline",
     color: "#5B3E96",
     gradient: ["#5B3E96", "#2E1F4D"],
-    tagline: "Basketball · Football · Baseball",
+    tagline: "Basketball · Football · Baseball · Hockey · Soccer · Lacrosse",
     leagues: [
-      { key: "NCAAB", label: "Basketball" },
+      { key: "NCAAB", label: "Men's Basketball" },
+      { key: "NCAAW", label: "Women's Basketball" },
       { key: "NCAAF", label: "Football" },
-    ],
-  },
-  {
-    id: "womens",
-    name: "Women's Sports",
-    emoji: "⭐",
-    icon: "star-outline",
-    color: "#E91E8C",
-    gradient: ["#E91E8C", "#7B0E4B"],
-    tagline: "WNBA · WTA · NWSL · LPGA",
-    leagues: [
-      { key: "WNBA", label: "WNBA" },
-      { key: "WTA", label: "WTA" },
+      { key: "NCAABB", label: "Baseball" },
+      { key: "NCAAHM", label: "Men's Hockey" },
+      { key: "NCAAHW", label: "Women's Hockey" },
+      { key: "NCAASM", label: "Men's Soccer" },
+      { key: "NCAASW", label: "Women's Soccer" },
+      { key: "NCAALM", label: "Men's Lacrosse" },
+      { key: "NCAALW", label: "Women's Lacrosse" },
+      { key: "NCAAVW", label: "Volleyball" },
+      { key: "NCAAWP", label: "Water Polo" },
+      { key: "NCAAFH", label: "Field Hockey" },
     ],
   },
   {
@@ -153,10 +164,11 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "car-sport-outline",
     color: "#F39C12",
     gradient: ["#F39C12", "#784D04"],
-    tagline: "F1 · NASCAR · IndyCar · MotoGP",
+    tagline: "F1 · NASCAR · IndyCar",
     leagues: [
       { key: "F1", label: "Formula 1" },
       { key: "NASCAR", label: "NASCAR" },
+      { key: "IRL", label: "IndyCar" },
     ],
   },
   {
@@ -166,10 +178,8 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "timer-outline",
     color: "#FF6B35",
     gradient: ["#FF6B35", "#8B2A08"],
-    tagline: "World Athletics · Diamond League · Olympics",
-    leagues: [
-      { key: "OLYMPICS", label: "Olympics" },
-    ],
+    tagline: "Diamond League · World Championships · Olympics",
+    leagues: [],
   },
   {
     id: "xgames",
@@ -190,7 +200,7 @@ export const SPORT_CATEGORIES: SportCategory[] = [
     icon: "game-controller-outline",
     color: "#9B59B6",
     gradient: ["#9B59B6", "#4A1F6B"],
-    tagline: "COD · Valorant · LoL · CS",
+    tagline: "LoL · VALORANT · CS2 · Dota 2 · Overwatch",
     leagues: [],
   },
 ];
@@ -200,24 +210,57 @@ const SPORT_ALIASES: Record<string, string> = {
   ufc: "combat",
   boxing: "combat",
   fighting: "combat",
+  bellator: "combat",
+  pfl: "combat",
   f1: "motorsports",
   nascar: "motorsports",
   racing: "motorsports",
+  indycar: "motorsports",
+  irl: "motorsports",
   pga: "golf",
+  lpga: "golf",
   liv: "golf",
   atp: "tennis",
   wta: "tennis",
   nba: "basketball",
   wnba: "basketball",
-  ncaab: "basketball",
   nfl: "football",
-  ncaaf: "football",
   mlb: "baseball",
   nhl: "hockey",
   mls: "soccer",
   epl: "soccer",
   ucl: "soccer",
   liga: "soccer",
+  bundesliga: "soccer",
+  bun: "soccer",
+  "serie-a": "soccer",
+  sera: "soccer",
+  "ligue-1": "soccer",
+  lig1: "soccer",
+  uel: "soccer",
+  uecl: "soccer",
+  nwsl: "soccer",
+  "world-cup": "soccer",
+  fwcm: "soccer",
+  euro: "soccer",
+  copa: "soccer",
+  ncaab: "college",
+  ncaaw: "college",
+  ncaaf: "college",
+  ncaabb: "college",
+  ncaahm: "college",
+  ncaahw: "college",
+  ncaasm: "college",
+  ncaasw: "college",
+  ncaalm: "college",
+  ncaalw: "college",
+  ncaavw: "college",
+  ncaawp: "college",
+  ncaafh: "college",
+  lacrosse: "college",
+  volleyball: "college",
+  "water-polo": "college",
+  "field-hockey": "college",
 };
 
 export function getSportById(id: string): SportCategory | undefined {
@@ -237,3 +280,9 @@ export function getSportByLeague(leagueKey: string): SportCategory | undefined {
 export const LEAGUE_TO_SPORT: Record<string, string> = Object.fromEntries(
   SPORT_CATEGORIES.flatMap((s) => s.leagues.map((l) => [l.key, s.id]))
 );
+
+export const SOCCER_LEAGUE_GROUPS: Record<string, SportLeague[]> = {
+  domestic: SPORT_CATEGORIES.find(s => s.id === "soccer")?.leagues.filter(l => l.group === "domestic") ?? [],
+  cups: SPORT_CATEGORIES.find(s => s.id === "soccer")?.leagues.filter(l => l.group === "cups") ?? [],
+  international: SPORT_CATEGORIES.find(s => s.id === "soccer")?.leagues.filter(l => l.group === "international") ?? [],
+};

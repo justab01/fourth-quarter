@@ -210,7 +210,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
   const isTennis   = archetype === "tennis";
   const isCombat   = archetype === "combat";
   const isGolf     = archetype === "golf";
-  const isMotor    = archetype === "motorsports";
+  const isMotor    = archetype === "racing";
   const isEventSport = isGolf || isMotor;
   const sportEmoji = SPORT_EMOJI[game.league] ?? "🏆";
 
