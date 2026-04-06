@@ -46,8 +46,8 @@ const PLAYER_STAT_COLS: Record<string, string[]> = {
   NHL:   ["G", "A", "PTS", "+/-", "S", "TOI", "PIM"],
   UFC:   ["SLM", "SLA", "TD", "TD%", "SUB", "KD"],
   BOXING: ["SLM", "KD", "TD", "CTRL"],
-  ATP:   ["ACES", "DF", "1ST%", "W1ST%", "BP"],
-  WTA:   ["ACES", "DF", "1ST%", "W1ST%", "BP"],
+  ATP:   ["ACES", "DF", "WIN", "UE", "1ST%", "BP"],
+  WTA:   ["ACES", "DF", "WIN", "UE", "1ST%", "BP"],
 };
 
 const NHL_GOALIE_STAT_COLS = ["SV", "GA", "SA", "SV%", "TOI"];

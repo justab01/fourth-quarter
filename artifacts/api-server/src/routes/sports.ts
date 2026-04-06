@@ -553,7 +553,8 @@ const ESPN_LABEL_ALIASES: Record<string, string[]> = {
   "G":    ["goals", "Goals"],
   "A":    ["assists", "Assists"],
   "PTS":  ["points", "Points"],
-  "S":    ["shotsTotal", "shots", "Shots"],
+  "S":    ["SOG", "shotsTotal", "shots", "Shots"],
+  "SOG":  ["S", "shotsTotal", "shots", "Shots"],
   "+/-":  ["plusMinus"],
   "PIM":  ["penaltyMinutes"],
   "TOI":  ["timeOnIce"],
@@ -583,6 +584,8 @@ const ESPN_LABEL_ALIASES: Record<string, string[]> = {
   "W1ST%":["WIN % 1ST", "winPct1st", "Win % 1st"],
   "W2ND%":["WIN % 2ND", "winPct2nd", "Win % 2nd"],
   "BP":   ["BREAK PTS WON", "breakPointsWon", "Break Pts Won"],
+  "WIN":  ["WINNERS", "winners", "Winners"],
+  "UE":   ["UNFORCED ERRORS", "unforcedErrors", "Unforced Errors"],
   "ACES": ["ACES", "aces", "Aces"],
 };
 
@@ -797,7 +800,7 @@ function extractBoxscore(
         }
       }
     } else if (isTennis) {
-      const TENNIS_LABELS = ["ACES", "DF", "1ST%", "W1ST%", "W2ND%", "BP"];
+      const TENNIS_LABELS = ["ACES", "DF", "WIN", "UE", "1ST%", "W1ST%", "W2ND%", "BP"];
       for (const sg of playerEntry.statistics) {
         if (!sg || !sg.athletes || sg.athletes.length === 0) continue;
         const lines = extractPlayerStatsByLabel(sg, TENNIS_LABELS);
