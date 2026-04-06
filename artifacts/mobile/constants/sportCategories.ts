@@ -238,6 +238,8 @@ tagline: "LoL · VALORANT · CS2 · Dota 2 · Overwatch",
 const SPORT_ALIASES: Record<string, string> = {
   mma: "combat",
   ufc: "combat",
+  bellator: "combat",
+  pfl: "combat",
   boxing: "combat",
   fighting: "combat",
   bellator: "combat",

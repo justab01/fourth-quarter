@@ -105,6 +105,25 @@ const LEAGUE_SEASON_INFO: Record<string, { start: string; end: string; label: st
   NCAAF: { start: "August",    end: "January",    label: "College football starts in August" },
 };
 
+const COMBAT_MMA_LEAGUES = new Set(["UFC", "BELLATOR", "PFL"]);
+
+const UFC_WEIGHT_CLASSES = [
+  { key: "all", label: "All", match: [] as string[] },
+  { key: "p4p", label: "P4P", match: ["pound for pound", "pound-for-pound"] },
+  { key: "hw", label: "HW", match: ["heavyweight division"] },
+  { key: "lhw", label: "LHW", match: ["light heavyweight division"] },
+  { key: "mw", label: "MW", match: ["middleweight division"] },
+  { key: "ww", label: "WW", match: ["welterweight division"] },
+  { key: "lw", label: "LW", match: ["lightweight division"] },
+  { key: "fw", label: "FW", match: ["featherweight division"] },
+  { key: "bw", label: "BW", match: ["bantamweight division"] },
+  { key: "flw", label: "FLW", match: ["flyweight division"] },
+  { key: "w-sw", label: "W-SW", match: ["women's strawweight"] },
+  { key: "w-flw", label: "W-FLW", match: ["women's flyweight"] },
+  { key: "w-bw", label: "W-BW", match: ["women's bantamweight"] },
+  { key: "w-fw", label: "W-FW", match: ["women's featherweight"] },
+];
+
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -660,6 +679,130 @@ function SeasonalEventCard({
   );
 }
 
+function WeightClassPills({
+  selected,
+  onSelect,
+  accentColor,
+}: {
+  selected: string;
+  onSelect: (key: string) => void;
+  accentColor: string;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 6, gap: 6 }}
+    >
+      {UFC_WEIGHT_CLASSES.map((wc) => {
+        const active = selected === wc.key;
+        return (
+          <Pressable
+            key={wc.key}
+            onPress={() => onSelect(wc.key)}
+            style={[
+              styles.leagueChip,
+              { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+              active && { backgroundColor: accentColor, borderColor: accentColor },
+            ]}
+          >
+            <Text
+              style={[
+                styles.leagueChipText,
+                { fontSize: 11 },
+                active && { color: "#fff" },
+              ]}
+            >
+              {wc.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function NextEventCard({
+  event,
+  accentColor,
+}: {
+  event: UpcomingEvent;
+  accentColor: string;
+}) {
+  const eventDate = event.date ? new Date(event.date) : null;
+  const isLive = event.type === "live";
+
+  const isEspnEvent = event.id?.startsWith("espn-ev-");
+  const handlePress = () => {
+    if (!isEspnEvent) return;
+    const gameId = event.id?.replace("espn-ev-", "");
+    if (gameId) {
+      router.push({ pathname: "/game/[id]", params: { id: `${event.league.toLowerCase()}-${gameId}` } } as any);
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      disabled={!isEspnEvent}
+      style={({ pressed }) => [
+        styles.rankingsCard,
+        { borderWidth: isLive ? 1 : 0, borderColor: isLive ? "#E53935" + "44" : "transparent", opacity: pressed ? 0.85 : 1 },
+      ]}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <View style={[styles.eventTypeBadge, {
+          backgroundColor: isLive ? "#E53935" : accentColor + "33",
+        }]}>
+          <Text style={[styles.eventTypeText, {
+            color: isLive ? "#fff" : accentColor,
+          }]}>{isLive ? "LIVE" : "NEXT EVENT"}</Text>
+        </View>
+        <Text style={[styles.eventMeta, { color: accentColor, fontFamily: "Inter_700Bold" }]}>{event.league}</Text>
+      </View>
+      <Text style={[styles.eventName, { fontSize: 16, marginBottom: 6 }]} numberOfLines={2}>{event.name}</Text>
+      <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+        {eventDate && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Ionicons name="calendar-outline" size={12} color={C.textSecondary} />
+            <Text style={styles.eventMeta}>
+              {eventDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+            </Text>
+          </View>
+        )}
+        {event.venue && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Ionicons name="location-outline" size={12} color={C.textSecondary} />
+            <Text style={styles.eventMeta} numberOfLines={1}>{event.venue}</Text>
+          </View>
+        )}
+      </View>
+      {event.homeTeam && event.awayTeam && (
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: 12,
+          paddingTop: 10,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: C.separator,
+          gap: 12,
+        }}>
+          <Text style={{ color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold", flex: 1, textAlign: "right" }} numberOfLines={1}>
+            {event.homeTeam}
+          </Text>
+          <View style={{ backgroundColor: accentColor + "22", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ color: accentColor, fontSize: 11, fontFamily: "Inter_700Bold" }}>VS</Text>
+          </View>
+          <Text style={{ color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold", flex: 1 }} numberOfLines={1}>
+            {event.awayTeam}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 function SeasonalAthleteChip({
   athlete,
   accentColor,
@@ -746,8 +889,16 @@ export default function SportBoardScreen() {
   const { openSearch } = useSearch();
 
   const sport = getSportById(id ?? "") ?? getSportByLeague((id ?? "").toUpperCase());
-  const [activeLeague, setActiveLeague] = useState<string>("all");
+  const [activeLeague, setActiveLeagueRaw] = useState<string>("all");
   const [activeGroup, setActiveGroup] = useState<LeagueGroup | "all">("all");
+  const [selectedWeightClass, setSelectedWeightClass] = useState<string>("all");
+
+  const setActiveLeague = useCallback((league: string) => {
+    setActiveLeagueRaw(league);
+    if (league !== "all" && league !== "UFC") {
+      setSelectedWeightClass("all");
+    }
+  }, []);
 
   const isSoccerSport = sport?.id === "soccer";
   const hasGroups = isSoccerSport && sport.leagues.some((l) => l.group);
@@ -952,12 +1103,42 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     return info?.label ?? null;
   }, [standingsLeague, sport]);
 
-  const rankingsGroups: RankingsGroup[] = rankingsData?.groups ?? [];
+  const allRankingsGroups: RankingsGroup[] = rankingsData?.groups ?? [];
+  const rankingsGroups: RankingsGroup[] = useMemo(() => {
+    if (archetype !== "combat" || (activeLeague !== "UFC" && activeLeague !== "all") || rankingsLeague !== "UFC") return allRankingsGroups;
+    if (selectedWeightClass === "all") return allRankingsGroups;
+    const wc = UFC_WEIGHT_CLASSES.find(w => w.key === selectedWeightClass);
+    if (!wc || wc.match.length === 0) return allRankingsGroups;
+    const isWomens = selectedWeightClass.startsWith("w-");
+    const isPfp = selectedWeightClass === "p4p";
+    return allRankingsGroups.filter(g => {
+      const title = g.title.toLowerCase();
+      if (!isPfp) {
+        const titleIsWomens = title.includes("women");
+        if (isWomens !== titleIsWomens) return false;
+      }
+      return wc.match.some(m => title.includes(m));
+    });
+  }, [allRankingsGroups, selectedWeightClass, archetype, activeLeague, rankingsLeague]);
   const tennisTournaments: TennisTournament[] = drawData?.tournaments ?? [];
   const standingsEntries: StandingEntry[] = standingsData?.standings ?? [];
   const nextRace: NextRace | null = racingScheduleData?.nextRace ?? null;
   const raceCalendar: RaceEvent[] = racingScheduleData?.races ?? [];
   const constructorGroups: RankingsGroup[] = constructorData?.groups ?? [];
+
+  const nextCombatEvent = useMemo(() => {
+    if (archetype !== "combat") return null;
+    const events: UpcomingEvent[] = upcomingData?.events ?? [];
+    const filtered = activeLeague !== "all"
+      ? events.filter(e => e.league === activeLeague)
+      : events.filter(e => COMBAT_MMA_LEAGUES.has(e.league));
+    const live = filtered.find(e => e.type === "live");
+    if (live) return live;
+    const upcoming = filtered
+      .filter(e => e.type === "upcoming")
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return upcoming[0] ?? null;
+  }, [archetype, upcomingData, activeLeague]);
 
   const liveCount = filteredGames.filter((g) => g.status === "live").length;
   const accentColor = sport?.color ?? C.accent;
@@ -1088,15 +1269,35 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     ? rankingsGroups.filter(g => !g.title.toLowerCase().includes("constructor") && !g.title.toLowerCase().includes("team"))
     : rankingsGroups;
 
-  const RankingsSection = driverRankingsGroups.length > 0 ? (
+  const showWeightClassPills = archetype === "combat" && (activeLeague === "all" || activeLeague === "UFC") && allRankingsGroups.length > 0;
+
+  const NextEventSection = nextCombatEvent ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Next Event</Text>
+      </View>
+      <NextEventCard event={nextCombatEvent} accentColor={accentColor} />
+    </View>
+  ) : null;
+
+  const displayRankingsGroups = archetype === "racing" ? driverRankingsGroups : rankingsGroups;
+
+  const RankingsSection = displayRankingsGroups.length > 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          {archetype === "racing" ? "Standings" : "World Rankings"}
+          {archetype === "racing" ? "Driver Standings" : archetype === "golf" ? "World Rankings" : archetype === "combat" ? "Division Rankings" : "World Rankings"}
         </Text>
       </View>
-      {driverRankingsGroups.slice(0, archetype === "combat" ? 3 : 2).map((group, i) => (
-        <RankingsTable key={group.title} group={group} accentColor={accentColor} limit={archetype === "combat" ? 5 : 10} />
+      {showWeightClassPills && (
+        <WeightClassPills
+          selected={selectedWeightClass}
+          onSelect={setSelectedWeightClass}
+          accentColor={accentColor}
+        />
+      )}
+      {displayRankingsGroups.slice(0, archetype === "combat" ? (selectedWeightClass === "all" ? 3 : 15) : 2).map((group, i) => (
+        <RankingsTable key={group.title} group={group} accentColor={accentColor} limit={archetype === "combat" ? (selectedWeightClass === "all" ? 5 : 15) : 10} />
       ))}
     </View>
   ) : null;
@@ -1864,6 +2065,7 @@ const SeasonalEventsSection = seasonalEvents.length > 0 ? (
       case "combat":
         return (
           <>
+            {NextEventSection}
             {RankingsSection}
             {GamesSection}
             {RankingsAthletesSection ?? AthletesSection}

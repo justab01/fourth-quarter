@@ -1792,7 +1792,7 @@ router.get("/sports/in-one-breath", async (_req, res) => {
   if (cached) { res.json(cached); return; }
 
   try {
-    const defaultLeagues = ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BOXING"];
+    const defaultLeagues = ["NBA", "NHL", "MLB", "MLS", "NFL", "WNBA", "NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH", "EPL", "UCL", "LIGA", "ATP", "WTA", "UFC", "BELLATOR", "PFL", "BOXING"];
     const results = await Promise.all(defaultLeagues.map(l => fetchLeagueGames(l).catch(() => [])));
     const games = results.flat();
     const live = games.filter((g: any) => g.status === "live");
@@ -1974,10 +1974,9 @@ const ESPN_LEAGUE_MAP: Record<string, string> = {
   "mens-college-lacrosse": "NCAALM", "womens-college-lacrosse": "NCAALW",
   "womens-college-volleyball": "NCAAVW", "mens-college-water-polo": "NCAAWP",
   "womens-college-field-hockey": "NCAAFH",
-  atp: "ATP", wta: "WTA", ufc: "UFC", boxing: "BOXING",
+  atp: "ATP", wta: "WTA", ufc: "UFC", bellator: "BELLATOR", pfl: "PFL", boxing: "BOXING",
 };
 
-// ESPN search description/display name → our league key fallback
 const ESPN_DISPLAY_MAP: Record<string, string> = {
   "NBA": "NBA", "NFL": "NFL", "MLB": "MLB", "NHL": "NHL", "WNBA": "WNBA",
   "MLS": "MLS", "EPL": "EPL", "UCL": "UCL", "LIGA": "LIGA",
@@ -1988,7 +1987,7 @@ const ESPN_DISPLAY_MAP: Record<string, string> = {
   "Men's College Lacrosse": "NCAALM", "Women's College Lacrosse": "NCAALW",
   "Women's College Volleyball": "NCAAVW", "Men's College Water Polo": "NCAAWP",
   "Women's College Field Hockey": "NCAAFH",
-  "ATP": "ATP", "WTA": "WTA", "UFC": "UFC", "Boxing": "BOXING",
+  "ATP": "ATP", "WTA": "WTA", "UFC": "UFC", "Bellator": "BELLATOR", "PFL": "PFL", "Boxing": "BOXING",
   "Tennis": "ATP",
 };
 
@@ -2573,7 +2572,7 @@ const SPORT_ESPN_LEAGUES: Record<string, string[]> = {
   hockey: ["NHL", "NCAAHM", "NCAAHW"],
   soccer: ["MLS", "EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "UEL", "UECL", "NWSL", "FWCM", "EURO", "COPA", "NCAASM", "NCAASW"],
   tennis: ["ATP", "WTA"],
-  combat: ["UFC", "BOXING"],
+  combat: ["UFC", "BELLATOR", "PFL", "BOXING"],
   golf: ["PGA", "LPGA", "LIV"],
   motorsports: ["F1", "NASCAR", "IRL"],
   college: ["NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH"],
