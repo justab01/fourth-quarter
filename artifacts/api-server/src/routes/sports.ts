@@ -342,7 +342,7 @@ function parseDetail(detail: string | undefined, state: string, leagueKey?: stri
   if (state !== "in" || !detail) return { quarter: null, timeRemaining: null };
 
   // Tennis: ESPN returns "40-30, 3rd Set" → quarter: "3rd Set", timeRemaining: "40-30"
-  if (TENNIS_SET.has(leagueKey)) {
+  if (leagueKey && TENNIS_SET.has(leagueKey)) {
     const m = detail.match(/^(.+?),\s*(.+)$/);
     if (m) return { timeRemaining: m[1].trim(), quarter: m[2].trim() };
     return { quarter: detail, timeRemaining: null };
@@ -350,7 +350,7 @@ function parseDetail(detail: string | undefined, state: string, leagueKey?: stri
 
   // Combat: ESPN returns "Round 1 - 2:30" → quarter: "Round 1", timeRemaining: "2:30"
   // (reversed vs default team sports)
-  if (COMBAT_SET.has(leagueKey)) {
+  if (leagueKey && COMBAT_SET.has(leagueKey)) {
     const m = detail.match(/^(.+?)\s+-\s+(.+)$/);
     if (m) return { quarter: m[1].trim(), timeRemaining: m[2].trim() };
     return { quarter: detail, timeRemaining: null };
@@ -394,7 +394,7 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   if (archetype === "golf") {
     const sorted = [...competitors].sort((a: any, b: any) => (a.order ?? 999) - (b.order ?? 999));
     const leader = sorted[0];
-    const leaderName = leader?.athlete?.displayName ?? leader?.athlete?.fullName ?? "TBD";
+    const leaderName = leader?.athlete?.displayName ?? (leader?.athlete as any)?.fullName ?? "TBD";
     const leaderScore = leader?.score ?? "";
     const leaderboard = sorted.slice(0, 10).map((c: any, i: number) => ({
       position: c.order ?? i + 1,
@@ -467,22 +467,15 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   const getEntityIdInner = (c: typeof home) =>
     c?.team?.id ?? c?.athlete?.id;
 
-  const isEventSport = archetype === "golf" || archetype === "racing";
   const eventName = (ev.name ?? (ev as any).shortName ?? "").trim() || null;
 
   let homeName = getDisplayNameInner(home);
   let awayName = getDisplayNameInner(away);
 
-  if (isEventSport) {
+  if (!homeName && !awayName) {
     const fallbackEvent = eventName ?? leagueKey;
-    if (!homeName && !awayName) {
-      homeName = fallbackEvent;
-      awayName = comp.venue?.fullName ?? leagueKey;
-    } else if (!homeName) {
-      homeName = fallbackEvent;
-    } else if (!awayName) {
-      awayName = fallbackEvent;
-    }
+    homeName = fallbackEvent;
+    awayName = comp?.venue?.fullName ?? leagueKey;
   } else {
     homeName = homeName ?? "Unknown";
     awayName = awayName ?? "Unknown";
@@ -508,8 +501,8 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     awayTeamLogo: isIndividual ? getHeadshot(away) : (away?.team?.logo ?? null),
     eventTitle: archetype !== "team" ? (eventName || ev.name || null) : null,
     round: (archetype === "tennis" || archetype === "combat") ? ((comp as any)?.type?.text ?? (comp as any)?.type?.abbreviation ?? null) : null,
-    seed1: archetype === "tennis" ? (away?.seed != null ? Number(away.seed) : (away as any)?.seed != null ? Number((away as any).seed) : null) : null,
-    seed2: archetype === "tennis" ? (home?.seed != null ? Number(home.seed) : (home as any)?.seed != null ? Number((home as any).seed) : null) : null,
+    seed1: archetype === "tennis" ? ((away as any)?.seed != null ? Number((away as any).seed) : null) : null,
+    seed2: archetype === "tennis" ? ((home as any)?.seed != null ? Number((home as any).seed) : null) : null,
   };
 }
 
@@ -2856,16 +2849,17 @@ interface RankingsGroup {
   entries: RankingEntry[];
 }
 
-router.get("/sports/rankings/:league", async (req, res) => {
+router.get("/sports/rankings/:league", async (req, res): Promise<void> => {
   const league = (req.params.league ?? "").toUpperCase();
   const cfg = RANKINGS_LEAGUES[league];
   if (!cfg) {
-    return res.status(400).json({ error: `Rankings not available for ${league}` });
+    res.status(400).json({ error: `Rankings not available for ${league}` });
+    return;
   }
 
   const cacheKey = `rankings-${league}`;
   const cached = getCached<{ groups: RankingsGroup[] }>(cacheKey);
-  if (cached) return res.json(cached);
+  if (cached) { res.json(cached); return; }
 
   try {
     const data = await espnFetch(cfg.url) as any;
@@ -2957,15 +2951,16 @@ function getRoundOrder(round: string): number {
   return ROUND_ORDER[round] ?? 9;
 }
 
-router.get("/sports/tennis/draw/:league", async (req, res) => {
+router.get("/sports/tennis/draw/:league", async (req, res): Promise<void> => {
   const league = (req.params.league ?? "").toUpperCase();
   if (league !== "ATP" && league !== "WTA") {
-    return res.status(400).json({ error: "Only ATP and WTA supported" });
+    res.status(400).json({ error: "Only ATP and WTA supported" });
+    return;
   }
 
   const cacheKey = `tennis-draw-${league}`;
   const cached = getCached<any>(cacheKey);
-  if (cached) return res.json(cached);
+  if (cached) { res.json(cached); return; }
 
   try {
     const cfg = LEAGUE_CONFIG[league];
