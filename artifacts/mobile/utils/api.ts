@@ -96,7 +96,7 @@ export const api = {
   getTennisDraw: (league: string) =>
     apiFetch<TennisDrawData>(`/sports/tennis/draw/${encodeURIComponent(league)}`),
 
-getRacingSchedule: (league: string) =>
+  getRacingSchedule: (league: string) =>
     apiFetch<RacingScheduleResponse>(`/sports/racing/schedule/${encodeURIComponent(league)}`),
 
   getSeasonalData: (sport: string) =>

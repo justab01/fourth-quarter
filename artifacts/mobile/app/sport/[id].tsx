@@ -1113,7 +1113,6 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     });
   }, [allRankingsGroups, selectedWeightClass, archetype, activeLeague, rankingsLeague]);
   const tennisTournaments: TennisTournament[] = drawData?.tournaments ?? [];
-  const standingsEntries: StandingEntry[] = standingsData?.standings ?? [];
   const nextRace: NextRace | null = racingScheduleData?.nextRace ?? null;
   const raceCalendar: RaceEvent[] = racingScheduleData?.races ?? [];
   const constructorGroups: RankingsGroup[] = constructorData?.groups ?? [];
@@ -1743,26 +1742,6 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     </View>
   );
 
-
-  const StandingsShortcut = (
-    <Pressable
-      style={({ pressed }) => [
-        styles.standingsCard,
-        { opacity: pressed ? 0.8 : 1, borderColor: accentColor + "44" },
-      ]}
-      onPress={() => router.push("/(tabs)/standings" as any)}
-    >
-      <Ionicons name="bar-chart-outline" size={22} color={accentColor} />
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={styles.standingsCardTitle}>Standings</Text>
-        <Text style={styles.standingsCardSub}>
-          View {sport.name} standings & rankings
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={C.textSecondary} />
-    </Pressable>
-  );
-
   const OffSeasonBanner = isOffSeason && offSeasonMessage ? (
     <View style={styles.section}>
       <View style={styles.offSeasonCard}>
@@ -2317,28 +2296,6 @@ const styles = StyleSheet.create({
   },
   newsRowMeta: {
     fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: C.textSecondary,
-    marginTop: 2,
-  },
-
-  standingsCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: C.card,
-    borderRadius: 14,
-    padding: 16,
-    marginHorizontal: 16,
-    marginTop: 8,
-    borderWidth: 1,
-  },
-  standingsCardTitle: {
-    fontSize: 15,
-    fontFamily: "Inter_700Bold",
-    color: C.text,
-  },
-  standingsCardSub: {
-    fontSize: 12,
     fontFamily: "Inter_400Regular",
     color: C.textSecondary,
     marginTop: 2,
