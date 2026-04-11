@@ -93,7 +93,6 @@ const RANKINGS_LEAGUES = new Set(["ATP", "WTA", "UFC", "PGA", "F1", "NASCAR", "I
 
 const STANDINGS_LEAGUES = new Set(["NBA", "NFL", "MLB", "NHL", "WNBA", "MLS", "EPL", "LIGA", "BUN", "SERA", "LIG1", "NWSL"]);
 
-const TEAM_STANDINGS_LEAGUES = new Set(["NBA", "WNBA", "NFL", "MLB", "NHL", "NCAAB"]);
 
 const LEAGUE_SEASON_INFO: Record<string, { start: string; end: string; label: string }> = {
   NBA:   { start: "October",   end: "June",      label: "NBA season starts in October" },
@@ -973,13 +972,6 @@ export default function SportBoardScreen() {
     enabled: archetype === "golf" && !!golfLeaderboardLeague,
   });
 
-  const standingsLeague = useMemo(() => {
-    if (activeLeague !== "all" && TEAM_STANDINGS_LEAGUES.has(activeLeague)) return activeLeague;
-    if (!sport) return null;
-    const sl = sport.leagues.find(l => TEAM_STANDINGS_LEAGUES.has(l.key));
-    return sl?.key ?? null;
-  }, [activeLeague, sport]);
-
   const { data: standingsData, isLoading: standingsLoading, refetch: refetchStandings } = useQuery({
     queryKey: ["sport-standings", standingsLeague],
     queryFn: () => api.getStandings(standingsLeague!),
@@ -1611,8 +1603,10 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
               </View>
             </View>
           </View>
-        ))
-      ) : (() => {
+        );
+      })}
+    </View>
+  ) : (() => {
         const INTL_LEAGUES = new Set(["FWCM", "EURO", "COPA"]);
         const isIntlLeague = INTL_LEAGUES.has(activeLeague);
         const isIntlGroup = activeGroup === "international";
@@ -1659,9 +1653,7 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
             </Text>
           </View>
         );
-      })()}
-    </View>
-  );
+      })();
 
   const ScheduleSection = (
     <View style={styles.section}>
@@ -1751,65 +1743,6 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     </View>
   );
 
-  const showPtsColumn = (sportId === "soccer" || sportId === "hockey") && standingsEntries[0]?.points != null;
-
-  const InlineStandingsSection = standingsEntries.length > 0 ? (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Standings</Text>
-        <Pressable onPress={() => router.push("/(tabs)/standings" as any)} style={styles.seeAllBtn}>
-          <Text style={[styles.seeAllText, { color: accentColor }]}>Full standings</Text>
-        </Pressable>
-      </View>
-      <View style={[styles.leaderboardCard, { borderColor: accentColor + "22" }]}>
-        <View style={styles.leaderboardHeader}>
-          <Text style={[styles.lbHeaderCell, { flex: 0.3 }]}>#</Text>
-          <Text style={[styles.lbHeaderCell, { flex: 2.5, textAlign: "left" }]}>Team</Text>
-          <Text style={[styles.lbHeaderCell, { flex: 0.5 }]}>W</Text>
-          <Text style={[styles.lbHeaderCell, { flex: 0.5 }]}>L</Text>
-          {showPtsColumn && (
-            <Text style={[styles.lbHeaderCell, { flex: 0.5 }]}>PTS</Text>
-          )}
-          {sportId !== "hockey" && (
-            <Text style={[styles.lbHeaderCell, { flex: 0.6 }]}>
-              {sportId === "soccer" ? "GD" : "PCT"}
-            </Text>
-          )}
-        </View>
-        {standingsEntries.slice(0, 8).map((entry: StandingEntry, idx: number) => (
-          <View key={entry.teamName + idx} style={[styles.leaderboardRow, idx % 2 === 0 && styles.leaderboardRowAlt]}>
-            <Text style={[styles.lbCell, { flex: 0.3, fontWeight: "700", color: idx < 3 ? accentColor : C.textSecondary }]}>
-              {entry.rank}
-            </Text>
-            <View style={{ flex: 2.5, flexDirection: "row", alignItems: "center", gap: 6 }}>
-              {entry.logoUrl ? (
-                <Image source={{ uri: entry.logoUrl }} style={styles.lbAvatar} />
-              ) : (
-                <View style={[styles.lbAvatarPlaceholder, { backgroundColor: accentColor + "22" }]}>
-                  <Text style={{ fontSize: 9, color: accentColor, fontWeight: "700" }}>
-                    {entry.teamName.charAt(0)}
-                  </Text>
-                </View>
-              )}
-              <Text style={styles.lbPlayerName} numberOfLines={1}>{entry.teamName}</Text>
-            </View>
-            <Text style={[styles.lbCell, { flex: 0.5 }]}>{entry.wins}</Text>
-            <Text style={[styles.lbCell, { flex: 0.5 }]}>{entry.losses}</Text>
-            {showPtsColumn && (
-              <Text style={[styles.lbCell, { flex: 0.5, color: accentColor }]}>{entry.points ?? 0}</Text>
-            )}
-            {sportId !== "hockey" && (
-              <Text style={[styles.lbCell, { flex: 0.6 }]}>
-                {sportId === "soccer"
-                  ? (entry.differential != null ? (entry.differential > 0 ? `+${entry.differential}` : `${entry.differential}`) : "0")
-                  : entry.winPct.toFixed(3).replace(/^0/, "")}
-              </Text>
-            )}
-          </View>
-        ))}
-      </View>
-    </View>
-  ) : null;
 
   const StandingsShortcut = (
     <Pressable
@@ -1830,7 +1763,7 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     </Pressable>
   );
 
-const OffSeasonBanner = isOffSeason && offSeasonMessage ? (
+  const OffSeasonBanner = isOffSeason && offSeasonMessage ? (
     <View style={styles.section}>
       <View style={styles.offSeasonCard}>
         <Text style={styles.offSeasonEmoji}>{sport.emoji}</Text>
@@ -1838,6 +1771,9 @@ const OffSeasonBanner = isOffSeason && offSeasonMessage ? (
         {standingsGroups.length > 0 && (
           <Text style={styles.offSeasonSub}>{"Showing last season's final standings below"}</Text>
         )}
+      </View>
+    </View>
+  ) : null;
 
 const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
     DIAMOND_LEAGUE: ["Diamond League"],
@@ -1900,7 +1836,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
     </View>
   ) : null;
 
-const InlineStandingsSection = standingsGroups.length > 0 ? (
+  const InlineStandingsSection = standingsGroups.length > 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Standings</Text>
@@ -1964,8 +1900,10 @@ const InlineStandingsSection = standingsGroups.length > 0 ? (
           </View>
         ))}
       </View>
+    </View>
+  ) : null;
 
-const SeasonalEventsSection = seasonalEvents.length > 0 ? (
+  const SeasonalEventsSection = seasonalEvents.length > 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Event Calendar</Text>

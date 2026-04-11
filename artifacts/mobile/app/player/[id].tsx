@@ -25,7 +25,7 @@ import { api, type AthleteProfile as LiveProfile, type AthleteGameLog, type Game
 import { usePreferences } from "@/context/PreferencesContext";
 
 // ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
-const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|EPL|UCL|LIGA|ATP|WTA|UFC|BOXING|OLYMPICS|XGAMES)-(\d+)$/i;
+const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|NCAAW|NCAABB|NCAAHM|NCAAHW|NCAASM|NCAASW|NCAALM|NCAALW|NCAAVW|NCAAWP|NCAAFH|EPL|UCL|LIGA|BUN|SERA|LIG1|NWSL|UEL|UECL|FWCM|EURO|COPA|ATP|WTA|UFC|BELLATOR|PFL|BOXING|PGA|LPGA|LIV|F1|NASCAR|IRL|OLYMPICS|XGAMES)-(\d+)$/i;
 function parseLiveId(id: string): { league: string; athleteId: string } | null {
   const m = id.match(LIVE_ID_RE);
   if (!m) return null;
@@ -2152,21 +2152,25 @@ export default function PlayerScreen() {
           )}
         </ScrollView>
       );
-      case "Game Log": return liveAthleteId && liveLeague ? (
-        <LiveGameLogTab
-          league={liveLeague}
-          athleteId={liveAthleteId}
-          teamColor={team.color}
-          draftYear={liveProfile?.draft?.year}
-          yearsExperience={liveProfile?.yearsExperience}
-        />
-      ) : (
-        <GameLogTab
-          playerName={player.name}
-          league={team.league}
-          teamColor={team.color}
-        />
-      );
+      case "Game Log": {
+        const glLeague = liveLeague ?? effectiveLeague ?? null;
+        const glAthleteId = liveAthleteId ?? directAthleteId ?? null;
+        return glLeague && glAthleteId ? (
+          <LiveGameLogTab
+            league={glLeague}
+            athleteId={String(glAthleteId)}
+            teamColor={team.color}
+            draftYear={liveProfile?.draft?.year}
+            yearsExperience={liveProfile?.yearsExperience}
+          />
+        ) : (
+          <GameLogTab
+            playerName={player.name}
+            league={team.league}
+            teamColor={team.color}
+          />
+        );
+      }
     }
   };
 
