@@ -21,6 +21,17 @@ function setCached(key: string, data: unknown, ttlMs: number): void {
   cache.set(key, { data, expiresAt: Date.now() + ttlMs });
 }
 
+// Only pick real ESPN photos — skip auto-generated matchup/team-logo graphics
+function getArticlePhoto(images: any[]): string | null {
+  if (!images?.length) return null;
+  const isRealPhoto = (img: any) =>
+    img?.url &&
+    !img.url.includes("/combiner/") &&
+    !img.url.includes("/teamlogos/") &&
+    (img.type === "header" || img.url.includes("/photo/"));
+  return images.find(isRealPhoto)?.url ?? null;
+}
+
 async function cachedFetch<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
   const cached = getCached<T>(key);
   if (cached) return cached;
@@ -2529,7 +2540,7 @@ router.get("/sports/news/:sport", async (req, res) => {
           title: a.headline ?? "Sports Update",
           summary: a.description ?? "",
           source: "ESPN",
-          imageUrl: a.images?.[0]?.url ?? null,
+          imageUrl: getArticlePhoto(a.images ?? []),
           publishedAt: a.published ?? new Date().toISOString(),
           leagues: [s.league],
         }));

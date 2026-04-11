@@ -18,6 +18,22 @@ function setCached(key: string, data: unknown, ttlMs: number): void {
   newsCache.set(key, { data, expiresAt: Date.now() + ttlMs });
 }
 
+// ─── Image filter ─────────────────────────────────────────────────────────────
+// ESPN's first image for game-preview articles is always an auto-generated
+// matchup graphic (two team logos side by side). We only want real photos.
+// Real ESPN photos: type === "header" OR the URL path includes "/photo/"
+// Generated matchup graphics: URL contains "/combiner/" or "/teamlogos/"
+function getArticlePhoto(images: any[]): string | null {
+  if (!images?.length) return null;
+  const isRealPhoto = (img: any) =>
+    img?.url &&
+    !img.url.includes("/combiner/") &&
+    !img.url.includes("/teamlogos/") &&
+    (img.type === "header" || img.url.includes("/photo/"));
+  const photo = images.find(isRealPhoto);
+  return photo?.url ?? null;
+}
+
 // ─── ESPN response shapes ─────────────────────────────────────────────────────
 interface EspnNewsCategory {
   type: string;
@@ -195,7 +211,7 @@ function mapArticle(raw: EspnNewsArticle, defaultLeague: string): MappedArticle 
     : crypto.createHash("md5").update(`${raw.headline ?? ""}|${raw.published ?? ""}`).digest("hex").slice(0, 12);
   const id = `espn-${rawId}`;
   const sourceUrl = raw.links?.web?.href ?? `https://www.espn.com/${defaultLeague.toLowerCase()}/`;
-  const imageUrl = raw.images?.[0]?.url ?? null;
+  const imageUrl = getArticlePhoto(raw.images ?? []);
   const fallbackText = raw.description ?? raw.headline ?? "";
 
   return {
