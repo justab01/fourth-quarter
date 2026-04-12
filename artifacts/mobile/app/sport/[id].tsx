@@ -891,6 +891,7 @@ export default function SportBoardScreen() {
   const [activeLeague, setActiveLeagueRaw] = useState<string>("all");
   const [activeGroup, setActiveGroup] = useState<LeagueGroup | "all">("all");
   const [selectedWeightClass, setSelectedWeightClass] = useState<string>("all");
+  const [standingsView, setStandingsView] = useState<"table" | "bracket">("table");
 
   const setActiveLeague = useCallback((league: string) => {
     setActiveLeagueRaw(league);
@@ -1081,6 +1082,30 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     }
     return groups;
   }, [standingsData]);
+
+  const showBracketToggle = useMemo(() => {
+    const BRACKET_LEAGUES = new Set(["NBA", "WNBA"]);
+    if (!standingsLeague || !BRACKET_LEAGUES.has(standingsLeague)) return false;
+    if (standingsGroups.length !== 2) return false;
+    return standingsGroups.every(g => g.entries.filter(e => e.playoffSeed != null).length >= 8 || g.entries.length >= 8);
+  }, [standingsLeague, standingsGroups]);
+
+  const bracketMatchups = useMemo(() => {
+    if (!showBracketToggle) return null;
+    return standingsGroups.map(group => {
+      const seeded = [...group.entries].sort((a, b) => (a.playoffSeed ?? a.rank) - (b.playoffSeed ?? b.rank));
+      const top8 = seeded.slice(0, 8);
+      return {
+        conference: group.title,
+        matchups: [
+          { high: top8[0], low: top8[7] },
+          { high: top8[3], low: top8[4] },
+          { high: top8[2], low: top8[5] },
+          { high: top8[1], low: top8[6] },
+        ] as { high: StandingEntry; low: StandingEntry }[],
+      };
+    });
+  }, [showBracketToggle, standingsGroups]);
 
   const isOffSeason = useMemo(() => {
     if (gamesLoading || standingsLoading) return false;
@@ -1819,53 +1844,111 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Standings</Text>
-        <Pressable onPress={() => router.push("/(tabs)/standings" as any)} style={styles.seeAllBtn}>
-          <Text style={[styles.seeAllText, { color: accentColor }]}>Full Standings</Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {showBracketToggle && (
+            <View style={styles.standingsToggle}>
+              <Pressable
+                style={[styles.standingsToggleBtn, standingsView === "table" && { backgroundColor: accentColor }]}
+                onPress={() => setStandingsView("table")}
+              >
+                <Ionicons name="list-outline" size={13} color={standingsView === "table" ? "#fff" : C.textSecondary} />
+              </Pressable>
+              <Pressable
+                style={[styles.standingsToggleBtn, standingsView === "bracket" && { backgroundColor: accentColor }]}
+                onPress={() => setStandingsView("bracket")}
+              >
+                <Ionicons name="git-network-outline" size={13} color={standingsView === "bracket" ? "#fff" : C.textSecondary} />
+              </Pressable>
+            </View>
+          )}
+          <Pressable onPress={() => router.push("/(tabs)/standings" as any)} style={styles.seeAllBtn}>
+            <Text style={[styles.seeAllText, { color: accentColor }]}>Full</Text>
+          </Pressable>
+        </View>
       </View>
-      {standingsGroups.map((group) => (
-        <View key={group.title} style={styles.inlineStandingsCard}>
-          <Text style={styles.inlineStandingsGroupTitle}>{group.title}</Text>
-          <View style={styles.inlineStandingsHeader}>
-            <Text style={[styles.inlineStandingsHeaderCell, { flex: 0.3 }]}>#</Text>
-            <Text style={[styles.inlineStandingsHeaderCell, { flex: 2, textAlign: "left" }]}>Team</Text>
-            <Text style={styles.inlineStandingsHeaderCell}>W</Text>
-            <Text style={styles.inlineStandingsHeaderCell}>L</Text>
-            {standingsLeague !== "NFL" && (
-              <Text style={styles.inlineStandingsHeaderCell}>PCT</Text>
-            )}
-            <Text style={[styles.inlineStandingsHeaderCell, { flex: 0.7 }]}>GB</Text>
-          </View>
-          {group.entries.slice(0, 8).map((entry, idx) => (
-            <View key={entry.teamName + idx} style={[styles.inlineStandingsRow, idx % 2 === 0 && styles.inlineStandingsRowAlt]}>
-              <Text style={[styles.inlineStandingsCell, { flex: 0.3, fontFamily: "Inter_700Bold", color: idx < 6 ? C.text : C.textTertiary }]}>
-                {entry.playoffSeed ?? entry.rank}
-                {entry.clinched ? ` ${entry.clinched}` : ""}
-              </Text>
-              <View style={{ flex: 2, flexDirection: "row", alignItems: "center", gap: 6 }}>
-                {entry.logoUrl ? (
-                  <Image source={{ uri: entry.logoUrl }} style={styles.inlineStandingsLogo} />
-                ) : (
-                  <View style={[styles.inlineStandingsLogo, { backgroundColor: accentColor + "22" }]} />
-                )}
-                <Pressable onPress={() => goToTeam(entry.teamName, standingsLeague ?? "")}>
-                  <Text style={styles.inlineStandingsTeam} numberOfLines={1}>{entry.teamName}</Text>
-                </Pressable>
-              </View>
-              <Text style={styles.inlineStandingsCell}>{entry.wins}</Text>
-              <Text style={styles.inlineStandingsCell}>{entry.losses}</Text>
-              {standingsLeague !== "NFL" && (
-                <Text style={styles.inlineStandingsCell}>
-                  {entry.winPct != null ? entry.winPct.toFixed(3).replace(/^0/, "") : "-"}
-                </Text>
-              )}
-              <Text style={[styles.inlineStandingsCell, { flex: 0.7 }]}>
-                {entry.gamesBack != null ? (entry.gamesBack === 0 ? "-" : entry.gamesBack.toString()) : "-"}
-              </Text>
+
+      {standingsView === "bracket" && bracketMatchups ? (
+        <View style={styles.bracketContainer}>
+          {bracketMatchups.map((conf, ci) => (
+            <View key={conf.conference} style={[styles.bracketConference, ci === 0 && { marginRight: 6 }]}>
+              <Text style={[styles.bracketConferenceTitle, { color: accentColor }]}>{conf.conference.toUpperCase()}</Text>
+              {conf.matchups.map((m, mi) => (
+                <View key={mi} style={styles.bracketMatchup}>
+                  <View style={styles.bracketTeamRow}>
+                    {m.high.logoUrl ? (
+                      <Image source={{ uri: m.high.logoUrl }} style={styles.bracketLogo} />
+                    ) : (
+                      <View style={[styles.bracketLogo, { backgroundColor: accentColor + "33" }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.bracketTeamName} numberOfLines={1}>{m.high.teamName}</Text>
+                      <Text style={styles.bracketRecord}>{m.high.wins}–{m.high.losses}</Text>
+                    </View>
+                    <Text style={[styles.bracketSeed, { color: accentColor }]}>{m.high.playoffSeed ?? m.high.rank}</Text>
+                  </View>
+                  <View style={styles.bracketDivider} />
+                  <View style={styles.bracketTeamRow}>
+                    {m.low.logoUrl ? (
+                      <Image source={{ uri: m.low.logoUrl }} style={styles.bracketLogo} />
+                    ) : (
+                      <View style={[styles.bracketLogo, { backgroundColor: C.separator }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.bracketTeamName, { color: C.textSecondary }]} numberOfLines={1}>{m.low.teamName}</Text>
+                      <Text style={styles.bracketRecord}>{m.low.wins}–{m.low.losses}</Text>
+                    </View>
+                    <Text style={styles.bracketSeedLow}>{m.low.playoffSeed ?? m.low.rank}</Text>
+                  </View>
+                </View>
+              ))}
             </View>
           ))}
         </View>
-      ))}
+      ) : (
+        standingsGroups.map((group) => (
+          <View key={group.title} style={styles.inlineStandingsCard}>
+            <Text style={styles.inlineStandingsGroupTitle}>{group.title}</Text>
+            <View style={styles.inlineStandingsHeader}>
+              <Text style={[styles.inlineStandingsHeaderCell, { flex: 0.3 }]}>#</Text>
+              <Text style={[styles.inlineStandingsHeaderCell, { flex: 2, textAlign: "left" }]}>Team</Text>
+              <Text style={styles.inlineStandingsHeaderCell}>W</Text>
+              <Text style={styles.inlineStandingsHeaderCell}>L</Text>
+              {standingsLeague !== "NFL" && (
+                <Text style={styles.inlineStandingsHeaderCell}>PCT</Text>
+              )}
+              <Text style={[styles.inlineStandingsHeaderCell, { flex: 0.7 }]}>GB</Text>
+            </View>
+            {group.entries.slice(0, 8).map((entry, idx) => (
+              <View key={entry.teamName + idx} style={[styles.inlineStandingsRow, idx % 2 === 0 && styles.inlineStandingsRowAlt]}>
+                <Text style={[styles.inlineStandingsCell, { flex: 0.3, fontFamily: "Inter_700Bold", color: idx < 6 ? C.text : C.textTertiary }]}>
+                  {entry.playoffSeed ?? entry.rank}
+                  {entry.clinched ? ` ${entry.clinched}` : ""}
+                </Text>
+                <View style={{ flex: 2, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  {entry.logoUrl ? (
+                    <Image source={{ uri: entry.logoUrl }} style={styles.inlineStandingsLogo} />
+                  ) : (
+                    <View style={[styles.inlineStandingsLogo, { backgroundColor: accentColor + "22" }]} />
+                  )}
+                  <Pressable onPress={() => goToTeam(entry.teamName, standingsLeague ?? "")}>
+                    <Text style={styles.inlineStandingsTeam} numberOfLines={1}>{entry.teamName}</Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.inlineStandingsCell}>{entry.wins}</Text>
+                <Text style={styles.inlineStandingsCell}>{entry.losses}</Text>
+                {standingsLeague !== "NFL" && (
+                  <Text style={styles.inlineStandingsCell}>
+                    {entry.winPct != null ? entry.winPct.toFixed(3).replace(/^0/, "") : "-"}
+                  </Text>
+                )}
+                <Text style={[styles.inlineStandingsCell, { flex: 0.7 }]}>
+                  {entry.gamesBack != null ? (entry.gamesBack === 0 ? "-" : entry.gamesBack.toString()) : "-"}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))
+      )}
     </View>
   ) : standingsLoading ? (
     <View style={styles.section}>
@@ -2589,6 +2672,85 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: C.text,
     maxWidth: 120,
+  },
+  standingsToggle: {
+    flexDirection: "row",
+    backgroundColor: C.card,
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.separator,
+  },
+  standingsToggleBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  bracketContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  bracketConference: {
+    flex: 1,
+  },
+  bracketConferenceTitle: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  bracketMatchup: {
+    backgroundColor: C.card,
+    borderRadius: 12,
+    marginBottom: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.separator,
+  },
+  bracketTeamRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    gap: 6,
+  },
+  bracketLogo: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
+  bracketTeamName: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    flexShrink: 1,
+  },
+  bracketRecord: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    color: C.textTertiary,
+    marginTop: 1,
+  },
+  bracketSeed: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    minWidth: 16,
+    textAlign: "right",
+  },
+  bracketSeedLow: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: C.textSecondary,
+    minWidth: 16,
+    textAlign: "right",
+  },
+  bracketDivider: {
+    height: 1,
+    backgroundColor: C.separator,
+    marginHorizontal: 8,
   },
   activeTournamentCard: {
     backgroundColor: C.card,
