@@ -920,7 +920,7 @@ function extractBoxscore(
   if (isMLB && homePlayerStats.length === 0) {
     for (const roster of json.rosters ?? []) {
       const isHome = roster.team.displayName === game.homeTeam;
-      const names = roster.entries
+      const names = (roster.entries ?? [])
         .map((e) => e.athlete?.displayName)
         .filter((n): n is string => Boolean(n))
         .slice(0, 9);
