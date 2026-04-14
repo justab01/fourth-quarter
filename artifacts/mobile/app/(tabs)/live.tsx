@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { api } from "@/utils/api";
@@ -347,10 +347,21 @@ type LeagueFilter = typeof LEAGUES_WITH_ALL[number];
 export default function LiveScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
+  const params = useLocalSearchParams<{ filter?: string }>();
   const [activeLeague, setActiveLeague] = useState<LeagueFilter>("All");
   const [smartFilter, setSmartFilter] = useState<SmartFilterKey>("none");
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [dateOffset, setDateOffset] = useState(0);
+
+  // Apply filter from navigation params (e.g., tapping "nail-biters" on Home)
+  useEffect(() => {
+    const f = params.filter;
+    if (f === "close" || f === "rivalry" || f === "my-teams") {
+      setSmartFilter(f as SmartFilterKey);
+    } else {
+      setSmartFilter("none");
+    }
+  }, [params.filter]);
   const [refreshing, setRefreshing] = useState(false);
   const [compactMode, setCompactMode] = useState(false);
 

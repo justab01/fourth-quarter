@@ -268,6 +268,61 @@ export default function ArticleScreen() {
 
         <Text style={s.title}>{article.title}</Text>
 
+        {/* ── Reading Modes — elevated directly below headline ─────────── */}
+        <View style={s.modesSection}>
+          <View style={s.modesSectionHeader}>
+            <Ionicons name="options-outline" size={13} color={C.textTertiary} />
+            <Text style={s.modesLabel}>Reading Mode</Text>
+          </View>
+          <View style={s.pillsRow}>
+            {MODES.map(m => {
+              const isActive = activeMode === m.id;
+              const modeIcons: Record<string, string> = {
+                original: "document-text-outline",
+                easy: "sunny-outline",
+                quick: "flash-outline",
+                "cross-sport": "swap-horizontal-outline",
+              };
+              return (
+                <Pressable
+                  key={m.id}
+                  onPress={() => tapMode(m.id)}
+                  style={[
+                    s.pill,
+                    isActive && { backgroundColor: leagueColor + "22", borderColor: leagueColor + "88" },
+                  ]}
+                >
+                  <Ionicons
+                    name={modeIcons[m.id] as any}
+                    size={13}
+                    color={isActive ? leagueColor : C.textTertiary}
+                  />
+                  <Text style={[s.pillLabel, isActive && { color: leagueColor }]}>{m.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={s.modeDescRow}>
+            <Text style={s.modeDesc}>
+              {MODES.find(m => m.id === activeMode)?.description ?? ""}
+            </Text>
+          </View>
+
+          {activeMode === "cross-sport" && (
+            <Pressable
+              style={[s.sportChip, { borderColor: leagueColor + "55" }]}
+              onPress={() => setShowSportPicker(true)}
+            >
+              <Text style={s.sportChipEmoji}>{activeSportInfo?.emoji ?? "🔄"}</Text>
+              <Text style={[s.sportChipLabel, { color: leagueColor }]}>
+                {activeSportInfo?.label ?? "Pick a sport"}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color={leagueColor} />
+            </Pressable>
+          )}
+        </View>
+
         {/* ── Meta row: source + time + reading time ───────────────────── */}
         <View style={s.meta}>
           <View style={s.sourceRow}>
@@ -296,48 +351,6 @@ export default function ArticleScreen() {
             <Text style={s.whyText}>{whyItMatters}</Text>
           </View>
         )}
-
-        {/* ── Reading Modes ───────────────────────────────────────────── */}
-        <View style={s.modesSection}>
-          <Text style={s.modesLabel}>Reading Modes</Text>
-          <View style={s.pillsRow}>
-            {MODES.map(m => {
-              const isActive = activeMode === m.id;
-              return (
-                <Pressable
-                  key={m.id}
-                  onPress={() => tapMode(m.id)}
-                  style={[
-                    s.pill,
-                    isActive && { backgroundColor: leagueColor + "22", borderColor: leagueColor + "88" },
-                  ]}
-                >
-                  <Text style={s.pillEmoji}>{m.emoji}</Text>
-                  <Text style={[s.pillLabel, isActive && { color: leagueColor }]}>{m.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View style={s.modeDescRow}>
-            <Text style={s.modeDesc}>
-              {MODES.find(m => m.id === activeMode)?.description ?? ""}
-            </Text>
-          </View>
-
-          {activeMode === "cross-sport" && (
-            <Pressable
-              style={[s.sportChip, { borderColor: leagueColor + "55" }]}
-              onPress={() => setShowSportPicker(true)}
-            >
-              <Text style={s.sportChipEmoji}>{activeSportInfo?.emoji ?? "🔄"}</Text>
-              <Text style={[s.sportChipLabel, { color: leagueColor }]}>
-                {activeSportInfo?.label ?? "Pick a sport"}
-              </Text>
-              <Ionicons name="chevron-down" size={12} color={leagueColor} />
-            </Pressable>
-          )}
-        </View>
 
         {/* ── Body ────────────────────────────────────────────────────── */}
         {loading ? (
@@ -434,7 +447,8 @@ const s = StyleSheet.create({
   whyText: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
 
   // Reading Modes section
-  modesSection: { gap: 10 },
+  modesSection: { gap: 10, paddingBottom: 4 },
+  modesSectionHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
   modesLabel: {
     color: C.textTertiary, fontSize: 10, fontWeight: "900",
     letterSpacing: 1.2, textTransform: "uppercase",

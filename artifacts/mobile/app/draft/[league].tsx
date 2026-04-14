@@ -104,7 +104,7 @@ export default function DraftScreen() {
         style={[s.headerGradient, { paddingTop: topPad }]}
       >
         <View style={s.headerRow}>
-          <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={12}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.push("/" as any)} style={s.backBtn} hitSlop={12}>
             <Ionicons name="chevron-back" size={24} color="#FFF" />
           </Pressable>
           <View style={s.headerCenter}>

@@ -918,19 +918,71 @@ function extractBoxscore(
 
   // ─── MLB: roster fallback for lineups if boxscore.players missing ──────────
   if (isMLB && homePlayerStats.length === 0) {
-    for (const roster of json.rosters ?? []) {
-      const isHome = roster.team.displayName === game.homeTeam;
-      const names = (roster.entries ?? [])
-        .map((e) => e.athlete?.displayName)
-        .filter((n): n is string => Boolean(n))
+    for (const roster of (json as any).rosters ?? []) {
+      const isHome = (roster.homeAway === "home") ||
+        (roster.team?.id ? roster.team.id === game.homeTeamId : roster.team?.displayName === game.homeTeam);
+      const names = (roster.entries ?? roster.roster ?? [])
+        .map((e: any) => e.athlete?.displayName ?? e.displayName)
+        .filter((n: any): n is string => Boolean(n))
         .slice(0, 9);
-      const lines: PlayerStatLine[] = names.map((name) => ({
+      const lines: PlayerStatLine[] = names.map((name: string) => ({
         name,
         starter: true,
         stats: {},
       }));
       if (isHome) homePlayerStats = lines;
       else awayPlayerStats = lines;
+    }
+  }
+
+  // ─── Soccer: roster fallback when boxscore.players has no athletes ──────────
+  if (isSoccer && homePlayerStats.length === 0 && awayPlayerStats.length === 0) {
+    for (const rosterObj of (json as any).rosters ?? []) {
+      const isHome = rosterObj.homeAway === "home";
+      const players: PlayerStatLine[] = [];
+
+      for (const player of rosterObj.roster ?? []) {
+        const name: string = player.athlete?.displayName ?? player.athlete?.fullName;
+        if (!name) continue;
+        const posAbbr = (player.position?.abbreviation ?? "").toUpperCase();
+        const isGK = posAbbr === "G" || posAbbr === "GK";
+        const isStarter = !!player.starter;
+        const subbedIn = !!player.subbedIn;
+        // Only include players who appeared: starters + subs that came on
+        if (!isStarter && !subbedIn) continue;
+
+        // Build a lookup from ESPN's stat abbreviation → displayValue
+        const sm: Record<string, string> = {};
+        for (const stat of player.stats ?? []) {
+          if (stat.abbreviation && stat.displayValue != null) {
+            sm[stat.abbreviation] = String(stat.displayValue);
+          }
+        }
+
+        const statsObj: Record<string, string> = {
+          MIN: "—",
+          G:   sm["G"]  ?? "0",
+          A:   sm["A"]  ?? "0",
+          SHT: sm["SH"] ?? "0",
+          YC:  sm["YC"] ?? "0",
+          FC:  sm["FC"] ?? "0",
+        };
+        if (isGK) {
+          statsObj["SV"]   = sm["SV"] ?? "0";
+          statsObj["GA"]   = sm["GA"] ?? "0";
+          const ga = parseInt(sm["GA"] ?? "0", 10);
+          statsObj["CS"]   = isNaN(ga) ? "—" : (ga === 0 ? "Yes" : "No");
+          statsObj["role"] = "GK";
+        }
+
+        players.push({ name, starter: isStarter, stats: statsObj });
+      }
+
+      // Starters first
+      players.sort((a, b) => (b.starter ? 1 : 0) - (a.starter ? 1 : 0));
+
+      if (isHome) homePlayerStats = players;
+      else awayPlayerStats = players;
     }
   }
 

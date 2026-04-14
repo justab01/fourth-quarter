@@ -255,22 +255,26 @@ function MoversChips({ allGames }: { allGames: Game[] }) {
   const blowoutGames = liveGames.filter(g => Math.abs((g.homeScore ?? 0) - (g.awayScore ?? 0)) >= 20);
   const upcomingCount = allGames.filter(g => g.status === "upcoming").length;
 
-  const chips: { label: string; color: string; icon: string }[] = [];
+  const chips: { label: string; color: string; icon: string; filter: string }[] = [];
   if (closeGames.length > 0) {
-    chips.push({ label: `${closeGames.length} nail-biter${closeGames.length > 1 ? "s" : ""}`, color: C.live, icon: "flame" });
+    chips.push({ label: `${closeGames.length} nail-biter${closeGames.length > 1 ? "s" : ""}`, color: C.live, icon: "flame", filter: "close" });
   }
   if (blowoutGames.length > 0) {
-    chips.push({ label: `${blowoutGames.length} blowout${blowoutGames.length > 1 ? "s" : ""}`, color: C.textTertiary, icon: "trending-up" });
+    chips.push({ label: `${blowoutGames.length} blowout${blowoutGames.length > 1 ? "s" : ""}`, color: C.textTertiary, icon: "trending-up", filter: "none" });
   }
   if (upcomingCount > 0) {
-    chips.push({ label: `${upcomingCount} upcoming`, color: C.accent, icon: "time-outline" });
+    chips.push({ label: `${upcomingCount} upcoming`, color: C.accent, icon: "time-outline", filter: "upcoming" });
   }
   if (chips.length === 0) return null;
 
   return (
     <View style={chipStyles.row}>
       {chips.map((c, i) => (
-        <Pressable key={i} style={chipStyles.chip} onPress={() => router.push("/(tabs)/live" as any)}>
+        <Pressable
+          key={i}
+          style={chipStyles.chip}
+          onPress={() => router.push({ pathname: "/(tabs)/live", params: { filter: c.filter } } as any)}
+        >
           <Ionicons name={c.icon as any} size={11} color={c.color} />
           <Text style={[chipStyles.chipText, { color: c.color }]}>{c.label}</Text>
         </Pressable>
@@ -763,6 +767,11 @@ export default function HubScreen() {
             </View>
           </View>
           <View style={styles.headerRight}>
+            {preferences.appMode === "nerd" && (
+              <View style={styles.nerdBadge}>
+                <Text style={styles.nerdBadgeText}>⚡ NERD</Text>
+              </View>
+            )}
             <Pressable style={styles.searchPill} onPress={() => openSearch()}>
               <Ionicons name="search" size={14} color={C.accent} />
               <Text style={styles.searchPillText}>Search</Text>
@@ -876,6 +885,8 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
   name: { fontSize: 30, fontWeight: "900", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
   teamBadge: { backgroundColor: C.accent, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  nerdBadge: { backgroundColor: `${C.accent}22`, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: `${C.accent}55` },
+  nerdBadgeText: { color: C.accent, fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
   teamBadgeText: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1 },
   headerRight: { flexDirection: "row", alignItems: "center", paddingTop: 18, gap: 10 },
   searchPill: {

@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>4th Quarter — Gamecast</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060608;
+  --bg2: #0D0D10;
+  --bg3: #141418;
+  --bg4: #1A1A1F;
+  --bg5: #222228;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --orange: #FF5500;
+  --orange2: #FF7A33;
+  --gold: #FFB700;
+  --red: #FF3A3A;
+  --green: #00D46A;
+  --blue: #3A8FFF;
+  --teal: #00C9B1;
+  --text: #F0F0F0;
+  --text2: #909090;
+  --text3: #505050;
+  --okc: #007AC1;
+  --okc2: #EF3B24;
+  --hou: #CE1141;
+  --hou2: #C4CED4;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow-x: hidden; }
+
+/* ── PHONE WRAPPER ── */
+.phone-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 32px 16px;
+  background: #000;
+}
+.phone {
+  width: 390px;
+  background: var(--bg);
+  border-radius: 44px;
+  overflow: hidden;
+  box-shadow: 0 0 0 8px #1a1a1a, 0 0 0 10px #111, 0 40px 80px rgba(0,0,0,0.8), 0 0 120px rgba(255,85,0,0.08);
+  position: relative;
+}
+
+/* ── STATUS BAR ── */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 28px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px 12px;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.back-btn {
+  width: 32px; height: 32px;
+  background: var(--bg3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.header-info { flex: 1; }
+.header-matchup {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  color: #fff;
+  line-height: 1;
+}
+.header-sub {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,58,58,0.12);
+  border: 1px solid rgba(255,58,58,0.25);
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--red);
+  font-family: 'JetBrains Mono', monospace;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: livePulse 1.2s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,58,58,0.5); }
+  50% { opacity: 0.5; box-shadow: 0 0 0 4px rgba(255,58,58,0); }
+}
+
+/* ── TAB BAR ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.tab {
+  flex: 1;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+/* ── SCORE HERO ── */
+.score-hero {
+  background: linear-gradient(180deg, #0D0D14 0%, var(--bg) 100%);
+  padding: 20px 20px 0;
+  position: relative;
+  overflow: hidden;
+}
+.score-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; left: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(0,122,193,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.score-hero::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(206,17,65,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.score-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.team-score-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.team-logo-score {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.team-logo-okc { background: rgba(0,122,193,0.15); border: 2px solid rgba(0,122,193,0.4); color: var(--okc); }
+.team-logo-hou { background: rgba(206,17,65,0.15); border: 2px solid rgba(206,17,65,0.4); color: var(--hou); }
+.team-name-sm {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  color: var(--text2);
+}
+.score-center { text-align: center; }
+.scores-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.score-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.score-num.okc { color: #fff; }
+.score-num.hou { color: #fff; }
+.score-dash { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--text3); }
+.game-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--orange);
+  text-align: center;
+  margin-top: 4px;
+}
+.quarter-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+}
+.context-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  margin-top: 14px;
+  background: rgba(255,183,0,0.08);
+  border-top: 1px solid rgba(255,183,0,0.15);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+
+/* ── WIN PROBABILITY ── */
+.wp-section {
+  padding: 16px 16px 0;
+}
+.wp-label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.wp-label-row .left { color: var(--okc); }
+.wp-label-row .right { color: var(--hou); }
+.wp-label-row .center { color: var(--text3); font-size: 10px; }
+.wp-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--bg4);
+  overflow: hidden;
+  position: relative;
+}
+.wp-fill-okc {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--okc), #0099FF);
+  border-radius: 5px;
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wp-fill-hou {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  background: linear-gradient(270deg, var(--hou), #FF5577);
+  border-radius: 5px;
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wp-divider {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--bg);
+  transform: translateX(-50%);
+}
+.wp-pcts {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+}
+.wp-pct-okc { color: var(--okc); }
+.wp-pct-hou { color: var(--hou); }
+
+/* ── MOMENTUM GRAPH ── */
+.momentum-section {
+  padding: 16px;
+}
+.section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.section-label span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.momentum-canvas-wrap {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+canvas#momentumChart {
+  display: block;
+  width: 100%;
+  height: 100px;
+}
+.momentum-q-labels {
+  display: flex;
+  justify-content: space-around;
+  padding: 4px 12px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+}
+
+/* ── COURT ── */
+.court-section {
+  padding: 0 16px 16px;
+}
+.court-wrap {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+canvas#courtCanvas {
+  display: block;
+  width: 100%;
+  height: 180px;
+}
+.court-legend {
+  display: flex;
+  gap: 16px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── AI INSIGHT ── */
+.ai-section {
+  padding: 0 16px 16px;
+}
+.ai-card {
+  background: linear-gradient(135deg, rgba(255,85,0,0.06), rgba(255,183,0,0.03));
+  border: 1px solid rgba(255,85,0,0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ai-icon { font-size: 14px; }
+.ai-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--orange2);
+}
+.ai-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.65;
+  font-weight: 500;
+}
+.ai-text strong { color: var(--text); }
+.ai-updating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 8px;
+}
+.ai-updating-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--orange);
+  animation: aiPulse 1.5s ease-in-out infinite;
+}
+@keyframes aiPulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* ── PLAY BY PLAY ── */
+.plays-section {
+  padding: 0 16px 16px;
+}
+.play-item {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  animation: slideIn 0.4s ease-out;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.play-item:last-child { border-bottom: none; }
+.play-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 600;
+  text-align: right;
+}
+.play-info {}
+.play-desc {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.play-desc strong { color: var(--text); }
+.play-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.play-item.score-play .play-desc { color: #fff; }
+.play-item.score-play .play-time { color: var(--orange); }
+
+/* ── STAT COMPARE ── */
+.stats-section {
+  padding: 0 16px 24px;
+}
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+}
+.stat-val.left { text-align: right; }
+.stat-val.okc { color: var(--okc); }
+.stat-val.hou { color: var(--hou); }
+.stat-val.lead { color: #fff; }
+.stat-name {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.stat-bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 2px 0;
+}
+.stat-mini-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bg4);
+  overflow: hidden;
+  position: relative;
+}
+.stat-mini-fill-l {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+.stat-mini-fill-r {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* ── KEY MOMENT STRIP ── */
+.moments-strip {
+  padding: 0 16px 0;
+  overflow-x: auto;
+  display: flex;
+  gap: 8px;
+  scrollbar-width: none;
+  margin-bottom: 16px;
+}
+.moments-strip::-webkit-scrollbar { display: none; }
+.moment-chip {
+  flex-shrink: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 130px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.moment-chip:hover { border-color: var(--border2); }
+.moment-chip.hot { border-color: rgba(255,85,0,0.3); background: rgba(255,85,0,0.05); }
+.moment-qtr {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.moment-desc {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+.moment-chip.hot .moment-qtr { color: var(--orange); }
+
+/* ── SCROLLABLE CONTENT ── */
+.game-content {
+  height: 720px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.game-content::-webkit-scrollbar { display: none; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  display: flex;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  padding: 8px 0 20px;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.nav-icon { font-size: 18px; opacity: 0.4; }
+.nav-icon.active { opacity: 1; }
+.nav-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.nav-label.active { color: var(--orange); }
+
+/* desktop backdrop */
+@media (min-width: 500px) {
+  body { background: #000; }
+  .phone-wrapper { background: linear-gradient(135deg, #0a0a0a, #111); }
+}
+</style>
+</head>
+<body>
+<div class="phone-wrapper">
+<div class="phone">
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>●●●●◦ 5G 🔋</span>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="back-btn">←</div>
+    <div class="header-info">
+      <div class="header-matchup">OKC THUNDER vs HOU ROCKETS</div>
+      <div class="header-sub">GAME 3 · WCF PLAYOFFS · TOYOTA CENTER</div>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active">GAMECAST</div>
+    <div class="tab">BOX</div>
+    <div class="tab">PLAYS</div>
+    <div class="tab">STATS</div>
+    <div class="tab">LINEUP</div>
+  </div>
+
+  <!-- Scrollable game content -->
+  <div class="game-content">
+
+    <!-- Score Hero -->
+    <div class="score-hero">
+      <div class="score-row">
+        <div class="team-score-block">
+          <div class="team-logo-score team-logo-okc">OKC</div>
+          <div class="team-name-sm">THUNDER</div>
+        </div>
+        <div class="score-center">
+          <div class="scores-display">
+            <div class="score-num okc" id="scoreOKC">87</div>
+            <div class="score-dash">–</div>
+            <div class="score-num hou" id="scoreHOU">91</div>
+          </div>
+          <div class="game-clock" id="gameClock">3:42</div>
+          <div class="quarter-label">4TH QTR</div>
+        </div>
+        <div class="team-score-block">
+          <div class="team-logo-score team-logo-hou">HOU</div>
+          <div class="team-name-sm">ROCKETS</div>
+        </div>
+      </div>
+      <div class="context-banner">
+        🔥 SERIES TIED 1–1 · ROCKETS LEAD BY 4 · TIMEOUT OKC
+      </div>
+    </div>
+
+    <!-- Win Probability -->
+    <div class="wp-section">
+      <div class="wp-label-row">
+        <span class="left">OKC <span id="wpOKC" style="font-size:13px;">38%</span></span>
+        <span class="center">WIN PROBABILITY</span>
+        <span class="right"><span id="wpHOU" style="font-size:13px;">62%</span> HOU</span>
+      </div>
+      <div class="wp-bar">
+        <div class="wp-fill-okc" id="wpBarOKC" style="width:38%"></div>
+        <div class="wp-fill-hou" id="wpBarHOU" style="width:62%"></div>
+        <div class="wp-divider"></div>
+      </div>
+    </div>
+
+    <!-- Momentum Graph -->
+    <div class="momentum-section">
+      <div class="section-label">
+        <span>SCORING MOMENTUM</span>
+        <span style="color:var(--text3); font-size:9px;">LAST 4 QTRS</span>
+      </div>
+      <div class="momentum-canvas-wrap">
+        <canvas id="momentumChart" width="358" height="100"></canvas>
+        <div class="momentum-q-labels">
+          <span>Q1</span><span>Q2</span><span>Q3</span><span>Q4 ←NOW</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Insight -->
+    <div class="ai-section">
+      <div class="ai-card">
+        <div class="ai-card-header">
+          <span class="ai-icon">✦</span>
+          <span class="ai-label">WHY IT MATTERS</span>
+        </div>
+        <div class="ai-text" id="aiInsight">
+          <strong>OKC is in serious trouble.</strong> Down 4 with 3:42 left and their timeout burned, Shai Gilgeous-Alexander needs a huge run. Houston's Alperen Şengün has dominated the paint all night — <strong>18 pts, 12 reb, 4 assists</strong>. If OKC loses tonight, they'll head back to the Paycom Center facing elimination in Game 4. Their only path: force turnovers and drain the clock.
+        </div>
+        <div class="ai-updating"><div class="ai-updating-dot"></div> UPDATING LIVE</div>
+      </div>
+    </div>
+
+    <!-- Key Moments Strip -->
+    <div class="section-label" style="padding: 0 16px 8px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);">KEY MOMENTS</span>
+    </div>
+    <div class="moments-strip">
+      <div class="moment-chip hot">
+        <div class="moment-qtr">Q4 · 8:12</div>
+        <div class="moment-desc">Green 3-pointer, Houston run begins 🔥</div>
+      </div>
+      <div class="moment-chip">
+        <div class="moment-qtr">Q3 · 2:44</div>
+        <div class="moment-desc">SGA 9-0 personal run ties it up</div>
+      </div>
+      <div class="moment-chip">
+        <div class="moment-qtr">Q2 · 5:01</div>
+        <div class="moment-desc">Sengun flagrant foul, OKC gets 3 FTs</div>
+      </div>
+      <div class="moment-chip">
+        <div class="moment-qtr">Q1 · 0:02</div>
+        <div class="moment-desc">Half-court buzzer beater missed</div>
+      </div>
+    </div>
+
+    <!-- Court Visualization -->
+    <div class="court-section">
+      <div class="section-label" style="margin-bottom:8px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);">SHOT CHART</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);">THIS GAME</span>
+      </div>
+      <div class="court-wrap">
+        <canvas id="courtCanvas" width="358" height="180"></canvas>
+        <div class="court-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--okc)"></div>OKC MADE</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(0,122,193,0.3); border:1px solid rgba(0,122,193,0.6)"></div>OKC MISS</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--hou)"></div>HOU MADE</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(206,17,65,0.3); border:1px solid rgba(206,17,65,0.6)"></div>HOU MISS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Stats -->
+    <div class="stats-section">
+      <div class="section-label" style="margin-bottom:10px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);">TEAM STATS</span>
+      </div>
+
+      <div id="statRows">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Play by Play -->
+    <div class="plays-section">
+      <div class="section-label" style="margin-bottom:8px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);">PLAY BY PLAY</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--orange);">● LIVE</span>
+      </div>
+      <div id="playsContainer"></div>
+    </div>
+
+  </div><!-- end game-content -->
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <div class="nav-icon">⌂</div>
+      <div class="nav-label">HOME</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon active">📊</div>
+      <div class="nav-label active">SCORES</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">◫</div>
+      <div class="nav-label">SPORTS</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">≡</div>
+      <div class="nav-label">STANDS</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📰</div>
+      <div class="nav-label">NEWS</div>
+    </div>
+  </div>
+
+</div><!-- phone -->
+</div><!-- wrapper -->
+
+<script>
+// ─── MOMENTUM GRAPH ───────────────────────────────────────────
+const mCanvas = document.getElementById('momentumChart');
+const mCtx = mCanvas.getContext('2d');
+mCanvas.width = mCanvas.offsetWidth * 2;
+mCanvas.height = 200;
+
+// Score differential over ~100 data points (positive = OKC leading, negative = HOU leading)
+const momentumData = [
+  2,4,5,3,6,4,2,0,-2,-1,1,3,5,4,6,8,6,4,2,0,
+  -2,-4,-3,-5,-4,-6,-4,-2,-3,-5,-7,-6,-8,-6,-4,-2,-4,-3,-2,-1,
+  1,3,2,4,3,5,4,6,5,4,6,8,7,5,4,3,5,4,6,8,
+  6,4,2,0,-2,-1,1,0,-1,-3,-2,-4,-5,-4,-6,-5,-4,-3,-5,-4,
+  -3,-2,-4,-3,-5,-4,-3,-2,-4,-5,-4,-3,-2,-4,-5,-4,-3,-4,-5,-4
+];
+
+function drawMomentum() {
+  const W = mCanvas.width, H = mCanvas.height;
+  mCtx.clearRect(0,0,W,H);
+
+  const midY = H/2;
+  const scaleY = (H/2 - 10) / 10;
+  const stepX = W / (momentumData.length - 1);
+
+  // Zero line
+  mCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+  mCtx.lineWidth = 1;
+  mCtx.beginPath();
+  mCtx.moveTo(0, midY);
+  mCtx.lineTo(W, midY);
+  mCtx.stroke();
+
+  // Quarter dividers
+  [25,50,75].forEach(q => {
+    mCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+    mCtx.beginPath();
+    mCtx.moveTo(q * stepX, 0);
+    mCtx.lineTo(q * stepX, H);
+    mCtx.stroke();
+  });
+
+  // OKC fill (above zero)
+  mCtx.beginPath();
+  mCtx.moveTo(0, midY);
+  for (let i=0; i<momentumData.length; i++) {
+    const x = i * stepX;
+    const y = midY - momentumData[i] * scaleY;
+    i === 0 ? mCtx.moveTo(x, midY) : mCtx.lineTo(x, y);
+  }
+  mCtx.lineTo((momentumData.length-1)*stepX, midY);
+  mCtx.closePath();
+  const gradOKC = mCtx.createLinearGradient(0,0,0,midY);
+  gradOKC.addColorStop(0,'rgba(0,122,193,0.5)');
+  gradOKC.addColorStop(1,'rgba(0,122,193,0.02)');
+  mCtx.fillStyle = gradOKC;
+  mCtx.fill();
+
+  // HOU fill (below zero)
+  mCtx.beginPath();
+  mCtx.moveTo(0, midY);
+  for (let i=0; i<momentumData.length; i++) {
+    const x = i * stepX;
+    const y = midY - momentumData[i] * scaleY;
+    i === 0 ? mCtx.moveTo(x, midY) : mCtx.lineTo(x, y);
+  }
+  mCtx.lineTo((momentumData.length-1)*stepX, midY);
+  mCtx.closePath();
+  const gradHOU = mCtx.createLinearGradient(0,midY,0,H);
+  gradHOU.addColorStop(0,'rgba(206,17,65,0.02)');
+  gradHOU.addColorStop(1,'rgba(206,17,65,0.5)');
+  mCtx.fillStyle = gradHOU;
+  mCtx.fill();
+
+  // Main line
+  mCtx.beginPath();
+  for (let i=0; i<momentumData.length; i++) {
+    const x = i * stepX;
+    const y = midY - momentumData[i] * scaleY;
+    i === 0 ? mCtx.moveTo(x,y) : mCtx.lineTo(x,y);
+  }
+  mCtx.strokeStyle = '#fff';
+  mCtx.lineWidth = 2.5;
+  mCtx.lineJoin = 'round';
+  mCtx.stroke();
+
+  // Current position dot
+  const lastI = momentumData.length - 1;
+  const lastX = lastI * stepX;
+  const lastY = midY - momentumData[lastI] * scaleY;
+  mCtx.beginPath();
+  mCtx.arc(lastX, lastY, 6, 0, Math.PI*2);
+  mCtx.fillStyle = momentumData[lastI] > 0 ? 'var(--okc)' : '#CE1141';
+  mCtx.fill();
+  mCtx.beginPath();
+  mCtx.arc(lastX, lastY, 9, 0, Math.PI*2);
+  mCtx.strokeStyle = momentumData[lastI] > 0 ? 'rgba(0,122,193,0.4)' : 'rgba(206,17,65,0.4)';
+  mCtx.lineWidth = 2;
+  mCtx.stroke();
+}
+drawMomentum();
+
+// ─── COURT / SHOT CHART ──────────────────────────────────────
+const cCanvas = document.getElementById('courtCanvas');
+const cCtx = cCanvas.getContext('2d');
+cCanvas.width = cCanvas.offsetWidth * 2;
+cCanvas.height = 360;
+
+function drawCourt() {
+  const W = cCanvas.width, H = cCanvas.height;
+  const S = W/2; // scale factor
+  cCtx.clearRect(0,0,W,H);
+
+  // Court background
+  cCtx.fillStyle = '#1A1A20';
+  cCtx.fillRect(0,0,W,H);
+
+  // Court markings color
+  const lineColor = 'rgba(255,255,255,0.12)';
+  cCtx.strokeStyle = lineColor;
+  cCtx.lineWidth = 2;
+
+  // Half court line (we show half court, offensive end)
+  // Paint area
+  cCtx.strokeRect(S*0.35, 0, S*0.3, H*0.38);
+
+  // Free throw line top
+  cCtx.beginPath();
+  cCtx.arc(S, H*0.38, S*0.15, Math.PI, 0);
+  cCtx.stroke();
+
+  // Three point arc
+  cCtx.beginPath();
+  cCtx.arc(S, H*0.06, S*0.7, 0.18*Math.PI, 0.82*Math.PI);
+  cCtx.stroke();
+
+  // Three point corners
+  cCtx.beginPath();
+  cCtx.moveTo(S*0.07, 0);
+  cCtx.lineTo(S*0.07, H*0.24);
+  cCtx.stroke();
+  cCtx.beginPath();
+  cCtx.moveTo(S*1.93, 0);
+  cCtx.lineTo(S*1.93, H*0.24);
+  cCtx.stroke();
+
+  // Basket
+  cCtx.beginPath();
+  cCtx.arc(S, H*0.06, 14, 0, Math.PI*2);
+  cCtx.strokeStyle = 'rgba(255,165,0,0.5)';
+  cCtx.stroke();
+
+  // Backboard
+  cCtx.strokeStyle = 'rgba(255,165,0,0.6)';
+  cCtx.lineWidth = 3;
+  cCtx.beginPath();
+  cCtx.moveTo(S-22, H*0.04);
+  cCtx.lineTo(S+22, H*0.04);
+  cCtx.stroke();
+
+  // Shot spots
+  const shots = [
+    // OKC makes [x,y in 0-1 of canvas, team, made]
+    {x:0.50,y:0.12,team:'okc',made:true},{x:0.36,y:0.25,team:'okc',made:true},
+    {x:0.64,y:0.25,team:'okc',made:true},{x:0.25,y:0.45,team:'okc',made:true},
+    {x:0.75,y:0.45,team:'okc',made:true},{x:0.50,y:0.40,team:'okc',made:true},
+    {x:0.42,y:0.30,team:'okc',made:false},{x:0.58,y:0.35,team:'okc',made:false},
+    {x:0.20,y:0.20,team:'okc',made:false},{x:0.80,y:0.20,team:'okc',made:false},
+    {x:0.30,y:0.55,team:'okc',made:false},{x:0.68,y:0.55,team:'okc',made:false},
+    // HOU makes
+    {x:0.50,y:0.14,team:'hou',made:true},{x:0.32,y:0.22,team:'hou',made:true},
+    {x:0.68,y:0.22,team:'hou',made:true},{x:0.22,y:0.42,team:'hou',made:true},
+    {x:0.78,y:0.42,team:'hou',made:true},{x:0.50,y:0.38,team:'hou',made:true},
+    {x:0.50,y:0.50,team:'hou',made:true},{x:0.38,y:0.60,team:'hou',made:true},
+    {x:0.45,y:0.18,team:'hou',made:false},{x:0.55,y:0.30,team:'hou',made:false},
+    {x:0.15,y:0.18,team:'hou',made:false},{x:0.85,y:0.18,team:'hou',made:false},
+  ];
+
+  shots.forEach(s => {
+    const px = s.x * W;
+    const py = s.y * H;
+    if (s.team === 'okc') {
+      if (s.made) {
+        cCtx.beginPath();
+        cCtx.arc(px,py,8,0,Math.PI*2);
+        cCtx.fillStyle = 'rgba(0,122,193,0.85)';
+        cCtx.fill();
+      } else {
+        cCtx.strokeStyle = 'rgba(0,122,193,0.5)';
+        cCtx.lineWidth = 2;
+        cCtx.beginPath();
+        cCtx.moveTo(px-6,py-6); cCtx.lineTo(px+6,py+6);
+        cCtx.moveTo(px+6,py-6); cCtx.lineTo(px-6,py+6);
+        cCtx.stroke();
+      }
+    } else {
+      if (s.made) {
+        cCtx.beginPath();
+        cCtx.arc(px,py,8,0,Math.PI*2);
+        cCtx.fillStyle = 'rgba(206,17,65,0.85)';
+        cCtx.fill();
+      } else {
+        cCtx.strokeStyle = 'rgba(206,17,65,0.5)';
+        cCtx.lineWidth = 2;
+        cCtx.beginPath();
+        cCtx.moveTo(px-6,py-6); cCtx.lineTo(px+6,py+6);
+        cCtx.moveTo(px+6,py-6); cCtx.lineTo(px-6,py+6);
+        cCtx.stroke();
+      }
+    }
+  });
+}
+drawCourt();
+
+// ─── TEAM STATS ──────────────────────────────────────────────
+const statsData = [
+  { label:'FG%', okc:'47.2', hou:'51.8', okcLead:false },
+  { label:'3PT%', okc:'38.5', hou:'41.2', okcLead:false },
+  { label:'REB', okc:'34', hou:'41', okcLead:false },
+  { label:'AST', okc:'19', hou:'24', okcLead:false },
+  { label:'TO', okc:'11', hou:'8', okcLead:true },
+  { label:'+/-', okc:'-4', hou:'+4', okcLead:false },
+];
+
+const statContainer = document.getElementById('statRows');
+statsData.forEach(s => {
+  const oNum = parseFloat(s.okc);
+  const hNum = parseFloat(s.hou);
+  const total = Math.abs(oNum) + Math.abs(hNum);
+  const oW = total > 0 ? (Math.abs(oNum)/total*100).toFixed(0) : 50;
+  const hW = total > 0 ? (Math.abs(hNum)/total*100).toFixed(0) : 50;
+  const oLead = s.label === 'TO' ? oNum < hNum : oNum > hNum;
+  const hLead = !oLead;
+  
+  statContainer.innerHTML += `
+    <div class="stat-row">
+      <div class="stat-val left ${oLead ? 'lead' : 'okc'}">${s.okc}</div>
+      <div class="stat-name">${s.label}</div>
+      <div class="stat-val ${hLead ? 'lead' : 'hou'}">${s.hou}</div>
+    </div>
+    <div class="stat-bar-row">
+      <div class="stat-mini-bar"><div class="stat-mini-fill-l" style="width:${oW}%; background:${oLead?'#007AC1':'rgba(0,122,193,0.3)'}"></div></div>
+      <div style="width:1px"></div>
+      <div class="stat-mini-bar"><div class="stat-mini-fill-r" style="width:${hW}%; background:${hLead?'#CE1141':'rgba(206,17,65,0.3)'}"></div></div>
+    </div>
+  `;
+});
+
+// ─── PLAY BY PLAY ─────────────────────────────────────────────
+const plays = [
+  { time:'3:42', desc:'<strong>SGA</strong> timeout called. OKC ball.', score:'87–91', isScore:false },
+  { time:'3:55', desc:'<strong>Sengun</strong> makes 1 of 2 free throws', score:'87–91', isScore:true },
+  { time:'3:55', desc:'SGA flagrant foul on Sengun. Houston shoots 2 FTs', score:'87–90', isScore:false },
+  { time:'4:12', desc:'<strong>SGA</strong> drives baseline, reverse layup — AND ONE! 🔥', score:'87–90', isScore:true },
+  { time:'4:28', desc:'<strong>Green</strong> cold from corner 3. Misses badly.', score:'85–90', isScore:false },
+  { time:'4:44', desc:'<strong>Amen Thompson</strong> puts back — Rockets extend lead!', score:'85–90', isScore:true },
+  { time:'5:01', desc:'<strong>SGA</strong> fadeaway mid-range. Pure.', score:'85–88', isScore:true },
+  { time:'5:19', desc:'<strong>Jalen Green</strong> off-balance 3 — BANKED IN! Wild.', score:'83–88', isScore:true },
+];
+
+const playsEl = document.getElementById('playsContainer');
+plays.forEach(p => {
+  playsEl.innerHTML += `
+    <div class="play-item ${p.isScore?'score-play':''}">
+      <div class="play-time">${p.time}</div>
+      <div class="play-info">
+        <div class="play-desc">${p.desc}</div>
+        <div class="play-score">${p.score}</div>
+      </div>
+    </div>
+  `;
+});
+
+// ─── LIVE SIMULATION ─────────────────────────────────────────
+let okcScore = 87, houScore = 91;
+let seconds = 3*60+42;
+let wpOKC = 38;
+
+const newPlays = [
+  { desc:'<strong>SGA</strong> isolates, hits mid-range jumper 💧', team:'okc', pts:2 },
+  { desc:'<strong>Sengun</strong> post spin, floater — HOU scores!', team:'hou', pts:2 },
+  { desc:'<strong>Dort</strong> corner 3 — BANG! OKC cuts it to 2!', team:'okc', pts:3 },
+  { desc:'<strong>Green</strong> slips, turns it over! OKC ball!', team:'okc', pts:0 },
+  { desc:'<strong>SGA</strong> pull-up 3 — TIE GAME! 🔥🔥🔥', team:'okc', pts:3 },
+  { desc:'<strong>Thompson</strong> mismatch, draws foul. 2 FTs.', team:'hou', pts:2 },
+];
+
+let playIdx = 0;
+let simRunning = true;
+
+function updateClock(s) {
+  const m = Math.floor(s/60);
+  const sec = (s%60).toString().padStart(2,'0');
+  document.getElementById('gameClock').textContent = `${m}:${sec}`;
+}
+
+function updateWP(okc) {
+  document.getElementById('wpOKC').textContent = okc + '%';
+  document.getElementById('wpHOU').textContent = (100-okc) + '%';
+  document.getElementById('wpBarOKC').style.width = okc + '%';
+  document.getElementById('wpBarHOU').style.width = (100-okc) + '%';
+}
+
+function addPlay(p) {
+  const diff = okcScore - houScore;
+  const score = `${okcScore}–${houScore}`;
+  const el = document.createElement('div');
+  el.className = `play-item ${p.pts > 0 ? 'score-play' : ''}`;
+  el.innerHTML = `
+    <div class="play-time" style="color:var(--orange)">LIVE</div>
+    <div class="play-info">
+      <div class="play-desc">${p.desc}</div>
+      <div class="play-score">${score}</div>
+    </div>
+  `;
+  playsEl.insertBefore(el, playsEl.firstChild);
+  // fade in first child
+  setTimeout(() => el.style.opacity = '1', 10);
+}
+
+function updateAI() {
+  const diff = okcScore - houScore;
+  const insights = [
+    `<strong>OKC is mounting a comeback!</strong> SGA has taken over — 4 straight points. Win probability jumping back to ${wpOKC}%. If the Thunder can force a stop next possession, this is anyone's game.`,
+    `<strong>This series is going to 7.</strong> With ${Math.floor(seconds/60)}:${(seconds%60).toString().padStart(2,'0')} left, both teams are playing playoff basketball. Sengun needs to stay out of foul trouble — he has 4. One more and IQ goes to the bench.`,
+    `<strong>TIE GAME.</strong> The Toyota Center is electric. OKC has completed the biggest comeback of the series. SGA with 31 pts, 8 ast. This is why you watch.`
+  ];
+  const idx = Math.floor(Math.random() * insights.length);
+  document.getElementById('aiInsight').innerHTML = insights[idx] + '<br><br><div class="ai-updating"><div class="ai-updating-dot"></div> UPDATING LIVE</div>';
+}
+
+function simulatePlay() {
+  if (!simRunning || playIdx >= newPlays.length) {
+    simRunning = false;
+    return;
+  }
+  const p = newPlays[playIdx++];
+  seconds = Math.max(0, seconds - Math.floor(Math.random()*20+8));
+  updateClock(seconds);
+
+  if (p.team === 'okc') {
+    okcScore += p.pts;
+    wpOKC = Math.min(65, wpOKC + (p.pts > 0 ? (p.pts === 3 ? 12 : 7) : 2));
+  } else {
+    houScore += p.pts;
+    wpOKC = Math.max(20, wpOKC - (p.pts > 0 ? 6 : 0));
+  }
+
+  document.getElementById('scoreOKC').textContent = okcScore;
+  document.getElementById('scoreHOU').textContent = houScore;
+  updateWP(wpOKC);
+  addPlay(p);
+
+  const diff = okcScore - houScore;
+  let banner = '🏀 ';
+  if (diff === 0) banner += 'TIE GAME — ANYTHING CAN HAPPEN';
+  else if (diff > 0) banner += `OKC LEADS BY ${diff} · Q4`;
+  else banner += `HOU LEADS BY ${Math.abs(diff)} · Q4`;
+  document.querySelector('.context-banner').innerHTML = '🔥 ' + banner.substring(2);
+
+  if (playIdx % 2 === 0) updateAI();
+
+  // Update momentum slightly
+  momentumData.push(diff);
+  if (momentumData.length > 100) momentumData.shift();
+  drawMomentum();
+
+  setTimeout(simulatePlay, 3500 + Math.random()*2000);
+}
+
+// Start simulation after 2 seconds
+setTimeout(simulatePlay, 2000);
+</script>
+</body>
+</html>

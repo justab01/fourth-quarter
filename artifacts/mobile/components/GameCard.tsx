@@ -149,27 +149,46 @@ const RIVALRY_PAIRS: [string, string][] = [
   ["Michigan Wolverines", "Ohio State Buckeyes"], ["Duke Blue Devils", "North Carolina Tar Heels"],
 ];
 
-function getContextChips(game: Game): { label: string; color: string; bg: string }[] {
-  const chips: { label: string; color: string; bg: string }[] = [];
+function getContextChip(game: Game): { label: string; color: string; bg: string } | null {
   const diff = Math.abs((game.homeScore ?? 0) - (game.awayScore ?? 0));
   const period = (game.quarter ?? "").toLowerCase();
   const isOT = period.includes("ot") || period.includes("overtime");
-  const isLate = period.includes("4") || period.includes("q4") || period.includes("9th") || period.includes("3rd");
-
-  if (game.status === "live") {
-    if (isOT) chips.push({ label: "OT", color: "#fff", bg: "#7C3AED" });
-    else if (diff <= 3 && isLate) chips.push({ label: "CLOSE", color: "#fff", bg: C.live });
-    else if (diff <= 5) chips.push({ label: "TIGHT", color: C.live, bg: `${C.live}20` });
-  }
-
-  if (RIVALRY_PAIRS.some(([a, b]) =>
+  const isLate = period.includes("4th") || period.includes("q4") || period.includes("9th") || period.includes("3rd period");
+  const isRivalry = RIVALRY_PAIRS.some(([a, b]) =>
     (game.homeTeam.includes(a.split(" ").slice(-1)[0]) && game.awayTeam.includes(b.split(" ").slice(-1)[0])) ||
     (game.homeTeam.includes(b.split(" ").slice(-1)[0]) && game.awayTeam.includes(a.split(" ").slice(-1)[0]))
-  )) {
-    chips.push({ label: "RIVALRY", color: C.accentGold, bg: `${C.accentGold}18` });
+  );
+
+  if (game.status === "live") {
+    // Priority 1: MUST WATCH — OT and within 2 points
+    if (isOT && diff <= 2) return { label: "MUST WATCH", color: "#fff", bg: "#7C3AED" };
+    // Priority 2: OT
+    if (isOT) return { label: "OT", color: "#fff", bg: "#7C3AED" };
+    // Priority 3: RIVALRY (live)
+    if (isRivalry) return { label: "RIVALRY", color: C.accentGold, bg: `${C.accentGold}18` };
+    // Priority 4: CLOSE — within 3 in a late period
+    if (diff <= 3 && isLate) return { label: "CLOSE", color: "#fff", bg: C.live };
+    // Priority 5: TIGHT — within 5
+    if (diff <= 5) return { label: "TIGHT", color: C.live, bg: `${C.live}20` };
   }
 
-  return chips.slice(0, 2);
+  if (game.status === "upcoming") {
+    // Priority 3: RIVALRY (upcoming)
+    if (isRivalry) return { label: "RIVALRY", color: C.accentGold, bg: `${C.accentGold}18` };
+  }
+
+  if (game.status === "finished") {
+    if (isOT) return { label: "OT", color: "#fff", bg: "#7C3AED" };
+    if (diff <= 3) return { label: "CLOSE", color: C.live, bg: `${C.live}18` };
+    if (isRivalry) return { label: "RIVALRY", color: C.accentGold, bg: `${C.accentGold}18` };
+  }
+
+  return null;
+}
+
+function getContextChips(game: Game): { label: string; color: string; bg: string }[] {
+  const chip = getContextChip(game);
+  return chip ? [chip] : [];
 }
 
 function ContextChips({ game }: { game: Game }) {

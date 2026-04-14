@@ -341,7 +341,30 @@ export default function GameDetailScreen() {
                     )}
                   </>
                 ) : (
-                  <Text style={s.empty}>Box score not yet available</Text>
+                  <View style={s.emptyBoxState}>
+                    <Text style={s.emptyBoxIcon}>
+                      {game.status === "live" ? "📊" : game.status === "upcoming" ? "🕐" : "📋"}
+                    </Text>
+                    <Text style={s.emptyBoxTitle}>
+                      {game.status === "live"
+                        ? "Stats Updating Live"
+                        : game.status === "upcoming"
+                        ? "Pre-Game"
+                        : "Stats Unavailable"}
+                    </Text>
+                    <Text style={s.emptyBoxMsg}>
+                      {game.status === "live"
+                        ? "Player stats are being compiled. They'll appear here shortly."
+                        : game.status === "upcoming"
+                        ? "Box score stats will appear here once the game begins."
+                        : "Detailed stats were not available for this game."}
+                    </Text>
+                    {game.status === "live" && (
+                      <Text style={[s.emptyBoxHint, { color: dc }]}>
+                        Check the Stats tab for live team totals →
+                      </Text>
+                    )}
+                  </View>
                 )}
               </View>
             )}
@@ -951,4 +974,9 @@ const s = StyleSheet.create({
   playerName: { flex: 1, color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
 
   empty: { color: C.textTertiary, fontSize: 14, textAlign: "center", paddingVertical: 20, fontFamily: "Inter_400Regular" },
+  emptyBoxState: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 24 },
+  emptyBoxIcon: { fontSize: 36, marginBottom: 12 },
+  emptyBoxTitle: { color: C.text, fontSize: 17, fontFamily: "Inter_700Bold", marginBottom: 8, textAlign: "center" },
+  emptyBoxMsg: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20, marginBottom: 12 },
+  emptyBoxHint: { fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
 });
