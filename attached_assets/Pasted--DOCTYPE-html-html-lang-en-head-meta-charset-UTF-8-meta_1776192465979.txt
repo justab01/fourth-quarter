@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4th Quarter — Master Execution Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,900;1,700&family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6B1A;
+    --orange-dim: #CC4E00;
+    --orange-glow: rgba(255,107,26,0.15);
+    --gold: #F5A623;
+    --red: #E53935;
+    --green: #2ECC71;
+    --blue: #2196F3;
+    --purple: #9C27B0;
+    --bg: #0A0A0B;
+    --bg2: #111113;
+    --bg3: #18181C;
+    --bg4: #1E1E24;
+    --border: rgba(255,255,255,0.07);
+    --text: #F0F0F0;
+    --text-dim: #888;
+    --text-muted: #555;
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘Barlow’, sans-serif;
+font-size: 15px;
+line-height: 1.6;
+overflow-x: hidden;
+}
+
+/* ── HERO ── */
+.hero {
+position: relative;
+padding: 80px 40px 60px;
+text-align: center;
+overflow: hidden;
+border-bottom: 1px solid var(–border);
+}
+.hero::before {
+content: ‘’;
+position: absolute;
+inset: 0;
+background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,107,26,0.18) 0%, transparent 70%);
+pointer-events: none;
+}
+.hero-eyebrow {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 0.25em;
+color: var(–orange);
+text-transform: uppercase;
+margin-bottom: 16px;
+}
+.hero h1 {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: clamp(52px, 10vw, 96px);
+letter-spacing: 0.04em;
+line-height: 0.95;
+color: #fff;
+margin-bottom: 8px;
+}
+.hero h1 span { color: var(–orange); }
+.hero-sub {
+font-size: 18px;
+font-weight: 500;
+color: var(–text-dim);
+max-width: 600px;
+margin: 20px auto 0;
+}
+.hero-meta {
+display: flex;
+gap: 32px;
+justify-content: center;
+margin-top: 36px;
+flex-wrap: wrap;
+}
+.hero-meta-item {
+text-align: center;
+}
+.hero-meta-item .num {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 42px;
+color: var(–orange);
+line-height: 1;
+}
+.hero-meta-item .label {
+font-size: 11px;
+letter-spacing: 0.15em;
+color: var(–text-muted);
+text-transform: uppercase;
+margin-top: 4px;
+}
+
+/* ── LAYOUT ── */
+.container {
+max-width: 960px;
+margin: 0 auto;
+padding: 0 24px;
+}
+
+/* ── SECTION ── */
+.section {
+padding: 64px 0;
+border-bottom: 1px solid var(–border);
+}
+.section-header {
+display: flex;
+align-items: flex-start;
+gap: 20px;
+margin-bottom: 40px;
+}
+.section-number {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 72px;
+line-height: 1;
+color: var(–orange);
+opacity: 0.25;
+flex-shrink: 0;
+min-width: 60px;
+}
+.section-title-block {}
+.section-label {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.25em;
+text-transform: uppercase;
+color: var(–orange);
+margin-bottom: 6px;
+}
+.section-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 36px;
+letter-spacing: 0.05em;
+color: #fff;
+line-height: 1;
+}
+.section-desc {
+font-size: 15px;
+color: var(–text-dim);
+margin-top: 8px;
+max-width: 680px;
+}
+
+/* ── STATUS GRID (what’s built) ── */
+.status-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+gap: 12px;
+}
+.status-card {
+background: var(–bg3);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 16px 18px;
+display: flex;
+align-items: flex-start;
+gap: 14px;
+}
+.status-card.done { border-left: 3px solid var(–green); }
+.status-card.partial { border-left: 3px solid var(–gold); }
+.status-card.missing { border-left: 3px solid var(–red); }
+.status-icon {
+font-size: 18px;
+flex-shrink: 0;
+margin-top: 1px;
+}
+.status-name {
+font-weight: 700;
+font-size: 14px;
+color: var(–text);
+margin-bottom: 3px;
+}
+.status-note {
+font-size: 12px;
+color: var(–text-dim);
+line-height: 1.5;
+}
+
+/* ── BUG LIST ── */
+.bug-list {
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+.bug-item {
+background: var(–bg3);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 16px 20px;
+display: grid;
+grid-template-columns: 80px 1fr auto;
+gap: 16px;
+align-items: center;
+}
+.bug-priority {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+padding: 4px 10px;
+border-radius: 4px;
+text-align: center;
+}
+.bug-priority.p0 { background: rgba(229,57,53,0.15); color: #E53935; }
+.bug-priority.p1 { background: rgba(245,166,35,0.15); color: var(–gold); }
+.bug-priority.p2 { background: rgba(33,150,243,0.15); color: var(–blue); }
+.bug-desc { font-size: 14px; color: var(–text); }
+.bug-desc strong { color: #fff; display: block; margin-bottom: 2px; }
+.bug-desc span { color: var(–text-dim); font-size: 13px; }
+.bug-screen {
+font-size: 11px;
+color: var(–text-muted);
+font-family: ‘Barlow Condensed’, sans-serif;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+white-space: nowrap;
+}
+
+/* ── PHASE CARDS ── */
+.phase-block {
+margin-bottom: 48px;
+}
+.phase-header {
+display: flex;
+align-items: center;
+gap: 16px;
+margin-bottom: 20px;
+padding-bottom: 16px;
+border-bottom: 1px solid var(–border);
+}
+.phase-badge {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 13px;
+letter-spacing: 0.15em;
+padding: 6px 14px;
+border-radius: 4px;
+}
+.phase-badge.week1 { background: rgba(229,57,53,0.15); color: #E53935; border: 1px solid rgba(229,57,53,0.3); }
+.phase-badge.week2 { background: rgba(245,166,35,0.15); color: var(–gold); border: 1px solid rgba(245,166,35,0.3); }
+.phase-badge.week3 { background: rgba(33,150,243,0.15); color: var(–blue); border: 1px solid rgba(33,150,243,0.3); }
+.phase-badge.week4 { background: rgba(46,204,113,0.15); color: var(–green); border: 1px solid rgba(46,204,113,0.3); }
+.phase-badge.beyond { background: rgba(156,39,176,0.15); color: var(–purple); border: 1px solid rgba(156,39,176,0.3); }
+.phase-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 24px;
+letter-spacing: 0.05em;
+}
+.phase-time {
+font-size: 13px;
+color: var(–text-muted);
+margin-left: auto;
+font-style: italic;
+}
+
+.task-list {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+.task {
+background: var(–bg3);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 14px 18px;
+display: grid;
+grid-template-columns: 1fr auto;
+gap: 12px;
+align-items: start;
+}
+.task-name {
+font-weight: 600;
+font-size: 14px;
+color: var(–text);
+margin-bottom: 4px;
+}
+.task-detail {
+font-size: 13px;
+color: var(–text-dim);
+line-height: 1.5;
+}
+.task-tag {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+padding: 3px 8px;
+border-radius: 3px;
+white-space: nowrap;
+margin-top: 2px;
+}
+.task-tag.ui { background: rgba(156,39,176,0.15); color: var(–purple); }
+.task-tag.bug { background: rgba(229,57,53,0.15); color: #E53935; }
+.task-tag.feature { background: rgba(255,107,26,0.15); color: var(–orange); }
+.task-tag.data { background: rgba(33,150,243,0.15); color: var(–blue); }
+.task-tag.infra { background: rgba(46,204,113,0.15); color: var(–green); }
+.task-tag.social { background: rgba(245,166,35,0.15); color: var(–gold); }
+
+/* ── UI DECISIONS ── */
+.ui-decision-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 16px;
+}
+@media (max-width: 640px) { .ui-decision-grid { grid-template-columns: 1fr; } }
+.ui-card {
+background: var(–bg3);
+border: 1px solid var(–border);
+border-radius: 10px;
+overflow: hidden;
+}
+.ui-card-header {
+padding: 14px 18px;
+border-bottom: 1px solid var(–border);
+display: flex;
+align-items: center;
+gap: 10px;
+}
+.ui-card-header .screen {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+color: var(–orange);
+}
+.ui-card-body { padding: 16px 18px; }
+.ui-before, .ui-after {
+font-size: 13px;
+line-height: 1.6;
+margin-bottom: 8px;
+}
+.ui-before { color: var(–red); }
+.ui-before::before { content: ’✗  ’; font-weight: 700; }
+.ui-after { color: var(–green); }
+.ui-after::before { content: ’✓  ’; font-weight: 700; }
+.ui-reason {
+font-size: 12px;
+color: var(–text-muted);
+border-top: 1px solid var(–border);
+padding-top: 10px;
+margin-top: 10px;
+font-style: italic;
+}
+
+/* ── FEATURE AUDIT TABLE ── */
+.audit-table {
+width: 100%;
+border-collapse: collapse;
+font-size: 13px;
+}
+.audit-table th {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+color: var(–text-muted);
+text-align: left;
+padding: 10px 14px;
+border-bottom: 1px solid var(–border);
+background: var(–bg2);
+}
+.audit-table td {
+padding: 12px 14px;
+border-bottom: 1px solid var(–border);
+vertical-align: top;
+}
+.audit-table tr:last-child td { border-bottom: none; }
+.audit-table tr:hover td { background: rgba(255,255,255,0.02); }
+.dot {
+display: inline-block;
+width: 8px;
+height: 8px;
+border-radius: 50%;
+margin-right: 6px;
+flex-shrink: 0;
+}
+.dot.green { background: var(–green); }
+.dot.yellow { background: var(–gold); }
+.dot.red { background: var(–red); }
+.status-cell {
+display: flex;
+align-items: center;
+white-space: nowrap;
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 12px;
+font-weight: 700;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+}
+.status-cell.built { color: var(–green); }
+.status-cell.partial { color: var(–gold); }
+.status-cell.broken { color: var(–red); }
+.status-cell.missing { color: var(–text-muted); }
+
+/* ── SOCIAL VISION ── */
+.vision-grid {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 14px;
+}
+@media (max-width: 680px) { .vision-grid { grid-template-columns: 1fr; } }
+.vision-card {
+background: var(–bg3);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 22px;
+position: relative;
+overflow: hidden;
+}
+.vision-card::before {
+content: ‘’;
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 3px;
+}
+.vision-card.v1::before { background: var(–orange); }
+.vision-card.v2::before { background: var(–gold); }
+.vision-card.v3::before { background: var(–green); }
+.vision-card.v4::before { background: var(–blue); }
+.vision-card.v5::before { background: var(–purple); }
+.vision-card.v6::before { background: var(–red); }
+.vision-emoji { font-size: 28px; margin-bottom: 12px; }
+.vision-name {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 20px;
+letter-spacing: 0.05em;
+color: #fff;
+margin-bottom: 8px;
+}
+.vision-desc { font-size: 13px; color: var(–text-dim); line-height: 1.6; }
+
+/* ── CALLOUT ── */
+.callout {
+background: linear-gradient(135deg, rgba(255,107,26,0.08), rgba(255,107,26,0.03));
+border: 1px solid rgba(255,107,26,0.25);
+border-radius: 12px;
+padding: 24px 28px;
+margin: 32px 0;
+display: flex;
+gap: 16px;
+align-items: flex-start;
+}
+.callout-icon { font-size: 24px; flex-shrink: 0; }
+.callout-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 20px;
+letter-spacing: 0.05em;
+color: var(–orange);
+margin-bottom: 6px;
+}
+.callout-body { font-size: 14px; color: var(–text-dim); line-height: 1.6; }
+
+/* ── MARKET SECTION ── */
+.market-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 14px;
+}
+@media (max-width: 640px) { .market-grid { grid-template-columns: 1fr; } }
+.market-card {
+background: var(–bg3);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 20px;
+}
+.market-card-title {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+color: var(–orange);
+margin-bottom: 10px;
+}
+.market-card p { font-size: 14px; color: var(–text-dim); line-height: 1.6; }
+
+/* ── TECH DEBT ── */
+.debt-list {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+.debt-item {
+display: flex;
+gap: 14px;
+padding: 14px 18px;
+background: var(–bg3);
+border: 1px solid var(–border);
+border-radius: 8px;
+font-size: 14px;
+align-items: flex-start;
+}
+.debt-item .area {
+font-family: ‘Barlow Condensed’, sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+color: var(–text-muted);
+white-space: nowrap;
+min-width: 80px;
+margin-top: 1px;
+}
+.debt-item .issue { color: var(–text-dim); }
+.debt-item .fix { color: var(–text); font-weight: 600; margin-bottom: 2px; }
+
+/* ── FOOTER ── */
+.footer {
+padding: 60px 40px;
+text-align: center;
+border-top: 1px solid var(–border);
+}
+.footer-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 48px;
+color: #fff;
+letter-spacing: 0.05em;
+}
+.footer-title span { color: var(–orange); }
+.footer-sub { color: var(–text-muted); font-size: 14px; margin-top: 8px; }
+
+/* ── UTILS ── */
+.divider {
+height: 1px;
+background: var(–border);
+margin: 32px 0;
+}
+.highlight { color: var(–orange); font-weight: 700; }
+ul.plain { list-style: none; padding: 0; }
+ul.plain li { padding: 6px 0; border-bottom: 1px solid var(–border); font-size: 14px; color: var(–text-dim); }
+ul.plain li:last-child { border-bottom: none; }
+ul.plain li strong { color: var(–text); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(–bg); }
+::-webkit-scrollbar-thumb { background: var(–bg4); border-radius: 3px; }
+</style>
+
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════ -->
+
+<div class="hero">
+  <div class="hero-eyebrow">Full Scope Execution Plan · April 2026</div>
+  <h1>4TH <span>QUARTER</span></h1>
+  <p class="hero-sub">A complete, screen-by-screen audit + step-by-step plan to ship the better ESPN — this week.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="num">18</div><div class="label">Screens Audited</div></div>
+    <div class="hero-meta-item"><div class="num">47</div><div class="label">Specific Tasks</div></div>
+    <div class="hero-meta-item"><div class="num">4</div><div class="label">Launch Phases</div></div>
+    <div class="hero-meta-item"><div class="num">7</div><div class="label">Days to Market-Ready</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 1 — FULL FEATURE AUDIT
+═══════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">01</div>
+      <div class="section-title-block">
+        <div class="section-label">Complete Audit</div>
+        <div class="section-title">Every Feature, Every Screen</div>
+        <div class="section-desc">Full status check of everything documented vs. what's actually working. Green = solid. Yellow = partially working or needs polish. Red = broken or missing.</div>
+      </div>
+    </div>
+
+```
+<table class="audit-table">
+  <thead>
+    <tr>
+      <th>Screen / Feature</th>
+      <th>Status</th>
+      <th>What Needs Fixing</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Onboarding (5-step flow)</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">Solid. Verify haptic fires on every step. Confirm re-run from profile works cleanly.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — Greeting + Header</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">Works. "HOU" team chip next to name could be more prominent. Minor spacing tweak.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — "In One Breath" AI Card</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Card renders but AI content appears empty/collapsed by default. Ensure it loads expanded first time, collapses on tap.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — My Teams Strip</strong></td>
+      <td><span class="status-cell broken"><span class="dot red"></span>Broken</span></td>
+      <td style="color:var(--text-dim)"><strong style="color:#E53935">Critical:</strong> Shows initials only (H, G) instead of real team logos. Team logos must render via ESPN CDN. This is the first thing users see after their name.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — Context Chips</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">"1 nail-biter" and "124 upcoming" chips working. Good.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — Today's Games Tabs</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Game cards render but favorite team games don't visually stand out enough. Need the priority "full-width" featured card vs compact cards layout.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — "Watch Live" Button</strong></td>
+      <td><span class="status-cell broken"><span class="dot red"></span>Broken</span></td>
+      <td style="color:var(--text-dim)"><strong style="color:#E53935">Critical:</strong> Button exists but likely routes nowhere. Either wire to ESPN/streaming URL or replace with "Open Game" that routes to game detail page.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — Headlines Feed</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">Large hero article card looks sharp. "Listen" button + arrow present. Real ESPN photos rendering. Good.</td>
+    </tr>
+    <tr>
+      <td><strong>Home — Draft Center Bar</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">NFL/NBA/NHL/MLB league chips visible. Confirm tap routes to correct draft page per league.</td>
+    </tr>
+    <tr>
+      <td><strong>Scores — Calendar Strip</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">Orange "Today 14" highlight working. Date dots for game days visible. Clean.</td>
+    </tr>
+    <tr>
+      <td><strong>Scores — Smart Filters</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">All Games / My Teams / Close Games / Rivalry dropdown working. Compact/Full toggle works.</td>
+    </tr>
+    <tr>
+      <td><strong>Scores — Importance Tags</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">BUBBLE tag showing on NBA + NHL games. Verify MUST WATCH, TIGHT, CLOSE, OT, RIVALRY, BLOWOUT, RED ZONE, POWER PLAY, MATCH POINT all trigger correctly.</td>
+    </tr>
+    <tr>
+      <td><strong>Scores — League Grouping</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">NBA (2), NHL (9), MLB (15) all showing with league emoji + color bar. Good.</td>
+    </tr>
+    <tr>
+      <td><strong>Sports Grid</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">14 sport cards with color-coded backgrounds, emojis, season status badges. Looks strong.</td>
+    </tr>
+    <tr>
+      <td><strong>Sport Detail — Basketball</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">League chips (NBA/WNBA/NCAA M/W), top athletes strip, standings table, schedule all present.</td>
+    </tr>
+    <tr>
+      <td><strong>Sport Detail — WNBA off-season state</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">"WNBA season starts in May" empty state renders. Top athletes still visible. Good pattern.</td>
+    </tr>
+    <tr>
+      <td><strong>Standings — NBA</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">Playoff zone color bars, clinch codes (z/y/x), streak badges (W2, W3), +/- column. Genuinely better than ESPN standings.</td>
+    </tr>
+    <tr>
+      <td><strong>Standings — NHL</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">Points-based system correct. "On the playoff bubble — every game matters" contextual text is a great touch. OUT zone separator visible.</td>
+    </tr>
+    <tr>
+      <td><strong>Standings — NFL</strong></td>
+      <td><span class="status-cell broken"><span class="dot red"></span>Broken</span></td>
+      <td style="color:var(--text-dim)"><strong style="color:#E53935">Critical:</strong> Multiple teams showing rank "1" within same conference (not grouped by division correctly). Also showing "D" column as draws — confirm logic. Layout looks off vs. other leagues.</td>
+    </tr>
+    <tr>
+      <td><strong>News — Narrative Buckets</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">Playoff Race bucket rendering with real ESPN content. EPL article has real photo. Listen button present. Strong.</td>
+    </tr>
+    <tr>
+      <td><strong>News — Filter Chips</strong></td>
+      <td><span class="status-cell built"><span class="dot green"></span>Built</span></td>
+      <td style="color:var(--text-dim)">All / My Teams / NBA / NFL / MLB etc. scrollable. Verify "My Teams" actually filters correctly based on preferences.</td>
+    </tr>
+    <tr>
+      <td><strong>Game Detail — Gamecast Tab</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Needs verification: ArenaRenderer SVG, Win Probability Bar, Momentum Graph, Live AI tracker. Test all 5 sport types.</td>
+    </tr>
+    <tr>
+      <td><strong>Game Detail — Box Score</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Verify player name taps route to player detail page. Confirm sport-specific columns render for each sport type.</td>
+    </tr>
+    <tr>
+      <td><strong>Game Detail — Play by Play</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Needs live game test to verify real play data flows through WebSocket correctly.</td>
+    </tr>
+    <tr>
+      <td><strong>Player Detail — Overview</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Role Badge + Milestone Tracker documented but needs visual verification across multiple players and sports.</td>
+    </tr>
+    <tr>
+      <td><strong>Player Detail — Tapping name from Box Score</strong></td>
+      <td><span class="status-cell missing"><span class="dot red"></span>Verify</span></td>
+      <td style="color:var(--text-dim)">User specifically flagged: tapping player name from box score must route to player bio. Needs end-to-end test.</td>
+    </tr>
+    <tr>
+      <td><strong>Player Detail — Bio Tab</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Bio card (birthdate, college, draft) documented. Verify ESPN bio text actually populates for common players — often this field is null.</td>
+    </tr>
+    <tr>
+      <td><strong>Player Detail — Game Log</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Tapping a game row from Game Log must navigate to that game's detail. Confirm this works.</td>
+    </tr>
+    <tr>
+      <td><strong>Team Page — All 7 Tabs</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Scores, News, Standings, Stats, Roster, Depth Chart, Future — verify all 7 load correctly. Roster player tap → player page must work.</td>
+    </tr>
+    <tr>
+      <td><strong>Article — Reading Modes</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">4 modes (Original, Easy Read, Quick Take, Cross-Sport) documented. Verify AI calls are working and results are cached correctly per article.</td>
+    </tr>
+    <tr>
+      <td><strong>Draft Page</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Pick Tracker, Prospects, Team Needs documented. NFL Draft is live right now — test this page today.</td>
+    </tr>
+    <tr>
+      <td><strong>Search Modal</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Static 2,284-line index + live ESPN fallback. Test: search Jayson Tatum, Patrick Mahomes, Erling Haaland. All 3 must return correct player page with headshot.</td>
+    </tr>
+    <tr>
+      <td><strong>Profile — Fan/Nerd Mode Toggle</strong></td>
+      <td><span class="status-cell partial"><span class="dot yellow"></span>Partial</span></td>
+      <td style="color:var(--text-dim)">Toggle exists. Verify Nerd Mode actually surfaces different stats/language on game detail and player pages.</td>
+    </tr>
+    <tr>
+      <td><strong>Push Notifications</strong></td>
+      <td><span class="status-cell missing"><span class="dot red"></span>Missing</span></td>
+      <td style="color:var(--text-dim)">Not mentioned in current implementation. This is a core retention feature — game start alerts, final scores for My Teams.</td>
+    </tr>
+    <tr>
+      <td><strong>Community / Social Layer</strong></td>
+      <td><span class="status-cell missing"><span class="dot red"></span>Missing</span></td>
+      <td style="color:var(--text-dim)">Not built. Hot Takes, game chat, reactions — none exist. This is the #1 differentiator from ESPN.</td>
+    </tr>
+    <tr>
+      <td><strong>User Auth / Accounts</strong></td>
+      <td><span class="status-cell missing"><span class="dot red"></span>Missing</span></td>
+      <td style="color:var(--text-dim)">Everything in AsyncStorage only. No cross-device sync. No social layer possible without this.</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 2 — CRITICAL BUGS
+═══════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">02</div>
+      <div class="section-title-block">
+        <div class="section-label">Fix These First</div>
+        <div class="section-title">Critical Bugs & Broken Flows</div>
+        <div class="section-desc">These are the issues that make the app feel unfinished the moment someone opens it. Fix these before showing anyone.</div>
+      </div>
+    </div>
+
+```
+<div class="bug-list">
+  <div class="bug-item">
+    <div class="bug-priority p0">P0 — NOW</div>
+    <div class="bug-desc">
+      <strong>My Teams strip shows initials instead of logos</strong>
+      <span>The "H" and "G" circles on the Home tab should show real team logo images pulled from ESPN CDN (e.g. a.espncdn.com/i/teamlogos/...). This is literally the first personalized thing a user sees. Fix: use ESPN team logo URL pattern from the same source as the sport detail pages.</span>
+    </div>
+    <div class="bug-screen">Home</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p0">P0 — NOW</div>
+    <div class="bug-desc">
+      <strong>"Watch Live" button routes nowhere</strong>
+      <span>The orange "Watch Live" button on the featured game card is the most prominent CTA on the home screen. If it does nothing, it destroys trust immediately. Fix: route to the game detail page (Gamecast tab). If you later want to link actual streams, swap to an external URL. But it must DO something.</span>
+    </div>
+    <div class="bug-screen">Home</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p0">P0 — NOW</div>
+    <div class="bug-desc">
+      <strong>NFL Standings — multiple teams ranked "1" in same conference</strong>
+      <span>The AFC standings show New England, Pittsburgh, Jacksonville, and Denver all listed as rank 1. This is because NFL standings group by division and each division has its own #1 — but the UI renders them all as "1" without a visible division header separator. Fix: add AFC East / AFC North / AFC South / AFC West group headers between division blocks, and number teams within each division (1–4) clearly.</span>
+    </div>
+    <div class="bug-screen">Standings</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p1">P1 — TODAY</div>
+    <div class="bug-desc">
+      <strong>Player name tap from Box Score → Player Page not verified</strong>
+      <span>User specifically flagged this. Every player name in every box score must be tappable and navigate to that player's full detail page. Test with 3 different sports (NBA, MLB, NFL). If any don't route correctly, fix the navigation handler to pass the correct player ID.</span>
+    </div>
+    <div class="bug-screen">Game Detail</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p1">P1 — TODAY</div>
+    <div class="bug-desc">
+      <strong>"In One Breath" AI card appears empty by default</strong>
+      <span>The card shows the title bar but the AI summary content is collapsed or not loading. It should be expanded on first open with real AI-generated content. Tap to collapse, tap to re-expand. Verify the API call is completing and content is being written to state.</span>
+    </div>
+    <div class="bug-screen">Home</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p1">P1 — TODAY</div>
+    <div class="bug-desc">
+      <strong>Player Bio tab — ESPN bio text often returns null</strong>
+      <span>Many players in ESPN's API have no free-text biography. When this is null, the Bio tab should render a graceful fallback: show the biographical card (height, weight, birthdate, college, draft info) prominently, and where the bio paragraph would be, show a "No additional bio available" note rather than empty white space or a crash.</span>
+    </div>
+    <div class="bug-screen">Player Detail</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p1">P1 — TODAY</div>
+    <div class="bug-desc">
+      <strong>Fan Mode / Nerd Mode not visually differentiated</strong>
+      <span>The toggle exists in Profile but it's unclear if switching actually changes what stats are shown on game detail and player pages. Nerd Mode should show: advanced stats (PER, TS%, DVOA, xG etc.), analyst framing in text, raw data tables. Fan Mode should show: clean score, top 3 stats, friendly context language. Test the toggle with a live game open.</span>
+    </div>
+    <div class="bug-screen">Profile / Game Detail</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p2">P2 — THIS WEEK</div>
+    <div class="bug-desc">
+      <strong>Draft Center bar league chips — verify routing</strong>
+      <span>The Draft Center bar shows NFL / NBA / NHL / MLB chips. Tapping each should route to that specific league's draft page. NFL Draft is happening RIGHT NOW in April — this is a live content opportunity. Test each chip routes to the correct draft/[league] page.</span>
+    </div>
+    <div class="bug-screen">Home / Draft</div>
+  </div>
+  <div class="bug-item">
+    <div class="bug-priority p2">P2 — THIS WEEK</div>
+    <div class="bug-desc">
+      <strong>Article Reading Modes — AI calls may be uncached or failing silently</strong>
+      <span>The 4 reading modes (Original, Easy Read, Quick Take, Cross-Sport) are a killer feature. But if the AI calls fail silently, users just see a blank card. Add a loading skeleton + error state for each mode. Verify the cache-per-article logic is working: switching back to a previously loaded mode should be instant.</span>
+    </div>
+    <div class="bug-screen">Article</div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 3 — UI DECISIONS
+═══════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">03</div>
+      <div class="section-title-block">
+        <div class="section-label">Design Upgrades</div>
+        <div class="section-title">UI Changes to Make Now</div>
+        <div class="section-desc">Specific UX decisions — what to change, what to keep, and why. These are the details that separate a good app from one that feels premium.</div>
+      </div>
+    </div>
+
+```
+<div class="ui-decision-grid">
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Home — My Teams Strip</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">Plain gray circles with white letter initials (H, G)</div>
+      <div class="ui-after">Real team logo images from ESPN CDN, with team's primary color as circle border glow. Show team abbreviation below, game time if playing today.</div>
+      <div class="ui-reason">Initials kill personalization. A Rockets fan wants to see the Rockets logo — that's the emotional hook.</div>
+    </div>
+  </div>
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Home — Featured Game Card</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">"Watch Live" button — dead CTA, goes nowhere, creates confusion</div>
+      <div class="ui-after">Rename to "Open Gamecast →" and route directly to the game detail page. If the game is live, open directly to the Gamecast tab. If upcoming, open to Lineups tab.</div>
+      <div class="ui-reason">Users expect every button to do something. A dead button is worse than no button.</div>
+    </div>
+  </div>
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Standings — NFL</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">All teams ranked "1" within the same conference, no division headers, confusing "D" (draws) column</div>
+      <div class="ui-after">Group by division with clear headers (AFC East, AFC North, etc.). Number teams 1–4 within each division. Remove or clarify the "D" column — for NFL, show W/L/T or just W/L. Add division leader badge.</div>
+      <div class="ui-reason">NFL standings are division-first, not conference-rank like NBA. This is a data rendering mismatch.</div>
+    </div>
+  </div>
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Game Cards — Importance Tags</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">BUBBLE tag appearing on most games, making it feel meaningless</div>
+      <div class="ui-after">Enforce tag hierarchy: only 1 tag per game, in priority order: MUST WATCH → OT → RIVALRY → CLOSE → TIGHT → BUBBLE → PLAYOFF RACE → FINAL. BUBBLE should only show for teams within 2 games of the cut line.</div>
+      <div class="ui-reason">When every game is BUBBLE, nothing feels urgent. Scarcity = impact.</div>
+    </div>
+  </div>
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Player Detail — Bio Tab</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">Bio tab may crash or show empty space when ESPN bio paragraph is null</div>
+      <div class="ui-after">Always show structured biographical card first (birthdate, hometown, college, draft year/round/pick, experience). Below that, show ESPN bio if available. If null, show "Career highlights" section from their stat milestones instead.</div>
+      <div class="ui-reason">The bio card data is always available from ESPN. Never show an empty tab.</div>
+    </div>
+  </div>
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Article — Reading Mode Selector</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">Reading modes buried in a pill selector below the article — most users won't discover them</div>
+      <div class="ui-after">Move to the top of the article, styled as prominent tab pills right below the headline. Label them with icons: 📰 Original · 💬 Easy · ⚡ Quick Take · 🔄 Cross-Sport. First-time view shows a subtle tooltip: "Tap to change how you read this."</div>
+      <div class="ui-reason">This is your most differentiated feature. It needs to be the first thing people notice.</div>
+    </div>
+  </div>
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Home — Context Chips</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">"124 upcoming" chip feels abstract — 124 upcoming what?</div>
+      <div class="ui-after">Make chips specific and tappable: "🔥 3 nail-biters live" taps → Scores with Close Games filter. "📅 15 MLB games today" taps → Scores filtered to MLB. Every chip should navigate somewhere.</div>
+      <div class="ui-reason">Chips are navigation shortcuts, not just info labels. Make them do something.</div>
+    </div>
+  </div>
+  <div class="ui-card">
+    <div class="ui-card-header"><span class="screen">Search — Trending Section</span></div>
+    <div class="ui-card-body">
+      <div class="ui-before">Pre-populated "Recent / Trending" suggestions before typing — unclear if these are real or placeholder</div>
+      <div class="ui-after">Show 3 real trending searches based on what's happening today (e.g., top-searched players during live games). If no data, show "Popular right now" chips for the 3 biggest matchups today.</div>
+      <div class="ui-reason">Empty or generic trending makes search feel broken. Real trending makes it feel alive.</div>
+    </div>
+  </div>
+</div>
+
+<div class="callout" style="margin-top:32px;">
+  <div class="callout-icon">🎨</div>
+  <div>
+    <div class="callout-title">The One Visual Thing That Changes Everything</div>
+    <div class="callout-body">Add a very subtle animated pulse to the orange "LIVE" dot on any live game card. A slow, breathing glow animation (0.8s ease-in-out, infinite) makes the whole app feel alive and real-time — even when nothing's changed. This is what ESPN has and it's what makes live sports apps feel premium. It's 5 lines of CSS.</div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 4 — WEEK-BY-WEEK EXECUTION PLAN
+═══════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">04</div>
+      <div class="section-title-block">
+        <div class="section-label">Step by Step</div>
+        <div class="section-title">7-Day Launch Execution Plan</div>
+        <div class="section-desc">Everything sequenced in order. Day 1–2 are bugs that block trust. Day 3–4 are the UX upgrades. Day 5–6 are features that differentiate. Day 7 is launch prep.</div>
+      </div>
+    </div>
+
+```
+<!-- DAY 1-2 -->
+<div class="phase-block">
+  <div class="phase-header">
+    <div class="phase-badge week1">Day 1–2</div>
+    <div class="phase-title">FIX THE TRUST BREAKERS</div>
+    <div class="phase-time">Tuesday – Wednesday</div>
+  </div>
+  <div class="task-list">
+    <div class="task">
+      <div>
+        <div class="task-name">Fix My Teams strip — render real team logos</div>
+        <div class="task-detail">Pull ESPN team logo URLs (pattern: a.espncdn.com/i/teamlogos/[league]/500/[teamId].png). Apply team's primary color as circular border. Show team abbreviation + game time below each circle if playing today.</div>
+      </div>
+      <div class="task-tag bug">Bug Fix</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Wire "Watch Live" → "Open Gamecast" routing</div>
+        <div class="task-detail">Rename button. Route to game/[id] with Gamecast tab active if live, Lineups tab if upcoming. Test with 3 different sport types.</div>
+      </div>
+      <div class="task-tag bug">Bug Fix</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Fix NFL standings — division grouping + headers</div>
+        <div class="task-detail">Add division header rows (AFC East, AFC North, etc.) between each group. Number teams 1–4 within division. Remove or rename the "D" column to "T" (ties) with a tooltip. Add "Division Leader" subtle indicator on rank 1 team per division.</div>
+      </div>
+      <div class="task-tag bug">Bug Fix</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Verify all player name taps → player detail page</div>
+        <div class="task-detail">Test in game box score for NBA, MLB, NFL, NHL. Test from team roster page. Test from search results. Every name must route to player/[id]. Fix any broken navigation handlers.</div>
+      </div>
+      <div class="task-tag bug">Bug Fix</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Add LIVE dot pulse animation globally</div>
+        <div class="task-detail">CSS keyframes: @keyframes livePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.5) } 50% { box-shadow: 0 0 0 6px transparent } }. Apply to every red LIVE indicator dot. Takes 5 minutes, makes the whole app feel premium.</div>
+      </div>
+      <div class="task-tag ui">UI Polish</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Fix "In One Breath" — load expanded, add loading skeleton</div>
+        <div class="task-detail">Make the card open expanded by default on first load. Add a shimmer skeleton while the AI content loads. If API call fails, show "Tap to refresh" fallback. Card should never appear empty.</div>
+      </div>
+      <div class="task-tag bug">Bug Fix</div>
+    </div>
+  </div>
+</div>
+
+<!-- DAY 3-4 -->
+<div class="phase-block">
+  <div class="phase-header">
+    <div class="phase-badge week2">Day 3–4</div>
+    <div class="phase-title">UX UPGRADES & POLISH</div>
+    <div class="phase-time">Thursday – Friday</div>
+  </div>
+  <div class="task-list">
+    <div class="task">
+      <div>
+        <div class="task-name">Elevate Article Reading Modes to top of article</div>
+        <div class="task-detail">Move the 4-mode pill selector to directly below the article headline and hero image. Add icons (📰 💬 ⚡ 🔄). Add first-time tooltip. Cache verification: switching between previously loaded modes must be instant, no re-fetch.</div>
+      </div>
+      <div class="task-tag ui">UI Upgrade</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Make Home context chips tappable + navigating</div>
+        <div class="task-detail">"3 nail-biters" → opens Scores with Close Games filter. "15 MLB games" → opens Scores filtered to MLB. "1 upset alert" → opens Scores sorted by upsets. Add chevron to chips to signal tappability.</div>
+      </div>
+      <div class="task-tag ui">UI Upgrade</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Fix Player Bio tab — never show empty state</div>
+        <div class="task-detail">When ESPN bio text is null: display structured biographical card prominently (birthdate, hometown, height/weight, college, draft info). Add a "Career at a Glance" section generated from their milestone data. No tab should ever be empty.</div>
+      </div>
+      <div class="task-tag ui">UI Upgrade</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Enforce importance tag hierarchy on score cards</div>
+        <div class="task-detail">Only 1 tag per game card. Priority: MUST WATCH → OT → RIVALRY → CLOSE → TIGHT → BUBBLE → PLAYOFF RACE → FINAL. Tighten BUBBLE threshold: only teams within 2 games of cut line. This makes urgent games feel truly urgent.</div>
+      </div>
+      <div class="task-tag ui">UI Upgrade</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Add Nerd Mode visual differentiation</div>
+        <div class="task-detail">When Nerd Mode is on: game cards show +/- differential. Player stat cards show advanced metrics (PER, TS%, xG, WHIP). Game detail box score shows additional columns. Add a small "NERD" badge in the app header when Nerd Mode is active so users know it's on.</div>
+      </div>
+      <div class="task-tag feature">Feature</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Test and fix Draft page — NFL Draft is LIVE now</div>
+        <div class="task-detail">NFL Draft is happening in April 2026. This is a huge real-time content opportunity. Open the draft page, verify: On The Clock banner showing current team, Round 1 picks populating, prospect big board sortable. Fix any data issues. Promote the Draft Center bar on Home.</div>
+      </div>
+      <div class="task-tag data">Data</div>
+    </div>
+  </div>
+</div>
+
+<!-- DAY 5-6 -->
+<div class="phase-block">
+  <div class="phase-header">
+    <div class="phase-badge week3">Day 5–6</div>
+    <div class="phase-title">THE DIFFERENTIATORS</div>
+    <div class="phase-time">Saturday – Sunday</div>
+  </div>
+  <div class="task-list">
+    <div class="task">
+      <div>
+        <div class="task-name">Build Hot Takes — the first social feature</div>
+        <div class="task-detail">Add a "Hot Takes" card on the Home tab below Today's Games. Users can submit a short take (max 160 chars) on any current game or matchup. Takes shown with team color accent, upvote count, and sport tag. No auth required yet — anonymous takes with localStorage identity. This is the first step toward the community layer.</div>
+      </div>
+      <div class="task-tag social">Social</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Add "Share" to game cards + articles</div>
+        <div class="task-detail">Every game card and article card gets a share icon (top right corner on long-press or 3-dot menu). Generates a clean share card with the 4th Quarter logo, game score or headline, and a deep link. This is your organic growth loop — fans sharing scores and takes from 4th Quarter.</div>
+      </div>
+      <div class="task-tag feature">Feature</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Wire up push notifications for My Teams</div>
+        <div class="task-detail">Use Expo Push Notifications. Three notification types: (1) Game starting in 15 min for a My Teams game. (2) Final score alert when My Teams game ends. (3) Major news alert (injury, trade) mentioning a My Teams player. Request permission on first My Team follow if not already granted.</div>
+      </div>
+      <div class="task-tag feature">Feature</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Add "Pick the Winner" prediction on upcoming game cards</div>
+        <div class="task-detail">For any upcoming game card, add two small team logo buttons below the matchup: "Pick [Team A]" or "Pick [Team B]". Stores locally. After game ends, show result: "You called it 🎯" or "Better luck next time". Show your overall pick record on your profile. No auth needed — this works purely with AsyncStorage.</div>
+      </div>
+      <div class="task-tag social">Social</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Upgrade Sports grid cards with real-time data badges</div>
+        <div class="task-detail">Each sport card currently shows a static "Playoffs" or "Regular Season" badge. Make them live: show the count of currently live games ("● 3 Live"), the top matchup right now (e.g., "Lakers vs Warriors 🔥"), and the number of games today. Tapping the live badge goes directly to Scores filtered to that sport.</div>
+      </div>
+      <div class="task-tag ui">UI Upgrade</div>
+    </div>
+  </div>
+</div>
+
+<!-- DAY 7 -->
+<div class="phase-block">
+  <div class="phase-header">
+    <div class="phase-badge week4">Day 7</div>
+    <div class="phase-title">LAUNCH PREP</div>
+    <div class="phase-time">Monday</div>
+  </div>
+  <div class="task-list">
+    <div class="task">
+      <div>
+        <div class="task-name">Full end-to-end walkthrough — every screen, every tap</div>
+        <div class="task-detail">Fresh install → Onboarding → follow 3 teams → Home → tap My Teams logo → tap game card → Gamecast → tap player name → player page → bio tab → game log → tap game → back to home → Scores → filter by rivalry → tap article → change reading mode → Profile → toggle Nerd Mode → re-run onboarding. Document every break.</div>
+      </div>
+      <div class="task-tag infra">QA</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Performance check — cold start under 2 seconds</div>
+        <div class="task-detail">Measure cold start to Home tab fully loaded. Target: under 2 seconds. If slower, check: React Query stale times, image loading (lazy load team logos), In One Breath AI call (don't block home load — load in background). App should feel instant.</div>
+      </div>
+      <div class="task-tag infra">Performance</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Build your launch moment around the NFL Draft</div>
+        <div class="task-detail">The NFL Draft is happening RIGHT NOW in April. Post a video of the Draft page live-updating picks, the "On The Clock" banner, and your reading modes on draft news. Caption: "ESPN doesn't let you read draft news in your team's language. We do." This is your launch hook — it's timely, it's visual, and it's something ESPN can't match.</div>
+      </div>
+      <div class="task-tag feature">GTM</div>
+    </div>
+    <div class="task">
+      <div>
+        <div class="task-name">Record a 60-second demo video</div>
+        <div class="task-detail">Screen record: open app, show personalized home with your team logos, tap into a live game for the Gamecast + momentum graph, tap a player for their milestone tracker, open an article and switch between reading modes, show the standings with playoff zone coloring. No voiceover needed — the product speaks for itself. Post everywhere.</div>
+      </div>
+      <div class="task-tag feature">GTM</div>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 5 — SOCIAL VISION (PHASE 2)
+═══════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">05</div>
+      <div class="section-title-block">
+        <div class="section-label">The Real Differentiator</div>
+        <div class="section-title">The Community Layer — Phase 2</div>
+        <div class="section-desc">This is what ESPN can never build. They're a corporate media company. You're fan-built. Here's the full social vision for after the 7-day launch sprint.</div>
+      </div>
+    </div>
+
+```
+<div class="vision-grid">
+  <div class="vision-card v1">
+    <div class="vision-emoji">🔥</div>
+    <div class="vision-name">Hot Takes Feed</div>
+    <div class="vision-desc">Short-form fan opinions (160 chars max) on any game, team, or player. Upvote the fire takes. Each take is anchored to a sport/team tag. Top takes surface on the relevant team page and game card.</div>
+  </div>
+  <div class="vision-card v2">
+    <div class="vision-emoji">💬</div>
+    <div class="vision-name">Game Chat Rooms</div>
+    <div class="vision-desc">Live chat room that auto-opens for any game that goes live. Fans from both teams in the same room. Auto-pinned context updates ("Tatum just hit a go-ahead 3"). Closes 30 mins after final buzzer.</div>
+  </div>
+  <div class="vision-card v3">
+    <div class="vision-emoji">🎯</div>
+    <div class="vision-name">Pick Record</div>
+    <div class="vision-desc">Track your game predictions. Win % per sport. Season leaderboard by sport fanbase. "Best Knicks predictor this week." Bragging rights — this is the social glue that keeps people coming back daily.</div>
+  </div>
+  <div class="vision-card v4">
+    <div class="vision-emoji">⚡</div>
+    <div class="vision-name">Fan Reactions</div>
+    <div class="vision-desc">6 reactions on every news article and game recap: 🔥 😤 💀 🏆 😂 🤔. Shows real-time reaction counts. Creates a sense of crowd energy without needing text input. Zero friction.</div>
+  </div>
+  <div class="vision-card v5">
+    <div class="vision-emoji">👤</div>
+    <div class="vision-name">Fan Profiles</div>
+    <div class="vision-desc">Your fandom, visible: teams you follow, pick record, top sport, Hot Takes rep score. Follow fans whose takes you trust. "People who follow the same teams as you also liked this take." Network effects start here.</div>
+  </div>
+  <div class="vision-card v6">
+    <div class="vision-emoji">✍️</div>
+    <div class="vision-name">Fan Articles</div>
+    <div class="vision-desc">Any fan can write a post. Top posts get featured in the relevant team's News tab. Verified fan badge for top contributors. This is your content flywheel — fans creating content for other fans, for free.</div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 6 — MARKET MOVE
+═══════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">06</div>
+      <div class="section-title-block">
+        <div class="section-label">Go-To-Market</div>
+        <div class="section-title">How to Make a Move This Week</div>
+        <div class="section-desc">The product is ready enough. The NFL Draft is happening now. Here's how you put 4th Quarter on the map this week.</div>
+      </div>
+    </div>
+
+```
+<div class="market-grid">
+  <div class="market-card">
+    <div class="market-card-title">🏈 The NFL Draft Moment</div>
+    <p>The NFL Draft is live in April. Post a video of your Draft page: On The Clock banner updating live, round-by-round picks coming in, team needs section shifting after each pick. Caption: "Finally a draft tracker built for fans, not analysts." Tag NFL Draft creators and Reddit r/nfl.</p>
+  </div>
+  <div class="market-card">
+    <div class="market-card-title">📱 The Demo Hook</div>
+    <p>Record a 60-second TikTok/Reel: "I built a better ESPN." Show: personalized home with your teams, live game Gamecast, tap a player mid-game and see their milestone tracker, open an article and switch to Easy Read mode. End with the 4th Quarter logo. This is the video that gets shared.</p>
+  </div>
+  <div class="market-card">
+    <div class="market-card-title">🎯 The First 100 Users</div>
+    <p>Post the app link in these specific communities: r/nba, r/nfl, r/soccer, Twitter/X sports spaces, Discord sports servers. Don't say "check out my app." Say: "I got annoyed at ESPN so I rebuilt it. Here's what I changed." Authenticity converts way better than marketing.</p>
+  </div>
+  <div class="market-card">
+    <div class="market-card-title">⚡ The Differentiation Line</div>
+    <p>One sentence you can say everywhere: <em>"ESPN shows you the game. 4th Quarter explains why it matters — in your language, for your teams, with your people."</em> That line hits on personalization, AI reading modes, and the coming social layer all at once.</p>
+  </div>
+</div>
+
+<div class="callout">
+  <div class="callout-icon">🚀</div>
+  <div>
+    <div class="callout-title">The Big Strategic Bet: Own One Thing ESPN Can't Touch</div>
+    <div class="callout-body">ESPN will never let fans write articles that appear next to their journalists. They will never build a game chat room. They will never show you "your picks record vs. other Rockets fans." These are things that require being fan-first, and ESPN is a corporation first. Pick one of these — the Hot Takes feed or the Pick Record — and make it absolutely undeniable in the next 30 days. That one social feature is what gets written about. That's your moat.</div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 7 — TECH DEBT TO PLAN FOR
+═══════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-number">07</div>
+      <div class="section-title-block">
+        <div class="section-label">Technical Foundation</div>
+        <div class="section-title">Tech Debt to Tackle in Month 2</div>
+        <div class="section-desc">Not urgent for launch, but these will become blockers as you grow. Plan for them now.</div>
+      </div>
+    </div>
+
+```
+<div class="debt-list">
+  <div class="debt-item">
+    <div class="area">Auth</div>
+    <div>
+      <div class="fix">Add user accounts (Supabase Auth or Clerk)</div>
+      <div class="issue">Everything lives in AsyncStorage. Can't do cross-device sync, social features, or any server-side personalization. This is the infrastructure prerequisite for every community feature.</div>
+    </div>
+  </div>
+  <div class="debt-item">
+    <div class="area">Search</div>
+    <div>
+      <div class="fix">Move from static 2,284-line index to real search backend</div>
+      <div class="issue">The local player/team index will miss newly signed players, trades, and international athletes. Build a lightweight search endpoint backed by the ESPN API that covers the long tail.</div>
+    </div>
+  </div>
+  <div class="debt-item">
+    <div class="area">ESPN API</div>
+    <div>
+      <div class="fix">Add rate limit handling + fallback caching layer</div>
+      <div class="issue">If ESPN's unofficial API has an outage or rate limits your server, the whole app breaks. Build a Redis or Supabase cache layer that serves the last-known good data while the API is down.</div>
+    </div>
+  </div>
+  <div class="debt-item">
+    <div class="area">AI Costs</div>
+    <div>
+      <div class="fix">Add cost controls for AI features (In One Breath, Article Modes, Live Tracker)</div>
+      <div class="issue">Every AI call costs money. Once you have real users, "In One Breath" refreshing on every pull-to-refresh could get expensive fast. Add smart caching: only regenerate if the underlying data has changed since last generation.</div>
+    </div>
+  </div>
+  <div class="debt-item">
+    <div class="area">Analytics</div>
+    <div>
+      <div class="fix">Add basic event tracking (Mixpanel or PostHog free tier)</div>
+      <div class="issue">Right now you have no idea which features users actually use, which tabs get visited, or where people drop off. You need this data to make smart product decisions in month 2.</div>
+    </div>
+  </div>
+  <div class="debt-item">
+    <div class="area">WebSocket</div>
+    <div>
+      <div class="fix">Stress test WebSocket connections for multiple simultaneous live games</div>
+      <div class="issue">On a Sunday in NFL season, you could have 14 games live simultaneously. Verify the WebSocket architecture handles multiple concurrent game subscriptions without memory leaks or missed updates.</div>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════ -->
+
+<div class="footer">
+  <div class="footer-title">BUILT FOR THE <span>FANS</span>.</div>
+  <div class="footer-sub">4th Quarter · Full Scope Plan · April 2026 · 47 tasks · 7 days to market-ready</div>
+</div>
+
+</body>
+</html>
