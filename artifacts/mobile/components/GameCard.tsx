@@ -354,10 +354,10 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 />
                 <Text style={[hero.ctaPillText, { color: leagueColor }]}>
                   {isLive
-                    ? (isTennis ? "Live Match" : isCombat ? "Live Fight" : isGolf ? "Live Leaderboard" : isMotor ? "Live Race" : "Watch Live")
+                    ? (isTennis ? "Live Match" : isCombat ? "Live Fight" : isGolf ? "Live Leaderboard" : isMotor ? "Live Race" : "Open Gamecast")
                     : isFinished
                     ? (isCombat ? "Fight Result" : isGolf ? "Final Results" : isMotor ? "Race Result" : "Full Recap")
-                    : (isTennis ? "Match Preview" : isCombat ? "Fight Card" : isGolf ? "Tournament Info" : isMotor ? "Race Preview" : "Match Preview")}
+                    : (isTennis ? "Match Preview" : isCombat ? "Fight Card" : isGolf ? "Tournament Info" : isMotor ? "Race Preview" : "Lineups & Preview")}
                 </Text>
                 <Text style={[hero.ctaChevron, { color: leagueColor }]}>›</Text>
               </View>

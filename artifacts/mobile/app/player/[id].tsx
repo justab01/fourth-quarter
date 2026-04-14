@@ -2146,10 +2146,16 @@ export default function PlayerScreen() {
               </View>
             );
           })}
-          {/* Static bio text as fallback */}
-          {player.bio && (
-            <Text style={bioTab.bioText}>{player.bio}</Text>
-          )}
+          {/* ESPN bio text, or graceful fallback */}
+          {player.bio
+            ? <Text style={bioTab.bioText}>{player.bio}</Text>
+            : (
+              <View style={bioTab.noBioRow}>
+                <Ionicons name="information-circle-outline" size={14} color={C.textTertiary} />
+                <Text style={bioTab.noBioText}>No additional biography available for this player.</Text>
+              </View>
+            )
+          }
         </ScrollView>
       );
       case "Game Log": {
@@ -2420,4 +2426,6 @@ const bioTab = StyleSheet.create({
   label: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_500Medium" },
   value: { color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold" },
   bioText: { color: C.textSecondary, fontSize: 14, lineHeight: 22, fontFamily: "Inter_400Regular", marginTop: 12 },
+  noBioRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, padding: 12, backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10 },
+  noBioText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
 });

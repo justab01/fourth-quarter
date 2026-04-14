@@ -25,6 +25,20 @@ import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportA
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
 
+function getTeamEspnLogoUrl(teamName: string, league: string): string | null {
+  const team = ALL_TEAMS.find(t => t.name === teamName);
+  if (!team?.abbr) return null;
+  const abbr = team.abbr.toLowerCase();
+  const sportMap: Record<string, string> = {
+    NBA: "nba", NFL: "nfl", MLB: "mlb", NHL: "nhl",
+    WNBA: "wnba", NCAAB: "mens-college-basketball",
+    MLS: "soccer", EPL: "soccer", UCL: "soccer", LIGA: "soccer",
+  };
+  const sport = sportMap[league];
+  if (!sport) return null;
+  return `https://a.espncdn.com/i/teamlogos/${sport}/500/${abbr}.png`;
+}
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -166,40 +180,52 @@ const secStyles = StyleSheet.create({
 });
 
 function InOneBreath() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["in-one-breath"],
     queryFn: () => api.getInOneBreath(),
     staleTime: 120_000,
     refetchInterval: 120_000,
   });
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+
+  const header = (
+    <View style={iobStyles.header}>
+      <Ionicons name="sparkles" size={14} color={C.accentGold} />
+      <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
+      <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
+      {isLoading
+        ? <ActivityIndicator color={C.accent} size="small" style={{ marginLeft: 4 }} />
+        : <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={16} color={C.textSecondary} style={{ marginLeft: 4 }} />
+      }
+    </View>
+  );
 
   if (isLoading) {
     return (
-      <Pressable style={iobStyles.card} onPress={() => setExpanded(v => !v)}>
+      <View style={iobStyles.card}>
         <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-        <View style={iobStyles.header}>
-          <Ionicons name="sparkles" size={14} color={C.accentGold} />
-          <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
-          <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
-          <ActivityIndicator color={C.accent} size="small" style={{ marginLeft: 4 }} />
+        {header}
+        <View style={iobStyles.shimmerWrap}>
+          {[100, 90, 95, 75].map((w, i) => (
+            <View key={i} style={[iobStyles.shimmerLine, { width: `${w}%` }]} />
+          ))}
         </View>
-      </Pressable>
+      </View>
     );
   }
-
-  if (!data?.summary) return null;
 
   return (
     <Pressable onPress={() => setExpanded(v => !v)} style={iobStyles.card}>
       <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-      <View style={iobStyles.header}>
-        <Ionicons name="sparkles" size={14} color={C.accentGold} />
-        <Text style={iobStyles.headerLabel}>IN ONE BREATH</Text>
-        <View style={iobStyles.aiBadge}><Text style={iobStyles.aiText}>AI</Text></View>
-        <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={16} color={C.textSecondary} style={{ marginLeft: 4 }} />
-      </View>
-      {expanded && <Text style={iobStyles.summary}>{data.summary}</Text>}
+      {header}
+      {expanded && (
+        data?.summary
+          ? <Text style={iobStyles.summary}>{data.summary}</Text>
+          : <Pressable onPress={() => refetch()} style={iobStyles.retryRow}>
+              <Ionicons name="refresh" size={13} color={C.accent} />
+              <Text style={iobStyles.retryText}>Tap to refresh</Text>
+            </Pressable>
+      )}
     </Pressable>
   );
 }
@@ -217,6 +243,10 @@ const iobStyles = StyleSheet.create({
   },
   aiText: { color: C.accent, fontSize: 8, fontWeight: "900", letterSpacing: 0.8 },
   summary: { color: "#AEAEB2", fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
+  shimmerWrap: { gap: 7 },
+  shimmerLine: { height: 12, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 6 },
+  retryRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  retryText: { color: C.accent, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 });
 
 function MoversChips({ allGames }: { allGames: Game[] }) {
@@ -295,7 +325,7 @@ function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game
               ? (featured.homeTeam === team ? featured.homeTeamLogo : featured.awayTeamLogo)
               : allGames.find(g => g.homeTeam === team)?.homeTeamLogo
                 ?? allGames.find(g => g.awayTeam === team)?.awayTeamLogo
-                ?? null;
+                ?? getTeamEspnLogoUrl(team, league);
           return (
             <Pressable key={team} onPress={() => goToTeam(team, league)} style={tileStyles.tile}>
               <TeamLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
@@ -706,7 +736,8 @@ export default function HubScreen() {
   const isHouston = myTeams.some(t => HOUSTON_TEAMS.includes(t));
 
   const handleGamePress = (game: Game) => {
-    router.push({ pathname: "/game/[id]", params: { id: game.id } } as any);
+    const tab = game.status === "live" ? "gamecast" : game.status === "upcoming" ? "lineups" : "gamecast";
+    router.push({ pathname: "/game/[id]", params: { id: game.id, tab } } as any);
   };
 
   const handleArticlePress = (a: NewsArticle) => {

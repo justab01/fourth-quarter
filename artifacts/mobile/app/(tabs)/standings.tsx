@@ -397,6 +397,8 @@ export default function StandingsScreen() {
   const hasHomeAway = standings.some(e => e.homeRecord != null);
   const hasConferences = standings.some(e => e.conference != null);
   const hasClinch = standings.some(e => e.clinched != null);
+  const hasDivisions = standings.some(e => e.division != null && e.conference != null && e.division !== e.conference);
+  const isNFL = activeLeague === "NFL";
   const conferences = hasConferences
     ? [...new Set(standings.map(e => e.conference).filter(Boolean))] as string[]
     : [null];
@@ -510,9 +512,13 @@ export default function StandingsScreen() {
             )}
 
             {conferences.map(conf => {
-              const confStandings = (conf
-                ? standings.filter(e => e.conference === conf)
-                : standings).sort((a, b) => (a.playoffSeed ?? a.rank) - (b.playoffSeed ?? b.rank));
+              const filtered = conf ? standings.filter(e => e.conference === conf) : standings;
+              const confStandings = [...filtered].sort((a, b) => {
+                if (hasDivisions && a.division && b.division) {
+                  if (a.division !== b.division) return a.division.localeCompare(b.division);
+                }
+                return (a.playoffSeed ?? a.rank) - (b.playoffSeed ?? b.rank);
+              });
               if (confStandings.length === 0) return null;
               const isCollapsed = conf ? collapsedConfs.has(conf) : false;
               const toggleConf = () => {
@@ -547,7 +553,7 @@ export default function StandingsScreen() {
                 <Text style={styles.thRank}>#</Text>
                 <Text style={styles.thTeam}>TEAM</Text>
                 <Text style={styles.thStat}>W</Text>
-                {hasDraws && <Text style={styles.thStat}>D</Text>}
+                {hasDraws && <Text style={styles.thStat}>{isNFL ? "T" : "D"}</Text>}
                 <Text style={styles.thStat}>L</Text>
                 {hasPoints && <Text style={styles.thStat}>PTS</Text>}
                 {hasGamesBack && !hasPoints && <Text style={styles.thStat}>GB</Text>}
@@ -562,9 +568,20 @@ export default function StandingsScreen() {
                 const isExpanded = expandedTeam === entry.teamName;
                 const winRate = entry.winPct;
                 const barWidth = Math.max(2, winRate * 60);
+                const prevEntry = confStandings[idx - 1];
+                const showDivHeader = hasDivisions && entry.division &&
+                  entry.division !== prevEntry?.division;
 
                 return (
                   <View key={entry.teamName}>
+                    {/* Division header for NFL-style standings */}
+                    {showDivHeader && (
+                      <View style={styles.divisionHeader}>
+                        <View style={[styles.divisionDot, { backgroundColor: leagueMeta.color }]} />
+                        <Text style={[styles.divisionTitle, { color: leagueMeta.color }]}>{entry.division}</Text>
+                        <View style={styles.divisionLine} />
+                      </View>
+                    )}
                     {/* Zone separator */}
                     {boundary && (
                       <ZoneSeparator zone={boundary.zone} prevZone={boundary.prevZone} />
@@ -847,6 +864,14 @@ const styles = StyleSheet.create({
   confTitle: { fontSize: 14, fontWeight: "900", fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
   confLine: { flex: 1, height: 1, backgroundColor: C.separator },
   confCount: { fontSize: 10, color: C.textTertiary, fontWeight: "600", marginLeft: 4 },
+
+  divisionHeader: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 16, paddingVertical: 8, marginTop: 6,
+  },
+  divisionDot: { width: 6, height: 6, borderRadius: 3 },
+  divisionTitle: { fontSize: 11, fontWeight: "800", fontFamily: "Inter_700Bold", letterSpacing: 0.8, textTransform: "uppercase" },
+  divisionLine: { flex: 1, height: 1, backgroundColor: C.separator },
 
   clinchBadge: {
     borderWidth: 1, borderRadius: 4,

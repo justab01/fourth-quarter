@@ -126,10 +126,12 @@ function playBadge(type: PlayType, desc: string): string | null {
 }
 
 export default function GameDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<GameTab>("gamecast");
+  const [activeTab, setActiveTab] = useState<GameTab>(
+    (tabParam as GameTab | undefined) ?? "gamecast"
+  );
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const { data, isLoading } = useQuery({
