@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
   Platform, ActivityIndicator, Image, Animated, Dimensions,
@@ -440,28 +440,35 @@ function WinProbBar({ game, dc }: { game: any; dc: string }) {
   const homeLeading = homeWinProb > 0.5;
   const isToss = Math.abs(homeWinProb - 0.5) < 0.08;
 
-  const homeShort = game.homeTeam.split(" ").slice(-1)[0];
-  const awayShort = game.awayTeam.split(" ").slice(-1)[0];
+  const homeShort = game.homeTeam.split(" ").slice(-1)[0].toUpperCase();
+  const awayShort = game.awayTeam.split(" ").slice(-1)[0].toUpperCase();
+  const awayPct  = Math.round(awayWinProb * 100);
+  const homePct  = Math.round(homeWinProb * 100);
 
   return (
     <View style={wpb.wrap}>
+      {/* Label row: AWAY 38%  |  WIN PROBABILITY  |  62% HOME */}
       <View style={wpb.labelRow}>
-        <Text style={[wpb.teamLabel, { color: !homeLeading ? dc : C.textTertiary }]}>{awayShort}</Text>
-        <Text style={wpb.centerLabel}>
-          {isToss ? "Toss-up" : `${homeLeading ? homeShort : awayShort} favored`}
-        </Text>
-        <Text style={[wpb.teamLabel, { color: homeLeading ? dc : C.textTertiary, textAlign: "right" }]}>{homeShort}</Text>
+        <View style={wpb.teamBlock}>
+          <Text style={[wpb.pct, { color: !homeLeading ? dc : C.textTertiary }]}>{awayPct}%</Text>
+          <Text style={[wpb.teamLabel, { color: !homeLeading ? dc : C.textTertiary }]}>{awayShort}</Text>
+        </View>
+        <Text style={wpb.centerLabel}>WIN PROBABILITY</Text>
+        <View style={[wpb.teamBlock, { alignItems: "flex-end" }]}>
+          <Text style={[wpb.pct, { color: homeLeading ? dc : C.textTertiary }]}>{homePct}%</Text>
+          <Text style={[wpb.teamLabel, { color: homeLeading ? dc : C.textTertiary }]}>{homeShort}</Text>
+        </View>
       </View>
+      {/* Split bar */}
       <View style={wpb.track}>
-        <View style={[wpb.awayFill, { flex: awayWinProb, backgroundColor: homeLeading ? `${dc}40` : dc }]} />
+        <View style={[wpb.fill, { flex: awayWinProb, backgroundColor: !homeLeading ? dc : `${dc}30` }]} />
         <View style={wpb.divider} />
-        <View style={[wpb.homeFill, { flex: homeWinProb, backgroundColor: homeLeading ? dc : `${dc}40` }]} />
+        <View style={[wpb.fill, { flex: homeWinProb, backgroundColor: homeLeading ? dc : `${dc}30` }]} />
       </View>
-      <View style={wpb.pctRow}>
-        <Text style={[wpb.pct, { color: !homeLeading ? dc : C.textTertiary }]}>{Math.round(awayWinProb * 100)}%</Text>
-        <Text style={wpb.pctLabel}>Win probability</Text>
-        <Text style={[wpb.pct, { color: homeLeading ? dc : C.textTertiary, textAlign: "right" }]}>{Math.round(homeWinProb * 100)}%</Text>
-      </View>
+      {/* Favored label */}
+      <Text style={wpb.favoredLabel}>
+        {isToss ? "Toss-up game" : `${homeLeading ? homeShort : awayShort} favored`}
+      </Text>
     </View>
   );
 }
@@ -469,18 +476,17 @@ function WinProbBar({ game, dc }: { game: any; dc: string }) {
 const wpb = StyleSheet.create({
   wrap: {
     backgroundColor: C.card, borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: C.cardBorder, gap: 8,
+    borderWidth: 1, borderColor: C.cardBorder, gap: 10,
   },
   labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  teamLabel: { fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold", minWidth: 60 },
-  centerLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
-  track: { flexDirection: "row", height: 8, borderRadius: 4, overflow: "hidden", backgroundColor: C.cardBorder },
-  awayFill: { height: "100%" },
+  teamBlock: { alignItems: "flex-start", minWidth: 60 },
+  pct: { fontSize: 22, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 26 },
+  teamLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 1, fontFamily: "Inter_600SemiBold", marginTop: 1 },
+  centerLabel: { color: C.textTertiary, fontSize: 9, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center" },
+  track: { flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", backgroundColor: C.cardBorder },
+  fill: { height: "100%" },
   divider: { width: 2, height: "100%", backgroundColor: C.background },
-  homeFill: { height: "100%" },
-  pctRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  pct: { fontSize: 16, fontWeight: "900", fontFamily: "Inter_700Bold", minWidth: 60 },
-  pctLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
+  favoredLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "600", textAlign: "center", letterSpacing: 0.3 },
 });
 
 // ─── Gamecast tab ──────────────────────────────────────────────────────────────
@@ -494,6 +500,20 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
     () => computeTrackerState(keyPlays, game),
     [keyPlays, game],
   );
+
+  // Key moments: pick the most notable plays for the horizontal strip
+  const keyMoments = React.useMemo(() => {
+    const plays = [...keyPlays].reverse();
+    // First try score plays and notable events
+    const hot = plays.filter((p: any) => {
+      const d = (p.description ?? "").toLowerCase();
+      return d.includes("three") || d.includes("goal") || d.includes("home run") ||
+             d.includes("dunk") || d.includes("timeout") || d.includes("turnover") ||
+             d.includes("interception") || d.includes("touchdown") || d.includes("save") ||
+             d.includes("overtime") || d.includes("penalty");
+    });
+    return (hot.length >= 3 ? hot : plays).slice(0, 6);
+  }, [keyPlays]);
 
   return (
     <View style={s.tabSection}>
@@ -536,45 +556,17 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
         />
       )}
 
-      {/* AI summary */}
+      {/* ── AI "Why It Matters" card with pulsing LIVE badge ─────────────── */}
       {data.aiSummary && (
-        <View style={s.aiCard}>
-          <View style={s.aiHeader}>
-            <Ionicons name="sparkles" size={15} color={dc} />
-            <Text style={[s.aiTitle, { color: dc }]}>AI Summary</Text>
-          </View>
-          <Text style={s.aiText}>{data.aiSummary}</Text>
-        </View>
+        <AiInsightCard summary={data.aiSummary} dc={dc} isLive={isLive} />
       )}
 
-      {/* Key plays */}
-      <View style={s.sectionHeader}>
-        <View style={[s.sectionAccent, { backgroundColor: dc }]} />
-        <Text style={s.sectionTitle}>Key Plays</Text>
-        {isLive && (
-          <>
-            <View style={{ flex: 1 }} />
-            <View style={s.liveChip}>
-              <View style={s.liveDotSmall} />
-              <Text style={s.liveChipText}>LIVE</Text>
-            </View>
-          </>
-        )}
-      </View>
-      {keyPlays.length === 0 ? (
-        <Text style={s.empty}>No key plays yet{isLive ? " — check back soon" : ""}</Text>
-      ) : (() => {
-        const reversed = [...keyPlays].reverse();
-        return (
-          <View style={s.playsCard}>
-            {reversed.map((play: any, i: number) => (
-              <PlayRow key={i} play={play} dc={dc} showDivider={i < reversed.length - 1} />
-            ))}
-          </View>
-        );
-      })()}
+      {/* ── Key Moments horizontal strip ─────────────────────────────────── */}
+      {keyMoments.length > 0 && (
+        <KeyMomentsStrip moments={keyMoments} dc={dc} isLive={isLive} />
+      )}
 
-      {/* Quick team stats */}
+      {/* ── Quick team stats ─────────────────────────────────────────────── */}
       {Object.keys(data.homeStats ?? {}).length > 0 && (
         <>
           <View style={s.sectionHeader}>
@@ -587,6 +579,106 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
     </View>
   );
 }
+
+// ─── AI Insight card with pulsing "UPDATING LIVE" ──────────────────────────────
+function AiInsightCard({ summary, dc, isLive }: { summary: string; dc: string; isLive: boolean }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!isLive) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 0.2, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,   duration: 800, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isLive, pulseAnim]);
+
+  return (
+    <View style={[aic.card, { borderColor: `${dc}30` }]}>
+      <LinearGradient
+        colors={[`${dc}0A`, "transparent"]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      />
+      <View style={aic.header}>
+        <Text style={[aic.sparkle, { color: dc }]}>✦</Text>
+        <Text style={[aic.label, { color: dc }]}>WHY IT MATTERS</Text>
+        {isLive && (
+          <View style={aic.liveRow}>
+            <Animated.View style={[aic.liveDot, { opacity: pulseAnim, backgroundColor: dc }]} />
+            <Text style={[aic.liveText, { color: dc }]}>UPDATING LIVE</Text>
+          </View>
+        )}
+      </View>
+      <Text style={aic.text}>{summary}</Text>
+    </View>
+  );
+}
+
+const aic = StyleSheet.create({
+  card: {
+    borderRadius: 14, borderWidth: 1, padding: 14,
+    backgroundColor: C.card, overflow: "hidden", gap: 10,
+  },
+  header: { flexDirection: "row", alignItems: "center", gap: 6 },
+  sparkle: { fontSize: 14, fontWeight: "900" },
+  label: { fontSize: 10, fontWeight: "800", letterSpacing: 1.5, textTransform: "uppercase", flex: 1 },
+  liveRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  liveDot: { width: 5, height: 5, borderRadius: 3 },
+  liveText: { fontSize: 9, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
+  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
+});
+
+// ─── Key Moments horizontal strip ─────────────────────────────────────────────
+function KeyMomentsStrip({ moments, dc, isLive }: {
+  moments: { time: string; description: string; team?: string }[];
+  dc: string;
+  isLive: boolean;
+}) {
+  return (
+    <View>
+      <View style={[s.sectionHeader, { marginBottom: 8 }]}>
+        <View style={[s.sectionAccent, { backgroundColor: dc }]} />
+        <Text style={s.sectionTitle}>Key Moments</Text>
+        {isLive && (
+          <>
+            <View style={{ flex: 1 }} />
+            <View style={s.liveChip}>
+              <View style={s.liveDotSmall} />
+              <Text style={s.liveChipText}>LIVE</Text>
+            </View>
+          </>
+        )}
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}
+        contentContainerStyle={km.strip}>
+        {moments.map((m, i) => {
+          const type = classifyPlay(m.description);
+          const isHot = type === "three" || type === "basket" || type === "goal";
+          return (
+            <View key={i} style={[km.chip, isHot && { borderColor: `${dc}55`, backgroundColor: `${dc}08` }]}>
+              <Text style={[km.qtr, isHot && { color: dc }]}>{m.time}</Text>
+              <Text style={km.desc} numberOfLines={3}>{m.description}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+const km = StyleSheet.create({
+  strip: { paddingHorizontal: 0, paddingBottom: 4, gap: 8, flexDirection: "row" },
+  chip: {
+    width: 148, padding: 10, borderRadius: 10,
+    backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder,
+  },
+  qtr: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, marginBottom: 4, textTransform: "uppercase" },
+  desc: { color: C.text, fontSize: 12, fontWeight: "600", lineHeight: 17 },
+});
 
 // ─── Individual play row ───────────────────────────────────────────────────────
 function PlayRow({ play, dc, showDivider }: { play: { time: string; description: string; team: string }; dc: string; showDivider: boolean }) {
