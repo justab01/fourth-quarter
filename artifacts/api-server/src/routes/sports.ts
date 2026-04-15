@@ -1919,6 +1919,88 @@ Respond with ONLY the 2-sentence summary, no quotes or extra text.`;
   }
 });
 
+// ─── AI GAME PREVIEW ─────────────────────────────────────────────────────────
+router.get("/sports/game-preview/:gameId", async (req, res): Promise<void> => {
+  const { gameId } = req.params;
+  const cacheKey = `game-preview-${gameId}`;
+  const cached = getCached<{ preview: string | null; homeTeam: string; awayTeam: string; league: string }>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    const dashIdx = gameId.indexOf("-");
+    const queryLeague = (req.query.league as string | undefined)?.toUpperCase();
+    let leagueKey: string;
+    let espnId: string;
+
+    if (dashIdx !== -1 && LEAGUE_CONFIG[gameId.slice(0, dashIdx).toUpperCase()]) {
+      leagueKey = gameId.slice(0, dashIdx).toUpperCase();
+      espnId = gameId.slice(dashIdx + 1);
+    } else if (queryLeague && LEAGUE_CONFIG[queryLeague]) {
+      leagueKey = queryLeague;
+      espnId = gameId;
+    } else {
+      res.status(400).json({ error: "Invalid game ID." });
+      return;
+    }
+
+    const cfg = LEAGUE_CONFIG[leagueKey]!;
+    const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/summary?event=${espnId}`;
+    const summaryJson = await espnFetch(summaryUrl) as any;
+
+    const comp = summaryJson?.header?.competitions?.[0];
+    const homeTeam = comp?.competitors?.find((c: any) => c.homeAway === "home")?.team?.displayName ?? "Home";
+    const awayTeam = comp?.competitors?.find((c: any) => c.homeAway === "away")?.team?.displayName ?? "Away";
+    const status = comp?.status?.type?.name ?? "";
+    const venue = comp?.venue?.fullName ?? "";
+    const notes = (summaryJson?.notes ?? []).map((n: any) => n.headline).filter(Boolean).join(". ");
+
+    if (!status.includes("STATUS_SCHEDULED") && !status.includes("STATUS_POSTPONED")) {
+      const result = { preview: null, homeTeam, awayTeam, league: leagueKey };
+      setCached(cacheKey, result, 60_000);
+      res.json(result);
+      return;
+    }
+
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      const fallback = `${awayTeam} travel to face ${homeTeam} in ${leagueKey} action${venue ? ` at ${venue}` : ""}. This matchup is one to watch as both sides look to make their mark this season.`;
+      const result = { preview: fallback, homeTeam, awayTeam, league: leagueKey };
+      setCached(cacheKey, result, 300_000);
+      res.json(result);
+      return;
+    }
+
+    const context = [
+      `Matchup: ${awayTeam} (away) vs ${homeTeam} (home)`,
+      `League: ${leagueKey}`,
+      venue ? `Venue: ${venue}` : null,
+      notes ? `Notes: ${notes}` : null,
+    ].filter(Boolean).join("\n");
+
+    const prompt = `You are a sharp, no-fluff sports analyst for the app "Fourth Quarter". Write a compelling 2-sentence preview for this upcoming game. Focus on what's at stake, the key storyline, and why fans should tune in. Be specific and exciting. No emojis. No quotes.\n\n${context}`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 110,
+        temperature: 0.75,
+      }),
+    });
+
+    const groqJson = await groqRes.json() as any;
+    const preview = groqJson.choices?.[0]?.message?.content?.trim() ?? `${awayTeam} face ${homeTeam} in a key ${leagueKey} matchup. Both teams will be looking to gain an edge as the season heats up.`;
+    const result = { preview, homeTeam, awayTeam, league: leagueKey };
+    setCached(cacheKey, result, 600_000);
+    res.json(result);
+  } catch (err) {
+    console.error("Game preview error:", err);
+    res.json({ preview: null, homeTeam: "", awayTeam: "", league: "" });
+  }
+});
+
 // ─── ATHLETE ENDPOINTS ────────────────────────────────────────────────────────
 // ESPN public APIs for individual athlete data (profile, stats, game log, search)
 

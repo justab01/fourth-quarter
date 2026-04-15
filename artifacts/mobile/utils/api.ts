@@ -101,6 +101,9 @@ export const api = {
 
   getSeasonalData: (sport: string) =>
     apiFetch<SeasonalSportData>(`/sports/seasonal/${encodeURIComponent(sport)}`),
+
+  getGamePreview: (gameId: string) =>
+    apiFetch<{ preview: string | null; homeTeam: string; awayTeam: string; league: string }>(`/sports/game-preview/${encodeURIComponent(gameId)}`),
 };
 
 export interface SeasonalEvent {

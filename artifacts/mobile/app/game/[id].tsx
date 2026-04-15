@@ -534,6 +534,11 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
         fieldPosition={trackerState.fieldPosition}
       />
 
+      {/* ── AI Preview card for upcoming games ───────────────────────────── */}
+      {!isLive && !isFinished && (
+        <AiPreviewCard gameId={game.id} dc={dc} />
+      )}
+
       {/* ── Live Tracker Panel (situation · scoring run · why it matters) ─── */}
       {(isLive || isFinished) && (
         <LiveTrackerPanel state={trackerState} accentColor={dc} game={game} />
@@ -579,6 +584,68 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
     </View>
   );
 }
+
+// ─── AI Preview card for upcoming games ────────────────────────────────────────
+function AiPreviewCard({ gameId, dc }: { gameId: string; dc: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["game-preview", gameId],
+    queryFn: () => api.getGamePreview(gameId),
+    staleTime: 600_000,
+    retry: 1,
+  });
+
+  if (isLoading) {
+    return (
+      <View style={[prev.card, { borderColor: `${dc}30` }]}>
+        <LinearGradient colors={[`${dc}0A`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+        <View style={prev.header}>
+          <Text style={[prev.sparkle, { color: dc }]}>✦</Text>
+          <Text style={[prev.label, { color: dc }]}>AI PREVIEW</Text>
+        </View>
+        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+          <ActivityIndicator size="small" color={dc} />
+          <Text style={prev.loading}>Generating preview...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const preview = data?.preview;
+  if (!preview) return null;
+
+  return (
+    <View style={[prev.card, { borderColor: `${dc}30` }]}>
+      <LinearGradient colors={[`${dc}0A`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+      <View style={prev.header}>
+        <Text style={[prev.sparkle, { color: dc }]}>✦</Text>
+        <Text style={[prev.label, { color: dc }]}>AI PREVIEW</Text>
+        <View style={prev.aiBadge}>
+          <Text style={prev.aiBadgeText}>AI</Text>
+        </View>
+      </View>
+      <Text style={prev.text}>{preview}</Text>
+      <Text style={prev.footer}>Powered by Fourth Quarter AI</Text>
+    </View>
+  );
+}
+
+const prev = StyleSheet.create({
+  card: {
+    borderRadius: 14, borderWidth: 1, padding: 14,
+    backgroundColor: C.card, overflow: "hidden", gap: 10,
+  },
+  header: { flexDirection: "row", alignItems: "center", gap: 6 },
+  sparkle: { fontSize: 14, fontWeight: "900" },
+  label: { fontSize: 10, fontWeight: "800", letterSpacing: 1.5, textTransform: "uppercase", flex: 1 },
+  aiBadge: {
+    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 5,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  aiBadgeText: { color: "#fff", fontSize: 8, fontWeight: "900", letterSpacing: 0.8 },
+  loading: { color: C.textTertiary, fontSize: 13, fontStyle: "italic" },
+  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
+  footer: { color: C.textTertiary, fontSize: 10, fontWeight: "500", letterSpacing: 0.3 },
+});
 
 // ─── AI Insight card with pulsing "UPDATING LIVE" ──────────────────────────────
 function AiInsightCard({ summary, dc, isLive }: { summary: string; dc: string; isLive: boolean }) {

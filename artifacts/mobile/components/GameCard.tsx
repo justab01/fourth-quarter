@@ -205,6 +205,76 @@ function ContextChips({ game }: { game: Game }) {
   );
 }
 
+// ── Nerd win probability heuristic ───────────────────────────────────────────
+function calcWinProb(homeScore: number, awayScore: number, quarter: string | null): { homeProb: number; awayProb: number } {
+  const diff = homeScore - awayScore;
+  const q = (quarter ?? "").toLowerCase();
+  let factor = 1.0;
+  if (q.includes("ot") || q.includes("overtime")) factor = 2.8;
+  else if (q.includes("4th") || q.includes("q4") || q.includes("3rd period") || q.includes("9th")) factor = 2.0;
+  else if (q.includes("3rd") || q.includes("q3") || q.includes("2nd period") || q.includes("7th") || q.includes("8th")) factor = 1.5;
+  else if (q.includes("2nd") || q.includes("q2") || q.includes("1st period") || q.includes("5th") || q.includes("6th")) factor = 1.2;
+  const swing = Math.min(Math.abs(diff) * 3.8 * factor, 46);
+  const homeProb = diff >= 0 ? 50 + swing : 50 - swing;
+  return { homeProb: Math.round(homeProb), awayProb: Math.round(100 - homeProb) };
+}
+
+function NerdStatsBar({ game, leagueColor }: { game: Game; leagueColor: string }) {
+  const homeScore = game.homeScore ?? 0;
+  const awayScore = game.awayScore ?? 0;
+  const diff = Math.abs(homeScore - awayScore);
+  const homeLeads = homeScore > awayScore;
+  const tied = homeScore === awayScore;
+  const { homeProb, awayProb } = calcWinProb(homeScore, awayScore, game.quarter);
+  const winPct = homeLeads ? homeProb : awayProb;
+  const leaderName = tied ? null : (homeLeads ? game.homeTeam.split(" ").slice(-1)[0] : game.awayTeam.split(" ").slice(-1)[0]);
+  const marginLabel = tied ? "TIED" : `+${diff}`;
+  const probLabel = tied ? "50%" : `${winPct}%`;
+
+  return (
+    <View style={nerd.bar}>
+      <View style={nerd.chip}>
+        <Text style={[nerd.chipLabel, { color: leagueColor }]}>MARGIN</Text>
+        <Text style={nerd.chipVal}>{marginLabel}</Text>
+      </View>
+      <View style={nerd.divider} />
+      <View style={nerd.chip}>
+        <Text style={[nerd.chipLabel, { color: leagueColor }]}>WIN PROB</Text>
+        <View style={nerd.probRow}>
+          <View style={[nerd.probBarBg]}>
+            <View style={[nerd.probBarFill, { width: `${winPct}%` as any, backgroundColor: leagueColor }]} />
+          </View>
+          <Text style={nerd.chipVal}>{probLabel}</Text>
+        </View>
+      </View>
+      {leaderName && !tied && (
+        <>
+          <View style={nerd.divider} />
+          <View style={nerd.chip}>
+            <Text style={[nerd.chipLabel, { color: leagueColor }]}>LEADING</Text>
+            <Text style={nerd.chipVal} numberOfLines={1}>{leaderName}</Text>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+const nerd = StyleSheet.create({
+  bar: {
+    flexDirection: "row", alignItems: "center",
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(255,255,255,0.07)",
+    paddingHorizontal: 12, paddingVertical: 7, gap: 0,
+  },
+  chip: { flex: 1, gap: 2 },
+  chipLabel: { fontSize: 7, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
+  chipVal: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  divider: { width: StyleSheet.hairlineWidth, height: 28, backgroundColor: "rgba(255,255,255,0.1)", marginHorizontal: 8 },
+  probRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  probBarBg: { width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.1)", overflow: "hidden" },
+  probBarFill: { height: 4, borderRadius: 2 },
+});
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface GameCardProps {
   game: Game;
@@ -212,6 +282,7 @@ interface GameCardProps {
   variant?: "default" | "hero" | "compact";
   isFavorite?: boolean;
   grouped?: boolean;
+  nerdMode?: boolean;
 }
 
 function formatTime(iso: string) {
@@ -220,7 +291,7 @@ function formatTime(iso: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-export function GameCard({ game, onPress, variant = "default", isFavorite = false, grouped = false }: GameCardProps) {
+export function GameCard({ game, onPress, variant = "default", isFavorite = false, grouped = false, nerdMode = false }: GameCardProps) {
   const isLive     = game.status === "live";
   const isFinished = game.status === "finished";
   const leagueColor = getLeagueColor(game.league);
@@ -474,7 +545,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={[dflt.card, grouped && dflt.cardGrouped, isLive && !grouped && { borderColor: `${leagueColor}30` }]}>
+          <View style={[dflt.cardWrap, grouped && dflt.cardGrouped, isLive && !grouped && { borderColor: `${leagueColor}30` }]}>
             {isLive && (
               <LinearGradient
                 colors={[`${leagueColor}08`, "transparent"]}
@@ -548,7 +619,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={[dflt.card, grouped && dflt.cardGrouped, isLive && !grouped && { borderColor: `${leagueColor}30` }]}>
+          <View style={[dflt.cardWrap, grouped && dflt.cardGrouped, isLive && !grouped && { borderColor: `${leagueColor}30` }]}>
             {isLive && (
               <LinearGradient
                 colors={[`${leagueColor}08`, "transparent"]}
@@ -626,7 +697,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={[dflt.card, grouped && dflt.cardGrouped, { paddingVertical: 0, minHeight: 0 }]}>
+          <View style={[dflt.cardWrap, grouped && dflt.cardGrouped, { paddingVertical: 0, minHeight: 0 }]}>
             <View style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
                 <View style={[dflt.liveBadge, { backgroundColor: isLive ? C.live : isFinished ? "#555" : `${leagueColor}22` }]}>
@@ -672,7 +743,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-          <View style={[dflt.card, grouped && dflt.cardGrouped, isLive && !grouped && { borderColor: `${leagueColor}30` }]}>
+          <View style={[dflt.cardWrap, grouped && dflt.cardGrouped, isLive && !grouped && { borderColor: `${leagueColor}30` }]}>
             {isLive && (
               <LinearGradient
                 colors={[`${leagueColor}08`, "transparent"]}
@@ -724,14 +795,16 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
   }
 
   // ── TEAM SPORT default ─────────────────────────────────────────────────────
+  const showNerdBar = nerdMode && (isLive || isFinished) && !isCombat && !isTennis && !isGolf && !isMotor;
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
         <View style={[
-          dflt.card,
+          dflt.cardWrap,
           grouped && dflt.cardGrouped,
           isLive && !grouped && { borderColor: `${C.live}30` },
         ]}>
+          <View style={dflt.card}>
           {isLive && (
             <LinearGradient
               colors={["rgba(232,22,43,0.06)", "transparent"]}
@@ -807,6 +880,8 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
             )}
             <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
           </View>
+          </View>
+          {showNerdBar && <NerdStatsBar game={game} leagueColor={leagueColor} />}
         </View>
       </Pressable>
     </Animated.View>
@@ -894,9 +969,12 @@ const cpt = StyleSheet.create({
 
 // ── Default (livescore row) styles ────────────────────────────────────────────
 const dflt = StyleSheet.create({
-  card: {
+  cardWrap: {
     backgroundColor: C.card, borderRadius: 16, overflow: "hidden",
     borderWidth: 1, borderColor: C.cardBorder,
+    flexDirection: "column",
+  },
+  card: {
     flexDirection: "row", alignItems: "stretch",
   },
   cardGrouped: {

@@ -385,8 +385,17 @@ export default function LiveScreen() {
 
   const all = data?.games ?? [];
   const myTeams = preferences.favoriteTeams;
+  const nerdMode = preferences.appMode === "nerd";
   const isFav = (g: Game) => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam);
   const totalLive = all.filter(g => g.status === "live").length;
+
+  const myTeamGames = all
+    .filter(g => isFav(g))
+    .sort((a, b) => {
+      const statusDiff = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      if (statusDiff !== 0) return statusDiff;
+      return getUrgencyScore(b, myTeams) - getUrgencyScore(a, myTeams);
+    });
 
   let filteredBase: Game[] = activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
 
@@ -550,6 +559,81 @@ export default function LiveScreen() {
           <View style={styles.list}>
             {[1, 2, 3].map(i => <GameCardSkeleton key={i} />)}
           </View>
+        ) : !isLoading && myTeamGames.length > 0 && smartFilter === "none" && activeLeague === "All" ? (
+          <View style={styles.sections}>
+            {/* ── MY TEAMS pinned section ── */}
+            <View style={styles.section}>
+              <View style={styles.myTeamsHeader}>
+                <Ionicons name="star" size={12} color={C.accentGold} />
+                <Text style={styles.myTeamsTitle}>MY TEAMS</Text>
+                <View style={styles.myTeamsLiveBadge}>
+                  {myTeamGames.some(g => g.status === "live") && (
+                    <>
+                      <View style={styles.myTeamsLiveDot} />
+                      <Text style={styles.myTeamsLiveText}>{myTeamGames.filter(g => g.status === "live").length} LIVE</Text>
+                    </>
+                  )}
+                </View>
+              </View>
+              <View style={styles.listCard}>
+                {myTeamGames.map((game, idx) => {
+                  const tags = getImportanceTags(game, myTeams);
+                  const hasRivalry = isRivalry(game.homeTeam, game.awayTeam);
+                  return (
+                    <View key={game.id}>
+                      {idx > 0 && <View style={styles.rowDivider} />}
+                      <View style={[hasRivalry && styles.rivalryRow]}>
+                        <ImportanceTags tags={tags} />
+                        <GameCard
+                          game={game}
+                          isFavorite={true}
+                          grouped
+                          nerdMode={nerdMode}
+                          variant={compactMode ? "compact" : "default"}
+                          onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+                        />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* ── Rest of league sections ── */}
+            {leagueSections.map(({ league, games }) => (
+              <View key={league} style={styles.section}>
+                <LeagueSectionHeader league={league} games={games} />
+                <View style={styles.listCard}>
+                  {games.map((game, idx) => {
+                    const tags = getImportanceTags(game, myTeams);
+                    const hasRivalry = isRivalry(game.homeTeam, game.awayTeam);
+                    return (
+                      <View key={game.id}>
+                        {idx > 0 && <View style={styles.rowDivider} />}
+                        <View style={[hasRivalry && styles.rivalryRow]}>
+                          <ImportanceTags tags={tags} />
+                          <GameCard
+                            game={game}
+                            isFavorite={isFav(game)}
+                            grouped
+                            nerdMode={nerdMode}
+                            variant={compactMode ? "compact" : "default"}
+                            onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+            {dateOffset !== 0 && (
+              <Pressable style={styles.backTodayBtn} onPress={() => setDateOffset(0)}>
+                <Ionicons name="today-outline" size={14} color="#fff" />
+                <Text style={styles.backTodayText}>Back to Today</Text>
+              </Pressable>
+            )}
+          </View>
         ) : leagueSections.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name={isFutureDay ? "calendar-outline" : "tv-outline"} size={52} color={C.textTertiary} />
@@ -590,6 +674,7 @@ export default function LiveScreen() {
                             game={game}
                             isFavorite={isFav(game)}
                             grouped
+                            nerdMode={nerdMode}
                             variant={compactMode ? "compact" : "default"}
                             onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
                           />
@@ -682,6 +767,18 @@ const styles = StyleSheet.create({
 
   sections: { gap: 12, paddingVertical: 6 },
   section: { gap: 8 },
+
+  myTeamsHeader: {
+    flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4,
+  },
+  myTeamsTitle: {
+    fontSize: 12, fontWeight: "900", color: C.accentGold,
+    letterSpacing: 1.2, textTransform: "uppercase", fontFamily: "Inter_700Bold",
+    flex: 1,
+  },
+  myTeamsLiveBadge: { flexDirection: "row", alignItems: "center", gap: 4 },
+  myTeamsLiveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
+  myTeamsLiveText: { color: C.live, fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
   list: { gap: 0 },
   listCard: {
     backgroundColor: C.card, borderRadius: 16, overflow: "hidden",
