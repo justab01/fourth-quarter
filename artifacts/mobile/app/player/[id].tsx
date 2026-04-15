@@ -1200,23 +1200,29 @@ const glS = StyleSheet.create({
   contextPillText: { fontSize: 10, fontWeight: "700" },
 });
 
-// ─── Preferred stat column order per league ────────────────────────────────────
-const PREFERRED_COLS: Record<string, string[]> = {
-  NBA: ["PTS", "REB", "AST", "MIN", "FG", "3PT", "FT", "BLK", "STL", "TO"],
-  NFL: ["ATT", "CMP", "YDS", "TD", "INT", "CAR", "RUSH", "REC", "RECY", "SACKS"],
-  MLB: ["AB", "H", "HR", "RBI", "R", "BB", "K", "AVG", "IP", "ER"],
-  MLS: ["MIN", "G", "A", "SH", "SOG", "FC", "PS%"],
-};
 
 type GameLogRow = {
   eventId: string;
+  rawDate: string;
   date: string;
   opponent: string;
-  atVs: string;
+  homeAway: "home" | "away";
   result: string;
   score: string;
   stats: Record<string, string>;
 };
+
+function rowToEntry(row: GameLogRow): GameLogEntry {
+  return {
+    date: row.rawDate || row.date,
+    opponent: row.opponent,
+    opponentId: row.opponent,
+    homeAway: row.homeAway,
+    result: row.result === "—" ? "" : row.result,
+    score: row.score === "—" ? "" : row.score,
+    stats: row.stats,
+  };
+}
 
 function GameLogTab({
   playerName,
@@ -1227,22 +1233,23 @@ function GameLogTab({
   league: string;
   teamColor: string;
 }) {
-  const defaultSeason = (league === "NBA" || league === "MLS") ? "2026" : "2025";
-  const seasonButtons = (league === "NBA" || league === "MLS")
-    ? ["2026", "2025", "2024"]
-    : ["2025", "2024", "2023"];
+  const defaultSeason = (league === "NBA" || league === "MLS") ? 2026 : 2025;
+  const seasons = (league === "NBA" || league === "MLS")
+    ? [2026, 2025, 2024]
+    : [2025, 2024, 2023];
 
   const [rows, setRows] = useState<GameLogRow[]>([]);
-  const [labels, setLabels] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [season, setSeason] = useState(defaultSeason);
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<GLFilter>("All");
 
-  const load = useCallback(async (s: string) => {
+  const load = useCallback(async (s: number) => {
     setLoading(true);
     setError(null);
     try {
-      const url = getEspnGamelogUrl(playerName, league, s);
+      const url = getEspnGamelogUrl(playerName, league, String(s));
       if (!url) {
         setError("Player not found in ESPN database");
         setLoading(false);
@@ -1279,27 +1286,23 @@ function GameLogTab({
           const dateStr = dateObj
             ? dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" })
             : "—";
+          const atVs = meta?.atVs ?? "vs";
           const statVals: Record<string, string> = {};
           (merged[eid].stats ?? []).forEach((v: string, i: number) => {
             if (allLabels[i]) statVals[allLabels[i]] = v;
           });
           return {
             eventId: eid,
+            rawDate,
             date: dateStr,
             opponent: meta?.opponent?.abbreviation ?? meta?.opponent?.displayName ?? "—",
-            atVs: meta?.atVs ?? "vs",
+            homeAway: atVs === "@" ? "away" : "home",
             result: meta?.gameResult ?? "—",
             score: meta?.score ?? "—",
             stats: statVals,
           };
         });
 
-      const preferred = PREFERRED_COLS[league] ?? [];
-      const shown = preferred.length
-        ? preferred.filter(l => allLabels.includes(l))
-        : allLabels.slice(0, 10);
-
-      setLabels(shown);
       setRows(built);
     } catch (e: any) {
       setError(e.message ?? "Failed to load");
@@ -1310,18 +1313,17 @@ function GameLogTab({
 
   useEffect(() => { load(season); }, [load, season]);
 
-  const COL_W = 52;
-  const LEFT_W = 196;
-  const ROW_H = 36;
+  const quickStats = GL_QUICK_STATS[league.toUpperCase()] ?? ["MIN", "PTS", "REB", "AST"];
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
-        <ActivityIndicator size="large" color={teamColor} />
-        <Text style={{ color: C.textTertiary, fontSize: 13 }}>Loading game log…</Text>
-      </View>
-    );
-  }
+  const entries: GameLogEntry[] = React.useMemo(() => rows.map(rowToEntry), [rows]);
+  const filteredEntries = React.useMemo(() => applyFilterToGames(entries, activeFilter), [entries, activeFilter]);
+  const monthGroups = React.useMemo(() => groupByMonth(filteredEntries), [filteredEntries]);
+
+  const seasonLabel = (league === "NFL" || league === "MLB")
+    ? String(season)
+    : `${season - 1}-${String(season).slice(2)}`;
+
+  if (loading) return <GameLogSkeleton />;
 
   if (error) {
     return (
@@ -1348,134 +1350,108 @@ function GameLogTab({
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={gl.seasonRow}>
-        {seasonButtons.map(s => (
-          <Pressable
-            key={s}
-            onPress={() => { setSeason(s); load(s); }}
-            style={[gl.seasonBtn, season === s && { backgroundColor: teamColor }]}
-          >
-            <Text style={[gl.seasonBtnTxt, season === s && { color: "#fff" }]}>
-              {(league === "NFL" || league === "MLB") ? s : `${parseInt(s) - 1}-${s.slice(2)}`}
-            </Text>
-          </Pressable>
-        ))}
-        <View style={{ flex: 1 }} />
-        <Text style={gl.gamesCount}>{rows.length} games</Text>
+    <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+      <View style={glS.introBlock}>
+        <Text style={glS.introTitle}>Game Log</Text>
+        <Text style={glS.introSubtitle}>{seasonLabel} Season</Text>
       </View>
 
-      <View style={{ flex: 1, flexDirection: "row" }}>
-        <View style={[gl.leftCol, { width: LEFT_W }]}>
-          <View style={[gl.headerRow, { height: ROW_H }]}>
-            <Text style={[gl.headerCell, { width: 50 }]}>DATE</Text>
-            <Text style={[gl.headerCell, { width: 40 }]}>OPP</Text>
-            <Text style={[gl.headerCell, { flex: 1 }]}>RESULT</Text>
-          </View>
-          <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
-            {rows.map((row, i) => {
-              const resultColor = row.result === "W" ? "#3ECF8E" : row.result === "L" ? "#FF6B6B" : C.textTertiary;
-              const scoreDisplay = row.score && row.score !== "—" ? `${row.result} ${row.score}` : row.result;
+      <View style={glS.seasonDropdownWrap}>
+        <Pressable
+          style={glS.seasonDropdown}
+          onPress={() => {
+            setSeasonDropdownOpen(o => !o);
+            if (Platform.OS !== "web") Haptics.selectionAsync();
+          }}
+        >
+          <Text style={glS.seasonDropdownText}>{seasonLabel}</Text>
+          <Ionicons name={seasonDropdownOpen ? "chevron-up" : "chevron-down"} size={18} color={C.textSecondary} />
+        </Pressable>
+        {seasonDropdownOpen && (
+          <View style={glS.seasonDropdownList}>
+            {seasons.map(s => {
+              const active = s === season;
+              const lbl = (league === "NFL" || league === "MLB") ? String(s) : `${s - 1}-${String(s).slice(2)}`;
               return (
-                <View
-                  key={row.eventId}
-                  style={[
-                    gl.dataRow,
-                    { height: ROW_H, backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.03)" },
-                  ]}
+                <Pressable
+                  key={s}
+                  onPress={() => {
+                    setSeason(s);
+                    setSeasonDropdownOpen(false);
+                    setActiveFilter("All");
+                    if (Platform.OS !== "web") Haptics.selectionAsync();
+                  }}
+                  style={[glS.seasonDropdownItem, active && { backgroundColor: `${teamColor}22` }]}
                 >
-                  <Text style={[gl.leftDateTxt, { width: 50 }]}>{row.date}</Text>
-                  <Text style={[gl.leftOppTxt, { width: 40 }]}>
-                    {row.atVs === "@" ? "@" : "vs"} {row.opponent}
+                  <Text style={[glS.seasonDropdownItemText, active && { color: teamColor, fontWeight: "700" }]}>
+                    {lbl}
                   </Text>
-                  <Text style={[gl.resultTxt, { flex: 1, color: resultColor }]} numberOfLines={1}>
-                    {scoreDisplay}
-                  </Text>
-                </View>
+                  {active && <Ionicons name="checkmark" size={16} color={teamColor} />}
+                </Pressable>
               );
             })}
-          </ScrollView>
-        </View>
+          </View>
+        )}
+      </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
-          <View>
-            <View style={[gl.headerRow, { height: ROW_H }]}>
-              {labels.map(lbl => (
-                <Text key={lbl} style={[gl.headerCell, { width: COL_W, textAlign: "right" }]}>{lbl}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={glS.filterRow}>
+        {GL_FILTERS.map(f => {
+          const active = f === activeFilter;
+          return (
+            <Pressable
+              key={f}
+              onPress={() => {
+                setActiveFilter(f);
+                if (Platform.OS !== "web") Haptics.selectionAsync();
+              }}
+              style={[glS.filterPill, active && { backgroundColor: teamColor, borderColor: teamColor }]}
+            >
+              <Text style={[glS.filterPillText, active && { color: "#fff" }]}>{f}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {filteredEntries.length === 0 ? (
+        <View style={{ alignItems: "center", justifyContent: "center", padding: 48, gap: 12 }}>
+          <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
+          <Text style={{ color: "#AEAEB2", fontSize: 15, fontWeight: "600", textAlign: "center" }}>
+            {activeFilter !== "All" ? `No games found for "${activeFilter}"` : "No games this season"}
+          </Text>
+        </View>
+      ) : (
+        <View style={{ paddingHorizontal: 16, gap: 0 }}>
+          <Text style={glS.gamesCountText}>
+            {filteredEntries.length} game{filteredEntries.length !== 1 ? "s" : ""}
+          </Text>
+          {monthGroups.map(group => (
+            <View key={group.monthKey} style={glS.monthSection}>
+              <View style={glS.monthHeaderRow}>
+                <Text style={glS.monthHeader}>{group.month}</Text>
+                <View style={glS.monthDivider} />
+              </View>
+              <MonthAvgCard
+                month={group.month}
+                averages={group.averages}
+                quickStats={quickStats}
+                teamColor={teamColor}
+              />
+              {group.games.map((game, i) => (
+                <GameRow
+                  key={`${game.date}-${game.opponent}-${i}`}
+                  game={game}
+                  league={league}
+                  teamColor={teamColor}
+                  quickStats={quickStats}
+                />
               ))}
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
-              {rows.map((row, i) => (
-                <View
-                  key={row.eventId}
-                  style={[
-                    gl.dataRow,
-                    { height: ROW_H, backgroundColor: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.03)" },
-                  ]}
-                >
-                  {labels.map(lbl => {
-                    const val = row.stats[lbl] ?? "—";
-                    const isKey = lbl === "PTS" || lbl === "YDS" || lbl === "HR" || lbl === "G";
-                    return (
-                      <Text
-                        key={lbl}
-                        style={[
-                          gl.statCell,
-                          { width: COL_W },
-                          isKey && { color: teamColor, fontWeight: "700" },
-                        ]}
-                      >
-                        {val}
-                      </Text>
-                    );
-                  })}
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </ScrollView>
-      </View>
-    </View>
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 }
-
-const gl = StyleSheet.create({
-  seasonRow: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.07)",
-  },
-  seasonBtn: {
-    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  seasonBtnTxt: { color: C.textSecondary, fontSize: 12, fontWeight: "600" },
-  gamesCount: { color: C.textTertiary, fontSize: 11 },
-  leftCol: {
-    borderRightWidth: 1, borderRightColor: "rgba(255,255,255,0.08)",
-  },
-  headerRow: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
-    paddingHorizontal: 8,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  headerCell: {
-    color: C.textTertiary, fontSize: 10, fontWeight: "700",
-    letterSpacing: 0.8, textTransform: "uppercase",
-  },
-  dataRow: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 8,
-  },
-  leftDateTxt: { color: C.textTertiary, fontSize: 11 },
-  leftOppTxt: { color: C.textSecondary, fontSize: 11 },
-  resultTxt: { fontSize: 11, fontWeight: "700", textAlign: "left" },
-  statCell: {
-    color: C.textSecondary, fontSize: 12, textAlign: "right",
-    fontFamily: "Inter_400Regular",
-  },
-});
 
 // ─── Tennis Athlete Overview ──────────────────────────────────────────────────
 function TennisOverview({ player, team, fallbackPlayer }: {
