@@ -128,6 +128,28 @@ const { width: SCREEN_W } = Dimensions.get("window");
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
+// Sport-specific hero gradients for visual differentiation
+function getSportHeroGradient(sportId: string): [string, string, string] {
+  const gradients: Record<string, [string, string, string]> = {
+    basketball: ["#E8503A", "#9B2617", "#4A0A05"],
+    football:   ["#8B7355", "#52432F", "#1A1208"],
+    baseball:   ["#3B6DB8", "#1E3D6B", "#0A1525"],
+    hockey:     ["#4A90D9", "#1E5293", "#0A1835"],
+    soccer:     ["#27AE60", "#145A32", "#052A12"],
+    golf:       ["#2ECC71", "#0E6B38", "#053320"],
+    tennis:     ["#CDDC39", "#4A5010", "#1A1D05"],
+    combat:     ["#E74C3C", "#7B241C", "#2A0A08"],
+    college:    ["#5B3E96", "#2E1F4D", "#120A1F"],
+    olympics:   ["#D4A843", "#8B6914", "#2A1D05"],
+    xgames:     ["#00D4FF", "#005C7A", "#001A2A"],
+    motorsports: ["#F39C12", "#784D04", "#2A1A05"],
+    esports:    ["#9B59B6", "#4A1F6B", "#1A0A25"],
+    track:      ["#FF6B35", "#8B2A08", "#2A0A05"],
+    womens:     ["#E91E8C", "#7B0E4B", "#2A0515"],
+  };
+  return gradients[sportId] ?? ["#333333", "#1A1A1A", "#0F0F0F"];
+}
+
 function AthleteChip({
   name,
   position,

@@ -3,10 +3,14 @@
 // red for LIVE, orange for favorites, muted gray for secondary info
 
 const liveRed    = "#E8162B";   // LIVE badge — bright red
-const orange     = "#EF7828";   // Favorites / CTA — orange
+const orange     = "#EF7828";   // Energy Orange — primary CTA
 const gold       = "#D4A843";   // AI recap gold
 const green      = "#30D158";   // Wins / positive (Apple green)
 const teal       = "#2CC4BF";   // Teal accent
+const vividTeal   = "#206E6B";   // Vivid Teal — secondary CTA
+const graphite    = "#504D47";   // Graphite — backgrounds
+const electricLime = "#BFFF00";  // Electric Lime — highlights
+const charcoal    = "#1F1F1F";   // Charcoal — deep surfaces
 
 export default {
   dark: {
@@ -34,6 +38,13 @@ export default {
     accentGold: gold,
     accentGreen: green,
     accentBlue: "#4A90D9",
+
+    // Brand Kit Colors
+    vividTeal:      vividTeal,
+    brandGraphite:  graphite,
+    electricLime:   electricLime,
+    charcoal:       charcoal,
+
     graphite:   "#2A2A2A",
 
     // Live indicator — ALWAYS red (Livescore style)

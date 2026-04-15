@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
   Platform, ActivityIndicator, Image, Animated, Dimensions,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -63,6 +64,23 @@ const NHL_GOALIE_STAT_COLS = ["SV", "GA", "SA", "SV%", "TOI"];
 const SOCCER_GK_STAT_COLS = ["MIN", "SV", "GA", "CS"];
 
 const SOCCER_LEAGUES = new Set(["MLS", "EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "UEL", "UECL", "NWSL", "FWCM", "EURO", "COPA"]);
+
+// Map league codes to ESPN sport slugs for gamecast URLs
+const ESPN_SPORT_SLUGS: Record<string, string> = {
+  NBA: "nba", WNBA: "wnba", NCAAB: "mens-college-basketball",
+  NFL: "nfl", NCAAF: "college-football",
+  MLB: "mlb", NHL: "nhl",
+  MLS: "mls", EPL: "epl", UCL: "champions-league",
+  LIGA: "la-liga", BUN: "german-bundesliga", SERA: "italian-serie-a", LIG1: "french-ligue-1",
+  UEL: "uefa-europa-league", UECL: "uefa-europa-conference-league",
+  NWSL: "nwsl", ATP: "tennis", WTA: "tennis",
+  UFC: "mma", BOXING: "boxing",
+};
+
+function getEspnGamecastUrl(league: string, gameId: string): string {
+  const sport = ESPN_SPORT_SLUGS[league] ?? "sports";
+  return `https://www.espn.com/${sport}/game/_/gameId/${gameId}`;
+}
 
 function getSportVenueGradient(league: string): [string, string, string, string] {
   const map: Record<string, [string, string, string, string]> = {
@@ -261,10 +279,17 @@ export default function GameDetailScreen() {
 
               {/* Watch live pill button */}
               {isLive && (
-                <View style={[s.watchPill, { borderColor: `${dc}55`, backgroundColor: `${dc}18` }]}>
+                <Pressable
+                  style={[s.watchPill, { borderColor: `${dc}55`, backgroundColor: `${dc}18` }]}
+                  onPress={() => {
+                    const url = getEspnGamecastUrl(game.league, id);
+                    Linking.openURL(url).catch(() => {});
+                  }}
+                  hitSlop={8}
+                >
                   <Ionicons name="radio" size={13} color={dc} />
                   <Text style={[s.watchText, { color: dc }]}>Watch Live</Text>
-                </View>
+                </Pressable>
               )}
             </LinearGradient>
           </View>
