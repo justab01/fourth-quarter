@@ -15,7 +15,7 @@ import { usePreferences } from "@/context/PreferencesContext";
 const C = Colors.dark;
 const { width } = Dimensions.get("window");
 
-const STEPS = ["welcome", "sports", "teams", "name", "confirm"] as const;
+const STEPS = ["welcome", "sports", "teams", "mode", "name", "confirm"] as const;
 type Step = (typeof STEPS)[number];
 
 export default function OnboardingScreen() {
@@ -25,6 +25,7 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState<Step>("welcome");
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [selectedMode, setSelectedMode] = useState<"fan" | "nerd">("fan");
   const [userName, setUserName] = useState("Abraham");
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -63,6 +64,7 @@ export default function OnboardingScreen() {
       name: userName.trim() || "Sports Fan",
       favoriteLeagues: selectedSports,
       favoriteTeams: selectedTeams,
+      appMode: selectedMode,
       onboardingComplete: true,
     });
     router.replace("/(tabs)");
@@ -83,7 +85,7 @@ export default function OnboardingScreen() {
 
         {step !== "welcome" && (
           <View style={styles.progressBar}>
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3, 4, 5].map((i) => (
               <View key={i} style={[styles.progressDot, stepIndex >= i && styles.progressDotActive]} />
             ))}
           </View>
@@ -105,6 +107,14 @@ export default function OnboardingScreen() {
               teams={availableTeams}
               selected={selectedTeams}
               onToggle={toggleTeam}
+              onNext={() => advance("mode")}
+              botPad={botPad}
+            />
+          )}
+          {step === "mode" && (
+            <ModeStep
+              selected={selectedMode}
+              onSelect={setSelectedMode}
               onNext={() => advance("name")}
               botPad={botPad}
             />
@@ -122,6 +132,7 @@ export default function OnboardingScreen() {
               name={userName}
               sports={selectedSports}
               teams={selectedTeams}
+              mode={selectedMode}
               onFinish={handleFinish}
               botPad={botPad}
             />
@@ -308,6 +319,88 @@ function TeamsStep({ teams, selected, onToggle, onNext, botPad }: {
   );
 }
 
+// ─── Mode ─────────────────────────────────────────────────────────────────────
+function ModeStep({ selected, onSelect, onNext, botPad }: {
+  selected: "fan" | "nerd"; onSelect: (m: "fan" | "nerd") => void; onNext: () => void; botPad: number;
+}) {
+  const isFan = selected === "fan";
+  const isNerd = selected === "nerd";
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={styles.stepScroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.stepTitle}>How do you watch?</Text>
+        <Text style={styles.stepSubtitle}>Pick your experience — you can change this anytime</Text>
+
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); onSelect("fan"); }}
+          style={[modeS.card, isFan && modeS.cardActiveFan]}
+        >
+          <View style={[modeS.iconWrap, isFan && { backgroundColor: `${C.accent}33` }]}>
+            <Ionicons name="heart" size={26} color={isFan ? C.accent : C.textTertiary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[modeS.cardTitle, isFan && { color: C.text }]}>Fan Mode</Text>
+            <Text style={modeS.cardDesc}>Clean scores, key moments, simple stats. Perfect for casual fans who want the story.</Text>
+          </View>
+          {isFan && <Ionicons name="checkmark-circle" size={22} color={C.accent} />}
+        </Pressable>
+
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); onSelect("nerd"); }}
+          style={[modeS.card, isNerd && modeS.cardActiveNerd]}
+        >
+          <View style={[modeS.iconWrap, isNerd && { backgroundColor: `${C.accentGold}33` }]}>
+            <Ionicons name="analytics" size={26} color={isNerd ? C.accentGold : C.textTertiary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[modeS.cardTitle, isNerd && { color: C.text }]}>Nerd Mode</Text>
+            <Text style={modeS.cardDesc}>Win probability, advanced metrics, full data. For the analytics-obsessed.</Text>
+          </View>
+          {isNerd && <Ionicons name="checkmark-circle" size={22} color={C.accentGold} />}
+        </Pressable>
+      </ScrollView>
+
+      <PrimaryButton label="Continue" onPress={onNext} botPad={botPad} />
+    </View>
+  );
+}
+
+const modeS = StyleSheet.create({
+  card: {
+    flexDirection: "row", alignItems: "center", gap: 16,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 20, padding: 20,
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.08)",
+    marginBottom: 14,
+  },
+  cardActiveFan: {
+    borderColor: C.accent,
+    backgroundColor: `${C.accent}10`,
+  },
+  cardActiveNerd: {
+    borderColor: C.accentGold,
+    backgroundColor: `${C.accentGold}10`,
+  },
+  iconWrap: {
+    width: 52, height: 52, borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    alignItems: "center", justifyContent: "center",
+    flexShrink: 0,
+  },
+  cardTitle: {
+    color: C.textSecondary, fontSize: 17, fontWeight: "800",
+    fontFamily: "Inter_700Bold", marginBottom: 4,
+  },
+  cardDesc: {
+    color: C.textTertiary, fontSize: 13,
+    fontFamily: "Inter_400Regular", lineHeight: 18,
+  },
+});
+
 // ─── Name ─────────────────────────────────────────────────────────────────────
 function NameStep({ name, onChange, onNext, botPad }: {
   name: string; onChange: (v: string) => void; onNext: () => void; botPad: number;
@@ -339,13 +432,14 @@ function NameStep({ name, onChange, onNext, botPad }: {
 }
 
 // ─── Confirm ──────────────────────────────────────────────────────────────────
-function ConfirmStep({ name, sports, teams, onFinish, botPad }: {
-  name: string; sports: string[]; teams: string[]; onFinish: () => void; botPad: number;
+function ConfirmStep({ name, sports, teams, mode, onFinish, botPad }: {
+  name: string; sports: string[]; teams: string[]; mode: "fan" | "nerd"; onFinish: () => void; botPad: number;
 }) {
   const SPORT_EMOJIS: Record<string, string> = {
     NBA: "🏀", NFL: "🏈", MLB: "⚾", MLS: "⚽", NHL: "🏒",
     EPL: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", UCL: "⭐", LIGA: "🇪🇸", NCAAB: "🎓", WNBA: "🏀", UFC: "🥋",
   };
+  const modeColor = mode === "nerd" ? C.accentGold : C.accent;
 
   return (
     <View style={{ flex: 1 }}>
@@ -355,7 +449,7 @@ function ConfirmStep({ name, sports, teams, onFinish, botPad }: {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.stepTitle}>Looks good, {name.trim() || "friend"}!</Text>
-        <Text style={styles.stepSubtitle}>Here's what your hub will look like</Text>
+        <Text style={styles.stepSubtitle}>Here's your personalized hub setup</Text>
 
         <View style={confirmS.card}>
           <View style={confirmS.row}>
@@ -365,6 +459,20 @@ function ConfirmStep({ name, sports, teams, onFinish, botPad }: {
             <View style={{ flex: 1 }}>
               <Text style={confirmS.rowLabel}>Name</Text>
               <Text style={confirmS.rowValue}>{name.trim() || "Sports Fan"}</Text>
+            </View>
+          </View>
+
+          <View style={confirmS.sep} />
+
+          <View style={confirmS.row}>
+            <View style={[confirmS.iconBox, { backgroundColor: `${modeColor}22` }]}>
+              <Ionicons name={mode === "nerd" ? "analytics" : "heart"} size={16} color={modeColor} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={confirmS.rowLabel}>Experience</Text>
+              <Text style={[confirmS.rowValue, { color: modeColor }]}>
+                {mode === "nerd" ? "⚡ Nerd Mode" : "❤️ Fan Mode"}
+              </Text>
             </View>
           </View>
 

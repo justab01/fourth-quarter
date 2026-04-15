@@ -293,6 +293,53 @@ const chipStyles = StyleSheet.create({
   chipText: { fontSize: 11, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
 });
 
+function PersonalizeCard() {
+  return (
+    <Pressable onPress={() => router.push("/(tabs)/profile" as any)} style={personS.card}>
+      <LinearGradient
+        colors={[`${C.accent}14`, `${C.accentGold}08`]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+      />
+      <View style={personS.left}>
+        <View style={personS.iconWrap}>
+          <Ionicons name="star" size={20} color={C.accentGold} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={personS.title}>Make it yours</Text>
+          <Text style={personS.sub}>Follow teams to get personalized scores, alerts, and AI recaps</Text>
+        </View>
+      </View>
+      <View style={personS.badge}>
+        <Text style={personS.badgeText}>Set Up</Text>
+        <Ionicons name="chevron-forward" size={12} color={C.accent} />
+      </View>
+    </Pressable>
+  );
+}
+
+const personS = StyleSheet.create({
+  card: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: C.card, borderRadius: 18, padding: 16,
+    borderWidth: 1.5, borderColor: `${C.accent}30`, overflow: "hidden", gap: 12,
+  },
+  left: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  iconWrap: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: `${C.accentGold}20`,
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
+  title: { color: C.text, fontSize: 15, fontWeight: "800", fontFamily: "Inter_700Bold", marginBottom: 2 },
+  sub: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
+  badge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: `${C.accent}20`, paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 10, borderWidth: 1, borderColor: `${C.accent}40`, flexShrink: 0,
+  },
+  badgeText: { color: C.accent, fontSize: 12, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+});
+
 function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game[] }) {
   if (myTeams.length === 0) return null;
   return (
@@ -827,9 +874,13 @@ export default function HubScreen() {
         )}
 
         {/* ── MY TEAMS STRIP ── */}
-        {myTeams.length > 0 && (
+        {myTeams.length > 0 ? (
           <View style={styles.section}>
             <MyTeamsStrip myTeams={myTeams} allGames={allGames} />
+          </View>
+        ) : !gamesLoading && (
+          <View style={styles.section}>
+            <PersonalizeCard />
           </View>
         )}
 

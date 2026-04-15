@@ -33,6 +33,12 @@ The project is structured as a pnpm workspace monorepo, separating deployable ap
 - **Mobile State Management:** `PreferencesContext` for user preferences (teams, players, leagues, mode), persisted via AsyncStorage and synced with the backend.
 - **Universal Sports Model:** Database includes `user_preferences`, `sport_game_events` (universal event table), and `sport_game_states` (live game snapshots).
 
+**Day 7 Launch Prep (Complete):**
+- **Web Onboarding Gate Removed:** `_layout.tsx` now redirects first-time users to onboarding on both web and native (previously native-only)
+- **Fan/Nerd Mode Onboarding Step:** Onboarding now has 6 steps (welcome→sports→teams→**mode**→name→confirm). The new mode step shows "How do you watch?" with Fan Mode (orange) and Nerd Mode (gold) cards. Selected mode is saved to `appMode` preference and shown in the confirm screen
+- **Personalize Card on Home:** When `favoriteTeams.length === 0` and games have loaded, Home shows a "Make it yours" CTA card linking to Profile
+- **Live Game Badge on Scores Tab:** Tab layout uses React Query (shared cache key `["games", dateStr]`) to show a red badge count of live games on the Scores tab. Home tab icon gets a red dot when a followed team is live
+
 **Feature Specifications:**
 - **Mobile App Core Features:** Onboarding flow, Fan/Nerd Mode toggle, redesigned Home Tab (consolidated sections, smart sport-tab default), Live Tab (urgency scoring, smart filters), Standings (sport-adaptive, "Why It Matters" context, playoff seed display, NCAAB bracket), Sports Tab (season phase badges), Game Log (competition-segmented timeline with filtering), Draft Center (multi-sport hub with pick tracker, prospects, team needs), Team Future Tab (draft/transfer info), and robust sport/team route fallbacks.
 - **Sport Boards Overhaul:** All sport pages display sport-adaptive content with archetype-based section ordering and inline standings. This includes tailored displays for Team Sports, Tennis, Golf, Combat/MMA, Motorsports, College sports, Soccer, and Seasonal Sports, leveraging dynamic data and contextual rankings/schedules.

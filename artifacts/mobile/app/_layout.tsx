@@ -31,7 +31,7 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    if (!preferences.onboardingComplete && Platform.OS !== "web") {
+    if (!preferences.onboardingComplete) {
       router.replace("/onboarding" as any);
     }
   }, [isLoaded, preferences.onboardingComplete]);
