@@ -3572,10 +3572,19 @@ interface RankingsGroup {
 
 router.get("/sports/rankings/:league", async (req, res): Promise<void> => {
   const league = (req.params.league ?? "").toUpperCase();
-  const weightClass = (req.query.weightClass as string) ?? "all";
+  const weightClass = ((req.query.weightClass as string) ?? "all").toLowerCase();
   const cfg = RANKINGS_LEAGUES[league];
   if (!cfg) {
     res.status(400).json({ error: `Rankings not available for ${league}` });
+    return;
+  }
+
+  // Validate weight class for UFC
+  if (league === "UFC" && weightClass !== "all" && !UFC_WEIGHT_CLASS_MAP[weightClass]) {
+    res.status(400).json({
+      error: `Invalid weight class: ${weightClass}`,
+      validOptions: ["all", ...Object.keys(UFC_WEIGHT_CLASS_MAP)]
+    });
     return;
   }
 
