@@ -170,13 +170,14 @@ function getImportanceTags(game: Game, myTeams: string[]): ImportanceTag[] {
     tags.push({ label: "RIVALRY", color: C.accentGold, bgColor: `${C.accentGold}18` });
   }
 
+  // Only show BUBBLE for close games in playoff bubble months
   const now = new Date();
   const month = now.getMonth();
-
-  const isPlayoffBubble = (game.league === "NBA" && (month >= 2 && month <= 3)) ||
+  const isPlayoffBubbleSeason = (game.league === "NBA" && (month >= 2 && month <= 3)) ||
     (game.league === "NHL" && (month >= 2 && month <= 3)) ||
     (game.league === "MLB" && (month >= 8 && month <= 9));
-  if (isPlayoffBubble) {
+  // Only show BUBBLE for tight games (not already tagged) during bubble season
+  if (isPlayoffBubbleSeason && diff <= 5 && !tags.some(t => t.label === "MUST WATCH" || t.label === "OT" || t.label === "CLOSE" || t.label === "TIGHT")) {
     tags.push({ label: "BUBBLE", color: "#F59E0B", bgColor: "#F59E0B15" });
   }
 
@@ -184,7 +185,7 @@ function getImportanceTags(game: Game, myTeams: string[]): ImportanceTag[] {
     (game.league === "MLB" && month >= 9) ||
     (game.league === "NHL" && month >= 3) ||
     (game.league === "NCAAB" && month === 2);
-  if (isPlayoffSeason && !isPlayoffBubble) {
+  if (isPlayoffSeason && !isPlayoffBubbleSeason && tags.length < 2) {
     tags.push({ label: "PLAYOFF RACE", color: C.accentGreen, bgColor: `${C.accentGreen}18` });
   }
 
