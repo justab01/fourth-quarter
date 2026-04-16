@@ -1158,6 +1158,9 @@ async function persistGameData(
   league: string,
   keyPlays: Array<{ time: string; description: string; team: string }>
 ): Promise<void> {
+  // Skip if no database connection
+  if (!db) return;
+
   const gameId = game.id;
 
   // Upsert game state snapshot
@@ -1413,6 +1416,7 @@ interface EspnStandingsEntry {
 interface EspnStandingsGroup {
   name?: string;
   standings?: { entries: EspnStandingsEntry[] };
+  children?: EspnStandingsGroup[];
 }
 
 interface EspnStandingsResponse {
@@ -3201,7 +3205,8 @@ router.get("/sports/racing/schedule/:league", async (req, res) => {
   const league = (req.params.league ?? "").toUpperCase();
   const cfg = LEAGUE_CONFIG[league];
   if (!cfg || getArchetype(league) !== "racing") {
-    return res.status(400).json({ error: `Racing schedule not available for ${league}` });
+    res.status(400).json({ error: `Racing schedule not available for ${league}` });
+    return;
   }
 
   const cacheKey = `racing-schedule-${league}`;
@@ -3532,6 +3537,23 @@ const RANKINGS_LEAGUES: Record<string, { url: string; type: "rankings" | "standi
   LPGA:     { url: "https://site.api.espn.com/apis/site/v2/sports/golf/lpga/scoreboard", type: "standings" },
 };
 
+// UFC weight class mapping for filtering
+const UFC_WEIGHT_CLASS_MAP: Record<string, string[]> = {
+  "p4p": ["pound for pound", "pound-for-pound"],
+  "hw": ["heavyweight division"],
+  "lhw": ["light heavyweight division"],
+  "mw": ["middleweight division"],
+  "ww": ["welterweight division"],
+  "lw": ["lightweight division"],
+  "fw": ["featherweight division"],
+  "bw": ["bantamweight division"],
+  "flw": ["flyweight division"],
+  "w-sw": ["women's strawweight"],
+  "w-flw": ["women's flyweight"],
+  "w-bw": ["women's bantamweight"],
+  "w-fw": ["women's featherweight"],
+};
+
 interface RankingEntry {
   rank: number;
   name: string;
@@ -3550,13 +3572,14 @@ interface RankingsGroup {
 
 router.get("/sports/rankings/:league", async (req, res): Promise<void> => {
   const league = (req.params.league ?? "").toUpperCase();
+  const weightClass = (req.query.weightClass as string) ?? "all";
   const cfg = RANKINGS_LEAGUES[league];
   if (!cfg) {
     res.status(400).json({ error: `Rankings not available for ${league}` });
     return;
   }
 
-  const cacheKey = `rankings-${league}`;
+  const cacheKey = `rankings-${league}${weightClass !== "all" ? `-${weightClass}` : ""}`;
   const cached = getCached<{ groups: RankingsGroup[] }>(cacheKey);
   if (cached) { res.json(cached); return; }
 
@@ -3624,6 +3647,17 @@ router.get("/sports/rankings/:league", async (req, res): Promise<void> => {
           }),
         });
       }
+    }
+
+    // Apply weight class filtering for UFC
+    if (league === "UFC" && weightClass !== "all") {
+      const matchPhrases = UFC_WEIGHT_CLASS_MAP[weightClass] ?? [];
+      const filtered = groups.filter(g => {
+        const titleLower = g.title.toLowerCase();
+        return matchPhrases.some(phrase => titleLower.includes(phrase));
+      });
+      groups.length = 0;
+      groups.push(...filtered);
     }
 
     const result = { groups };
