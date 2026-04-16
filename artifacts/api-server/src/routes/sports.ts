@@ -3822,29 +3822,32 @@ router.get("/sports/seasonal/:sport", async (req, res) => {
 });
 
 // ─── Top Athletes Endpoint ────────────────────────────────────────────────────
+interface TopAthleteEntry {
+  name: string;
+  rank: number;
+  stat: string | null;
+  headshot: string | null;
+  country: string | null;
+  team: string | null;
+  league: string;
+}
+
 router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
   const league = (req.params.league ?? "").toUpperCase();
   const limit = Math.min(parseInt(req.query.limit as string) || 10, 25);
 
+  // Check cache first
+  const cacheKey = `top-athletes-${league}-${limit}`;
+  const cached = getCached<{ athletes: TopAthleteEntry[] }>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
   // For rankings-based sports, derive from rankings
   if (RANKINGS_LEAGUES[league]) {
     const cfg = RANKINGS_LEAGUES[league];
-    if (!cfg) {
-      res.status(400).json({ error: `No rankings for ${league}` });
-      return;
-    }
 
     try {
       const data = await espnFetch(cfg.url) as any;
-      const athletes: Array<{
-        name: string;
-        rank: number;
-        stat: string | null;
-        headshot: string | null;
-        country: string | null;
-        team: string | null;
-        league: string;
-      }> = [];
+      const athletes: TopAthleteEntry[] = [];
 
       const rankings = data.rankings ?? [];
       for (const group of rankings.slice(0, 2)) {
@@ -3862,7 +3865,9 @@ router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
         }
       }
 
-      res.json({ athletes: athletes.slice(0, limit) });
+      const result = { athletes: athletes.slice(0, limit) };
+      setCached(cacheKey, result, 300_000);
+      res.json(result);
       return;
     } catch (err) {
       console.error(`Top athletes fetch error for ${league}:`, err);
@@ -3883,15 +3888,7 @@ router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
     const standingsUrl = `https://site.api.espn.com/apis/site/v2/sports/${standingsCfg.espnPath}/standings`;
     const standingsData = await espnFetch(standingsUrl) as any;
 
-    const athletes: Array<{
-      name: string;
-      rank: number;
-      stat: string | null;
-      headshot: string | null;
-      country: string | null;
-      team: string;
-      league: string;
-    }> = [];
+    const athletes: TopAthleteEntry[] = [];
 
     // Get top 3 teams from standings
     const children = standingsData.children ?? [];
@@ -3946,7 +3943,9 @@ router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
       if (athletes.length >= limit) break;
     }
 
-    res.json({ athletes: athletes.slice(0, limit) });
+    const result = { athletes: athletes.slice(0, limit) };
+    setCached(cacheKey, result, 300_000);
+    res.json(result);
   } catch (err) {
     console.error(`Top athletes fetch error for ${league}:`, err);
     res.status(500).json({ error: "Failed to fetch athletes" });
