@@ -3821,4 +3821,136 @@ router.get("/sports/seasonal/:sport", async (req, res) => {
   res.json(data);
 });
 
+// ─── Top Athletes Endpoint ────────────────────────────────────────────────────
+router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
+  const league = (req.params.league ?? "").toUpperCase();
+  const limit = Math.min(parseInt(req.query.limit as string) || 10, 25);
+
+  // For rankings-based sports, derive from rankings
+  if (RANKINGS_LEAGUES[league]) {
+    const cfg = RANKINGS_LEAGUES[league];
+    if (!cfg) {
+      res.status(400).json({ error: `No rankings for ${league}` });
+      return;
+    }
+
+    try {
+      const data = await espnFetch(cfg.url) as any;
+      const athletes: Array<{
+        name: string;
+        rank: number;
+        stat: string | null;
+        headshot: string | null;
+        country: string | null;
+        team: string | null;
+        league: string;
+      }> = [];
+
+      const rankings = data.rankings ?? [];
+      for (const group of rankings.slice(0, 2)) {
+        const entries = group.ranks ?? group.entries ?? [];
+        for (const entry of entries.slice(0, limit)) {
+          athletes.push({
+            name: entry.athlete?.displayName ?? entry.athlete?.fullName ?? "Unknown",
+            rank: entry.current ?? 0,
+            stat: entry.points != null ? `${entry.points} pts` : entry.recordSummary ?? null,
+            headshot: entry.athlete?.headshot?.href ?? null,
+            country: entry.athlete?.flag?.alt ?? null,
+            team: null,
+            league,
+          });
+        }
+      }
+
+      res.json({ athletes: athletes.slice(0, limit) });
+      return;
+    } catch (err) {
+      console.error(`Top athletes fetch error for ${league}:`, err);
+      res.status(500).json({ error: "Failed to fetch athletes" });
+      return;
+    }
+  }
+
+  // For team sports, get top players from standings-leading teams' rosters
+  const standingsCfg = LEAGUE_CONFIG[league];
+  if (!standingsCfg) {
+    res.status(400).json({ error: `Unknown league: ${league}` });
+    return;
+  }
+
+  try {
+    // Get standings to find top teams
+    const standingsUrl = `https://site.api.espn.com/apis/site/v2/sports/${standingsCfg.espnPath}/standings`;
+    const standingsData = await espnFetch(standingsUrl) as any;
+
+    const athletes: Array<{
+      name: string;
+      rank: number;
+      stat: string | null;
+      headshot: string | null;
+      country: string | null;
+      team: string;
+      league: string;
+    }> = [];
+
+    // Get top 3 teams from standings
+    const children = standingsData.children ?? [];
+    const allEntries: any[] = [];
+    for (const child of children) {
+      const entries = child.standings?.entries ?? [];
+      allEntries.push(...entries);
+    }
+    allEntries.sort((a, b) => {
+      const rankA = a.stats?.find((s: any) => s.name === "rank")?.value ?? 999;
+      const rankB = b.stats?.find((s: any) => s.name === "rank")?.value ?? 999;
+      return rankA - rankB;
+    });
+
+    const topTeams = allEntries.slice(0, 3);
+
+    // Get rosters for top teams
+    for (const teamEntry of topTeams) {
+      const teamId = teamEntry.team?.id;
+      const teamName = teamEntry.team?.displayName ?? "Unknown";
+      if (!teamId) continue;
+
+      try {
+        const rosterUrl = `https://site.api.espn.com/apis/site/v2/sports/${standingsCfg.espnPath}/teams/${teamId}?enable=roster`;
+        const rosterData = await espnFetch(rosterUrl) as any;
+        const roster = rosterData.team?.athletes ?? [];
+
+        // Get top 3-5 players from roster (starters or by position importance)
+        const topPlayers = roster
+          .filter((p: any) => p.active && p.starter)
+          .slice(0, 5);
+
+        for (const player of topPlayers) {
+          const stat = player.stats?.find((s: any) =>
+            s.name === "points" || s.name === "goals" || s.name === "avg" || s.name === "ppg"
+          );
+
+          athletes.push({
+            name: player.displayName ?? player.fullName ?? "Unknown",
+            rank: athletes.length + 1,
+            stat: stat?.displayValue ?? player.position?.displayValue ?? null,
+            headshot: player.headshot?.href ?? null,
+            country: null,
+            team: teamName,
+            league,
+          });
+        }
+      } catch (e) {
+        console.error(`Roster fetch error for team ${teamId}:`, e);
+      }
+
+      if (athletes.length >= limit) break;
+    }
+
+    res.json({ athletes: athletes.slice(0, limit) });
+  } catch (err) {
+    console.error(`Top athletes fetch error for ${league}:`, err);
+    res.status(500).json({ error: "Failed to fetch athletes" });
+  }
+});
+
 export default router;

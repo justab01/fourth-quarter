@@ -1,5 +1,7 @@
 const BASE = process.env.EXPO_PUBLIC_DOMAIN
-  ? `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`
+  ? (process.env.EXPO_PUBLIC_DOMAIN.includes("localhost") || process.env.EXPO_PUBLIC_DOMAIN.includes("127.0.0.1")
+      ? `http://${process.env.EXPO_PUBLIC_DOMAIN}/api`
+      : `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`)
   : "/api";
 
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
@@ -50,6 +52,12 @@ export const api = {
     apiFetch<RecapResponse>("/ai/recap", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  whyWatch: (sport: string, games?: { homeTeam: string; awayTeam: string; status: string; league: string }[], standings?: { teamName: string; rank: number }[]) =>
+    apiFetch<{ context: string }>("/ai/why-watch", {
+      method: "POST",
+      body: JSON.stringify({ sport, games, standings }),
     }),
 
   savePreferences: (prefs: UserPreferencesPayload) =>
@@ -104,6 +112,9 @@ export const api = {
 
   getGamePreview: (gameId: string) =>
     apiFetch<{ preview: string | null; homeTeam: string; awayTeam: string; league: string }>(`/sports/game-preview/${encodeURIComponent(gameId)}`),
+
+  getTopAthletes: (league: string, limit = 10) =>
+    apiFetch<{ athletes: TopAthlete[] }>(`/sports/top-athletes/${encodeURIComponent(league)}?limit=${limit}`),
 };
 
 export interface SeasonalEvent {
@@ -549,4 +560,14 @@ export interface TennisTournament {
 export interface TennisDrawData {
   league: string;
   tournaments: TennisTournament[];
+}
+
+export interface TopAthlete {
+  name: string;
+  rank: number;
+  stat: string | null;
+  headshot: string | null;
+  country: string | null;
+  team: string | null;
+  league: string;
 }
