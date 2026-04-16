@@ -3022,10 +3022,9 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
             tintColor={accentColor}
           />
         }
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
       >
         {renderSections()}
-        <View style={{ height: 32 }} />
       </ScrollView>
     </View>
   );

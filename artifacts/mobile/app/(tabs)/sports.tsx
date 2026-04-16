@@ -169,7 +169,7 @@ export default function SportsScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 72 }]}
       >
         {/* ── Quick Links ──────────────────────────────────────────────── */}
         <ScrollView
