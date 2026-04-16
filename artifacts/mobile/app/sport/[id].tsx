@@ -17,7 +17,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
-import { getSportById, getSportByLeague, type SportCategory, type LeagueGroup } from "@/constants/sportCategories";
+import { getSportById, getSportByLeague, type SportCategory, type LeagueGroup, getArchetypeStyle } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
 import { GameCard, TeamLogo } from "@/components/GameCard";
@@ -950,6 +950,10 @@ export default function SportBoardScreen() {
   const archetype = getArchetypeForSport(sport, activeLeague);
   const rankingsLeague = getRankingsLeague(sport, activeLeague);
   const standingsLeague = getStandingsLeague(sport, activeLeague);
+
+  // Get archetype-specific styling
+  const activeLeagueKey = activeLeague !== "all" ? activeLeague : (sport?.leagues[0]?.key ?? "NBA");
+  const archetypeStyle = getArchetypeStyle(activeLeagueKey);
 
   const todayDate = useMemo(() => {
     const d = new Date();
@@ -2208,9 +2212,9 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       <StatusBar barStyle="light-content" />
 
       <LinearGradient
-        colors={[accentColor + "22", "transparent"]}
+        colors={archetypeStyle.heroGradient}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        end={{ x: 1, y: 1 }}
         style={styles.heroGradient}
       >
         <View style={styles.header}>
