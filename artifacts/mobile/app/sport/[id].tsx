@@ -20,9 +20,9 @@ import Colors from "@/constants/colors";
 import { getSportById, getSportByLeague, type SportCategory, type LeagueGroup } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
-import { GameCard } from "@/components/GameCard";
+import { GameCard, TeamLogo } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
-import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
+import { GameCardSkeleton, NewsCardSkeleton, SportPageSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
 import { getEspnHeadshotUrl } from "@/constants/espnAthleteIds";
 import { goToTeam } from "@/utils/navHelpers";
@@ -983,6 +983,20 @@ export default function SportBoardScreen() {
     enabled: !!rankingsLeague,
   });
 
+  // Live top athletes for sport pages
+  const topAthletesLeague = useMemo(() => {
+    if (activeLeague !== "all") return activeLeague;
+    // For "all", use first league with rankings
+    return sport?.leagues.find(l => RANKINGS_LEAGUES.has(l.key))?.key ?? null;
+  }, [activeLeague, sport]);
+
+  const { data: topAthletesData, isLoading: topAthletesLoading } = useQuery({
+    queryKey: ["top-athletes", topAthletesLeague],
+    queryFn: () => api.getTopAthletes(topAthletesLeague!, 12),
+    staleTime: 300_000,
+    enabled: !!topAthletesLeague,
+  });
+
   const isSeasonal = SEASONAL_SPORTS.has(sportId);
   const { data: seasonalData, isLoading: seasonalLoading, refetch: refetchSeasonal } = useQuery({
     queryKey: ["seasonal", sportId],
@@ -1031,11 +1045,6 @@ export default function SportBoardScreen() {
   });
 
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRankings(), refetchDraw(), refetchLeaderboard(), refetchStandings(), refetchRacingSchedule(), refetchConstructors(), refetchSeasonal()]);
-    setRefreshing(false);
-  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchStandings, refetchRacingSchedule, refetchConstructors, refetchSeasonal]);
 
   const sportLeagueKeys = useMemo(
     () => new Set(sport?.leagues.map((l) => l.key) ?? []),
@@ -1084,6 +1093,34 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
   }, [upcomingData, activeLeague, hasGroups, activeGroup, groupLeagueKeys]);
 
   const topAthletes = useMemo(() => {
+    // Use live data from API
+    const liveAthletes = topAthletesData?.athletes ?? [];
+    if (liveAthletes.length > 0) {
+      return liveAthletes.map(a => ({
+        name: a.name,
+        team: a.team ?? "",
+        league: a.league,
+        position: a.stat ?? "",
+        stat: a.stat ?? "",
+        resolvedHeadshot: a.headshot || getEspnHeadshotUrl(a.name, a.league) || undefined,
+      }));
+    }
+
+    // Fallback to rankings data if available
+    const allRankingsGroups = rankingsData?.groups ?? [];
+    const rankingsAthletes = allRankingsGroups[0]?.entries.slice(0, 12) ?? [];
+    if (rankingsAthletes.length > 0) {
+      return rankingsAthletes.map((entry, i) => ({
+        name: entry.name,
+        team: "",
+        league: rankingsLeague ?? "",
+        position: "",
+        stat: entry.points ?? entry.record ?? "",
+        resolvedHeadshot: entry.headshot || undefined,
+      }));
+    }
+
+    // Last resort: filter static ALL_PLAYERS
     let filterSet: Set<string>;
     if (activeLeague !== "all") {
       filterSet = activeLeagueKeys ?? new Set([activeLeague]);
@@ -1092,11 +1129,55 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
     } else {
       filterSet = sportLeagueKeys;
     }
-    return ALL_PLAYERS.filter((p) => filterSet.has(p.league)).slice(0, 20).map(p => ({
+    return ALL_PLAYERS.filter((p) => filterSet.has(p.league)).slice(0, 12).map(p => ({
       ...p,
       resolvedHeadshot: p.headshotUrl || getEspnHeadshotUrl(p.name, p.league) || undefined,
     }));
-  }, [sportLeagueKeys, activeLeague, activeLeagueKeys, hasGroups, activeGroup, groupLeagueKeys]);
+  }, [topAthletesData, rankingsData, rankingsLeague, activeLeague, activeLeagueKeys, hasGroups, activeGroup, groupLeagueKeys, sportLeagueKeys]);
+
+  // ── Why Watch Today AI context ───────────────────────────────────────────────
+  const gamesForWhyWatch = useMemo(() => {
+    return filteredGames.slice(0, 5).map(g => ({
+      homeTeam: g.homeTeam,
+      awayTeam: g.awayTeam,
+      status: g.status,
+      league: g.league,
+    }));
+  }, [filteredGames]);
+
+  const standingsForWhyWatch = useMemo(() => {
+    const entries: StandingEntry[] = standingsData?.standings ?? [];
+    if (entries.length === 0) return undefined;
+    return entries.slice(0, 5).map(s => ({
+      teamName: s.teamName,
+      rank: s.rank,
+    }));
+  }, [standingsData]);
+
+  const { data: whyWatchData, refetch: refetchWhyWatch } = useQuery({
+    queryKey: ["why-watch", sportId, gamesForWhyWatch.length, standingsForWhyWatch?.length],
+    queryFn: () => api.whyWatch(sport!.name, gamesForWhyWatch, standingsForWhyWatch),
+    staleTime: 300_000,
+    enabled: !!sport && filteredGames.length > 0,
+  });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetchGames(),
+      refetchNews(),
+      refetchUpcoming(),
+      refetchRankings(),
+      refetchDraw(),
+      refetchLeaderboard(),
+      refetchStandings(),
+      refetchRacingSchedule(),
+      refetchConstructors(),
+      refetchSeasonal(),
+      refetchWhyWatch?.() ?? Promise.resolve(),
+    ]);
+    setRefreshing(false);
+  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchStandings, refetchRacingSchedule, refetchConstructors, refetchSeasonal, refetchWhyWatch]);
 
   const standingsGroups = useMemo(() => {
     const entries: StandingEntry[] = standingsData?.standings ?? [];
@@ -1144,7 +1225,7 @@ await Promise.all([refetchGames(), refetchNews(), refetchUpcoming(), refetchRank
   const isOffSeason = useMemo(() => {
     if (gamesLoading || standingsLoading) return false;
     if (filteredGames.length > 0) return false;
-    if (archetype === "team" && standingsData?.standings?.length > 0) return false;
+    if (archetype === "team" && (standingsData?.standings?.length ?? 0) > 0) return false;
     return true;
   }, [gamesLoading, standingsLoading, filteredGames.length, archetype, standingsData]);
 
@@ -2200,6 +2281,14 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
               ))
           }
         </ScrollView>
+
+        {/* ── Why Watch Today ─────────────────────────────────────────────────── */}
+        {whyWatchData?.context && (
+          <View style={styles.whyWatchContainer}>
+            <Ionicons name="sparkles" size={12} color={accentColor} style={{ marginRight: 6 }} />
+            <Text style={styles.whyWatchText} numberOfLines={2}>{whyWatchData.context}</Text>
+          </View>
+        )}
       </LinearGradient>
 
       {/* ── Live Games Strip ─────────────────────────────────────────────────────── */}
@@ -2208,7 +2297,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
           <View style={styles.liveStripHeader}>
             <View style={styles.liveStripPulse}>
               <Animated.View style={{
-                width: 8, height: 8, borderRadius: 4, backgroundColor: "#E53935",
+                width: 8, height: 8, borderRadius: 4, backgroundColor: C.electricLime,
                 opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
                 transform: [{ scale: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }]
               }} />
@@ -2310,22 +2399,23 @@ const styles = StyleSheet.create({
   liveTag: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(232,22,43,0.15)",
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    gap: 4,
+    backgroundColor: C.electricLime + "25",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 5,
   },
   liveDot: {
-    width: 5,
-    height: 5,
+    width: 6,
+    height: 6,
     borderRadius: 3,
-    backgroundColor: C.live,
+    backgroundColor: C.electricLime,
   },
   liveTagText: {
     fontSize: 11,
     fontFamily: "Inter_700Bold",
-    color: C.live,
+    color: C.electricLime,
+    letterSpacing: 0.5,
   },
   chipScroll: {
     marginBottom: 0,
@@ -2338,7 +2428,7 @@ const styles = StyleSheet.create({
   leagueChip: {
     backgroundColor: C.card,
     borderRadius: 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1.5,
     borderColor: C.separator,
@@ -2347,6 +2437,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
     color: C.textSecondary,
+    letterSpacing: 0.2,
+  },
+  whyWatchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  whyWatchText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    lineHeight: 16,
   },
 
   content: {
@@ -2362,17 +2466,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 14,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
     fontSize: 18,
     fontFamily: "Inter_700Bold",
     color: C.text,
+    letterSpacing: -0.3,
   },
   seeAllBtn: {},
   seeAllText: {
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.2,
   },
 
   athleteRow: {
@@ -2440,52 +2547,58 @@ const styles = StyleSheet.create({
 
   newsRow: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
+    alignItems: "flex-start",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: C.separator,
-    gap: 10,
+    gap: 12,
   },
   newsRowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: C.accent,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: C.electricLime,
     flexShrink: 0,
+    marginTop: 5,
   },
   newsRowText: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
+    fontSize: 15,
+    fontFamily: "Inter_500Medium",
     color: C.text,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   newsRowMeta: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: "Inter_400Regular",
-    color: C.textSecondary,
+    color: C.textTertiary,
     marginTop: 2,
   },
 
   emptyCard: {
     backgroundColor: C.card,
-    borderRadius: 14,
-    padding: 24,
+    borderRadius: 16,
+    padding: 32,
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: C.separator,
   },
   emptyCardEmoji: {
-    fontSize: 32,
+    fontSize: 48,
+    marginBottom: 4,
   },
   emptyCardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: "Inter_700Bold",
     color: C.text,
+    textAlign: "center",
   },
   emptyCardSub: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
-    color: "#AEAEB2",
+    color: C.textSecondary,
     textAlign: "center",
     lineHeight: 19,
   },
@@ -2539,25 +2652,28 @@ const styles = StyleSheet.create({
 
   rankingsCard: {
     backgroundColor: C.card,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
   },
   rankingsGroupTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: "Inter_700Bold",
     color: C.text,
     flex: 1,
+    marginBottom: 4,
   },
   rankRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: C.separator,
   },
   rankNum: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: "Inter_700Bold",
     color: C.textSecondary,
     width: 24,
@@ -2900,7 +3016,7 @@ const styles = StyleSheet.create({
   liveStripTitle: {
     fontSize: 11,
     fontFamily: "Inter_700Bold",
-    color: "#E53935",
+    color: C.electricLime,
     letterSpacing: 1,
   },
   liveStripCount: {
