@@ -294,3 +294,111 @@ export const SOCCER_LEAGUE_GROUPS: Record<string, SportLeague[]> = {
   cups: SPORT_CATEGORIES.find(s => s.id === "soccer")?.leagues.filter(l => l.group === "cups") ?? [],
   international: SPORT_CATEGORIES.find(s => s.id === "soccer")?.leagues.filter(l => l.group === "international") ?? [],
 };
+
+// Sport Archetype Styling Configuration
+
+export type SportArchetypeType = "team" | "tennis" | "combat" | "golf" | "racing" | "seasonal" | "multi_event";
+
+export type ArchetypeStyle = {
+  heroGradient: [string, string, string];
+  cardStyle: "score" | "match" | "leaderboard" | "bracket" | "event";
+  accentColor: string;
+  sectionOrder: string[];
+  showRankings: boolean;
+  showStandings: boolean;
+  showLeaderboard: boolean;
+  athleteStatLabel: string;
+};
+
+export const ARCHETYPE_STYLES: Record<SportArchetypeType, ArchetypeStyle> = {
+  team: {
+    heroGradient: ["#1A1A2E", "#16213E", "#0F0F1A"],
+    cardStyle: "score",
+    accentColor: "#E8503A",
+    sectionOrder: ["live", "games", "standings", "athletes", "news"],
+    showRankings: false,
+    showStandings: true,
+    showLeaderboard: false,
+    athleteStatLabel: "PPG",
+  },
+  tennis: {
+    heroGradient: ["#9BA720", "#4A5010", "#1A1D05"],
+    cardStyle: "match",
+    accentColor: "#CDDC39",
+    sectionOrder: ["live", "draw", "rankings", "athletes", "news"],
+    showRankings: true,
+    showStandings: false,
+    showLeaderboard: false,
+    athleteStatLabel: "Rank",
+  },
+  combat: {
+    heroGradient: ["#E74C3C", "#7B241C", "#2A0A08"],
+    cardStyle: "match",
+    accentColor: "#E74C3C",
+    sectionOrder: ["live", "rankings", "upcoming", "athletes", "news"],
+    showRankings: true,
+    showStandings: false,
+    showLeaderboard: false,
+    athleteStatLabel: "Record",
+  },
+  golf: {
+    heroGradient: ["#2ECC71", "#0E6B38", "#053320"],
+    cardStyle: "leaderboard",
+    accentColor: "#2ECC71",
+    sectionOrder: ["leaderboard", "rankings", "athletes", "news"],
+    showRankings: true,
+    showStandings: false,
+    showLeaderboard: true,
+    athleteStatLabel: "Score",
+  },
+  racing: {
+    heroGradient: ["#F39C12", "#784D04", "#2A1A05"],
+    cardStyle: "event",
+    accentColor: "#F39C12",
+    sectionOrder: ["live", "schedule", "standings", "athletes", "news"],
+    showRankings: true,
+    showStandings: true,
+    showLeaderboard: false,
+    athleteStatLabel: "Points",
+  },
+  seasonal: {
+    heroGradient: ["#8E8E93", "#3A3A3C", "#1A1A1A"],
+    cardStyle: "event",
+    accentColor: "#8E8E93",
+    sectionOrder: ["events", "athletes", "news"],
+    showRankings: false,
+    showStandings: false,
+    showLeaderboard: false,
+    athleteStatLabel: "",
+  },
+  multi_event: {
+    heroGradient: ["#D4A843", "#8B6914", "#2A1D05"],
+    cardStyle: "bracket",
+    accentColor: "#D4A843",
+    sectionOrder: ["events", "medals", "athletes", "news"],
+    showRankings: false,
+    showStandings: false,
+    showLeaderboard: false,
+    athleteStatLabel: "Medals",
+  },
+};
+
+export function getArchetypeForLeague(leagueKey: string): SportArchetypeType {
+  const TENNIS = new Set(["ATP", "WTA"]);
+  const COMBAT = new Set(["UFC", "BELLATOR", "PFL", "BOXING"]);
+  const GOLF = new Set(["PGA", "LPGA", "LIV"]);
+  const RACING = new Set(["F1", "NASCAR", "IRL"]);
+
+  if (TENNIS.has(leagueKey)) return "tennis";
+  if (COMBAT.has(leagueKey)) return "combat";
+  if (GOLF.has(leagueKey)) return "golf";
+  if (RACING.has(leagueKey)) return "racing";
+  if (leagueKey.startsWith("OLYMPICS") || leagueKey.startsWith("XGAMES")) return "multi_event";
+  if (leagueKey.startsWith("DIAMOND") || leagueKey.startsWith("WORLD_ATHLETICS")) return "seasonal";
+  return "team";
+}
+
+export function getArchetypeStyle(leagueKey: string): ArchetypeStyle {
+  const archetype = getArchetypeForLeague(leagueKey);
+  return ARCHETYPE_STYLES[archetype];
+}
