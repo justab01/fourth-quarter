@@ -105,6 +105,94 @@ const LEAGUE_SEASON_INFO: Record<string, { start: string; end: string; label: st
   NCAAF: { start: "August",    end: "January",    label: "College football starts in August" },
 };
 
+// Season phase info for empty states
+function getSeasonPhaseInfo(league: string): { phase: string; nextEvent: string; color: string } | null {
+  const month = new Date().getMonth();
+  const phases: Record<string, Record<number, { phase: string; nextEvent: string; color: string }>> = {
+    NBA: {
+      0: { phase: "Mid-Season", nextEvent: "All-Star Weekend in February", color: "#E8503A" },
+      1: { phase: "All-Star Break", nextEvent: "Season resumes after break", color: "#E8503A" },
+      2: { phase: "Playoff Push", nextEvent: "Playoffs begin mid-April", color: "#FF6B35" },
+      3: { phase: "Playoffs", nextEvent: "NBA Finals in June", color: "#FF6B35" },
+      4: { phase: "Off-Season", nextEvent: "NBA Draft in June", color: "#888" },
+      5: { phase: "Off-Season", nextEvent: "Free agency begins July 1", color: "#888" },
+      6: { phase: "Off-Season", nextEvent: "Summer League in July", color: "#888" },
+      7: { phase: "Off-Season", nextEvent: "Training camp in September", color: "#888" },
+      8: { phase: "Preseason", nextEvent: "Season tips off in October", color: "#22C55E" },
+      9: { phase: "Season Start", nextEvent: "Regular season underway", color: "#22C55E" },
+      10: { phase: "Early Season", nextEvent: "Games daily through April", color: "#E8503A" },
+      11: { phase: "Early Season", nextEvent: "Christmas Day games upcoming", color: "#E8503A" },
+    },
+    NFL: {
+      0: { phase: "Off-Season", nextEvent: "Combine in February", color: "#888" },
+      1: { phase: "Off-Season", nextEvent: "Draft in April", color: "#888" },
+      2: { phase: "Off-Season", nextEvent: "Free agency ongoing", color: "#888" },
+      3: { phase: "Off-Season", nextEvent: "Draft approaching", color: "#888" },
+      4: { phase: "Off-Season", nextEvent: "OTA's begin May", color: "#888" },
+      5: { phase: "Off-Season", nextEvent: "Minicamps in June", color: "#888" },
+      6: { phase: "Off-Season", nextEvent: "Training camp in July", color: "#888" },
+      7: { phase: "Preseason", nextEvent: "Preseason games in August", color: "#22C55E" },
+      8: { phase: "Season Start", nextEvent: "Kickoff in September", color: "#22C55E" },
+      9: { phase: "Early Season", nextEvent: "Weekly games through January", color: "#8B7355" },
+      10: { phase: "Mid-Season", nextEvent: "Thanksgiving games upcoming", color: "#8B7355" },
+      11: { phase: "Late Season", nextEvent: "Playoffs begin January", color: "#FF6B35" },
+    },
+    MLB: {
+      0: { phase: "Off-Season", nextEvent: "Spring Training in February", color: "#888" },
+      1: { phase: "Spring Training", nextEvent: "Opening Day in late March", color: "#22C55E" },
+      2: { phase: "Spring Training", nextEvent: "Season starts soon", color: "#22C55E" },
+      3: { phase: "Season Start", nextEvent: "Opening Day", color: "#3B6DB8" },
+      4: { phase: "Early Season", nextEvent: "Games daily through October", color: "#3B6DB8" },
+      5: { phase: "Early Season", nextEvent: "Summer classic in July", color: "#3B6DB8" },
+      6: { phase: "Mid-Season", nextEvent: "Trade deadline in July", color: "#3B6DB8" },
+      7: { phase: "Late Season", nextEvent: "Postseason in October", color: "#FF6B35" },
+      8: { phase: "Postseason", nextEvent: "World Series in late October", color: "#FF6B35" },
+      9: { phase: "Off-Season", nextEvent: "Winter Meetings in December", color: "#888" },
+      10: { phase: "Off-Season", nextEvent: "Hot stove season", color: "#888" },
+      11: { phase: "Off-Season", nextEvent: "Spring Training approaching", color: "#888" },
+    },
+    NHL: {
+      0: { phase: "Mid-Season", nextEvent: "All-Star Weekend in February", color: "#4A90D9" },
+      1: { phase: "All-Star Break", nextEvent: "Season resumes after break", color: "#4A90D9" },
+      2: { phase: "Playoff Push", nextEvent: "Playoffs begin mid-April", color: "#FF6B35" },
+      3: { phase: "Playoffs", nextEvent: "Stanley Cup Finals in June", color: "#FF6B35" },
+      4: { phase: "Off-Season", nextEvent: "NHL Draft in June", color: "#888" },
+      5: { phase: "Off-Season", nextEvent: "Free agency begins July 1", color: "#888" },
+      6: { phase: "Off-Season", nextEvent: "Development camps in July", color: "#888" },
+      7: { phase: "Off-Season", nextEvent: "Training camp in September", color: "#888" },
+      8: { phase: "Preseason", nextEvent: "Season starts in October", color: "#22C55E" },
+      9: { phase: "Season Start", nextEvent: "Regular season underway", color: "#22C55E" },
+      10: { phase: "Early Season", nextEvent: "Games daily through April", color: "#4A90D9" },
+      11: { phase: "Early Season", nextEvent: "Winter Classic on New Year's", color: "#4A90D9" },
+    },
+  };
+
+  return phases[league]?.[month] ?? null;
+}
+
+// Get sport icon name based on archetype
+function getSportIconName(archetype: string): keyof typeof Ionicons.glyphMap {
+  const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+    basketball: "basketball-outline",
+    football: "american-football-outline",
+    baseball: "baseball-outline",
+    hockey: "snow-outline",
+    soccer: "football-outline",
+    golf: "golf-outline",
+    tennis: "tennisball-outline",
+    combat: "barbell-outline",
+    racing: "speedometer-outline",
+    motorsports: "speedometer-outline",
+    college: "school-outline",
+    esports: "game-controller-outline",
+    track: "footsteps-outline",
+    xgames: "snow-outline",
+    olympics: "medal-outline",
+    womens: "heart-outline",
+  };
+  return iconMap[archetype] ?? "calendar-outline";
+}
+
 const COMBAT_MMA_LEAGUES = new Set(["UFC", "BELLATOR", "PFL"]);
 
 const UFC_WEIGHT_CLASSES = [
@@ -1840,16 +1928,37 @@ export default function SportBoardScreen() {
             </View>
           );
         })
-      ) : (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
-          <Text style={styles.emptyCardTitle}>No events scheduled right now</Text>
-          <Text style={styles.emptyCardSub}>
-            {SPORT_DATA_NOTE[sport.id] ??
-              `${visibleLeagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
-          </Text>
-        </View>
-      )}
+      ) : (() => {
+          // Get season phase info for the primary league
+          const primaryLeague = standingsLeague ?? activeLeagueKey;
+          const seasonPhase = getSeasonPhaseInfo(primaryLeague);
+          const iconName = getSportIconName(archetype);
+
+          return (
+            <View style={styles.emptyCard}>
+              <View style={[styles.emptyIconWrap, { backgroundColor: (seasonPhase?.color ?? accentColor) + "22" }]}>
+                <Ionicons name={iconName} size={32} color={seasonPhase?.color ?? accentColor} />
+              </View>
+              {seasonPhase ? (
+                <>
+                  <View style={[styles.phaseBadge, { backgroundColor: seasonPhase.color + "22" }]}>
+                    <Text style={[styles.phaseBadgeText, { color: seasonPhase.color }]}>{seasonPhase.phase}</Text>
+                  </View>
+                  <Text style={styles.emptyCardTitle}>{seasonPhase.nextEvent}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
+                  <Text style={styles.emptyCardTitle}>No events scheduled right now</Text>
+                </>
+              )}
+              <Text style={styles.emptyCardSub}>
+                {SPORT_DATA_NOTE[sport.id] ??
+                  `${visibleLeagues.map((l) => l.label).join(" · ")} events will appear here when scheduled.`}
+              </Text>
+            </View>
+          );
+        })()}
     </View>
   );
 
@@ -2106,13 +2215,34 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
     </View>
   ) : (
     <View style={styles.section}>
-      <View style={styles.emptyCard}>
-        <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
-        <Text style={styles.emptyCardTitle}>Season Not Active</Text>
-        <Text style={styles.emptyCardSub}>
-          Check back soon for upcoming {sport.name} events
-        </Text>
-      </View>
+      {(() => {
+        const seasonPhase = getSeasonPhaseInfo(activeLeagueKey);
+        const iconName = getSportIconName(archetype);
+
+        return (
+          <View style={styles.emptyCard}>
+            <View style={[styles.emptyIconWrap, { backgroundColor: (seasonPhase?.color ?? accentColor) + "22" }]}>
+              <Ionicons name={iconName} size={32} color={seasonPhase?.color ?? accentColor} />
+            </View>
+            {seasonPhase ? (
+              <>
+                <View style={[styles.phaseBadge, { backgroundColor: seasonPhase.color + "22" }]}>
+                  <Text style={[styles.phaseBadgeText, { color: seasonPhase.color }]}>{seasonPhase.phase}</Text>
+                </View>
+                <Text style={styles.emptyCardTitle}>{seasonPhase.nextEvent}</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.emptyCardEmoji}>{sport.emoji}</Text>
+                <Text style={styles.emptyCardTitle}>Season Not Active</Text>
+              </>
+            )}
+            <Text style={styles.emptyCardSub}>
+              Check back soon for upcoming {sport.name} events
+            </Text>
+          </View>
+        );
+      })()}
     </View>
   );
 
@@ -2605,6 +2735,25 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     textAlign: "center",
     lineHeight: 19,
+  },
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  phaseBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: -4,
+  },
+  phaseBadgeText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.5,
   },
   emptyCenter: {
     flex: 1,
