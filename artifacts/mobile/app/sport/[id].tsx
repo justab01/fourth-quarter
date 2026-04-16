@@ -94,6 +94,32 @@ const RANKINGS_LEAGUES = new Set(["ATP", "WTA", "UFC", "PGA", "F1", "NASCAR", "I
 
 const STANDINGS_LEAGUES = new Set(["NBA", "NFL", "MLB", "NHL", "WNBA", "MLS", "EPL", "LIGA", "BUN", "SERA", "LIG1", "NWSL"]);
 
+// Sub-navigation configs for sports with multiple sub-categories
+const SUB_NAV_CONFIGS: Record<string, { tabs: { label: string; leagues: string[] }[] }> = {
+  basketball: {
+    tabs: [
+      { label: "NBA", leagues: ["NBA"] },
+      { label: "WNBA", leagues: ["WNBA"] },
+      { label: "NCAA", leagues: ["NCAAB", "NCAAW"] },
+    ],
+  },
+  soccer: {
+    tabs: [
+      { label: "Domestic", leagues: ["EPL", "LIGA", "BUN", "SERA", "LIG1", "MLS", "NWSL"] },
+      { label: "Cups", leagues: ["UCL", "UEL", "UECL"] },
+      { label: "International", leagues: ["FWCM", "EURO", "COPA"] },
+    ],
+  },
+  combat: {
+    tabs: [
+      { label: "UFC", leagues: ["UFC"] },
+      { label: "Bellator", leagues: ["BELLATOR"] },
+      { label: "PFL", leagues: ["PFL"] },
+      { label: "Boxing", leagues: ["BOXING"] },
+    ],
+  },
+};
+
 
 const LEAGUE_SEASON_INFO: Record<string, { start: string; end: string; label: string }> = {
   NBA:   { start: "October",   end: "June",      label: "NBA season starts in October" },
@@ -832,6 +858,50 @@ function WeightClassPills({
   );
 }
 
+function SubNavigation({
+  config,
+  activeSubTab,
+  setActiveSubTab,
+  accentColor,
+}: {
+  config: { tabs: { label: string; leagues: string[] }[] };
+  activeSubTab: string;
+  setActiveSubTab: (tab: string) => void;
+  accentColor: string;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingVertical: 8 }}
+    >
+      <Pressable
+        onPress={() => setActiveSubTab("all")}
+        style={[
+          styles.subTab,
+          activeSubTab === "all" && { backgroundColor: accentColor, borderColor: accentColor },
+        ]}
+      >
+        <Text style={[styles.subTabText, activeSubTab === "all" && { color: "#fff" }]}>All</Text>
+      </Pressable>
+      {config.tabs.map((tab) => (
+        <Pressable
+          key={tab.label}
+          onPress={() => setActiveSubTab(tab.label)}
+          style={[
+            styles.subTab,
+            activeSubTab === tab.label && { backgroundColor: accentColor, borderColor: accentColor },
+          ]}
+        >
+          <Text style={[styles.subTabText, activeSubTab === tab.label && { color: "#fff" }]}>
+            {tab.label}
+          </Text>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
+}
+
 function NextEventCard({
   event,
   accentColor,
@@ -1001,6 +1071,7 @@ export default function SportBoardScreen() {
   const sport = getSportById(id ?? "") ?? getSportByLeague((id ?? "").toUpperCase());
   const [activeLeague, setActiveLeagueRaw] = useState<string>("all");
   const [activeGroup, setActiveGroup] = useState<LeagueGroup | "all">("all");
+  const [activeSubTab, setActiveSubTab] = useState<string>("all");
   const [selectedWeightClass, setSelectedWeightClass] = useState<string>("all");
   const [standingsView, setStandingsView] = useState<"table" | "bracket">("table");
 
@@ -1020,6 +1091,8 @@ export default function SportBoardScreen() {
     if (league !== "all" && league !== "UFC") {
       setSelectedWeightClass("all");
     }
+    // Reset sub-tab when a league chip is clicked
+    setActiveSubTab("all");
   }, []);
 
   const isSoccerSport = sport?.id === "soccer";
@@ -1042,6 +1115,9 @@ export default function SportBoardScreen() {
   // Get archetype-specific styling
   const activeLeagueKey = activeLeague !== "all" ? activeLeague : (sport?.leagues[0]?.key ?? "NBA");
   const archetypeStyle = getArchetypeStyle(activeLeagueKey);
+
+  // Get sub-navigation config for multi-league sports
+  const subNavConfig = sport?.id ? SUB_NAV_CONFIGS[sport.id] : null;
 
   const todayDate = useMemo(() => {
     const d = new Date();
@@ -1153,6 +1229,20 @@ export default function SportBoardScreen() {
     return new Set([activeLeague]);
   }, [activeLeague]);
 
+  // Derive league keys from sub-tab selection
+  const subTabLeagueKeys = useMemo(() => {
+    if (!subNavConfig || activeSubTab === "all") return null;
+    const tab = subNavConfig.tabs.find(t => t.label === activeSubTab);
+    return tab ? new Set(tab.leagues) : null;
+  }, [subNavConfig, activeSubTab]);
+
+  // Combine sub-tab filtering with league/group filtering
+  const effectiveLeagueKeys = useMemo(() => {
+    if (subTabLeagueKeys) return subTabLeagueKeys;
+    if (activeLeagueKeys) return activeLeagueKeys;
+    return null;
+  }, [subTabLeagueKeys, activeLeagueKeys]);
+
   const groupLeagueKeys = useMemo(() => {
     if (!hasGroups || activeGroup === "all") return sportLeagueKeys;
     return new Set(
@@ -1165,12 +1255,12 @@ export default function SportBoardScreen() {
     return games
       .filter((g) => {
         if (!sportLeagueKeys.has(g.league)) return false;
-        if (activeLeagueKeys && !activeLeagueKeys.has(g.league)) return false;
+        if (effectiveLeagueKeys && !effectiveLeagueKeys.has(g.league)) return false;
         if (activeLeague === "all" && hasGroups && activeGroup !== "all" && !groupLeagueKeys.has(g.league)) return false;
         return true;
       })
       .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
-  }, [gamesData, sportLeagueKeys, activeLeagueKeys, activeLeague, hasGroups, activeGroup, groupLeagueKeys]);
+  }, [gamesData, sportLeagueKeys, effectiveLeagueKeys, activeLeague, hasGroups, activeGroup, groupLeagueKeys]);
 
   const golfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype === "golf"), [filteredGames]);
   const nonGolfGames = useMemo(() => filteredGames.filter(g => g.sportArchetype !== "golf"), [filteredGames]);
@@ -1178,19 +1268,25 @@ export default function SportBoardScreen() {
   const sportNews: SportNewsArticle[] = sportNewsData?.articles ?? [];
 
   const filteredNews = useMemo(() => {
-    if (activeLeague === "all") return sportNews;
+    if (!effectiveLeagueKeys && activeLeague === "all") return sportNews;
+    if (effectiveLeagueKeys) {
+      return sportNews.filter((a) =>
+        a.leagues?.some((l) => effectiveLeagueKeys.has(l))
+      );
+    }
     return sportNews.filter((a) =>
       a.leagues?.includes(activeLeague) ||
       a.leagues?.some((l) => activeLeagueKeys?.has(l))
     );
-  }, [sportNews, activeLeague, activeLeagueKeys]);
+  }, [sportNews, effectiveLeagueKeys, activeLeague, activeLeagueKeys]);
 
   const upcomingEvents: UpcomingEvent[] = useMemo(() => {
     const all: UpcomingEvent[] = upcomingData?.events ?? [];
+    if (effectiveLeagueKeys) return all.filter((ev) => effectiveLeagueKeys.has(ev.league));
     if (activeLeague !== "all") return all.filter((ev) => ev.league === activeLeague);
     if (hasGroups && activeGroup !== "all") return all.filter((ev) => groupLeagueKeys.has(ev.league));
     return all;
-  }, [upcomingData, activeLeague, hasGroups, activeGroup, groupLeagueKeys]);
+  }, [upcomingData, effectiveLeagueKeys, activeLeague, hasGroups, activeGroup, groupLeagueKeys]);
 
   const topAthletes = useMemo(() => {
     // Use live data from API
@@ -2445,6 +2541,16 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
         )}
       </LinearGradient>
 
+      {/* ── Sub-Navigation for multi-league sports ─────────────────────────────── */}
+      {subNavConfig && (
+        <SubNavigation
+          config={subNavConfig}
+          activeSubTab={activeSubTab}
+          setActiveSubTab={setActiveSubTab}
+          accentColor={accentColor}
+        />
+      )}
+
       {/* ── Live Games Strip ─────────────────────────────────────────────────────── */}
       {liveCount > 0 && (
         <View style={styles.liveStripContainer}>
@@ -3271,5 +3377,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Inter_600SemiBold",
     color: "#E53935",
+  },
+
+  // Sub-Navigation tabs
+  subTab: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: C.separator,
+  },
+  subTabText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
   },
 });
