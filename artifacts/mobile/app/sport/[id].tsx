@@ -1177,6 +1177,14 @@ export default function SportBoardScreen() {
 
   const sportNews: SportNewsArticle[] = sportNewsData?.articles ?? [];
 
+  const filteredNews = useMemo(() => {
+    if (activeLeague === "all") return sportNews;
+    return sportNews.filter((a) =>
+      a.leagues?.includes(activeLeague) ||
+      a.leagues?.some((l) => activeLeagueKeys?.has(l))
+    );
+  }, [sportNews, activeLeague, activeLeagueKeys]);
+
   const upcomingEvents: UpcomingEvent[] = useMemo(() => {
     const all: UpcomingEvent[] = upcomingData?.events ?? [];
     if (activeLeague !== "all") return all.filter((ev) => ev.league === activeLeague);
@@ -1972,12 +1980,12 @@ export default function SportBoardScreen() {
           <NewsCardSkeleton />
           <NewsCardSkeleton />
         </>
-      ) : sportNews.length === 0 ? (
+      ) : filteredNews.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyCardSub}>No news right now — check back soon</Text>
         </View>
       ) : (
-        sportNews.map((article) => (
+        filteredNews.map((article) => (
           <Pressable
             key={article.id}
             style={({ pressed }) => [styles.newsRow, { opacity: pressed ? 0.75 : 1 }]}
@@ -2416,6 +2424,18 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
           }
         </ScrollView>
 
+        {/* ── Active Filter Banner ─────────────────────────────────────────────── */}
+        {activeLeague !== "all" && (
+          <View style={[styles.activeFilterBanner, { borderColor: accentColor + "44" }]}>
+            <Text style={styles.activeFilterText}>
+              Showing {activeLeague.startsWith("cg:") ? activeLeague.slice(3) : (sport?.leagues.find(l => l.key === activeLeague)?.label ?? activeLeague)} only
+            </Text>
+            <Pressable onPress={() => setActiveLeague("all")} style={[styles.clearFilterBtn, { backgroundColor: accentColor + "22" }]}>
+              <Text style={[styles.clearFilterText, { color: accentColor }]}>Clear</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* ── Why Watch Today ─────────────────────────────────────────────────── */}
         {whyWatchData?.context && (
           <View style={styles.whyWatchContainer}>
@@ -2585,6 +2605,32 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: C.textSecondary,
     lineHeight: 16,
+  },
+  activeFilterBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: C.card,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderWidth: 1,
+  },
+  activeFilterText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: C.text,
+  },
+  clearFilterBtn: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  clearFilterText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
   },
 
   content: {
