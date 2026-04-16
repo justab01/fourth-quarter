@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Dimensions,
   StatusBar,
+  Animated,
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -914,6 +915,17 @@ export default function SportBoardScreen() {
   const [activeGroup, setActiveGroup] = useState<LeagueGroup | "all">("all");
   const [selectedWeightClass, setSelectedWeightClass] = useState<string>("all");
   const [standingsView, setStandingsView] = useState<"table" | "bracket">("table");
+
+  // Animated shimmer for live pulse
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(shimmerAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
 
   const setActiveLeague = useCallback((league: string) => {
     setActiveLeagueRaw(league);
@@ -2190,6 +2202,55 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
         </ScrollView>
       </LinearGradient>
 
+      {/* ── Live Games Strip ─────────────────────────────────────────────────────── */}
+      {liveCount > 0 && (
+        <View style={styles.liveStripContainer}>
+          <View style={styles.liveStripHeader}>
+            <View style={styles.liveStripPulse}>
+              <Animated.View style={{
+                width: 8, height: 8, borderRadius: 4, backgroundColor: "#E53935",
+                opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+                transform: [{ scale: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }]
+              }} />
+            </View>
+            <Text style={styles.liveStripTitle}>LIVE NOW</Text>
+            <Text style={styles.liveStripCount}>{liveCount} {liveCount === 1 ? "game" : "games"}</Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.liveStripContent}
+          >
+            {filteredGames.filter(g => g.status === "live").map((game) => (
+              <Pressable
+                key={game.id}
+                style={styles.liveGameCard}
+                onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+              >
+                <View style={styles.liveGameTeams}>
+                  <View style={styles.liveGameTeam}>
+                    <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={32} borderColor={`${accentColor}44`} />
+                    <Text style={styles.liveGameTeamName} numberOfLines={1}>{game.awayTeam.split(" ").slice(-1)[0]}</Text>
+                  </View>
+                  <View style={styles.liveGameScoreBox}>
+                    <Text style={styles.liveGameScore}>{game.awayScore ?? 0}</Text>
+                    <Text style={styles.liveGameScore}>-</Text>
+                    <Text style={styles.liveGameScore}>{game.homeScore ?? 0}</Text>
+                  </View>
+                  <View style={styles.liveGameTeam}>
+                    <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={32} borderColor={`${accentColor}44`} />
+                    <Text style={styles.liveGameTeamName} numberOfLines={1}>{game.homeTeam.split(" ").slice(-1)[0]}</Text>
+                  </View>
+                </View>
+                <View style={styles.liveGameQuarter}>
+                  <Text style={styles.liveGameQuarterText}>{game.quarter}{game.timeRemaining ? ` · ${game.timeRemaining}` : ""}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -2814,5 +2875,86 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     color: "#1a1a1a",
     letterSpacing: 0.5,
+  },
+
+  // Live Games Strip
+  liveStripContainer: {
+    backgroundColor: C.card,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.separator,
+    paddingVertical: 10,
+  },
+  liveStripHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    gap: 8,
+  },
+  liveStripPulse: {
+    width: 10,
+    height: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  liveStripTitle: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    color: "#E53935",
+    letterSpacing: 1,
+  },
+  liveStripCount: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    flex: 1,
+    marginLeft: 4,
+  },
+  liveStripContent: {
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  liveGameCard: {
+    backgroundColor: C.background,
+    borderRadius: 12,
+    padding: 10,
+    minWidth: 140,
+    borderWidth: 1,
+    borderColor: "#E5393533",
+  },
+  liveGameTeams: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  liveGameTeam: {
+    alignItems: "center",
+    gap: 4,
+  },
+  liveGameTeamName: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    maxWidth: 50,
+  },
+  liveGameScoreBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  liveGameScore: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+  },
+  liveGameQuarter: {
+    marginTop: 6,
+    alignItems: "center",
+  },
+  liveGameQuarterText: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    color: "#E53935",
   },
 });
