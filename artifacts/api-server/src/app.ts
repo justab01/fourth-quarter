@@ -27,14 +27,9 @@ app.use(
   }),
 );
 
-// CORS - restrict to allowed origins
+// CORS - allow all origins in development (Replit proxies, Expo Go, local)
 app.use(cors({
-  origin: [
-    "http://localhost:19006",     // Expo dev server
-    "http://localhost:3000",       // Local web dev
-    "http://localhost:8081",       // Expo alternative
-    /^exp:\/\/\d+\.\d+\.\d+\.\d+:\d+$/, // Expo LAN URLs
-  ],
+  origin: true,
   credentials: true,
 }));
 
