@@ -383,16 +383,17 @@ export const ARCHETYPE_STYLES: Record<SportArchetypeType, ArchetypeStyle> = {
   },
 };
 
-export function getArchetypeForLeague(leagueKey: string): SportArchetypeType {
-  const TENNIS = new Set(["ATP", "WTA"]);
-  const COMBAT = new Set(["UFC", "BELLATOR", "PFL", "BOXING"]);
-  const GOLF = new Set(["PGA", "LPGA", "LIV"]);
-  const RACING = new Set(["F1", "NASCAR", "IRL"]);
+// League-to-archetype mappings (module-level for efficiency)
+const TENNIS_LEAGUES = new Set(["ATP", "WTA"]);
+const COMBAT_LEAGUES = new Set(["UFC", "BELLATOR", "PFL", "BOXING"]);
+const GOLF_LEAGUES = new Set(["PGA", "LPGA", "LIV"]);
+const RACING_LEAGUES = new Set(["F1", "NASCAR", "IRL"]);
 
-  if (TENNIS.has(leagueKey)) return "tennis";
-  if (COMBAT.has(leagueKey)) return "combat";
-  if (GOLF.has(leagueKey)) return "golf";
-  if (RACING.has(leagueKey)) return "racing";
+export function getArchetypeForLeague(leagueKey: string): SportArchetypeType {
+  if (TENNIS_LEAGUES.has(leagueKey)) return "tennis";
+  if (COMBAT_LEAGUES.has(leagueKey)) return "combat";
+  if (GOLF_LEAGUES.has(leagueKey)) return "golf";
+  if (RACING_LEAGUES.has(leagueKey)) return "racing";
   if (leagueKey.startsWith("OLYMPICS") || leagueKey.startsWith("XGAMES")) return "multi_event";
   if (leagueKey.startsWith("DIAMOND") || leagueKey.startsWith("WORLD_ATHLETICS")) return "seasonal";
   return "team";
