@@ -2251,16 +2251,38 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
               <Text style={[styles.inlineStandingsHeaderCell, { flex: 0.7 }]}>GB</Text>
             </View>
             {group.entries.slice(0, 8).map((entry, idx) => (
-              <View key={entry.teamName + idx} style={[styles.inlineStandingsRow, idx % 2 === 0 && styles.inlineStandingsRowAlt]}>
-                <Text style={[styles.inlineStandingsCell, { flex: 0.3, fontFamily: "Inter_700Bold", color: idx < 6 ? C.text : C.textTertiary }]}>
-                  {entry.playoffSeed ?? entry.rank}
-                  {entry.clinched ? ` ${entry.clinched}` : ""}
-                </Text>
+              <View
+                key={entry.teamName + idx}
+                style={[
+                  styles.inlineStandingsRow,
+                  idx % 2 === 0 && styles.inlineStandingsRowAlt,
+                  entry.rank <= 3 && { backgroundColor: accentColor + "08" },
+                  entry.rank <= 3 && { borderLeftWidth: 3, borderLeftColor: accentColor },
+                ]}
+              >
+                <View style={{ flex: 0.3, flexDirection: "row", alignItems: "center" }}>
+                  <Text style={[styles.inlineStandingsCell, { flex: undefined, fontFamily: "Inter_700Bold", color: entry.rank <= 3 ? accentColor : (idx < 6 ? C.text : C.textTertiary) }]}>
+                    {entry.playoffSeed ?? entry.rank}
+                    {entry.clinched ? ` ${entry.clinched}` : ""}
+                  </Text>
+                  {entry.rankChange != null && entry.rankChange !== 0 && (
+                    <Ionicons
+                      name={entry.rankChange > 0 ? "arrow-up" : "arrow-down"}
+                      size={10}
+                      color={entry.rankChange > 0 ? "#22C55E" : "#EF4444"}
+                      style={{ marginLeft: 2 }}
+                    />
+                  )}
+                </View>
                 <View style={{ flex: 2, flexDirection: "row", alignItems: "center", gap: 6 }}>
                   {entry.logoUrl ? (
                     <Image source={{ uri: entry.logoUrl }} style={styles.inlineStandingsLogo} />
                   ) : (
-                    <View style={[styles.inlineStandingsLogo, { backgroundColor: accentColor + "22" }]} />
+                    <View style={[styles.inlineStandingsLogo, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
+                      <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold" }}>
+                        {entry.teamName.charAt(0)}
+                      </Text>
+                    </View>
                   )}
                   <Pressable onPress={() => goToTeam(entry.teamName, standingsLeague ?? "")}>
                     <Text style={styles.inlineStandingsTeam} numberOfLines={1}>{entry.teamName}</Text>
