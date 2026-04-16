@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Pressable, Platform, type ScrollView as ScrollViewType
+  Pressable, Platform, Animated, type ScrollView as ScrollViewType
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +39,27 @@ const LEAGUE_META: Record<string, { color: string; emoji: string; fullName: stri
 };
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
+
+// ── Pulsing live dot animation ───────────────────────────────────────────────────
+function PulsingLiveDot() {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 0.2] });
+  return (
+    <View style={{ width: 8, height: 8, alignItems: "center", justifyContent: "center" }}>
+      <Animated.View style={{ position: "absolute", width: 8, height: 8, borderRadius: 4, backgroundColor: C.live, transform: [{ scale }], opacity }} />
+      <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.live }} />
+    </View>
+  );
+}
 
 function getUrgencyScore(game: Game, myTeams: string[]): number {
   let score = 0;
@@ -569,7 +590,7 @@ export default function LiveScreen() {
                 <View style={styles.myTeamsLiveBadge}>
                   {myTeamGames.some(g => g.status === "live") && (
                     <>
-                      <View style={styles.myTeamsLiveDot} />
+                      <PulsingLiveDot />
                       <Text style={styles.myTeamsLiveText}>{myTeamGames.filter(g => g.status === "live").length} LIVE</Text>
                     </>
                   )}

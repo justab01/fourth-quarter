@@ -29,10 +29,19 @@ function getTeamEspnLogoUrl(teamName: string, league: string): string | null {
   const team = ALL_TEAMS.find(t => t.name === teamName);
   if (!team?.abbr) return null;
   const abbr = team.abbr.toLowerCase();
+  // ESPN sport slugs for team logos
   const sportMap: Record<string, string> = {
-    NBA: "nba", NFL: "nfl", MLB: "mlb", NHL: "nhl",
-    WNBA: "wnba", NCAAB: "mens-college-basketball",
-    MLS: "soccer", EPL: "soccer", UCL: "soccer", LIGA: "soccer",
+    NBA: "nba", WNBA: "wnba",
+    NFL: "nfl", NCAAF: "college-football",
+    MLB: "mlb", NCAABB: "college-baseball",
+    NHL: "nhl", NCAAHM: "mens-college-hockey", NCAAHW: "womens-college-hockey",
+    MLS: "soccer", NWSL: "soccer",
+    EPL: "soccer", LIGA: "soccer", BUN: "soccer", SERA: "soccer", LIG1: "soccer",
+    UCL: "soccer", UEL: "soccer", UECL: "soccer",
+    NCAAB: "mens-college-basketball", NCAAW: "womens-college-basketball",
+    ATP: "tennis", WTA: "tennis",
+    UFC: "mma", BELLATOR: "mma", PFL: "mma",
+    F1: "racing", NASCAR: "racing",
   };
   const sport = sportMap[league];
   if (!sport) return null;
@@ -180,13 +189,26 @@ const secStyles = StyleSheet.create({
 });
 
 function InOneBreath() {
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch, isError } = useQuery({
     queryKey: ["in-one-breath"],
     queryFn: () => api.getInOneBreath(),
     staleTime: 120_000,
     refetchInterval: 120_000,
+    retry: 1,
   });
   const [expanded, setExpanded] = useState(true);
+
+  // Animated shimmer effect
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(shimmerAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  const shimmerOpacity = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] });
 
   const header = (
     <View style={iobStyles.header}>
@@ -207,7 +229,7 @@ function InOneBreath() {
         {header}
         <View style={iobStyles.shimmerWrap}>
           {[100, 90, 95, 75].map((w, i) => (
-            <View key={i} style={[iobStyles.shimmerLine, { width: `${w}%` }]} />
+            <Animated.View key={i} style={[iobStyles.shimmerLine, { width: `${w}%`, opacity: shimmerOpacity }]} />
           ))}
         </View>
       </View>
@@ -219,12 +241,19 @@ function InOneBreath() {
       <LinearGradient colors={[`${C.accent}12`, `${C.accentGold}08`, "transparent"]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
       {header}
       {expanded && (
-        data?.summary
-          ? <Text style={iobStyles.summary}>{data.summary}</Text>
-          : <Pressable onPress={() => refetch()} style={iobStyles.retryRow}>
-              <Ionicons name="refresh" size={13} color={C.accent} />
-              <Text style={iobStyles.retryText}>Tap to refresh</Text>
-            </Pressable>
+        isError ? (
+          <Pressable onPress={() => refetch()} style={iobStyles.retryRow}>
+            <Ionicons name="cloud-offline-outline" size={13} color={C.textSecondary} />
+            <Text style={iobStyles.errorText}>Unable to load. Tap to retry</Text>
+          </Pressable>
+        ) : data?.summary ? (
+          <Text style={iobStyles.summary}>{data.summary}</Text>
+        ) : (
+          <Pressable onPress={() => refetch()} style={iobStyles.retryRow}>
+            <Ionicons name="refresh" size={13} color={C.accent} />
+            <Text style={iobStyles.retryText}>Tap to refresh</Text>
+          </Pressable>
+        )
       )}
     </Pressable>
   );
@@ -247,6 +276,7 @@ const iobStyles = StyleSheet.create({
   shimmerLine: { height: 12, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 6 },
   retryRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   retryText: { color: C.accent, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  errorText: { color: C.textSecondary, fontSize: 13, fontWeight: "500", fontFamily: "Inter_500Medium" },
 });
 
 function MoversChips({ allGames }: { allGames: Game[] }) {

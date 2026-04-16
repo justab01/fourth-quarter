@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   Dimensions,
   StatusBar,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,6 +24,27 @@ import type { Game } from "@/utils/api";
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
 const CARD_W = (SCREEN_W - 48) / 2;
+
+// ── Pulsing live dot animation ───────────────────────────────────────────────────
+function PulsingLiveDot() {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 0.2] });
+  return (
+    <View style={{ width: 6, height: 6, alignItems: "center", justifyContent: "center" }}>
+      <Animated.View style={{ position: "absolute", width: 6, height: 6, borderRadius: 3, backgroundColor: "#FF3B30", transform: [{ scale }], opacity }} />
+      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: "#FF3B30" }} />
+    </View>
+  );
+}
 
 // ─── Live count helper ─────────────────────────────────────────────────────────
 function getLiveCount(games: Game[], sport: SportCategory): number {
@@ -71,7 +93,7 @@ function SportCard({
       >
         {liveCount > 0 && (
           <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
+            <PulsingLiveDot />
             <Text style={styles.liveBadgeText}>{liveCount} Live</Text>
           </View>
         )}

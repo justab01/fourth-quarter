@@ -12,6 +12,7 @@ import {
   isGolfLeague, isRacingLeague,
   shortAthleteName, SPORT_EMOJI,
 } from "@/utils/sportArchetype";
+import { ALL_TEAMS } from "@/constants/allPlayers";
 
 const C = Colors.dark;
 
@@ -95,12 +96,14 @@ function SportBadge({ emoji, size, color }: { emoji: string; size: number; color
   );
 }
 
-// ── Team logo with letter fallback ────────────────────────────────────────────
+// ── Team logo with abbreviation fallback ────────────────────────────────────────────
 export function TeamLogo({
   uri, name, size, borderColor, fontSize,
 }: { uri?: string | null; name: string; size: number; borderColor?: string; fontSize?: number }) {
   const [failed, setFailed] = useState(false);
-  const letter = name.charAt(0).toUpperCase();
+  // Try to find team abbreviation from ALL_TEAMS for better fallback
+  const teamData = ALL_TEAMS.find(t => t.name === name);
+  const abbr = teamData?.abbr ?? name.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
   const r = size / 2;
   return (
     <View style={{
@@ -119,8 +122,8 @@ export function TeamLogo({
           onError={() => setFailed(true)}
         />
       ) : (
-        <Text style={{ color: "#fff", fontSize: fontSize ?? size * 0.38, fontWeight: "900", fontFamily: "Inter_700Bold" }}>
-          {letter}
+        <Text style={{ color: "#fff", fontSize: fontSize ?? size * 0.32, fontWeight: "900", fontFamily: "Inter_700Bold" }}>
+          {abbr}
         </Text>
       )}
     </View>
