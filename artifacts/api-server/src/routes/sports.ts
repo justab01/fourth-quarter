@@ -3245,14 +3245,45 @@ router.get("/sports/racing/schedule/:league", async (req, res) => {
 
 // ─── Golf Leaderboard ────────────────────────────────────────────────────────
 
+const GOLF_MAJORS = new Set([
+  "The Masters", "Masters Tournament", "U.S. Open", "The Open Championship",
+  "Open Championship", "PGA Championship", "THE PLAYERS Championship"
+]);
+
+function parseScoreToPar(score: string): number {
+  if (!score || score === "E") return 0;
+  const parsed = parseInt(score.replace("+", ""), 10);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+function getCountryCode(countryName: string): string {
+  const codes: Record<string, string> = {
+    "United States": "US", "USA": "US", "England": "GB", "Scotland": "GB",
+    "Ireland": "IE", "Australia": "AU", "South Africa": "ZA", "Japan": "JP",
+    "South Korea": "KR", "Canada": "CA", "Spain": "ES", "Germany": "DE",
+    "Sweden": "SE", "Norway": "NO", "Denmark": "DK", "France": "FR",
+    "Italy": "IT", "Argentina": "AR", "Mexico": "MX", "Thailand": "TH",
+    "China": "CN", "India": "IN", "New Zealand": "NZ", "Belgium": "BE",
+    "Austria": "AT", "Switzerland": "CH", "Netherlands": "NL", "Portugal": "PT",
+    "Brazil": "BR", "Chile": "CL", "Colombia": "CO", "Venezuela": "VE",
+    "Czech Republic": "CZ", "Finland": "FI", "Poland": "PL", "Wales": "GB",
+    "Northern Ireland": "GB"
+  };
+  return codes[countryName] ?? "";
+}
+
 interface LeaderboardEntry {
   position: number | null;
   name: string;
   score: string;
-  thru: string;
+  toPar: number;
   today: string;
+  todayToPar: number;
+  thru: string;
   country: string;
+  countryCode: string;
   headshotUrl: string | null;
+  movement: number;
 }
 
 router.get("/sports/golf/leaderboard", async (req, res) => {
@@ -3285,17 +3316,29 @@ router.get("/sports/golf/leaderboard", async (req, res) => {
       status = state === "in" ? "live" : state === "post" ? "completed" : "upcoming";
 
       const competitors = comp?.competitors ?? [];
-      for (const c of competitors.slice(0, 10)) {
+      let prevPosition = 0;
+      for (let i = 0; i < Math.min(competitors.length, 50); i++) {
+        const c = competitors[i];
         const athlete = c.athlete ?? c;
+        const scoreStr = c.score ?? "E";
+        const todayStr = c.statistics?.[0]?.displayValue ?? "-";
+        const pos = c.order ?? c.sortOrder ?? i + 1;
+        const countryName = athlete.flag?.alt ?? athlete.country?.name ?? "";
+
         entries.push({
-          position: c.order ?? c.sortOrder ?? null,
+          position: pos,
           name: athlete.displayName ?? c.team?.displayName ?? "Unknown",
-          score: c.score ?? c.linescores?.map((l: any) => l.value).join(", ") ?? "E",
+          score: scoreStr,
+          toPar: parseScoreToPar(scoreStr),
+          today: todayStr,
+          todayToPar: parseScoreToPar(todayStr),
           thru: c.status?.thru?.toString() ?? c.linescores?.length?.toString() ?? "-",
-          today: c.statistics?.[0]?.displayValue ?? c.linescores?.[c.linescores.length - 1]?.value?.toString() ?? "-",
-          country: athlete.flag?.href ? athlete.flag.alt ?? "" : "",
+          country: countryName,
+          countryCode: getCountryCode(countryName),
           headshotUrl: athlete.headshot?.href ?? null,
+          movement: prevPosition > 0 ? prevPosition - pos : 0,
         });
+        prevPosition = pos;
       }
     }
 
@@ -3303,12 +3346,135 @@ router.get("/sports/golf/leaderboard", async (req, res) => {
     const roundNum = activeEvent?.competitions?.[0]?.competitors?.[0]?.linescores?.length ?? 0;
     const roundDetail = status === "completed" ? "Final" : status === "live" ? (statusDesc || (roundNum > 0 ? `Round ${roundNum}` : "")) : (roundNum > 0 ? `Round ${roundNum}` : "");
 
-    const response = { tournament: tournamentName, venue, status, round: roundDetail, leaderboard: entries };
+    const isMajor = GOLF_MAJORS.has(tournamentName);
+    const cutLine = null; // ESPN doesn't provide cut line easily
+
+    const response = { tournament: tournamentName, venue, status, round: roundDetail, cutLine, isMajor, leaderboard: entries };
     setCached(cacheKey, response, 120_000);
     res.json(response);
   } catch (err) {
     console.error("Golf leaderboard error:", err);
-    res.json({ tournament: "", venue: "", status: "unknown", round: "", leaderboard: [] });
+    res.json({ tournament: "", venue: "", status: "unknown", round: "", cutLine: null, isMajor: false, leaderboard: [] });
+  }
+});
+
+// ─── Golf Schedule ───────────────────────────────────────────────────────────
+
+interface GolfTournament {
+  id: string;
+  name: string;
+  date: string;
+  endDate: string;
+  course: string;
+  location: string;
+  status: "upcoming" | "live" | "completed";
+  purse: string;
+  winner: string | null;
+  isMajor: boolean;
+}
+
+router.get("/sports/golf/schedule", async (req, res) => {
+  const league = ((req.query.league as string) ?? "PGA").toUpperCase();
+  const season = (req.query.season as string) ?? "2026";
+  const cacheKey = `golf-schedule-${league}-${season}`;
+  const cached = getCached<GolfTournament[]>(cacheKey);
+  if (cached) { res.json({ tournaments: cached }); return; }
+
+  try {
+    const GOLF_ESPN_PATHS: Record<string, string> = {
+      PGA: "golf/pga", LPGA: "golf/lpga", LIV: "golf/liv"
+    };
+    const espnPath = GOLF_ESPN_PATHS[league] ?? "golf/pga";
+
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/scoreboard?season=${season}`;
+    const json = await espnFetch(url) as any;
+    const events = json.events ?? [];
+
+    const tournaments: GolfTournament[] = events.map((e: any) => {
+      const comp = e.competitions?.[0];
+      const startDate = e.date ?? "";
+      const now = new Date();
+      const eventDate = new Date(startDate);
+      const endDateStr = e.endDate ?? startDate;
+
+      let status: "upcoming" | "live" | "completed" = "upcoming";
+      if (e.status?.type?.state === "in") status = "live";
+      else if (e.status?.type?.state === "post") status = "completed";
+      else if (eventDate < now) status = "completed";
+      else if (eventDate.toDateString() === now.toDateString()) status = "live";
+
+      const city = comp?.venue?.address?.city ?? "";
+      const state = comp?.venue?.address?.state ?? "";
+      const location = city + (state ? `, ${state}` : "");
+
+      return {
+        id: e.id ?? "",
+        name: e.name ?? "",
+        date: startDate.split("T")[0] ?? "",
+        endDate: endDateStr.split("T")[0] ?? "",
+        course: comp?.venue?.fullName ?? "",
+        location,
+        status,
+        purse: comp?.purse ?? "",
+        winner: comp?.winner?.displayName ?? null,
+        isMajor: GOLF_MAJORS.has(e.name ?? ""),
+      };
+    });
+
+    setCached(cacheKey, tournaments, 300_000);
+    res.json({ tournaments });
+  } catch (err) {
+    console.error("Golf schedule error:", err);
+    res.json({ tournaments: [] });
+  }
+});
+
+// ─── Golf Rankings ───────────────────────────────────────────────────────────
+
+interface GolfRankingEntry {
+  rank: number;
+  name: string;
+  country: string;
+  points: number;
+  events: number;
+  movement: number;
+}
+
+router.get("/sports/golf/rankings", async (req, res) => {
+  const type = ((req.query.type as string) ?? "fedex").toLowerCase();
+  const cacheKey = `golf-rankings-${type}`;
+  const cached = getCached<GolfRankingEntry[]>(cacheKey);
+  if (cached) { res.json({ rankings: cached }); return; }
+
+  try {
+    const url = type === "owgr"
+      ? "https://site.api.espn.com/apis/site/v2/sports/golf/rankings"
+      : "https://site.api.espn.com/apis/site/v2/sports/golf/pga/rankings";
+
+    const json = await espnFetch(url) as any;
+    const rankingsList = json.rankings ?? json.leaders ?? [];
+
+    const rankings: GolfRankingEntry[] = rankingsList.slice(0, 10).map((r: any, idx: number) => {
+      const athlete = r.athlete ?? r;
+      const rank = r.rank ?? idx + 1;
+      const prevRank = r.previousRank ?? rank;
+      const movement = prevRank - rank;
+
+      return {
+        rank,
+        name: athlete.displayName ?? athlete.name ?? "Unknown",
+        country: athlete.country?.name ?? athlete.flag?.alt ?? "",
+        points: parseFloat(r.points ?? r.value ?? 0),
+        events: r.eventsPlayed ?? r.events ?? 0,
+        movement,
+      };
+    });
+
+    setCached(cacheKey, rankings, 600_000);
+    res.json({ rankings });
+  } catch (err) {
+    console.error("Golf rankings error:", err);
+    res.json({ rankings: [] });
   }
 });
 

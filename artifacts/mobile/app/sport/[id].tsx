@@ -10,6 +10,7 @@ import {
   StatusBar,
   Animated,
   Image,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -67,6 +68,31 @@ function isMajorEvent(name: string, archetype: string): boolean {
     }
   }
   return false;
+}
+
+// Golf score color coding helpers
+function getGolfScoreColor(toPar: number): string {
+  if (toPar < 0) return "#E53935";        // Under par = red
+  if (toPar > 0) return "#2ECC71";        // Over par = green
+  return "#9E9E9E";                       // Even par = gray
+}
+
+function getMovementIndicator(movement: number): string {
+  if (movement > 0) return "↑";
+  if (movement < 0) return "↓";
+  return "→";
+}
+
+function getMovementColor(movement: number): string {
+  if (movement > 0) return "#4CAF50";     // Moving up = green
+  if (movement < 0) return "#F44336";     // Moving down = red
+  return "#9E9E9E";                       // No change = gray
+}
+
+function getCountryFlag(countryCode: string): string {
+  if (!countryCode || countryCode.length !== 2) return "";
+  const codePoints = countryCode.toUpperCase().split("").map(c => 0x1F1E6 + c.charCodeAt(0) - 65);
+  return String.fromCodePoint(...codePoints);
 }
 
 function inferTennisSurface(name: string): string | null {
@@ -1246,6 +1272,21 @@ export default function SportBoardScreen() {
     enabled: archetype === "golf" && !!golfLeaderboardLeague,
   });
 
+  const golfScheduleLeague = archetype === "golf" ? (activeLeague !== "all" ? activeLeague : "PGA") : null;
+  const { data: golfScheduleData, refetch: refetchGolfSchedule } = useQuery({
+    queryKey: ["golf-schedule", golfScheduleLeague],
+    queryFn: () => api.getGolfSchedule(golfScheduleLeague ?? undefined, 2026),
+    staleTime: 5 * 60 * 1000,
+    enabled: archetype === "golf" && !!golfScheduleLeague,
+  });
+
+  const { data: golfRankingsData, refetch: refetchGolfRankings } = useQuery({
+    queryKey: ["golf-rankings", "fedex"],
+    queryFn: () => api.getGolfRankings("fedex"),
+    staleTime: 10 * 60 * 1000,
+    enabled: archetype === "golf",
+  });
+
   const { data: standingsData, isLoading: standingsLoading, refetch: refetchStandings } = useQuery({
     queryKey: ["sport-standings", standingsLeague],
     queryFn: () => api.getStandings(standingsLeague!),
@@ -1430,7 +1471,7 @@ export default function SportBoardScreen() {
       refetchWhyWatch?.() ?? Promise.resolve(),
     ]);
     setRefreshing(false);
-  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchStandings, refetchRacingSchedule, refetchConstructors, refetchSeasonal, refetchWhyWatch]);
+  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchGolfSchedule, refetchGolfRankings, refetchStandings, refetchRacingSchedule, refetchConstructors, refetchSeasonal, refetchWhyWatch]);
 
   const standingsGroups = useMemo(() => {
     const entries: StandingEntry[] = standingsData?.standings ?? [];
@@ -1570,70 +1611,233 @@ export default function SportBoardScreen() {
   ) : null;
 
   const lbEntries = leaderboardData?.leaderboard ?? [];
+  const leader = lbEntries[0];
+
+  // ── GOLF HUB REDESIGN ─────────────────────────────────────────────────────────────
   const ApiLeaderboardSection = archetype === "golf" && lbEntries.length > 0 ? (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Leaderboard</Text>
-        {leaderboardData?.status === "live" && (
-          <View style={[styles.liveDot, { backgroundColor: accentColor }]} />
-        )}
-      </View>
-      {leaderboardData?.tournament ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <Text style={styles.leaderboardTourName}>{leaderboardData.tournament}</Text>
-          {isMajorEvent(leaderboardData.tournament, "golf") && (
-            <View style={[styles.majorBadgeSmall, { backgroundColor: "#FFD700" }]}>
-              <Text style={styles.majorBadgeSmallText}>MAJOR</Text>
+      {/* ═══════════════════════════════════════
+          LIVE LEADER HERO CARD
+      ══════════════════════════════════════ */}
+      {leaderboardData?.status === "live" && leader && (
+        <View style={styles.golfHeroCard}>
+          {/* Grass texture top bar */}
+          <View style={styles.golfHeroGrass}>
+            {leaderboardData.isMajor && (
+              <View style={styles.golfHeroMajorBadge}>
+                <Text style={styles.golfHeroMajorText}>MAJOR</Text>
+              </View>
+            )}
+            <View style={styles.golfHeroLiveBadge}>
+              <Animated.View style={{
+                width: 5, height: 5, borderRadius: 2.5, backgroundColor: "#4DCC70",
+                opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+              }} />
+              <Text style={styles.golfHeroLiveText}>LIVE</Text>
             </View>
-          )}
-        </View>
-      ) : null}
-      {(leaderboardData?.status || leaderboardData?.round) && leaderboardData.status !== "unknown" && (
-        <View style={{ flexDirection: "row", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-          {leaderboardData.status && (
-            <View style={[styles.eventTypeBadge, {
-              backgroundColor: leaderboardData.status === "live" ? "#E53935" : leaderboardData.status === "completed" ? C.textTertiary + "33" : accentColor + "33",
-            }]}>
-              <Text style={[styles.eventTypeText, {
-                color: leaderboardData.status === "live" ? "#fff" : leaderboardData.status === "completed" ? C.textSecondary : accentColor,
-              }]}>{leaderboardData.status === "live" ? "LIVE" : leaderboardData.status === "completed" ? "FINAL" : "UPCOMING"}</Text>
-            </View>
-          )}
-          {leaderboardData.round ? (
-            <View style={[styles.eventTypeBadge, { backgroundColor: accentColor + "22" }]}>
-              <Text style={[styles.eventTypeText, { color: accentColor }]}>{leaderboardData.round}</Text>
-            </View>
-          ) : null}
-        </View>
-      )}
-      <View style={[styles.leaderboardCard, { borderColor: accentColor + "33" }]}>
-        <View style={styles.leaderboardHeader}>
-          <Text style={[styles.lbHeaderCell, { flex: 0.4 }]}>Pos</Text>
-          <Text style={[styles.lbHeaderCell, { flex: 2, textAlign: "left" }]}>Player</Text>
-          <Text style={[styles.lbHeaderCell, { flex: 0.7 }]}>Score</Text>
-          <Text style={[styles.lbHeaderCell, { flex: 0.6 }]}>Thru</Text>
-        </View>
-        {lbEntries.map((entry: GolfLeaderboardEntry, idx: number) => (
-          <View key={entry.name + idx} style={[styles.leaderboardRow, idx % 2 === 0 && styles.leaderboardRowAlt]}>
-            <Text style={[styles.lbCell, { flex: 0.4, fontWeight: "700", color: idx < 3 ? accentColor : C.textSecondary }]}>
-              {entry.position != null ? `T${entry.position}` : "-"}
+            <Text style={styles.golfHeroRound}>{leaderboardData.round ?? "Round 1"}</Text>
+          </View>
+
+          <View style={styles.golfHeroBody}>
+            <Text style={styles.golfHeroTournament}>
+              ⛳ {leaderboardData.tournament ?? "Tournament"} · {leaderboardData.venue ?? "Course"}
             </Text>
-            <View style={{ flex: 2, flexDirection: "row", alignItems: "center", gap: 6 }}>
-              {entry.headshotUrl ? (
-                <Image source={{ uri: entry.headshotUrl }} style={styles.lbAvatar} />
+            <View style={styles.golfHeroPlayerRow}>
+              {leader.headshotUrl ? (
+                <Image source={{ uri: leader.headshotUrl }} style={styles.golfHeroAvatar} />
               ) : (
-                <View style={[styles.lbAvatarPlaceholder, { backgroundColor: accentColor + "22" }]}>
-                  <Text style={{ fontSize: 9, color: accentColor, fontWeight: "700" }}>
-                    {entry.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+                <View style={styles.golfHeroAvatarPlaceholder}>
+                  <Text style={styles.golfHeroAvatarInitials}>
+                    {leader.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
                   </Text>
                 </View>
               )}
-              <Text style={styles.lbPlayerName} numberOfLines={1}>{entry.name}</Text>
+              <View style={styles.golfHeroPlayerInfo}>
+                <Text style={styles.golfHeroPlayerName}>{leader.name}</Text>
+                <Text style={styles.golfHeroPlayerCountry}>{getCountryFlag(leader.countryCode)} {leader.country}</Text>
+              </View>
+              <View style={styles.golfHeroScoreBig}>
+                <Text style={[styles.golfHeroScoreNum, { color: getGolfScoreColor(leader.toPar) }]}>
+                  {leader.score}
+                </Text>
+                <Text style={styles.golfHeroScoreLabel}>TOURNAMENT</Text>
+              </View>
             </View>
-            <Text style={[styles.lbCell, { flex: 0.7, fontWeight: "600", color: C.text }]}>{entry.score}</Text>
-            <Text style={[styles.lbCell, { flex: 0.6 }]}>{entry.thru}</Text>
+
+            <View style={styles.golfHeroStats}>
+              <View style={styles.golfHeroStat}>
+                <Text style={[styles.golfHeroStatNum, { color: getGolfScoreColor(leader.todayToPar) }]}>
+                  {leader.today}
+                </Text>
+                <Text style={styles.golfHeroStatLabel}>TODAY</Text>
+              </View>
+              <View style={styles.golfHeroStat}>
+                <Text style={styles.golfHeroStatNum}>{leader.thru}</Text>
+                <Text style={styles.golfHeroStatLabel}>THRU</Text>
+              </View>
+              <View style={styles.golfHeroStat}>
+                <Text style={[styles.golfHeroStatNum, { color: accentColor }]}>1st</Text>
+                <Text style={styles.golfHeroStatLabel}>POS</Text>
+              </View>
+              <View style={styles.golfHeroStat}>
+                <Text style={styles.golfHeroStatNum}>—</Text>
+                <Text style={styles.golfHeroStatLabel}>AHEAD</Text>
+              </View>
+            </View>
           </View>
-        ))}
+        </View>
+      )}
+
+      {/* ═══════════════════════════════════════
+          AI INSIGHT CARD
+      ══════════════════════════════════════ */}
+      {whyWatchData?.context && (
+        <View style={styles.golfInsightCard}>
+          <View style={styles.golfInsightHeader}>
+            <Text style={styles.golfInsightSpark}>✦</Text>
+            <Text style={[styles.golfInsightLabel, { color: accentColor }]}>WHY IT MATTERS</Text>
+          </View>
+          <Text style={styles.golfInsightText}>{whyWatchData.context}</Text>
+          <View style={styles.golfInsightUpdating}>
+            <Animated.View style={{
+              width: 4, height: 4, borderRadius: 2, backgroundColor: "#4DCC70",
+              opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+            }} />
+            <Text style={styles.golfInsightUpdatingText}>UPDATING LIVE</Text>
+          </View>
+        </View>
+      )}
+
+      {/* ═══════════════════════════════════════
+          LIVE TOURNAMENT CARDS (Horizontal Scroll)
+      ══════════════════════════════════════ */}
+      {leaderboardData && lbEntries.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.golfLiveCardsScroll}
+        >
+          <View style={styles.golfLiveCard}>
+            <View style={styles.golfLiveCardGrass}>
+              <View style={styles.golfLiveBadge}>
+                <Animated.View style={{
+                  width: 5, height: 5, borderRadius: 2.5, backgroundColor: "#4DCC70",
+                  opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+                }} />
+                <Text style={styles.golfLiveBadgeText}>LIVE</Text>
+              </View>
+              <Text style={styles.golfLiveRound}>{leaderboardData.round ?? "RND 1"}</Text>
+              <Text style={styles.golfLiveFlag}>🏌️</Text>
+            </View>
+            <View style={styles.golfLiveCardBody}>
+              <Text style={styles.golfLiveTournament}>{leaderboardData.tournament ?? "Tournament"}</Text>
+              <Text style={styles.golfLiveVenue}>⛳ {leaderboardData.venue ?? "Course"} · {leaderboardData.status === "live" ? "LIVE" : "FINAL"}</Text>
+              <View style={styles.golfLiveDivider} />
+
+              {lbEntries.slice(0, 5).map((entry: GolfLeaderboardEntry, idx: number) => (
+                <View key={entry.name + idx} style={styles.golfLiveLeaderRow}>
+                  <Text style={[styles.golfLivePos, idx === 0 && { color: "#E8C96A" }]}>
+                    {entry.position ?? idx + 1}
+                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flex: 1 }}>
+                    {entry.headshotUrl ? (
+                      <Image source={{ uri: entry.headshotUrl }} style={styles.golfLiveAvatar} />
+                    ) : (
+                      <View style={styles.golfLiveAvatarPlaceholder}>
+                        <Text style={styles.golfLiveAvatarText}>
+                          {entry.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+                        </Text>
+                      </View>
+                    )}
+                    <View>
+                      <Text style={styles.golfLiveName} numberOfLines={1}>{entry.name}</Text>
+                      <Text style={styles.golfLiveCountry}>{getCountryFlag(entry.countryCode)} Thru {entry.thru}</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.golfLiveScore, { color: getGolfScoreColor(entry.toPar) }]}>
+                    {entry.score}
+                  </Text>
+                </View>
+              ))}
+
+              <View style={styles.golfLiveFooter}>
+                <Text style={styles.golfLivePurse}>Purse: <Text style={{ color: accentColor }}>$8.7M</Text></Text>
+                <Text style={styles.golfLiveOpenBtn}>Full board →</Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* ═══════════════════════════════════════
+          FULL LEADERBOARD
+      ══════════════════════════════════════ */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Full Leaderboard</Text>
+        <Text style={styles.sectionSubTitle}>{lbEntries.length} players</Text>
+      </View>
+
+      <View style={styles.golfLeaderboardSection}>
+        {/* Leaderboard header */}
+        <View style={styles.golfLbHeader}>
+          <Text style={styles.golfLbHeaderCell}>#</Text>
+          <Text style={[styles.golfLbHeaderCell, { flex: 2, textAlign: "left" }]}>PLAYER</Text>
+          <Text style={styles.golfLbHeaderCell}>TOD</Text>
+          <Text style={styles.golfLbHeaderCell}>TOT</Text>
+          <Text style={styles.golfLbHeaderCell}>THR</Text>
+        </View>
+
+        {lbEntries.slice(0, 20).map((entry: GolfLeaderboardEntry, idx: number) => {
+          const isTop3 = idx < 3;
+          const scoreColor = getGolfScoreColor(entry.toPar);
+          const todayColor = getGolfScoreColor(entry.todayToPar);
+          const movementArrow = getMovementIndicator(entry.movement);
+          const movementColor = getMovementColor(entry.movement);
+          const flagEmoji = getCountryFlag(entry.countryCode);
+          const isAtCutLine = leaderboardData?.cutLine != null && entry.toPar === leaderboardData.cutLine;
+
+          return (
+            <View key={entry.name + idx} style={[
+              styles.golfLbRow,
+              isTop3 && styles.golfLbRowTop,
+              isAtCutLine && styles.golfLbRowCut,
+            ]}>
+              <View style={styles.golfLbPos}>
+                <Text style={[styles.golfLbPosNum, isTop3 && { color: "#E8C96A" }]}>
+                  {entry.position ?? idx + 1}
+                </Text>
+                <Text style={[styles.golfLbMoveArrow, { color: movementColor }]}>{movementArrow}</Text>
+              </View>
+              <View style={styles.golfLbPlayer}>
+                {entry.headshotUrl ? (
+                  <Image source={{ uri: entry.headshotUrl }} style={styles.golfLbAvatar} />
+                ) : (
+                  <View style={styles.golfLbAvatarPlaceholder}>
+                    <Text style={styles.golfLbAvatarText}>
+                      {entry.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2)}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.golfLbPlayerInfo}>
+                  <Text style={styles.golfLbPlayerName} numberOfLines={1}>{entry.name}</Text>
+                  <Text style={styles.golfLbPlayerSub}>{flagEmoji} {entry.country}</Text>
+                </View>
+              </View>
+              <Text style={[styles.golfLbCell, { color: todayColor }]}>{entry.today}</Text>
+              <Text style={[styles.golfLbCell, { color: scoreColor, fontWeight: "700" }]}>{entry.score}</Text>
+              <Text style={styles.golfLbCell}>{entry.thru}</Text>
+            </View>
+          );
+        })}
+
+        {/* Cut line indicator */}
+        {leaderboardData?.cutLine != null && (
+          <View style={styles.golfLbCutLine}>
+            <Text style={styles.golfLbCutText}>PROJECTED CUT</Text>
+            <View style={styles.golfLbCutBar} />
+            <Text style={styles.golfLbCutText}>{leaderboardData.cutLine > 0 ? "+" : ""}{leaderboardData.cutLine}</Text>
+          </View>
+        )}
       </View>
     </View>
   ) : null;
@@ -1646,6 +1850,79 @@ export default function SportBoardScreen() {
       {golfGames.map((game) => (
         <GolfLeaderboard key={game.id} game={game} accentColor={accentColor} />
       ))}
+    </View>
+  ) : null;
+
+  // Golf Schedule Section - Enhanced Grid Layout
+  const golfTournaments = golfScheduleData?.tournaments ?? [];
+  const upcomingTournaments = golfTournaments.filter(t => t.status === "upcoming").slice(0, 6);
+  const GolfScheduleSection = archetype === "golf" && upcomingTournaments.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Upcoming Tournaments</Text>
+      </View>
+      <View style={styles.golfScheduleGrid}>
+        {upcomingTournaments.map((tournament) => {
+          const dateStr = new Date(tournament.date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          const endStr = tournament.endDate !== tournament.date
+            ? ` - ${new Date(tournament.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+            : "";
+          return (
+            <View key={tournament.id} style={[styles.golfScheduleCard, { borderColor: tournament.isMajor ? "#FFD70044" : accentColor + "25" }]}>
+              {tournament.isMajor && (
+                <View style={styles.golfScheduleMajorBadge}>
+                  <Text style={styles.golfScheduleMajorText}>MAJOR</Text>
+                </View>
+              )}
+              <Text style={styles.golfScheduleName} numberOfLines={2}>{tournament.name}</Text>
+              <Text style={styles.golfScheduleCourse} numberOfLines={1}>{tournament.course}</Text>
+              <View style={styles.golfScheduleFooter}>
+                <Text style={styles.golfScheduleDate}>{dateStr}{endStr}</Text>
+                {tournament.location && (
+                  <Text style={styles.golfScheduleLocation} numberOfLines={1}>{tournament.location}</Text>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  ) : null;
+
+  // Golf Rankings Section (FedEx Cup + World Rankings)
+  const fedexRankings = golfRankingsData?.rankings ?? [];
+  const GolfRankingsSection = archetype === "golf" && fedexRankings.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>World Rankings</Text>
+        <Text style={styles.sectionSubTitle}>Top {Math.min(5, fedexRankings.length)}</Text>
+      </View>
+      <View style={[styles.golfRankingsCard, { borderColor: accentColor + "25" }]}>
+        {fedexRankings.slice(0, 5).map((player, idx) => {
+          const flagEmoji = getCountryFlag(player.country);
+          const movementArrow = getMovementIndicator(player.movement);
+          const movementColor = getMovementColor(player.movement);
+          const isTopThree = idx < 3;
+
+          return (
+            <View key={player.name} style={[styles.golfRankingsRow, idx === 0 && { borderTopWidth: 0 }, isTopThree && { backgroundColor: accentColor + "08" }]}>
+              <View style={[styles.golfRankingsPos, isTopThree && { backgroundColor: accentColor + "20" }]}>
+                <Text style={[styles.golfRankingsPosNum, { color: isTopThree ? accentColor : C.textSecondary }]}>
+                  {player.rank}
+                </Text>
+              </View>
+              <View style={styles.golfRankingsPlayer}>
+                <Text style={styles.golfRankingsName} numberOfLines={1}>{flagEmoji} {player.name}</Text>
+                <Text style={styles.golfRankingsCountry}>{player.country}</Text>
+              </View>
+              <View style={styles.golfRankingsStats}>
+                <Text style={[styles.golfRankingsMovement, { color: movementColor }]}>{movementArrow}</Text>
+                <Text style={styles.golfRankingsPoints}>{player.points.toLocaleString()}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
     </View>
   ) : null;
 
@@ -2473,13 +2750,11 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       case "golf":
         return (
           <>
-            {AthleteSpotlightSection}
             {ApiLeaderboardSection}
+            {GolfScheduleSection}
+            {GolfRankingsSection}
             {GolfLeaderboardSection}
-            {UpcomingTournamentsSection}
-            {RankingsSection}
-            {RankingsAthletesSection ?? AthletesSection}
-            {ScheduleSection}
+            {AthleteSpotlightSection}
             {NewsSection}
           </>
         );
@@ -2667,32 +2942,73 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.liveStripContent}
           >
-            {filteredGames.filter(g => g.status === "live").map((game) => (
-              <Pressable
-                key={game.id}
-                style={styles.liveGameCard}
-                onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
-              >
-                <View style={styles.liveGameTeams}>
-                  <View style={styles.liveGameTeam}>
-                    <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={32} borderColor={`${accentColor}44`} />
-                    <Text style={styles.liveGameTeamName} numberOfLines={1}>{game.awayTeam.split(" ").slice(-1)[0]}</Text>
+            {filteredGames.filter(g => g.status === "live").map((game) => {
+              // Special rendering for golf
+              if (game.sportArchetype === "golf") {
+                const leaderboard = (game as any).leaderboard ?? [];
+                const leader = leaderboard[0];
+                return (
+                  <Pressable
+                    key={game.id}
+                    style={[styles.liveGameCard, styles.liveGolfCard]}
+                    onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+                  >
+                    <View style={styles.liveGolfHeader}>
+                      <Text style={styles.liveGolfTitle} numberOfLines={1}>{game.eventTitle ?? "Tournament"}</Text>
+                      <View style={[styles.liveGolfBadge, { backgroundColor: accentColor + "22" }]}>
+                        <Text style={[styles.liveGolfBadgeText, { color: accentColor }]}>LIVE</Text>
+                      </View>
+                    </View>
+                    {leader && (
+                      <View style={styles.liveGolfLeader}>
+                        <Text style={styles.liveGolfLeaderPos}>1</Text>
+                        <Text style={styles.liveGolfLeaderName} numberOfLines={1}>{leader.name}</Text>
+                        <Text style={[styles.liveGolfLeaderScore, { color: accentColor }]}>{leader.score}</Text>
+                      </View>
+                    )}
+                    {leaderboard.length > 1 && (
+                      <View style={styles.liveGolfMiniLb}>
+                        {leaderboard.slice(1, 4).map((p: any, i: number) => (
+                          <View key={i} style={styles.liveGolfMiniRow}>
+                            <Text style={styles.liveGolfMiniPos}>T{p.position}</Text>
+                            <Text style={styles.liveGolfMiniName} numberOfLines={1}>{p.name}</Text>
+                            <Text style={styles.liveGolfMiniScore}>{p.score}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              }
+
+              // Regular team sport rendering
+              return (
+                <Pressable
+                  key={game.id}
+                  style={styles.liveGameCard}
+                  onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+                >
+                  <View style={styles.liveGameTeams}>
+                    <View style={styles.liveGameTeam}>
+                      <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={32} borderColor={`${accentColor}44`} />
+                      <Text style={styles.liveGameTeamName} numberOfLines={1}>{game.awayTeam.split(" ").slice(-1)[0]}</Text>
+                    </View>
+                    <View style={styles.liveGameScoreBox}>
+                      <Text style={styles.liveGameScore}>{game.awayScore ?? 0}</Text>
+                      <Text style={styles.liveGameScore}>-</Text>
+                      <Text style={styles.liveGameScore}>{game.homeScore ?? 0}</Text>
+                    </View>
+                    <View style={styles.liveGameTeam}>
+                      <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={32} borderColor={`${accentColor}44`} />
+                      <Text style={styles.liveGameTeamName} numberOfLines={1}>{game.homeTeam.split(" ").slice(-1)[0]}</Text>
+                    </View>
                   </View>
-                  <View style={styles.liveGameScoreBox}>
-                    <Text style={styles.liveGameScore}>{game.awayScore ?? 0}</Text>
-                    <Text style={styles.liveGameScore}>-</Text>
-                    <Text style={styles.liveGameScore}>{game.homeScore ?? 0}</Text>
+                  <View style={styles.liveGameQuarter}>
+                    <Text style={styles.liveGameQuarterText}>{game.quarter}{game.timeRemaining ? ` · ${game.timeRemaining}` : ""}</Text>
                   </View>
-                  <View style={styles.liveGameTeam}>
-                    <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={32} borderColor={`${accentColor}44`} />
-                    <Text style={styles.liveGameTeamName} numberOfLines={1}>{game.homeTeam.split(" ").slice(-1)[0]}</Text>
-                  </View>
-                </View>
-                <View style={styles.liveGameQuarter}>
-                  <Text style={styles.liveGameQuarterText}>{game.quarter}{game.timeRemaining ? ` · ${game.timeRemaining}` : ""}</Text>
-                </View>
-              </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </ScrollView>
         </View>
       )}
@@ -2719,10 +3035,17 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: C.background,
+    ...(Platform.OS === "web" ? {
+      alignItems: "center",
+    } : {}),
   },
 
   heroGradient: {
     paddingBottom: 0,
+    ...(Platform.OS === "web" ? {
+      width: "100%",
+      maxWidth: 900,
+    } : {}),
   },
   header: {
     flexDirection: "row",
@@ -2838,25 +3161,30 @@ const styles = StyleSheet.create({
 
   content: {
     paddingTop: 8,
+    ...(Platform.OS === "web" ? {
+      maxWidth: 900,
+      width: "100%",
+      alignSelf: "center",
+    } : {}),
   },
 
   section: {
-    marginBottom: 8,
-    paddingTop: 16,
+    marginBottom: 12,
+    paddingTop: 20,
     paddingHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: 16,
     paddingHorizontal: 4,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontSize: 20,
+    fontFamily: "Inter_800ExtraBold",
     color: C.text,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
   seeAllBtn: {},
   seeAllText: {
@@ -3136,59 +3464,157 @@ const styles = StyleSheet.create({
   },
   leaderboardCard: {
     backgroundColor: C.card,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   leaderboardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: C.separator,
+    backgroundColor: "rgba(255,255,255,0.02)",
   },
   lbHeaderCell: {
     fontSize: 10,
     fontFamily: "Inter_700Bold",
-    color: C.textSecondary,
+    color: C.textTertiary,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     textAlign: "center",
   },
   leaderboardRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 48,
+    position: "relative",
   },
   leaderboardRowAlt: {
     backgroundColor: "rgba(255,255,255,0.02)",
   },
+  leaderboardRowTop: {
+    backgroundColor: "rgba(201,168,76,0.05)",
+    borderLeftWidth: 3,
+    borderLeftColor: "#C9A84C",
+  },
   lbCell: {
     fontSize: 13,
-    fontFamily: "Inter_400Regular",
+    fontFamily: "Inter_500Medium",
     color: C.textSecondary,
     textAlign: "center",
   },
   lbAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   lbAvatarPlaceholder: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(46,204,113,0.15)",
   },
   lbPlayerName: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
     color: C.text,
     flex: 1,
+    letterSpacing: -0.2,
+  },
+  lbMovement: {
+    fontSize: 10,
+    marginLeft: 4,
+    fontWeight: "700",
+  },
+  lbMovementUp: {
+    color: "#3DAA5C",
+  },
+  lbMovementDown: {
+    color: "#E05252",
+  },
+  lbMovementNeutral: {
+    color: "#888880",
+  },
+  lbScoreUnder: {
+    color: "#3DAA5C",
+  },
+  lbScoreOver: {
+    color: "#E05252",
+  },
+  lbScoreEven: {
+    color: "#888880",
+  },
+  golfTournamentHeader: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  golfTournamentName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: C.text,
+    letterSpacing: -0.3,
+  },
+  golfVenue: {
+    fontSize: 13,
+    color: C.textSecondary,
+    marginTop: 4,
+  },
+  cutLineRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "#2ECC71",
+    backgroundColor: "rgba(46, 204, 113, 0.12)",
+    gap: 6,
+  },
+  cutLineText: {
+    fontSize: 12,
+    color: "#2ECC71",
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  majorBadgeInline: {
+    backgroundColor: "#FFD700",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  majorBadgeInlineText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#000",
+    letterSpacing: 0.5,
   },
 
   offSeasonCard: {
@@ -3476,6 +3902,86 @@ const styles = StyleSheet.create({
     color: "#E53935",
   },
 
+  // Golf Live Game Card
+  liveGolfCard: {
+    width: 200,
+    padding: 12,
+  },
+  liveGolfHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  liveGolfTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    flex: 1,
+    marginRight: 8,
+  },
+  liveGolfBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  liveGolfBadgeText: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.5,
+  },
+  liveGolfLeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+  },
+  liveGolfLeaderPos: {
+    fontSize: 16,
+    fontFamily: "Inter_800ExtraBold",
+    color: C.textTertiary,
+    width: 24,
+  },
+  liveGolfLeaderName: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    marginHorizontal: 8,
+  },
+  liveGolfLeaderScore: {
+    fontSize: 16,
+    fontFamily: "Inter_800ExtraBold",
+  },
+  liveGolfMiniLb: {
+    gap: 4,
+  },
+  liveGolfMiniRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  liveGolfMiniPos: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    color: C.textTertiary,
+    width: 24,
+  },
+  liveGolfMiniName: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: C.textSecondary,
+    marginHorizontal: 8,
+  },
+  liveGolfMiniScore: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+  },
+
   // Sub-Navigation tabs
   subTab: {
     backgroundColor: C.card,
@@ -3548,5 +4054,638 @@ const styles = StyleSheet.create({
   spotlightStatText: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
+  },
+
+  // Section subtitle
+  sectionSubTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+  },
+
+  // ═══════════════════════════════════════
+  // GOLF HUB - REDesign from HTML mockup
+  // ══════════════════════════════════════
+
+  // Leader Hero Card
+  golfHeroCard: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: "#101610",
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(201,168,76,0.25)",
+  },
+  golfHeroGrass: {
+    height: 56,
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#1C3D28",
+  },
+  golfHeroMajorBadge: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    backgroundColor: "#FFD700",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  golfHeroMajorText: {
+    fontSize: 9,
+    fontFamily: "Inter_800ExtraBold",
+    color: "#000",
+    letterSpacing: 0.15,
+  },
+  golfHeroLiveBadge: {
+    position: "absolute",
+    top: 10,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 100,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  golfHeroLiveText: {
+    fontSize: 9,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    color: "#4DCC70",
+    letterSpacing: 0.1,
+  },
+  golfHeroRound: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 100,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    fontSize: 9,
+    fontFamily: "JetBrains Mono",
+    color: "#888880",
+    letterSpacing: 0.05,
+  },
+  golfHeroBody: {
+    padding: 16,
+  },
+  golfHeroTournament: {
+    fontSize: 11,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "700",
+    letterSpacing: 0.1,
+    textTransform: "uppercase",
+    color: C.textTertiary,
+    marginBottom: 12,
+  },
+  golfHeroPlayerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  golfHeroAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.separator,
+    borderWidth: 2,
+    borderColor: "#C9A84C",
+  },
+  golfHeroAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#1C3D28",
+    borderWidth: 2,
+    borderColor: "#C9A84C",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  golfHeroAvatarInitials: {
+    fontSize: 14,
+    fontFamily: "Inter_800ExtraBold",
+    color: C.text,
+  },
+  golfHeroPlayerInfo: {
+    flex: 1,
+  },
+  golfHeroPlayerName: {
+    fontSize: 22,
+    fontFamily: "Playfair Display",
+    fontWeight: "700",
+    color: C.text,
+    lineHeight: 26,
+  },
+  golfHeroPlayerCountry: {
+    fontSize: 12,
+    color: C.textSecondary,
+    marginTop: 3,
+  },
+  golfHeroScoreBig: {
+    marginLeft: "auto",
+    alignItems: "flex-end",
+  },
+  golfHeroScoreNum: {
+    fontSize: 40,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    lineHeight: 44,
+  },
+  golfHeroScoreLabel: {
+    fontSize: 11,
+    fontFamily: "JetBrains Mono",
+    color: C.textSecondary,
+    letterSpacing: 0.05,
+  },
+  golfHeroStats: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+  },
+  golfHeroStat: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 10,
+    borderRightWidth: 1,
+    borderRightColor: "rgba(255,255,255,0.06)",
+  },
+  golfHeroStatNum: {
+    fontSize: 16,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    color: C.text,
+  },
+  golfHeroStatLabel: {
+    fontSize: 10,
+    fontFamily: "JetBrains Mono",
+    color: C.textTertiary,
+    marginTop: 2,
+    letterSpacing: 0.05,
+  },
+
+  // AI Insight Card
+  golfInsightCard: {
+    marginHorizontal: 16,
+    marginBottom: 4,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: "rgba(10,26,13,0.8)",
+    borderWidth: 1,
+    borderColor: "rgba(201,168,76,0.2)",
+    position: "relative",
+    overflow: "hidden",
+  },
+  golfInsightHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  golfInsightSpark: {
+    fontSize: 12,
+  },
+  golfInsightLabel: {
+    fontSize: 9,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
+  },
+  golfInsightText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: "#C8C8C0",
+    lineHeight: 20,
+  },
+  golfInsightUpdating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 8,
+  },
+  golfInsightUpdatingText: {
+    fontSize: 9,
+    fontFamily: "JetBrains Mono",
+    color: C.textTertiary,
+    letterSpacing: 0.1,
+  },
+
+  // Live Tournament Cards
+  golfLiveCardsScroll: {
+    paddingHorizontal: 16,
+    gap: 10,
+    paddingBottom: 4,
+  },
+  golfLiveCard: {
+    width: 300,
+    backgroundColor: "#101610",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(61,170,92,0.25)",
+    overflow: "hidden",
+  },
+  golfLiveCardGrass: {
+    height: 80,
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#1C3D28",
+  },
+  golfLiveBadge: {
+    position: "absolute",
+    top: 10,
+    left: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 100,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+  },
+  golfLiveBadgeText: {
+    fontSize: 9,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    color: "#4DCC70",
+    letterSpacing: 0.1,
+  },
+  golfLiveRound: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 100,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    fontSize: 9,
+    fontFamily: "JetBrains Mono",
+    color: "#888880",
+    letterSpacing: 0.05,
+  },
+  golfLiveFlag: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    fontSize: 26,
+  },
+  golfLiveCardBody: {
+    padding: 14,
+  },
+  golfLiveTournament: {
+    fontSize: 15,
+    fontFamily: "Playfair Display",
+    fontWeight: "700",
+    color: C.text,
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  golfLiveVenue: {
+    fontSize: 11,
+    fontFamily: "JetBrains Mono",
+    color: C.textTertiary,
+    letterSpacing: 0.05,
+    marginBottom: 14,
+  },
+  golfLiveDivider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    marginBottom: 12,
+  },
+  golfLiveLeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.03)",
+  },
+  golfLivePos: {
+    width: 28,
+    fontFamily: "JetBrains Mono",
+    fontSize: 11,
+    fontWeight: "600",
+    color: C.textTertiary,
+  },
+  golfLiveAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: C.separator,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  golfLiveAvatarPlaceholder: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#1C3D28",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  golfLiveAvatarText: {
+    fontSize: 9,
+    fontFamily: "Inter_800ExtraBold",
+    color: "#C8C8C0",
+    letterSpacing: 0.02,
+  },
+  golfLiveName: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    flex: 1,
+  },
+  golfLiveCountry: {
+    fontSize: 10,
+    color: C.textTertiary,
+  },
+  golfLiveScore: {
+    fontSize: 15,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    textAlign: "right",
+    minWidth: 40,
+  },
+  golfLiveFooter: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  golfLivePurse: {
+    fontSize: 11,
+    fontFamily: "JetBrains Mono",
+    color: C.textTertiary,
+  },
+  golfLiveOpenBtn: {
+    fontSize: 11,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "700",
+    color: "#3DAA5C",
+    letterSpacing: 0.05,
+  },
+
+  // Full Leaderboard
+  golfLeaderboardSection: {
+    marginHorizontal: 16,
+  },
+  golfLbHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#141D15",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  golfLbHeaderCell: {
+    flex: 0.5,
+    fontSize: 9,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    letterSpacing: 0.15,
+    textTransform: "uppercase",
+    color: C.textTertiary,
+    textAlign: "center",
+  },
+  golfLbRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    backgroundColor: "#0C110E",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.06)",
+  },
+  golfLbRowTop: {
+    backgroundColor: "rgba(201,168,76,0.05)",
+  },
+  golfLbRowCut: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#2ECC71",
+    borderStyle: "dashed",
+  },
+  golfLbPos: {
+    flex: 0.5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  golfLbPosNum: {
+    fontSize: 13,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    color: C.text,
+  },
+  golfLbMoveArrow: {
+    fontSize: 8,
+  },
+  golfLbPlayer: {
+    flex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  golfLbAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#1C3D28",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  golfLbAvatarPlaceholder: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#1C3D28",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  golfLbAvatarText: {
+    fontSize: 10,
+    fontFamily: "Inter_800ExtraBold",
+    color: "#C8C8C0",
+    letterSpacing: -0.02,
+  },
+  golfLbPlayerInfo: {
+    flex: 1,
+  },
+  golfLbPlayerName: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    lineHeight: 18,
+  },
+  golfLbPlayerSub: {
+    fontSize: 10,
+    color: C.textTertiary,
+    fontFamily: "JetBrains Mono",
+    marginTop: 1,
+  },
+  golfLbCell: {
+    flex: 0.5,
+    fontSize: 13,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    color: C.textSecondary,
+    textAlign: "center",
+  },
+  golfLbCutLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(224,82,82,0.05)",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  golfLbCutText: {
+    fontSize: 10,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    color: "#E05252",
+    letterSpacing: 0.1,
+  },
+  golfLbCutBar: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(224,82,82,0.3)",
+  },
+
+  // Enhanced Golf Schedule Grid
+  golfScheduleGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 8,
+  },
+  golfScheduleCard: {
+    width: "47%",
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 0,
+    position: "relative",
+    overflow: "hidden",
+  },
+  golfScheduleMajorBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#FFD700",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderBottomLeftRadius: 8,
+  },
+  golfScheduleMajorText: {
+    fontSize: 9,
+    fontFamily: "Inter_800ExtraBold",
+    color: "#000",
+    letterSpacing: 0.5,
+  },
+  golfScheduleName: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: C.text,
+    marginBottom: 4,
+    paddingRight: 40,
+  },
+  golfScheduleCourse: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    marginBottom: 8,
+  },
+  golfScheduleDate: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: C.textSecondary,
+  },
+  golfScheduleFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: "auto",
+  },
+  golfScheduleLocation: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    color: C.textTertiary,
+    flex: 1,
+    textAlign: "right",
+    marginLeft: 4,
+  },
+
+  // Enhanced Golf Rankings
+  golfRankingsCard: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  golfRankingsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.separator,
+    gap: 12,
+  },
+  golfRankingsPos: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: C.separator,
+  },
+  golfRankingsPosNum: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  golfRankingsPlayer: {
+    flex: 1,
+  },
+  golfRankingsName: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    marginBottom: 2,
+  },
+  golfRankingsCountry: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: C.textTertiary,
+  },
+  golfRankingsStats: {
+    alignItems: "flex-end",
+  },
+  golfRankingsMovement: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 2,
+  },
+  golfRankingsPoints: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    color: C.textSecondary,
   },
 });

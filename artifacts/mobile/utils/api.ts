@@ -90,6 +90,17 @@ export const api = {
   getGolfLeaderboard: (league?: string) =>
     apiFetch<GolfLeaderboardResponse>(`/sports/golf/leaderboard${league ? `?league=${encodeURIComponent(league)}` : ""}`),
 
+  getGolfSchedule: (league?: string, season?: number) => {
+    const params = new URLSearchParams();
+    if (league) params.set("league", league);
+    if (season) params.set("season", String(season));
+    const q = params.toString();
+    return apiFetch<{ tournaments: GolfTournament[] }>(`/sports/golf/schedule${q ? `?${q}` : ""}`);
+  },
+
+  getGolfRankings: (type: "fedex" | "owgr" = "fedex") =>
+    apiFetch<{ rankings: GolfRankingEntry[] }>(`/sports/golf/rankings?type=${type}`),
+
   getInOneBreath: () =>
     apiFetch<{ summary: string; generated: string }>("/sports/in-one-breath"),
 
@@ -261,10 +272,14 @@ export interface GolfLeaderboardEntry {
   position: number | null;
   name: string;
   score: string;
-  thru: string;
+  toPar: number;           // numeric score relative to par (e.g., -5, 0, 3)
   today: string;
+  todayToPar: number;      // today's score relative to par
+  thru: string;
   country: string;
+  countryCode: string;     // ISO country code for flag emoji
   headshotUrl: string | null;
+  movement: number;        // positions moved (+ up, - down, 0 = no change)
 }
 
 export interface GolfLeaderboardResponse {
@@ -272,7 +287,31 @@ export interface GolfLeaderboardResponse {
   venue: string;
   status: string;
   round: string;
+  cutLine: number | null;    // projected cut line (par + strokes)
+  isMajor: boolean;          // is this a major championship
   leaderboard: GolfLeaderboardEntry[];
+}
+
+export interface GolfTournament {
+  id: string;
+  name: string;
+  date: string;
+  endDate: string;
+  course: string;
+  location: string;
+  status: "upcoming" | "live" | "completed";
+  purse: string;
+  winner: string | null;
+  isMajor: boolean;
+}
+
+export interface GolfRankingEntry {
+  rank: number;
+  name: string;
+  country: string;
+  points: number;
+  events: number;
+  movement: number;
 }
 
 export interface RaceResult {
