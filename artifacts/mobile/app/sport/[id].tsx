@@ -312,6 +312,63 @@ function AthleteChip({
   );
 }
 
+function AthleteSpotlight({
+  athletes,
+  accentColor,
+}: {
+  athletes: Array<{ name: string; stat: string | null; headshot: string | null; team: string | null }>;
+  accentColor: string;
+}) {
+  if (athletes.length === 0) return null;
+
+  return (
+    <View style={styles.spotlightSection}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Athletes to Watch</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.spotlightRow}
+      >
+        {athletes.slice(0, 5).map((athlete, i) => (
+          <Pressable
+            key={athlete.name}
+            style={styles.spotlightCard}
+            onPress={() =>
+              router.push({ pathname: "/player/[id]", params: { id: athlete.name.toLowerCase().replace(/\s+/g, "-") } } as any)
+            }
+          >
+            <View style={[styles.spotlightRank, { backgroundColor: accentColor }]}>
+              <Text style={styles.spotlightRankText}>#{i + 1}</Text>
+            </View>
+            {athlete.headshot ? (
+              <Image source={{ uri: athlete.headshot }} style={styles.spotlightHeadshot} />
+            ) : (
+              <View style={[styles.spotlightHeadshot, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
+                <Text style={{ color: accentColor, fontSize: 20, fontFamily: "Inter_700Bold" }}>
+                  {athlete.name.charAt(0)}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.spotlightName} numberOfLines={1}>{athlete.name}</Text>
+            {athlete.team && (
+              <Text style={styles.spotlightTeam} numberOfLines={1}>{athlete.team}</Text>
+            )}
+            {athlete.stat && (
+              <View style={[styles.spotlightStat, { backgroundColor: accentColor + "15" }]}>
+                <Text style={[styles.spotlightStatText, { color: accentColor }]}>
+                  {athlete.stat}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 function LeagueChip({
   label,
   active,
@@ -1629,6 +1686,18 @@ export default function SportBoardScreen() {
     </View>
   ) : null;
 
+  const AthleteSpotlightSection = topAthletes.length > 0 ? (
+    <AthleteSpotlight
+      athletes={topAthletes.slice(0, 5).map(a => ({
+        name: a.name,
+        stat: a.stat ?? null,
+        headshot: a.resolvedHeadshot ?? null,
+        team: a.team ?? null,
+      }))}
+      accentColor={accentColor}
+    />
+  ) : null;
+
   const AthletesSection = topAthletes.length > 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -2394,6 +2463,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       case "seasonal":
         return (
           <>
+            {AthleteSpotlightSection}
             {SeasonalNextEventSection}
             {SeasonalEventsSection}
             {SeasonalAthletesSection}
@@ -2403,6 +2473,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       case "golf":
         return (
           <>
+            {AthleteSpotlightSection}
             {ApiLeaderboardSection}
             {GolfLeaderboardSection}
             {UpcomingTournamentsSection}
@@ -2415,6 +2486,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       case "racing":
         return (
           <>
+            {AthleteSpotlightSection}
             {NextRaceSection}
             {RankingsSection}
             {ConstructorStandingsSection}
@@ -2427,6 +2499,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       case "tennis":
         return (
           <>
+            {AthleteSpotlightSection}
             {ActiveTournamentSection}
             {RankingsSection}
             {TournamentDrawSection}
@@ -2440,6 +2513,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       case "combat":
         return (
           <>
+            {AthleteSpotlightSection}
             {NextEventSection}
             {RankingsSection}
             {GamesSection}
@@ -2451,6 +2525,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       default:
         return (
           <>
+            {AthleteSpotlightSection}
             {OffSeasonBanner}
             {GamesSection}
             {InlineStandingsSection}
@@ -3414,5 +3489,64 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
     color: C.text,
+  },
+
+  // Athlete Spotlight
+  spotlightSection: {
+    marginTop: 16,
+  },
+  spotlightRow: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  spotlightCard: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    padding: 12,
+    width: 120,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  spotlightRank: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  spotlightRankText: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+  },
+  spotlightHeadshot: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginBottom: 8,
+  },
+  spotlightName: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: C.text,
+    textAlign: "center",
+  },
+  spotlightTeam: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    color: C.textSecondary,
+    marginTop: 2,
+  },
+  spotlightStat: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 6,
+  },
+  spotlightStatText: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
   },
 });
