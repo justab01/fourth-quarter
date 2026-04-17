@@ -191,8 +191,8 @@ function InOneBreath() {
   const { data, isLoading, refetch, isError } = useQuery({
     queryKey: ["in-one-breath"],
     queryFn: () => api.getInOneBreath(),
-    staleTime: 120_000,
-    refetchInterval: 120_000,
+    staleTime: 300_000,
+    refetchInterval: 300_000,
     retry: 1,
   });
   const [expanded, setExpanded] = useState(true);
@@ -369,6 +369,36 @@ const personS = StyleSheet.create({
   badgeText: { color: C.accent, fontSize: 12, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
 });
 
+function LiveRingLogo({ uri, name, size, borderColor }: { uri?: string | null; name: string; size: number; borderColor?: string }) {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1100, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 1100, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim]);
+  const ringOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] });
+  const ringScale  = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
+  return (
+    <View style={{ width: size + 8, height: size + 8, alignItems: "center", justifyContent: "center" }}>
+      <Animated.View style={{
+        position: "absolute",
+        width: size + 8, height: size + 8,
+        borderRadius: (size + 8) / 2,
+        borderWidth: 2.5,
+        borderColor: C.live,
+        opacity: ringOpacity,
+        transform: [{ scale: ringScale }],
+      }} />
+      <TeamLogo uri={uri} name={name} size={size} borderColor={borderColor} />
+    </View>
+  );
+}
+
 function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game[] }) {
   if (myTeams.length === 0) return null;
   return (
@@ -387,7 +417,7 @@ function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game
           let statusLine = "";
           let statusColor = C.textTertiary;
           if (live) {
-            statusLine = "● LIVE";
+            statusLine = "LIVE";
             statusColor = C.live;
           } else if (next) {
             const d = new Date(next.startTime);
@@ -408,7 +438,11 @@ function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game
                 ?? getTeamEspnLogoUrl(team, league);
           return (
             <Pressable key={team} onPress={() => goToTeam(team, league)} style={tileStyles.tile}>
-              <TeamLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
+              {live ? (
+                <LiveRingLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
+              ) : (
+                <TeamLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
+              )}
               <Text style={tileStyles.teamShort} numberOfLines={1}>{abbr}</Text>
               {statusLine ? (
                 <Text style={[tileStyles.status, { color: statusColor }]} numberOfLines={1}>{statusLine}</Text>

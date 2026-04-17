@@ -16,6 +16,72 @@ import { ALL_TEAMS } from "@/constants/allPlayers";
 
 const C = Colors.dark;
 
+// ── Team primary color map (for split atmosphere gradients) ──────────────────
+const TEAM_PRIMARY_COLORS: Record<string, string> = {
+  // NBA
+  "Los Angeles Lakers": "#552583", "Boston Celtics": "#007A33",
+  "Golden State Warriors": "#1D428A", "Miami Heat": "#98002E",
+  "Chicago Bulls": "#CE1141", "New York Knicks": "#006BB6",
+  "Brooklyn Nets": "#FFFFFF", "Dallas Mavericks": "#00538C",
+  "Phoenix Suns": "#E56020", "Denver Nuggets": "#0E2240",
+  "Philadelphia 76ers": "#006BB6", "Milwaukee Bucks": "#00471B",
+  "Memphis Grizzlies": "#5D76A9", "Cleveland Cavaliers": "#860038",
+  "Indiana Pacers": "#002D62", "Oklahoma City Thunder": "#007AC1",
+  "San Antonio Spurs": "#C4CED4", "Atlanta Hawks": "#C1D32F",
+  "Toronto Raptors": "#CE1141", "Charlotte Hornets": "#1D1160",
+  "Detroit Pistons": "#C8102E", "Orlando Magic": "#0077C0",
+  "Washington Wizards": "#002B5C", "Sacramento Kings": "#5A2D81",
+  "New Orleans Pelicans": "#0C2340", "Houston Rockets": "#CE1141",
+  "Utah Jazz": "#002B5C", "Portland Trail Blazers": "#E03A3E",
+  "Minnesota Timberwolves": "#0C2340", "Los Angeles Clippers": "#C8102E",
+  // NFL
+  "Dallas Cowboys": "#041E42", "New England Patriots": "#002244",
+  "Green Bay Packers": "#203731", "San Francisco 49ers": "#AA0000",
+  "Kansas City Chiefs": "#E31837", "Seattle Seahawks": "#002244",
+  "Pittsburgh Steelers": "#FFB612", "Baltimore Ravens": "#241773",
+  "Philadelphia Eagles": "#004C54", "Buffalo Bills": "#00338D",
+  "Las Vegas Raiders": "#A5ACAF", "Los Angeles Rams": "#003594",
+  "Tampa Bay Buccaneers": "#D50A0A", "Denver Broncos": "#FB4F14",
+  "Chicago Bears": "#0B162A", "New York Giants": "#0B2265",
+  "New York Jets": "#125740", "Miami Dolphins": "#008E97",
+  "Jacksonville Jaguars": "#006778", "Tennessee Titans": "#0C2340",
+  "Carolina Panthers": "#0085CA", "New Orleans Saints": "#D3BC8D",
+  "Minnesota Vikings": "#4F2683", "Detroit Lions": "#0076B6",
+  "Arizona Cardinals": "#97233F", "Los Angeles Chargers": "#0080C6",
+  "Atlanta Falcons": "#A71930", "Indianapolis Colts": "#002C5F",
+  "Cincinnati Bengals": "#FB4F14", "Cleveland Browns": "#FF3C00",
+  "Houston Texans": "#03202F", "Washington Commanders": "#5A1414",
+  // MLB
+  "New York Yankees": "#003087", "Boston Red Sox": "#BD3039",
+  "Los Angeles Dodgers": "#005A9C", "Chicago Cubs": "#0E3386",
+  "San Francisco Giants": "#FD5A1E", "Houston Astros": "#002D62",
+  "Atlanta Braves": "#CE1141", "New York Mets": "#002D72",
+  "St. Louis Cardinals": "#C41E3A", "Texas Rangers": "#003278",
+  "Chicago White Sox": "#27251F", "Oakland Athletics": "#003831",
+  "Tampa Bay Rays": "#092C5C", "Toronto Blue Jays": "#134A8E",
+  // NHL
+  "Toronto Maple Leafs": "#003E7E", "Montreal Canadiens": "#AF1E2D",
+  "Boston Bruins": "#FFB81C", "Chicago Blackhawks": "#CF0A2C",
+  "Detroit Red Wings": "#CE1126", "Pittsburgh Penguins": "#FCB514",
+  "Edmonton Oilers": "#FF4C00", "Colorado Avalanche": "#6F263D",
+  "Vegas Golden Knights": "#B4975A", "Tampa Bay Lightning": "#002868",
+  "New York Rangers": "#0038A8", "Carolina Hurricanes": "#CC0000",
+  "Florida Panthers": "#041E42", "New York Islanders": "#003087",
+  // Soccer
+  "Arsenal": "#EF0107", "Chelsea": "#034694",
+  "Liverpool": "#C8102E", "Manchester United": "#DA291C",
+  "Manchester City": "#6CABDD", "Tottenham Hotspur": "#132257",
+  "Real Madrid": "#FEBE10", "FC Barcelona": "#A50044",
+  "Atletico Madrid": "#CB3524", "Juventus": "#000000",
+  "AC Milan": "#FB090B", "Inter Milan": "#010E80",
+  "Paris Saint-Germain": "#004170", "Bayern Munich": "#DC052D",
+  "Borussia Dortmund": "#FDE100", "Bayer Leverkusen": "#E32221",
+};
+
+function getTeamPrimaryColor(teamName: string, fallback: string): string {
+  return TEAM_PRIMARY_COLORS[teamName] ?? fallback;
+}
+
 // ── League color map ──────────────────────────────────────────────────────────
 function getLeagueColor(league: string): string {
   const map: Record<string, string> = {
@@ -345,6 +411,8 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
     const venueGradient = getSportVenueGradient(game.league);
     const awayShort = game.awayTeam.split(" ").slice(-1)[0];
     const homeShort = game.homeTeam.split(" ").slice(-1)[0];
+    const awayTeamColor = getTeamPrimaryColor(game.awayTeam, leagueColor);
+    const homeTeamColor = getTeamPrimaryColor(game.homeTeam, leagueColor);
     const ctaLabel = isLive
       ? (isTennis ? "Live Match" : isCombat ? "Live Fight" : isGolf ? "Live Leaderboard" : isMotor ? "Live Race" : "Open Gamecast")
       : isFinished
@@ -365,9 +433,9 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
               />
               {/* Away-team color glow left */}
-              <View style={[hero.teamGlow, { left: -40, backgroundColor: `${leagueColor}44` }]} />
+              <View style={[hero.teamGlow, { left: -40, backgroundColor: `${awayTeamColor}55` }]} />
               {/* Home-team color glow right */}
-              <View style={[hero.teamGlow, { right: -40, backgroundColor: `${leagueColor}33` }]} />
+              <View style={[hero.teamGlow, { right: -40, backgroundColor: `${homeTeamColor}44` }]} />
 
               {/* Crowd texture */}
               <View style={hero.crowdLines} />

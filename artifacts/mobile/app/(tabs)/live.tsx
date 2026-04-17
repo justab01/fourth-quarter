@@ -286,7 +286,7 @@ const cal = StyleSheet.create({
   cellPast:   { opacity: 0.7 },
   top:        { fontSize: 10, fontWeight: "700", color: C.textTertiary, letterSpacing: 0.4 },
   topActive:  { color: C.accent },
-  num:        { fontSize: 18, fontWeight: "800", color: C.textSecondary, fontFamily: "Inter_700Bold" },
+  num:        { fontSize: 18, fontWeight: "800", color: C.textSecondary, fontFamily: "PlusJakartaSans_800ExtraBold" },
   numActive:  { color: C.text },
   numPast:    { color: C.textTertiary },
   liveDot:    { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
@@ -345,7 +345,7 @@ const secH = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 2 },
   colorBar: { width: 4, height: 20, borderRadius: 2, flexShrink: 0 },
   emoji: { fontSize: 16 },
-  label: { fontSize: 16, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.2 },
+  label: { fontSize: 16, fontWeight: "800", color: C.text, fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: -0.2 },
   livePill: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: C.live, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,

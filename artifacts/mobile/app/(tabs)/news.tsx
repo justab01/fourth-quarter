@@ -73,7 +73,7 @@ const nh = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 6 },
   bar: { width: 3, height: 18, borderRadius: 2 },
   emoji: { fontSize: 15 },
-  label: { fontSize: 14, fontWeight: "800", fontFamily: "Inter_700Bold", letterSpacing: 0.2 },
+  label: { fontSize: 14, fontWeight: "800", fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: 0.2 },
 });
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     color: C.text,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
     letterSpacing: -0.5,
   },
   personalTag: {
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     color: C.accent,
     fontSize: 12,
     fontWeight: "700",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "PlusJakartaSans_700Bold",
   },
 
   filterScroll: { marginBottom: 8 },
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     fontSize: 13,
     fontWeight: "700",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "PlusJakartaSans_700Bold",
   },
 
   narrativeList: { gap: 28, paddingVertical: 4 },
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: C.textSecondary,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
   },
-  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: "Inter_400Regular" },
+  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: "PlusJakartaSans_400Regular" },
 });
