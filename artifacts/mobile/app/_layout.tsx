@@ -3,6 +3,7 @@ import {
   Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
+  Inter_800ExtraBold,
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -27,10 +28,24 @@ const queryClient = new QueryClient();
 const BG = "#0A0907";
 
 function RootLayoutNav() {
-  const { preferences, isLoaded } = usePreferences();
+  const { preferences, isLoaded, savePreferences } = usePreferences();
 
   useEffect(() => {
     if (!isLoaded) return;
+    // Dev-only: ?dev_skip_onboarding=1 auto-completes onboarding for screenshot debugging
+    if (Platform.OS === "web" && typeof window !== "undefined" && !preferences.onboardingComplete) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("dev_skip_onboarding") === "1") {
+        savePreferences({
+          ...preferences,
+          name: preferences.name || "Abraham",
+          favoriteLeagues: preferences.favoriteLeagues?.length ? preferences.favoriteLeagues : ["NBA"],
+          appMode: preferences.appMode || "fan",
+          onboardingComplete: true,
+        });
+        return;
+      }
+    }
     if (!preferences.onboardingComplete) {
       router.replace("/onboarding" as any);
     }
@@ -60,6 +75,7 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Inter_800ExtraBold,
   });
 
   useEffect(() => {

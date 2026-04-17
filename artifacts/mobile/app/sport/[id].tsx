@@ -1620,21 +1620,6 @@ export default function SportBoardScreen() {
   const ApiLeaderboardSection = archetype === "golf" && lbEntries.length > 0 ? (
     <View style={styles.section}>
       {/* ═══════════════════════════════════════
-          LIVE NOW SECTION HEADER
-      ══════════════════════════════════════ */}
-      {leaderboardData?.status === "live" && leader && (
-        <View style={[styles.golfSecHead, { paddingTop: 12 }]}>
-          <View style={styles.golfSecLabelWrap}>
-            <Animated.View style={{
-              width: 6, height: 6, borderRadius: 3, backgroundColor: "#3DAA5C",
-              opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
-            }} />
-            <Text style={styles.golfSecLabelText}>Live Now</Text>
-          </View>
-        </View>
-      )}
-
-      {/* ═══════════════════════════════════════
           LIVE LEADER HERO CARD
       ══════════════════════════════════════ */}
       {leaderboardData?.status === "live" && leader && (
@@ -1728,19 +1713,9 @@ export default function SportBoardScreen() {
       )}
 
       {/* ═══════════════════════════════════════
-          LIVE TOURNAMENTS SECTION HEADER
+          LIVE TOURNAMENT CARDS (Horizontal Scroll) — REMOVED, redundant with hero + full leaderboard
       ══════════════════════════════════════ */}
-      {leaderboardData && lbEntries.length > 0 && (
-        <View style={styles.golfSecHead}>
-          <Text style={styles.golfSecLabelText}>Live Tournaments</Text>
-          <Text style={styles.golfSeeAll}>See all →</Text>
-        </View>
-      )}
-
-      {/* ═══════════════════════════════════════
-          LIVE TOURNAMENT CARDS (Horizontal Scroll)
-      ══════════════════════════════════════ */}
-      {leaderboardData && lbEntries.length > 0 && (
+      {false && leaderboardData && lbEntries.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
