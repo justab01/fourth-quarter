@@ -22,7 +22,7 @@ import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
 import { GameCard, TeamLogo } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
-import { GameCardSkeleton, NewsCardSkeleton, SportPageSkeleton } from "@/components/LoadingSkeleton";
+import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
 import { getEspnHeadshotUrl } from "@/constants/espnAthleteIds";
 import { goToTeam } from "@/utils/navHelpers";

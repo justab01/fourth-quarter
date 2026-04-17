@@ -72,16 +72,18 @@ function SportCard({
   sport,
   liveCount,
   onPress,
+  cardWidth,
 }: {
   sport: SportCategory;
   liveCount: number;
   onPress: () => void;
+  cardWidth: number;
 }) {
   const seasonPhase = getSeasonPhase(sport.id);
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, { opacity: pressed ? 0.82 : 1 }]}
+      style={({ pressed }) => [styles.card, { width: cardWidth, opacity: pressed ? 0.82 : 1 }]}
     >
       <LinearGradient
         colors={sport.gradient}
@@ -208,6 +210,7 @@ export default function SportsScreen() {
               sport={sport}
               liveCount={getLiveCount(games, sport)}
               onPress={() => goToSport(sport.id)}
+              cardWidth={CARD_W}
             />
           ))}
         </View>
@@ -311,7 +314,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    width: CARD_W,
     borderRadius: 16,
     overflow: "hidden",
   },

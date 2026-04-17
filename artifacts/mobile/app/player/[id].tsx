@@ -1550,7 +1550,7 @@ function TennisOverview({ player, team, fallbackPlayer }: {
           profile?.careerEarnings && ["Career Earnings", profile.careerEarnings],
           profile && ["Career W-L", `${profile.careerWins}-${profile.careerLosses}`],
           profile?.height && ["Height", profile.height],
-        ].filter(Boolean).map(([label, value]) => (
+        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
           <View key={label as string} style={indS.infoRow}>
             <Text style={indS.infoLabel}>{label as string}</Text>
             <Text style={indS.infoValue}>{value as string}</Text>
@@ -1673,7 +1673,7 @@ function CombatOverview({ player, team, fallbackPlayer }: {
           profile?.weight && ["Weight", profile.weight],
           profile?.reach && ["Reach", profile.reach],
           profile?.titleDefenses != null && ["Title Defenses", String(profile.titleDefenses)],
-        ].filter(Boolean).map(([label, value]) => (
+        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
           <View key={label as string} style={indS.infoRow}>
             <Text style={indS.infoLabel}>{label as string}</Text>
             <Text style={indS.infoValue}>{value as string}</Text>
@@ -1739,7 +1739,7 @@ function XGamesOverview({ player, team, fallbackPlayer }: {
           ["Nationality", `${flag} ${natl}`],
           ["Sport", "X Games"],
           profile?.born && ["Born", profile.born.slice(0, 4)],
-        ].filter(Boolean).map(([label, value]) => (
+        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
           <View key={label as string} style={indS.infoRow}>
             <Text style={indS.infoLabel}>{label as string}</Text>
             <Text style={indS.infoValue}>{value as string}</Text>
@@ -1820,7 +1820,7 @@ function OlympicsOverview({ player, team, fallbackPlayer }: {
           ["Nationality", `${flag} ${natl}`],
           ["Discipline", profile?.discipline ?? fallbackPlayer?.position ?? "—"],
           profile?.born && ["Born", profile.born.slice(0, 4)],
-        ].filter(Boolean).map(([label, value]) => (
+        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
           <View key={label as string} style={indS.infoRow}>
             <Text style={indS.infoLabel}>{label as string}</Text>
             <Text style={indS.infoValue}>{value as string}</Text>
