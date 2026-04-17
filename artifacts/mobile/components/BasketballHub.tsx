@@ -444,15 +444,63 @@ function SkeletonRows({ count }: { count: number }) {
 
 function GameStripCard({ game }: { game: Game }) {
   const isLive = game.status === "live";
+  const isFinished = game.status === "finished";
   const home = (game.homeScore ?? 0);
   const away = (game.awayScore ?? 0);
   const homeLeading = home > away;
+  const margin = Math.abs(home - away);
   const accent = LEAGUE_ACCENT[game.league] ?? C.accent;
+
+  // Pulsing animation for the live dot
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!isLive) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isLive, pulse]);
+  const pulseOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
+
+  // Late period detection (Q4, OT, 2nd Half, Final-ish)
+  const period = (game.quarter ?? "").toLowerCase();
+  const isLatePeriod = /4|ot|final|2nd half|half 2/.test(period);
+
+  // Marquee tag derivation
+  const isPlayoffContext = !!game.round && /playoff|round|final|championship|conference/i.test(game.round);
+  const isMustWatch = isLive && (isLatePeriod && margin <= 6) || (isPlayoffContext && (isLive || game.status === "upcoming"));
+
+  // Upset alert: lower-seeded team leading in a playoff matchup
+  let isUpset = false;
+  if (isLive && game.seed1 != null && game.seed2 != null && game.seed1 !== game.seed2) {
+    const homeIsLower = (game.seed1 ?? 0) > (game.seed2 ?? 0);
+    const awayIsLower = (game.seed2 ?? 0) > (game.seed1 ?? 0);
+    if ((homeIsLower && homeLeading && margin >= 3) || (awayIsLower && !homeLeading && margin >= 3)) {
+      isUpset = true;
+    }
+  }
+
+  // Contextual tags (rendered as pill chips matching MUST WATCH)
+  type Tag = { label: string; color: string };
+  const tags: Tag[] = [];
+  if (isUpset) tags.push({ label: "UPSET ALERT 🚨", color: accent });
+  if (isLive && isLatePeriod && margin <= 4 && !isUpset) tags.push({ label: "INSTANT CLASSIC", color: C.accentGold });
+  if (isFinished && margin <= 3) tags.push({ label: `FINAL · ${margin}-PT THRILLER`, color: C.accentGold });
+  if (isMustWatch) tags.push({ label: "MUST WATCH", color: accent });
+  // Venue stays as a plain status caption (not a tag)
+  const venueLine = !isUpset && game.venue ? game.venue : null;
 
   return (
     <Pressable
       onPress={() => router.push(`/game/${game.id}`)}
-      style={[styles.gameCard, isLive && { borderColor: accent + "55" }]}
+      style={[
+        styles.gameCard,
+        isLive && { borderColor: C.live + "55", backgroundColor: C.live + "08" },
+      ]}
     >
       <View style={styles.gcTop}>
         <Text style={[styles.gcLeague, { color: accent }]} numberOfLines={1}>
@@ -460,38 +508,56 @@ function GameStripCard({ game }: { game: Game }) {
           {game.round ? ` · ${game.round.toUpperCase()}` : ""}
         </Text>
         {isLive ? (
-          <View style={styles.gcLive}>
-            <View style={[styles.gcLiveDot, { backgroundColor: C.live }]} />
-            <Text style={styles.gcLiveText}>{game.quarter ?? "LIVE"} {game.timeRemaining ?? ""}</Text>
+          <View style={styles.liveBadge}>
+            <Animated.View style={[styles.liveBadgeDot, { backgroundColor: C.live, opacity: pulseOpacity }]} />
+            <Text style={styles.liveBadgeText}>
+              LIVE{game.quarter ? ` · ${game.quarter}` : ""}{game.timeRemaining ? ` ${game.timeRemaining}` : ""}
+            </Text>
           </View>
         ) : (
           <Text style={styles.gcUpcoming}>
-            {new Date(game.startTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+            {isFinished ? "FINAL" : new Date(game.startTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
           </Text>
         )}
       </View>
 
       <View style={styles.gcMatchup}>
         <View style={styles.gcTeamRow}>
-          <Text style={[styles.gcTeamName, homeLeading && styles.gcLeader]} numberOfLines={1}>
+          {game.seed1 != null && <Text style={styles.gcSeed}>{game.seed1}</Text>}
+          <Text style={[styles.gcTeamName, homeLeading && styles.gcLeader, { flex: 1 }]} numberOfLines={1}>
             {game.homeTeam}
           </Text>
-          <Text style={[styles.gcScore, homeLeading && styles.gcLeader]}>
+          <Text style={[styles.gcScore, homeLeading && styles.gcLeader, !homeLeading && isFinished && styles.gcLoser]}>
             {game.status === "upcoming" ? "—" : home}
           </Text>
         </View>
         <View style={styles.gcDivider} />
         <View style={styles.gcTeamRow}>
-          <Text style={[styles.gcTeamName, !homeLeading && game.status !== "upcoming" && styles.gcLeader]} numberOfLines={1}>
+          {game.seed2 != null && <Text style={styles.gcSeed}>{game.seed2}</Text>}
+          <Text style={[styles.gcTeamName, !homeLeading && game.status !== "upcoming" && styles.gcLeader, { flex: 1 }]} numberOfLines={1}>
             {game.awayTeam}
           </Text>
-          <Text style={[styles.gcScore, !homeLeading && game.status !== "upcoming" && styles.gcLeader]}>
+          <Text style={[styles.gcScore, !homeLeading && game.status !== "upcoming" && styles.gcLeader, homeLeading && isFinished && styles.gcLoser]}>
             {game.status === "upcoming" ? "—" : away}
           </Text>
         </View>
       </View>
 
-      {game.venue && <Text style={styles.gcStatus} numberOfLines={1}>{game.venue}</Text>}
+      {tags.length > 0 && (
+        <View style={styles.gcTagRow}>
+          {tags.map((t) => (
+            <View key={t.label} style={[styles.gcTag, { backgroundColor: t.color + "22", borderColor: t.color + "55" }]}>
+              <Text style={[styles.gcTagText, { color: t.color }]}>{t.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {venueLine && (
+        <Text style={styles.gcStatus} numberOfLines={1}>
+          {venueLine}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -711,7 +777,22 @@ function StandingsList({ standings, league }: { standings: StandingEntry[]; leag
                     {rc > 0 ? `▲${rc}` : `▼${-rc}`}
                   </Text>
                 )}
-                {s.clinched && <Text style={styles.stdClinch}>{s.clinched}</Text>}
+                {s.clinched && (() => {
+                  const code = s.clinched.toLowerCase();
+                  const palette: Record<string, { bg: string; fg: string }> = {
+                    z: { bg: "rgba(241,196,15,0.18)", fg: C.accentGold },
+                    y: { bg: "rgba(46,204,113,0.18)", fg: C.accentGreen },
+                    x: { bg: "rgba(58,143,255,0.18)", fg: "#6BAEFF" },
+                    pb: { bg: "rgba(241,196,15,0.14)", fg: C.accentGold },
+                    e: { bg: "rgba(120,120,120,0.18)", fg: C.textSecondary },
+                  };
+                  const p = palette[code] ?? palette.x;
+                  return (
+                    <Text style={[styles.stdClinch, { backgroundColor: p.bg, color: p.fg }]}>
+                      {s.clinched}
+                    </Text>
+                  );
+                })()}
               </View>
               <View style={[styles.stdTeam, { flex: 1 }]}>
                 <TeamLogo uri={s.logoUrl} name={s.teamName} size={26} fontSize={9} />
@@ -972,8 +1053,25 @@ const styles = StyleSheet.create({
   stdStripe: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
   stdRank: { width: 36, flexDirection: "row", alignItems: "center", gap: 4 },
   stdRankText: { fontFamily: FONTS.monoBold, fontSize: 12, color: C.text },
-  stdClinch: { fontFamily: FONTS.monoBold, fontSize: 8, color: C.accentGold, backgroundColor: C.background, paddingHorizontal: 3, borderRadius: 2 },
+  stdClinch: { fontFamily: FONTS.monoBold, fontSize: 8, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 3, overflow: "hidden" },
   stdRankArrow: { fontFamily: FONTS.monoBold, fontSize: 9 },
+
+  // Game-card live indicators / tags
+  liveBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 100,
+    backgroundColor: "rgba(46,204,113,0.14)",
+    borderWidth: 1, borderColor: "rgba(46,204,113,0.35)",
+  },
+  liveBadgeDot: { width: 5, height: 5, borderRadius: 3 },
+  liveBadgeText: { fontFamily: FONTS.monoBold, fontSize: 9, color: "#3DD68C", letterSpacing: 0.4 },
+  gcSeed: { fontFamily: FONTS.monoBold, fontSize: 10, color: C.textSecondary, width: 14, textAlign: "center" },
+  gcLoser: { color: C.textSecondary, opacity: 0.6 },
+  gcTagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  gcTag: {
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4, borderWidth: 1,
+  },
+  gcTagText: { fontFamily: FONTS.monoBold, fontSize: 9, letterSpacing: 1.2 },
   playInSep: {
     flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8,
     borderWidth: 1, borderTopWidth: 0, borderColor: C.cardBorder,
