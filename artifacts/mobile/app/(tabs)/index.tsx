@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Pressable, Platform, Dimensions, FlatList, ActivityIndicator, Animated
+  Pressable, Platform, FlatList, ActivityIndicator, Animated, useWindowDimensions
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,7 +23,6 @@ import { ALL_TEAMS } from "@/constants/allPlayers";
 import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
 
 const C = Colors.dark;
-const { width: SCREEN_W } = Dimensions.get("window");
 
 function getTeamEspnLogoUrl(teamName: string, league: string): string | null {
   const team = ALL_TEAMS.find(t => t.name === teamName);
@@ -757,6 +756,7 @@ const clusterStyles = StyleSheet.create({
 });
 
 export default function HubScreen() {
+  const { width: SCREEN_W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
   const { openSearch } = useSearch();

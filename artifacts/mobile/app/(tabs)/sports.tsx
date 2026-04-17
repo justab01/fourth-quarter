@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Dimensions,
   StatusBar,
   Animated,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,8 +22,6 @@ import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 
 const C = Colors.dark;
-const { width: SCREEN_W } = Dimensions.get("window");
-const CARD_W = (SCREEN_W - 48) / 2;
 
 // ── Pulsing live dot animation ───────────────────────────────────────────────────
 function PulsingLiveDot() {
@@ -129,6 +127,8 @@ const QUICK_LINKS = [
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function SportsScreen() {
+  const { width: screenW } = useWindowDimensions();
+  const CARD_W = (screenW - 48) / 2;
   const insets = useSafeAreaInsets();
   const { openSearch } = useSearch();
 

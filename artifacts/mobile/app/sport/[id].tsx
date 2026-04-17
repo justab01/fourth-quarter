@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
-  Dimensions,
   StatusBar,
   Animated,
   Image,
@@ -265,7 +264,6 @@ const UFC_WEIGHT_CLASSES = [
 ];
 
 const C = Colors.dark;
-const { width: SCREEN_W } = Dimensions.get("window");
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
@@ -956,6 +954,7 @@ function SubNavigation({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      style={Platform.OS === "web" ? { width: "100%", maxWidth: 900 } : undefined}
       contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingVertical: 8 }}
     >
       <Pressable
@@ -3015,6 +3014,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        style={Platform.OS === "web" ? { width: "100%", maxWidth: 900 } : undefined}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -3826,6 +3826,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: C.separator,
     paddingVertical: 10,
+    ...(Platform.OS === "web" ? { width: "100%", maxWidth: 900 } : {}),
   },
   liveStripHeader: {
     flexDirection: "row",
