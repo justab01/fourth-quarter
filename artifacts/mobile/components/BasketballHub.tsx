@@ -524,7 +524,8 @@ function GameStripCard({ game }: { game: Game }) {
       <View style={styles.gcMatchup}>
         <View style={styles.gcTeamRow}>
           {game.seed1 != null && <Text style={styles.gcSeed}>{game.seed1}</Text>}
-          <Text style={[styles.gcTeamName, homeLeading && styles.gcLeader, { flex: 1 }]} numberOfLines={1}>
+          <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={30} fontSize={10} borderColor={homeLeading ? accent + "66" : undefined} />
+          <Text style={[styles.gcTeamName, homeLeading && styles.gcLeader, !homeLeading && isFinished && styles.gcLoser]} numberOfLines={1}>
             {game.homeTeam}
           </Text>
           <Text style={[styles.gcScore, homeLeading && styles.gcLeader, !homeLeading && isFinished && styles.gcLoser]}>
@@ -534,7 +535,8 @@ function GameStripCard({ game }: { game: Game }) {
         <View style={styles.gcDivider} />
         <View style={styles.gcTeamRow}>
           {game.seed2 != null && <Text style={styles.gcSeed}>{game.seed2}</Text>}
-          <Text style={[styles.gcTeamName, !homeLeading && game.status !== "upcoming" && styles.gcLeader, { flex: 1 }]} numberOfLines={1}>
+          <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={30} fontSize={10} borderColor={!homeLeading && !isFinished ? accent + "66" : undefined} />
+          <Text style={[styles.gcTeamName, !homeLeading && game.status !== "upcoming" && styles.gcLeader, homeLeading && isFinished && styles.gcLoser]} numberOfLines={1}>
             {game.awayTeam}
           </Text>
           <Text style={[styles.gcScore, !homeLeading && game.status !== "upcoming" && styles.gcLeader, homeLeading && isFinished && styles.gcLoser]}>
@@ -971,7 +973,7 @@ const styles = StyleSheet.create({
   // Game strip
   stripContent: { paddingHorizontal: 16, gap: 10 },
   gameCard: {
-    width: 240, padding: 12, borderRadius: 12,
+    width: 260, padding: 12, borderRadius: 12,
     backgroundColor: C.cardElevated, borderWidth: 1, borderColor: C.cardBorder,
   },
   gcTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
@@ -981,11 +983,11 @@ const styles = StyleSheet.create({
   gcLiveText: { fontFamily: FONTS.monoBold, fontSize: 10, color: C.live },
   gcUpcoming: { fontFamily: FONTS.mono, fontSize: 10, color: C.textSecondary },
   gcMatchup: { gap: 4 },
-  gcTeamRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 },
-  gcTeamName: { flex: 1, fontFamily: FONTS.bodyMedium, fontSize: 13, color: C.textSecondary, marginRight: 8 },
+  gcTeamRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5 },
+  gcTeamName: { flex: 1, fontFamily: FONTS.bodyMedium, fontSize: 12, color: C.textSecondary },
   gcScore: { fontFamily: FONTS.display, fontSize: 18, color: C.textSecondary },
   gcLeader: { color: C.text },
-  gcDivider: { height: 1, backgroundColor: C.cardBorder },
+  gcDivider: { height: 1, backgroundColor: C.cardBorder, marginLeft: 38 },
   gcStatus: { marginTop: 8, fontFamily: FONTS.mono, fontSize: 10, color: C.textSecondary },
 
   // Player card
