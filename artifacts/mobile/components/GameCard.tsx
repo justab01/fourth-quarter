@@ -96,6 +96,25 @@ function SportBadge({ emoji, size, color }: { emoji: string; size: number; color
   );
 }
 
+// ── Team logo without circle border (used in hero stadium area) ──────────────────────
+function TeamLogoRaw({ uri, name, size }: { uri?: string | null; name: string; size: number }) {
+  const [failed, setFailed] = useState(false);
+  const teamData = ALL_TEAMS.find(t => t.name === name);
+  const abbr = teamData?.abbr ?? name.split(" ").slice(-1)[0].substring(0, 3).toUpperCase();
+  return uri && !failed ? (
+    <Image
+      source={{ uri }}
+      style={{ width: size, height: size }}
+      resizeMode="contain"
+      onError={() => setFailed(true)}
+    />
+  ) : (
+    <Text style={{ color: "#fff", fontSize: size * 0.28, fontWeight: "900", fontFamily: "Oswald_700Bold" }}>
+      {abbr}
+    </Text>
+  );
+}
+
 // ── Team logo with abbreviation fallback ────────────────────────────────────────────
 export function TeamLogo({
   uri, name, size, borderColor, fontSize,
@@ -324,137 +343,185 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
   // ── HERO ───────────────────────────────────────────────────────────────────
   if (variant === "hero") {
     const venueGradient = getSportVenueGradient(game.league);
-    const awayLabel = isTennis ? (game.league === "WTA" ? "WTA" : "ATP") : isCombat ? "Away" : "Away";
-    const homeLabel = isTennis ? (game.league === "WTA" ? "WTA" : "ATP") : isCombat ? "Home" : "Home";
+    const awayShort = game.awayTeam.split(" ").slice(-1)[0];
+    const homeShort = game.homeTeam.split(" ").slice(-1)[0];
+    const ctaLabel = isLive
+      ? (isTennis ? "Live Match" : isCombat ? "Live Fight" : isGolf ? "Live Leaderboard" : isMotor ? "Live Race" : "Open Gamecast")
+      : isFinished
+      ? (isCombat ? "Fight Result" : isGolf ? "Final Results" : isMotor ? "Race Result" : "Full Recap")
+      : (isTennis ? "Match Preview" : isCombat ? "Fight Card" : isGolf ? "Tournament Info" : isMotor ? "Race Preview" : "Lineups & Preview");
 
     return (
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
           <View style={hero.card}>
-            <LinearGradient colors={venueGradient} style={StyleSheet.absoluteFill} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} />
-            <LinearGradient colors={[`${leagueColor}18`, "transparent", `${leagueColor}0A`]} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-            {isLive && <View style={[hero.topStripe, { backgroundColor: C.live }]} />}
 
-            <View style={hero.header}>
-              <View style={[hero.leaguePill, { backgroundColor: `${leagueColor}22` }]}>
-                <Text style={[hero.leagueText, { color: leagueColor }]}>{game.league}</Text>
+            {/* ── STADIUM TOP ── */}
+            <View style={hero.stadium}>
+              {/* Background gradients */}
+              <LinearGradient
+                colors={venueGradient as [string, string, ...string[]]}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
+              />
+              {/* Away-team color glow left */}
+              <View style={[hero.teamGlow, { left: -40, backgroundColor: `${leagueColor}44` }]} />
+              {/* Home-team color glow right */}
+              <View style={[hero.teamGlow, { right: -40, backgroundColor: `${leagueColor}33` }]} />
+
+              {/* Crowd texture */}
+              <View style={hero.crowdLines} />
+
+              {/* VS watermark */}
+              <Text style={hero.vsWatermark}>VS</Text>
+
+              {/* Bottom fade */}
+              <LinearGradient
+                colors={["transparent", "rgba(22,19,13,0.95)"]}
+                style={hero.stadiumFade}
+                start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+              />
+
+              {/* LIVE / FINAL / TIME pill — centered at top */}
+              <View style={hero.topPillRow}>
+                {isLive ? (
+                  <View style={hero.livePill}>
+                    <PulsingDot />
+                    <Text style={hero.livePillText}>
+                      LIVE{game.quarter ? ` · ${game.quarter}` : ""}
+                    </Text>
+                  </View>
+                ) : isFinished ? (
+                  <View style={[hero.livePill, { borderColor: "rgba(255,255,255,0.15)" }]}>
+                    <Text style={[hero.livePillText, { color: C.textSecondary }]}>
+                      FINAL{combatMethod ? ` · ${combatMethod}` : ""}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={[hero.livePill, { borderColor: "rgba(255,255,255,0.15)" }]}>
+                    <Text style={[hero.livePillText, { color: C.textSecondary }]}>{formatTime(game.startTime)}</Text>
+                  </View>
+                )}
               </View>
-              {isLive ? (
-                <View style={hero.livePill}>
-                  <PulsingDot />
-                  <Text style={hero.liveText}>LIVE</Text>
-                  {game.quarter && <Text style={hero.quarterText}>{game.quarter}</Text>}
-                </View>
-              ) : isFinished ? (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Text style={hero.finalText}>FINAL</Text>
-                  {combatMethod && <Text style={[hero.quarterText, { color: leagueColor }]}>{combatMethod}</Text>}
-                </View>
-              ) : (
-                <Text style={hero.timeText}>{formatTime(game.startTime)}</Text>
-              )}
+
+              {/* IMPORTANCE badge top-right */}
+              <View style={hero.importanceBadge}>
+                <Text style={hero.importanceBadgeText}>{game.league}</Text>
+              </View>
+
+              {/* Logos at bottom corners */}
+              <View style={hero.logosRow}>
+                {/* Away logo */}
+                <Pressable
+                  style={hero.logoBlock}
+                  onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.awayTeam, game.league); }}
+                  hitSlop={8}
+                >
+                  {(isTennis || isCombat || isEventSport) ? (
+                    <View style={hero.logoBubble}>
+                      <Text style={{ fontSize: 40 }}>{sportEmoji}</Text>
+                    </View>
+                  ) : (
+                    <View style={hero.logoBubble}>
+                      <TeamLogoRaw uri={game.awayTeamLogo} name={game.awayTeam} size={82} />
+                    </View>
+                  )}
+                  <View style={hero.namePlate}>
+                    <Text style={hero.namePlateText} numberOfLines={1}>
+                      {isTennis || isCombat ? shortAthleteName(game.awayTeam) : awayShort}
+                    </Text>
+                  </View>
+                </Pressable>
+
+                {/* Home logo */}
+                <Pressable
+                  style={[hero.logoBlock, { alignItems: "flex-end" }]}
+                  onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.homeTeam, game.league); }}
+                  hitSlop={8}
+                >
+                  {(isTennis || isCombat || isEventSport) ? (
+                    <View style={hero.logoBubble}>
+                      <Text style={{ fontSize: 40 }}>{sportEmoji}</Text>
+                    </View>
+                  ) : (
+                    <View style={hero.logoBubble}>
+                      <TeamLogoRaw uri={game.homeTeamLogo} name={game.homeTeam} size={82} />
+                    </View>
+                  )}
+                  <View style={hero.namePlate}>
+                    <Text style={hero.namePlateText} numberOfLines={1}>
+                      {isTennis || isCombat ? shortAthleteName(game.homeTeam) : homeShort}
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+
               <ContextChips game={game} />
             </View>
 
-            {/* Teams + centered score block */}
-            <View style={hero.teams}>
-              {/* Away team / player */}
-              <Pressable
-                style={hero.teamCol}
-                onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.awayTeam, game.league); }}
-                hitSlop={8}
-              >
-                {(isTennis || isCombat || isEventSport) ? (
-                  <SportBadge emoji={sportEmoji} size={80} color={leagueColor} />
-                ) : (
-                  <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={80} borderColor={`${leagueColor}55`} />
-                )}
-                <Text style={hero.teamName} numberOfLines={2}>
-                  {isEventSport ? (game.eventTitle ?? game.awayTeam) : (isTennis || isCombat) ? shortAthleteName(game.awayTeam) : game.awayTeam}
-                </Text>
-                <Text style={hero.teamLabel}>{awayLabel}</Text>
-              </Pressable>
+            {/* ── SCORE PANEL ── */}
+            <View style={hero.scorePanel}>
+              <View style={hero.scoreRow}>
+                {/* Away team */}
+                <View style={hero.scoreTeam}>
+                  <Text style={hero.scoreTeamName} numberOfLines={1}>
+                    {isTennis || isCombat ? shortAthleteName(game.awayTeam) : game.awayTeam}
+                  </Text>
+                  <Text style={hero.scoreTeamSub}>{isFinished && awayWin ? "✈ WINNER" : "✈ AWAY"}</Text>
+                </View>
 
-              {/* Center: score or VS */}
-              <View style={hero.centerCol}>
-                {isEventSport ? (
-                  <>
-                    <Text style={hero.vsText}>{isLive ? "LIVE" : isFinished ? "DONE" : "VS"}</Text>
-                  </>
-                ) : (isLive || isFinished) ? (
-                  <>
-                    {isCombat && !combatAwayWin && !combatHomeWin ? (
-                      <Text style={hero.vsText}>—</Text>
-                    ) : (
-                      <View style={hero.scoreBlock}>
-                        <Text style={[hero.score,
-                          isTennis && !awayWin && isFinished && hero.scoreDim,
-                          isCombat && combatHomeWin && hero.scoreDim,
-                        ]}>
-                          {isCombat ? (combatAwayWin ? "W" : "L") : (game.awayScore ?? 0)}
-                        </Text>
-                        <Text style={hero.scoreSep}>–</Text>
-                        <Text style={[hero.score,
-                          isTennis && !homeWin && isFinished && hero.scoreDim,
-                          isCombat && combatAwayWin && hero.scoreDim,
-                        ]}>
-                          {isCombat ? (combatHomeWin ? "W" : "L") : (game.homeScore ?? 0)}
-                        </Text>
-                      </View>
-                    )}
-                    {isTennis && (isLive || isFinished) && (
-                      <Text style={[hero.venue, { color: `${leagueColor}CC`, fontSize: 10, fontWeight: "700" }]}>SETS</Text>
-                    )}
-                  </>
-                ) : (
-                  <Text style={hero.vsText}>VS</Text>
-                )}
-                {isLive && game.timeRemaining && (
-                  <Text style={hero.timeRemaining}>{game.timeRemaining}</Text>
-                )}
-                {!isLive && !isFinished && (
-                  <Text style={hero.kickoffTime}>{formatTime(game.startTime)}</Text>
-                )}
-                {game.venue && (
-                  <Text style={hero.venue} numberOfLines={1}>{game.venue}</Text>
-                )}
+                {/* Score */}
+                <View style={hero.scoreCenterBlock}>
+                  {(isLive || isFinished) && !isEventSport ? (
+                    <View style={hero.scoreNumRow}>
+                      <Text style={[hero.scoreNum, awayWin && { color: C.accentAmber2 ?? C.accent }]}>
+                        {isCombat ? (combatAwayWin ? "W" : "L") : (game.awayScore ?? 0)}
+                      </Text>
+                      <Text style={hero.scoreDash}>–</Text>
+                      <Text style={[hero.scoreNum, homeWin && { color: C.accentAmber2 ?? C.accent }]}>
+                        {isCombat ? (combatHomeWin ? "W" : "L") : (game.homeScore ?? 0)}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={hero.scoreVs}>VS</Text>
+                  )}
+                  <Text style={hero.scoreClock} numberOfLines={1}>
+                    {isLive && game.timeRemaining
+                      ? <Text style={{ color: C.accent }}>{game.quarter} {game.timeRemaining}</Text>
+                      : isLive && game.quarter
+                      ? game.quarter
+                      : game.venue
+                      ? game.venue
+                      : ""}
+                  </Text>
+                </View>
+
+                {/* Home team */}
+                <View style={[hero.scoreTeam, { alignItems: "flex-end" }]}>
+                  <Text style={[hero.scoreTeamName, { textAlign: "right" }]} numberOfLines={1}>
+                    {isTennis || isCombat ? shortAthleteName(game.homeTeam) : game.homeTeam}
+                  </Text>
+                  <Text style={[hero.scoreTeamSub, { textAlign: "right" }]}>{isFinished && homeWin ? "🏠 WINNER" : "🏠 HOME"}</Text>
+                </View>
               </View>
 
-              {/* Home team / player */}
-              <Pressable
-                style={[hero.teamCol, { alignItems: "flex-end" }]}
-                onPress={(e) => { e.stopPropagation(); if (!isEventSport) goToTeam(game.homeTeam, game.league); }}
-                hitSlop={8}
-              >
-                {(isTennis || isCombat || isEventSport) ? (
-                  <SportBadge emoji={sportEmoji} size={80} color={leagueColor} />
-                ) : (
-                  <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={80} borderColor={`${leagueColor}55`} />
-                )}
-                <Text style={[hero.teamName, { textAlign: "right" }]} numberOfLines={2}>
-                  {isEventSport ? (game.venue ?? game.homeTeam) : (isTennis || isCombat) ? shortAthleteName(game.homeTeam) : game.homeTeam}
-                </Text>
-                <Text style={[hero.teamLabel, { textAlign: "right" }]}>{homeLabel}</Text>
-              </Pressable>
-            </View>
-
-            <View style={hero.ctaRow}>
-              <View style={[hero.ctaPill, { borderColor: `${leagueColor}60`, backgroundColor: `${leagueColor}18` }]}>
+              {/* CTA button */}
+              <Pressable style={hero.ctaBtn} onPress={onPress}>
+                <LinearGradient
+                  colors={["rgba(232,130,12,0.16)", "rgba(232,130,12,0.07)"]}
+                  style={StyleSheet.absoluteFill}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                />
                 <Ionicons
                   name={isLive ? "radio" : isFinished ? "document-text-outline" : "play-circle-outline"}
-                  size={13}
-                  color={leagueColor}
+                  size={14}
+                  color={C.accent}
                 />
-                <Text style={[hero.ctaPillText, { color: leagueColor }]}>
-                  {isLive
-                    ? (isTennis ? "Live Match" : isCombat ? "Live Fight" : isGolf ? "Live Leaderboard" : isMotor ? "Live Race" : "Open Gamecast")
-                    : isFinished
-                    ? (isCombat ? "Fight Result" : isGolf ? "Final Results" : isMotor ? "Race Result" : "Full Recap")
-                    : (isTennis ? "Match Preview" : isCombat ? "Fight Card" : isGolf ? "Tournament Info" : isMotor ? "Race Preview" : "Lineups & Preview")}
-                </Text>
-                <Text style={[hero.ctaChevron, { color: leagueColor }]}>›</Text>
-              </View>
+                <Text style={hero.ctaBtnText}>{ctaLabel}</Text>
+                <Text style={hero.ctaBtnChevron}>›</Text>
+              </Pressable>
             </View>
+
           </View>
         </Pressable>
       </Animated.View>
@@ -902,47 +969,133 @@ const ind = StyleSheet.create({
 // ── Hero styles ───────────────────────────────────────────────────────────────
 const hero = StyleSheet.create({
   card: {
-    backgroundColor: C.cardElevated, borderRadius: 24, overflow: "hidden",
-    borderWidth: 1.5, borderColor: C.cardBorder, minHeight: 200,
+    backgroundColor: C.card, borderRadius: 20, overflow: "hidden",
+    borderWidth: 1, borderColor: "rgba(255,200,100,0.13)",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.7, shadowRadius: 24, elevation: 12,
   },
-  topStripe: { height: 3 },
-  header: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8,
+
+  // ── Stadium top ──
+  stadium: {
+    height: 220, overflow: "hidden", position: "relative",
   },
-  leaguePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  leagueText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
-  livePill: { flexDirection: "row", alignItems: "center", gap: 6 },
-  liveText: { color: C.live, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
-  quarterText: { color: C.textSecondary, fontSize: 12, fontWeight: "500" },
-  finalText: { color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
-  timeText: { color: C.textSecondary, fontSize: 12, fontWeight: "500" },
-  teams: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 20, paddingVertical: 16, gap: 12,
+  teamGlow: {
+    position: "absolute", top: -60, width: 200, height: 200,
+    borderRadius: 100, opacity: 0.6,
   },
-  teamCol: { flex: 1, alignItems: "flex-start", gap: 6 },
-  teamName: {
-    color: C.text, fontSize: 14, fontWeight: "700",
-    fontFamily: "Inter_700Bold", lineHeight: 18, flex: 1,
+  crowdLines: {
+    position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0.02,
   },
-  scoreBlock: { flexDirection: "row", alignItems: "baseline", gap: 4 },
-  score: { color: C.text, fontSize: 40, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 46 },
-  scoreSep: { color: C.textTertiary, fontSize: 24, fontWeight: "300", lineHeight: 46 },
-  scoreDim: { color: C.textTertiary },
-  teamLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
-  centerCol: { flex: 1, alignItems: "center", gap: 6 },
-  vsText: { color: C.textTertiary, fontSize: 22, fontWeight: "800", letterSpacing: 2 },
-  timeRemaining: { color: C.live, fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
-  kickoffTime: { color: C.textSecondary, fontSize: 13, fontWeight: "600" },
-  venue: { color: C.textTertiary, fontSize: 10, textAlign: "center" },
-  ctaRow: { paddingHorizontal: 20, paddingBottom: 18, paddingTop: 4, alignItems: "center" },
-  ctaPill: {
+  vsWatermark: {
+    position: "absolute", top: 60, alignSelf: "center",
+    fontSize: 80, fontFamily: "Oswald_700Bold", fontWeight: "700",
+    color: "rgba(255,255,255,0.04)", letterSpacing: -3,
+  },
+  stadiumFade: {
+    position: "absolute", bottom: 0, left: 0, right: 0, height: 80,
+    zIndex: 2,
+  },
+
+  // ── Pills at top ──
+  topPillRow: {
+    position: "absolute", top: 14, left: 0, right: 0,
+    alignItems: "center", zIndex: 5,
+  },
+  livePill: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    borderWidth: 1, borderColor: "rgba(0,255,135,0.4)",
+    borderRadius: 100, paddingHorizontal: 14, paddingVertical: 5,
+  },
+  livePillText: {
+    fontFamily: "DMMono_500Medium", fontSize: 11, fontWeight: "600",
+    color: C.live, letterSpacing: 0.8,
+  },
+  importanceBadge: {
+    position: "absolute", top: 14, right: 14, zIndex: 5,
+    backgroundColor: "rgba(232,130,12,0.88)", borderRadius: 6,
+    paddingHorizontal: 9, paddingVertical: 4,
+  },
+  importanceBadgeText: {
+    fontFamily: "DMMono_500Medium", fontSize: 9, fontWeight: "600",
+    color: "#000", letterSpacing: 0.12,
+  },
+
+  // ── Logos at bottom of stadium ──
+  logosRow: {
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    flexDirection: "row", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingBottom: 14, zIndex: 3,
+  },
+  logoBlock: {
+    alignItems: "flex-start", gap: 5,
+  },
+  logoBubble: {
+    width: 90, height: 90, alignItems: "center", justifyContent: "center",
+  },
+  namePlate: {
+    backgroundColor: "rgba(0,0,0,0.52)", borderRadius: 5,
+    paddingHorizontal: 10, paddingVertical: 3,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+  },
+  namePlateText: {
+    fontFamily: "PlusJakartaSans_700Bold", fontSize: 11, fontWeight: "700",
+    color: "rgba(255,255,255,0.75)", letterSpacing: 0.8, textTransform: "uppercase",
+  },
+
+  // ── Score panel ──
+  scorePanel: {
+    backgroundColor: C.card, borderTopWidth: 1, borderTopColor: "rgba(255,200,100,0.07)",
+    paddingHorizontal: 16, paddingVertical: 14, gap: 12,
+  },
+  scoreRow: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    borderWidth: 1.5, borderRadius: 28, paddingHorizontal: 22, paddingVertical: 11,
   },
-  ctaPillText: { fontSize: 13, fontWeight: "800", letterSpacing: 0.4, fontFamily: "Inter_700Bold" },
-  ctaChevron: { fontSize: 20, fontWeight: "700", lineHeight: 20 },
+  scoreTeam: { flex: 1 },
+  scoreTeamName: {
+    color: C.text, fontSize: 13, fontWeight: "700",
+    fontFamily: "PlusJakartaSans_700Bold",
+  },
+  scoreTeamSub: {
+    color: C.textTertiary, fontSize: 10,
+    fontFamily: "DMMono_500Medium", marginTop: 1,
+  },
+  scoreCenterBlock: {
+    alignItems: "center", flex: 1.2,
+  },
+  scoreNumRow: {
+    flexDirection: "row", alignItems: "baseline", gap: 5, justifyContent: "center",
+  },
+  scoreNum: {
+    color: C.text, fontSize: 56, fontWeight: "700",
+    fontFamily: "Oswald_700Bold", lineHeight: 62, letterSpacing: -0.02,
+  },
+  scoreDash: {
+    color: C.textTertiary, fontSize: 28, fontWeight: "400",
+    fontFamily: "Oswald_400Regular", lineHeight: 62,
+  },
+  scoreVs: {
+    color: C.textTertiary, fontSize: 22, fontWeight: "700",
+    fontFamily: "Oswald_700Bold", letterSpacing: 2,
+  },
+  scoreClock: {
+    color: C.textTertiary, fontSize: 10, textAlign: "center",
+    fontFamily: "DMMono_500Medium", marginTop: 3,
+  },
+
+  // ── CTA button ──
+  ctaBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    borderWidth: 1, borderColor: "rgba(232,130,12,0.3)", borderRadius: 12,
+    paddingVertical: 12, overflow: "hidden",
+  },
+  ctaBtnText: {
+    color: "rgba(245,163,64,1)", fontSize: 14, fontWeight: "700",
+    fontFamily: "PlusJakartaSans_700Bold",
+  },
+  ctaBtnChevron: {
+    color: "rgba(245,163,64,1)", fontSize: 20, fontWeight: "700", lineHeight: 20,
+  },
 });
 
 // ── Compact styles ────────────────────────────────────────────────────────────

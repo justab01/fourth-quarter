@@ -4,8 +4,23 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
   Inter_800ExtraBold,
-  useFonts,
 } from "@expo-google-fonts/inter";
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from "@expo-google-fonts/plus-jakarta-sans";
+import {
+  Oswald_400Regular,
+  Oswald_500Medium,
+  Oswald_700Bold,
+} from "@expo-google-fonts/oswald";
+import {
+  DMMono_400Regular,
+  DMMono_500Medium,
+} from "@expo-google-fonts/dm-mono";
+import { useFonts } from "expo-font";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -25,14 +40,13 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-const BG = "#0A0907";
+const BG = "#0A0805";
 
 function RootLayoutNav() {
   const { preferences, isLoaded, savePreferences } = usePreferences();
 
   useEffect(() => {
     if (!isLoaded) return;
-    // Dev-only: ?dev_skip_onboarding=1 auto-completes onboarding for screenshot debugging
     if (Platform.OS === "web" && typeof window !== "undefined" && !preferences.onboardingComplete) {
       const params = new URLSearchParams(window.location.search);
       if (params.get("dev_skip_onboarding") === "1") {
@@ -63,7 +77,6 @@ function RootLayoutNav() {
         <Stack.Screen name="player/[id]" options={{ headerShown: false, presentation: "card" }} />
         <Stack.Screen name="draft/[league]" options={{ headerShown: false, presentation: "card" }} />
       </Stack>
-      {/* Global search modal — available on every screen */}
       <SearchModal />
     </>
   );
@@ -76,6 +89,15 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
     Inter_800ExtraBold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+    Oswald_400Regular,
+    Oswald_500Medium,
+    Oswald_700Bold,
+    DMMono_400Regular,
+    DMMono_500Medium,
   });
 
   useEffect(() => {

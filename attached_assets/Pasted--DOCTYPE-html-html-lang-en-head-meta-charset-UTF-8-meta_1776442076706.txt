@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>4Q · Home</title>
+<!--
+  FONT STRATEGY:
+  Your app uses SF Pro / iOS system font — clean, rounded, humanist.
+  Closest free match on web: "Plus Jakarta Sans" for body text
+  and "DM Sans" for UI labels. Both are rounded, warm, modern —
+  not aggressive like Bebas or sterile like Inter.
+  For big display numbers we keep "Oswald" — condensed but not as
+  military as Bebas Neue, still punchy for scores.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&family=Oswald:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --amber:  #E8820C;
+  --amber2: #F5A340;
+  --ember:  #C45C00;
+  --bg:     #0A0805;
+  --bg2:    #100E09;
+  --bg3:    #16130D;
+  --bg4:    #1C1812;
+  --bg5:    #231E17;
+  --bdr:    rgba(255,200,100,0.07);
+  --bdr2:   rgba(255,200,100,0.13);
+  --txt:    #F0ECE4;
+  --txt2:   #8C8070;
+  --txt3:   #4A4035;
+  --green:  #2ECC71;
+  --red:    #E74C3C;
+  --gold:   #F1C40F;
+  --blue:   #3498DB;
+  --neon:   #00FF87;
+
+/* FONT STACK — matches iOS SF Pro feel */
+–font-body:    ‘Plus Jakarta Sans’, -apple-system, BlinkMacSystemFont, ‘SF Pro Display’, sans-serif;
+–font-display: ‘Oswald’, -apple-system, sans-serif;
+–font-mono:    ‘DM Mono’, ‘SF Mono’, monospace;
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { background:#000; }
+
+body {
+background: var(–bg);
+background-image:
+radial-gradient(ellipse 70% 50% at 20% 80%, rgba(232,130,12,0.07) 0%, transparent 60%),
+radial-gradient(ellipse 50% 40% at 80% 20%, rgba(255,100,30,0.05) 0%, transparent 55%);
+color: var(–txt);
+font-family: var(–font-body);
+min-height: 100vh;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+overflow-x: hidden;
+}
+
+/* PHONE */
+.wrap { display:flex; justify-content:center; background:#030201; min-height:100vh; padding:20px 0; }
+.phone { width:min(393px,100vw); position:relative; overflow:hidden; background:var(–bg); box-shadow:0 0 120px rgba(0,0,0,0.98), 0 0 0 1px rgba(255,200,100,0.05); }
+@media(max-width:420px){ .wrap{padding:0;} .phone{width:100vw;} }
+
+/* STATUS */
+.status {
+display:flex; justify-content:space-between;
+padding:14px 22px 6px;
+font-family: var(–font-mono);
+font-size:12px; font-weight:600; color:var(–txt2);
+}
+
+/* HEADER */
+.hdr {
+padding:8px 16px 12px;
+display:flex; align-items:center; justify-content:space-between;
+background:linear-gradient(180deg, rgba(232,130,12,0.04) 0%, transparent 100%);
+border-bottom:1px solid var(–bdr);
+}
+.hdr-greet {
+font-size:13px; color:var(–txt3); font-weight:500;
+letter-spacing:0.01em;
+font-family: var(–font-body);
+}
+.hdr-name {
+font-family: var(–font-body);
+font-size:28px; font-weight:800; letter-spacing:-0.02em;
+color:var(–txt); line-height:1.1;
+display:flex; align-items:center; gap:10px;
+}
+.team-chip {
+display:inline-flex; align-items:center;
+background:rgba(232,130,12,0.1); border:1px solid rgba(232,130,12,0.22);
+border-radius:8px; padding:3px 9px;
+font-family: var(–font-mono); font-size:11px; font-weight:600;
+color:var(–amber2); letter-spacing:0.06em;
+}
+.hdr-right { display:flex; gap:8px; }
+.hdr-btn {
+width:36px; height:36px; border-radius:11px;
+background:var(–bg3); border:1px solid var(–bdr);
+display:flex; align-items:center; justify-content:center;
+font-size:16px; cursor:pointer;
+}
+.hdr-avatar {
+width:36px; height:36px; border-radius:50%;
+background:linear-gradient(135deg,var(–amber),var(–ember));
+display:flex; align-items:center; justify-content:center;
+font-family: var(–font-body); font-size:16px; font-weight:800; color:#fff;
+border:2px solid rgba(232,130,12,0.3); cursor:pointer;
+}
+
+/* SCROLL */
+.scroll { height:calc(100vh - 120px); overflow-y:auto; overflow-x:hidden; scrollbar-width:none; padding-bottom:110px; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* ── YOUR TEAM HERO ── */
+.my-hero {
+margin:12px 14px 0; border-radius:20px; overflow:hidden;
+cursor:pointer; position:relative;
+box-shadow: 0 12px 50px rgba(0,0,0,0.7), 0 0 0 1px var(–bdr2);
+transition:transform 0.2s;
+}
+.my-hero:active { transform:scale(0.985); }
+.mh-stadium { height:220px; position:relative; overflow:hidden; }
+.mh-bg {
+position:absolute; inset:0;
+background:linear-gradient(155deg, var(–team-dark-a,#1a0500) 0%, #0c0a06 40%, var(–team-dark-b,#00041a) 100%);
+}
+.mh-crowd {
+position:absolute; inset:0; opacity:0.03;
+background:
+repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255,255,255,0.8) 5px, rgba(255,255,255,0.8) 6px),
+repeating-linear-gradient(90deg, transparent, transparent 12px, rgba(255,255,255,0.3) 12px, rgba(255,255,255,0.3) 13px);
+}
+.mh-bloom-a {
+position:absolute; left:-60px; top:-60px; width:280px; height:280px; border-radius:50%;
+background:radial-gradient(circle, var(–team-glow-a,rgba(255,80,0,0.4)) 0%, transparent 70%);
+animation:ba 5s ease-in-out infinite;
+}
+.mh-bloom-b {
+position:absolute; right:-60px; top:-60px; width:280px; height:280px; border-radius:50%;
+background:radial-gradient(circle, var(–team-glow-b,rgba(0,80,200,0.35)) 0%, transparent 70%);
+animation:bb 5s ease-in-out infinite 2.5s;
+}
+@keyframes ba { 0%,100%{opacity:.75;transform:scale(1)} 50%{opacity:1;transform:scale(1.12)} }
+@keyframes bb { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
+.mh-fade { position:absolute; bottom:0; left:0; right:0; height:80px; background:linear-gradient(to bottom,transparent,var(–bg3)); z-index:2; }
+.mh-live-pill {
+position:absolute; top:14px; left:50%; transform:translateX(-50%);
+display:flex; align-items:center; gap:6px;
+background:rgba(0,0,0,0.65); backdrop-filter:blur(14px);
+border:1px solid rgba(46,204,113,0.4); border-radius:100px;
+padding:5px 14px; white-space:nowrap; z-index:5;
+}
+.live-neon {
+width:7px; height:7px; border-radius:50%; background:var(–neon);
+box-shadow:0 0 8px var(–neon), 0 0 16px rgba(0,255,135,0.4);
+animation:nd 1.6s ease-in-out infinite; flex-shrink:0;
+}
+@keyframes nd { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.mh-live-txt {
+font-family: var(–font-mono); font-size:11px; font-weight:600;
+color:var(–neon); letter-spacing:0.08em;
+}
+.mh-importance {
+position:absolute; top:14px; right:14px; z-index:5;
+font-family: var(–font-mono); font-size:9px; font-weight:600;
+letter-spacing:0.12em; padding:4px 9px; border-radius:6px;
+background:rgba(232,130,12,0.88); color:#000;
+}
+.mh-logos {
+position:absolute; inset:0; z-index:3;
+display:flex; align-items:flex-end; justify-content:space-between;
+padding:0 16px 14px;
+}
+.mh-logo-block { display:flex; flex-direction:column; align-items:center; }
+.mh-logo-img {
+width:90px; height:90px; object-fit:contain;
+filter:drop-shadow(0 6px 24px rgba(0,0,0,0.8)) drop-shadow(0 0 20px rgba(0,0,0,0.6));
+}
+.mh-vs {
+position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+font-family: var(–font-display); font-size:80px; letter-spacing:-0.04em;
+color:rgba(255,255,255,0.04); z-index:2; pointer-events:none;
+}
+.mh-plate {
+font-family: var(–font-body); font-size:11px; font-weight:700;
+letter-spacing:0.08em; text-transform:uppercase;
+padding:3px 10px; border-radius:5px; margin-top:5px;
+background:rgba(0,0,0,0.52); backdrop-filter:blur(8px);
+color:rgba(255,255,255,0.75); border:1px solid rgba(255,255,255,0.08); white-space:nowrap;
+}
+.mh-score { background:var(–bg3); border:1px solid var(–bdr); border-top:none; padding:14px 16px; }
+.mh-score-row { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; margin-bottom:10px; }
+.mh-team { display:flex; flex-direction:column; }
+.mh-team.r { align-items:flex-end; }
+.mh-tname { font-size:13px; font-weight:700; color:var(–txt); font-family: var(–font-body); }
+.mh-tsub { font-size:10px; color:var(–txt3); font-family: var(–font-mono); margin-top:1px; }
+.mh-nums {
+font-family: var(–font-display); font-size:58px; font-weight:700; line-height:1;
+letter-spacing:-0.02em; color:var(–txt);
+display:flex; align-items:center; gap:5px; justify-content:center;
+}
+.mh-sep { font-size:28px; color:var(–txt3); font-weight:400; }
+.mh-num.win { color:var(–amber2); }
+.mh-clock { font-family: var(–font-mono); font-size:11px; color:var(–txt3); text-align:center; margin-top:3px; }
+.mh-clock .hot { color:var(–amber); font-weight:600; }
+.mh-context { font-size:13px; font-weight:500; color:var(–txt2); padding:10px 0; border-top:1px solid var(–bdr); display:flex; gap:7px; align-items:flex-start; line-height:1.55; }
+.mh-btn {
+display:flex; align-items:center; justify-content:center; gap:8px;
+background:linear-gradient(135deg, rgba(232,130,12,0.16), rgba(232,130,12,0.07));
+border:1px solid rgba(232,130,12,0.3); border-radius:12px;
+padding:12px 0; margin-top:12px;
+font-family: var(–font-body); font-weight:700; font-size:14px;
+color:var(–amber2); cursor:pointer; transition:all 0.2s;
+}
+.mh-btn:active { background:rgba(232,130,12,0.22); }
+
+/* SECTION HEADS */
+.sh { display:flex; align-items:center; justify-content:space-between; padding:18px 14px 10px; }
+.sl {
+font-family: var(–font-body); font-size:18px; font-weight:800;
+letter-spacing:-0.01em; color:var(–txt);
+display:flex; align-items:center; gap:10px;
+}
+.sl::before { content:’’; width:3px; height:20px; background:var(–amber); border-radius:2px; flex-shrink:0; }
+.sl-sub { font-family: var(–font-mono); font-size:9px; font-weight:500; letter-spacing:0.14em; color:var(–txt3); }
+.sa { font-family: var(–font-body); font-size:13px; font-weight:700; color:var(–amber); cursor:pointer; }
+
+/* MY TEAMS STRIP */
+.teams-strip { display:flex; gap:12px; padding:0 14px 2px; overflow-x:auto; scrollbar-width:none; }
+.teams-strip::-webkit-scrollbar { display:none; }
+.t-chip { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; transition:transform 0.18s; }
+.t-chip:active { transform:scale(0.9); }
+.t-ring { width:54px; height:54px; border-radius:50%; position:relative; display:flex; align-items:center; justify-content:center; background:var(–bg4); border:1.5px solid var(–bdr2); overflow:hidden; }
+.t-ring img { width:38px; height:38px; object-fit:contain; }
+.t-ring .neon-ring { position:absolute; inset:-3px; border-radius:50%; border:2px solid var(–neon); box-shadow:0 0 8px var(–neon), inset 0 0 6px rgba(0,255,135,0.1); animation:nr 2.2s ease-in-out infinite; }
+@keyframes nr { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.t-abbr { font-family: var(–font-mono); font-size:9px; font-weight:600; letter-spacing:0.06em; color:var(–txt3); }
+.t-when { font-family: var(–font-mono); font-size:8px; color:var(–neon); }
+.t-when.soon { color:var(–txt3); }
+.add-btn { width:54px; height:54px; border-radius:50%; border:1.5px dashed var(–txt3); display:flex; align-items:center; justify-content:center; font-size:22px; color:var(–txt3); background:var(–bg4); cursor:pointer; }
+
+/* IN ONE BREATH */
+.breath {
+margin:12px 14px 0;
+background:linear-gradient(135deg, rgba(232,130,12,0.08), rgba(232,130,12,0.02));
+border:1px solid rgba(232,130,12,0.15); border-radius:16px; padding:14px 16px;
+cursor:pointer; position:relative; overflow:hidden;
+}
+.breath::after { content:‘✦’; position:absolute; right:14px; bottom:12px; font-size:40px; color:rgba(232,130,12,0.04); }
+.b-top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.b-icon { font-size:13px; }
+.b-lbl { font-family: var(–font-mono); font-size:10px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(–amber); }
+.b-ai { margin-left:auto; font-family: var(–font-mono); font-size:9px; background:rgba(232,130,12,0.1); border:1px solid rgba(232,130,12,0.18); color:var(–amber2); padding:2px 7px; border-radius:3px; letter-spacing:0.1em; display:flex; align-items:center; gap:4px; }
+.b-pulse { width:4px; height:4px; border-radius:50%; background:var(–neon); animation:nd 1.8s ease-in-out infinite; }
+.b-txt { font-size:13px; color:var(–txt2); line-height:1.7; font-weight:500; font-family: var(–font-body); }
+.b-txt strong { color:var(–txt); font-weight:700; }
+.b-pills { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+.bpill { padding:4px 11px; border-radius:100px; font-family: var(–font-body); font-size:10px; font-weight:700; white-space:nowrap; border:1px solid; }
+.bpill.fire  { background:rgba(232,130,12,0.1); border-color:rgba(232,130,12,0.2); color:var(–amber2); }
+.bpill.upset { background:rgba(241,196,15,0.08); border-color:rgba(241,196,15,0.2); color:var(–gold); }
+.bpill.muted { background:var(–bg4); border-color:var(–bdr); color:var(–txt3); }
+
+/* TODAY’S GAMES */
+.sport-tabs { display:flex; gap:7px; padding:0 14px; overflow-x:auto; scrollbar-width:none; }
+.sport-tabs::-webkit-scrollbar { display:none; }
+.stab {
+flex-shrink:0; padding:7px 16px; border-radius:100px;
+font-family: var(–font-body); font-size:13px; font-weight:700; letter-spacing:0.01em;
+cursor:pointer; border:1px solid var(–bdr); background:var(–bg3); color:var(–txt3);
+display:flex; align-items:center; gap:6px; transition:all 0.2s; white-space:nowrap;
+}
+.stab.on { background:rgba(232,130,12,0.12); border-color:rgba(232,130,12,0.3); color:var(–amber2); }
+.stab .cnt { background:var(–amber); color:#000; border-radius:100px; padding:1px 6px; font-size:10px; font-family: var(–font-mono); font-weight:700; }
+.stab .cnt.b { background:var(–blue); color:#fff; }
+
+/* GAME ROWS */
+.games { padding:0 14px; display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.gr { background:var(–bg3); border:1px solid var(–bdr); border-radius:14px; overflow:hidden; cursor:pointer; transition:all 0.18s; position:relative; }
+.gr:active { transform:scale(0.99); }
+.gr.live-g  { border-left:3px solid var(–neon); background:linear-gradient(90deg, rgba(46,204,113,0.04), var(–bg3) 55%); }
+.gr.my-g    { border-left:3px solid var(–amber); background:linear-gradient(90deg, rgba(232,130,12,0.05), var(–bg3) 55%); }
+.gr.upset-g { border-left:3px solid var(–gold); background:linear-gradient(90deg, rgba(241,196,15,0.04), var(–bg3) 55%); }
+.gr-inner { padding:13px 14px; }
+.gr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
+.gr-meta { font-family: var(–font-mono); font-size:9px; font-weight:500; letter-spacing:0.1em; color:var(–txt3); }
+.gr-tag { font-family: var(–font-mono); font-size:9px; font-weight:600; padding:3px 8px; border-radius:4px; letter-spacing:0.08em; display:flex; align-items:center; gap:4px; }
+.gt-live  { background:rgba(46,204,113,0.1); color:var(–neon); border:1px solid rgba(46,204,113,0.2); }
+.gt-upset { background:rgba(241,196,15,0.1); color:var(–gold); border:1px solid rgba(241,196,15,0.2); }
+.gt-soon  { color:var(–txt3); }
+.gr-matchup { display:flex; flex-direction:column; gap:5px; }
+.gr-team { display:flex; align-items:center; gap:9px; }
+.gr-logo { width:28px; height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.gr-logo img { width:25px; height:25px; object-fit:contain; }
+.gr-name { font-size:14px; font-weight:700; color:var(–txt); flex:1; font-family: var(–font-body); }
+.gr-name.w { color:#fff; }
+.gr-sc { font-family: var(–font-display); font-size:20px; font-weight:600; color:var(–txt3); }
+.gr-sc.w { color:#fff; }
+.gr-sc.lead { color:var(–amber2); }
+.gr-div { height:1px; background:var(–bdr); margin:2px 0; }
+.gr-foot { font-family: var(–font-mono); font-size:9px; color:var(–txt3); padding-top:8px; border-top:1px solid var(–bdr); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.gr-pick { color:var(–amber2); font-weight:600; }
+.live-dot { width:5px; height:5px; border-radius:50%; background:var(–neon); animation:nd 1.4s infinite; flex-shrink:0; box-shadow:0 0 5px var(–neon); }
+
+/* DRAFT BAR */
+.draft {
+margin:14px 14px 0;
+background:linear-gradient(135deg, rgba(241,196,15,0.07), rgba(241,196,15,0.02), var(–bg3));
+border:1px solid rgba(241,196,15,0.18); border-radius:14px;
+padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;
+}
+.draft:active { transform:scale(0.99); }
+.d-icon { font-size:24px; flex-shrink:0; }
+.d-body { flex:1; }
+.d-title { font-size:15px; font-weight:700; color:var(–txt); margin-bottom:2px; font-family: var(–font-body); }
+.d-sub { font-size:12px; color:var(–txt3); font-family: var(–font-body); font-weight:500; }
+.d-chips { display:flex; gap:5px; margin-top:7px; }
+.dc { font-family: var(–font-mono); font-size:9px; font-weight:600; padding:3px 8px; border-radius:4px; letter-spacing:0.1em; border:1px solid; }
+.dc.nfl { background:rgba(1,51,105,0.25); color:#6494FF; border-color:rgba(100,148,255,0.2); }
+.dc.nba { background:rgba(201,8,42,0.15); color:#FF6680; border-color:rgba(201,8,42,0.2); }
+.dc.nhl { background:rgba(255,255,255,0.05); color:#ccc; border-color:rgba(255,255,255,0.1); }
+.dc.mlb { background:rgba(191,13,62,0.15); color:#FF6680; border-color:rgba(191,13,62,0.2); }
+
+/* HEADLINES */
+.hh { margin:14px 14px 0; border-radius:18px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 8px 30px rgba(0,0,0,0.5); transition:transform 0.2s; }
+.hh:active { transform:scale(0.99); }
+.hh-top { height:190px; position:relative; overflow:hidden; display:flex; align-items:flex-end; }
+.hh-bg { position:absolute; inset:0; background:linear-gradient(155deg, #1a0900, #0e0c08); }
+.hh-sport-bg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:100px; opacity:0.06; }
+.hh-grad { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0) 15%, rgba(10,8,5,0.98) 100%); }
+.hh-badge { position:absolute; top:12px; left:14px; background:rgba(232,130,12,0.9); border-radius:5px; padding:3px 9px; font-family: var(–font-mono); font-size:9px; font-weight:600; color:#000; letter-spacing:0.12em; }
+.hh-age { position:absolute; top:12px; right:14px; font-family: var(–font-mono); font-size:10px; color:rgba(255,255,255,0.35); }
+.hh-content { position:relative; z-index:2; padding:14px 16px; }
+.hh-hl { font-family: var(–font-body); font-weight:800; font-size:19px; line-height:1.25; color:var(–txt); margin-bottom:9px; }
+.hh-row { display:flex; align-items:center; gap:8px; }
+.hh-src { font-family: var(–font-mono); font-size:10px; color:rgba(255,255,255,0.35); flex:1; }
+.hh-listen { background:rgba(232,130,12,0.85); border-radius:100px; padding:5px 13px; font-family: var(–font-body); font-size:11px; font-weight:700; color:#000; display:flex; align-items:center; gap:4px; white-space:nowrap; }
+
+/* NEWS BUCKETS */
+.bucket { margin:10px 14px 0; }
+.bkt-head { display:flex; align-items:center; gap:8px; padding:10px 0 8px; border-bottom:1px solid var(–bdr); }
+.bkt-bar { width:3px; height:18px; border-radius:2px; flex-shrink:0; }
+.bkt-name { font-family: var(–font-body); font-size:16px; font-weight:800; letter-spacing:-0.01em; color:var(–txt); }
+.bkt-n { font-family: var(–font-mono); font-size:10px; color:var(–txt3); margin-left:auto; background:var(–bg4); border:1px solid var(–bdr); border-radius:100px; padding:1px 8px; }
+.ni { display:flex; align-items:flex-start; gap:10px; padding:11px 0; border-bottom:1px solid var(–bdr); cursor:pointer; transition:opacity 0.15s; }
+.ni:last-child { border-bottom:none; }
+.ni:active { opacity:0.7; }
+.ni-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; margin-top:7px; }
+.ni-txt { flex:1; }
+.ni-hl { font-size:13px; font-weight:600; color:var(–txt); line-height:1.45; font-family: var(–font-body); }
+.ni-meta { font-size:10px; color:var(–txt3); margin-top:2px; font-family: var(–font-mono); }
+.ni-arr { font-size:16px; color:var(–txt3); padding-top:2px; }
+
+/* ── FLOATING PILL NAV ── */
+.float-nav {
+position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+width:min(356px, calc(100vw - 28px));
+background:rgba(14,12,9,0.94);
+backdrop-filter:blur(32px) saturate(160%);
+-webkit-backdrop-filter:blur(32px) saturate(160%);
+border:1px solid rgba(255,200,100,0.1);
+border-radius:32px;
+display:flex; align-items:center;
+padding:6px 8px;
+box-shadow:
+0 10px 50px rgba(0,0,0,0.8),
+0 0 0 1px rgba(232,130,12,0.06),
+inset 0 1px 0 rgba(255,220,120,0.06),
+0 0 80px rgba(232,130,12,0.08),
+0 20px 60px rgba(0,0,0,0.6);
+z-index:200;
+}
+.fn { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px; cursor:pointer; border-radius:24px; transition:all 0.2s; position:relative; }
+.fn:active { transform:scale(0.9); }
+.fn.on { background:rgba(232,130,12,0.12); }
+.fn-ico { font-size:20px; opacity:0.28; transition:all 0.2s; }
+.fn-ico.on { opacity:1; filter:drop-shadow(0 0 6px rgba(232,130,12,0.5)); }
+.fn-lbl { font-family: var(–font-body); font-size:9px; font-weight:700; letter-spacing:0.02em; text-transform:uppercase; color:var(–txt3); transition:all 0.2s; }
+.fn-lbl.on { color:var(–amber); }
+.fn-badge { position:absolute; top:5px; right:calc(50% - 20px); background:var(–red); color:#fff; border-radius:100px; min-width:14px; height:14px; display:flex; align-items:center; justify-content:center; font-family: var(–font-mono); font-size:8px; font-weight:700; border:2px solid var(–bg); padding:0 2px; }
+
+/* ANIMATIONS */
+@keyframes fu { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.fu { animation:fu 0.38s ease-out both; }
+.fu:nth-child(1){animation-delay:0s} .fu:nth-child(2){animation-delay:0.05s}
+.fu:nth-child(3){animation-delay:0.10s} .fu:nth-child(4){animation-delay:0.15s}
+.fu:nth-child(5){animation-delay:0.20s} .fu:nth-child(6){animation-delay:0.25s}
+.fu:nth-child(7){animation-delay:0.30s} .fu:nth-child(8){animation-delay:0.35s}
+.fu:nth-child(9){animation-delay:0.40s} .fu:nth-child(10){animation-delay:0.45s}
+.fu:nth-child(11){animation-delay:0.50s} .fu:nth-child(12){animation-delay:0.55s}
+</style>
+
+</head>
+<body>
+<div class="wrap"><div class="phone">
+
+<div class="status"><span>9:41</span><span>●●●● LTE 🔋</span></div>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-greet">Good morning,</div>
+    <div class="hdr-name">Abraham <span class="team-chip">HOU</span></div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-btn">🔍</div>
+    <div class="hdr-avatar">A</div>
+  </div>
+</div>
+
+<div class="scroll">
+
+<!-- YOUR TEAM HERO -->
+
+<div class="my-hero fu"
+  style="--team-dark-a:#1a0300;--team-dark-b:#00031a;--team-glow-a:rgba(206,17,65,0.45);--team-glow-b:rgba(0,107,182,0.38);">
+  <div class="mh-stadium">
+    <div class="mh-bg"></div>
+    <div class="mh-crowd"></div>
+    <div class="mh-bloom-a"></div>
+    <div class="mh-bloom-b"></div>
+    <div class="mh-vs">VS</div>
+    <div class="mh-fade"></div>
+    <div class="mh-live-pill">
+      <div class="live-neon"></div>
+      <span class="mh-live-txt">LIVE · Q3 8:44</span>
+    </div>
+    <div class="mh-importance">YOUR TEAM</div>
+    <div class="mh-logos">
+      <div class="mh-logo-block left">
+        <img class="mh-logo-img" src="https://a.espncdn.com/i/teamlogos/nba/500/hou.png" onerror="this.style.display='none'" alt="Houston Rockets">
+        <div class="mh-plate">Houston</div>
+      </div>
+      <div class="mh-logo-block right">
+        <img class="mh-logo-img" src="https://a.espncdn.com/i/teamlogos/nba/500/gs.png" onerror="this.style.display='none'" alt="Golden State Warriors">
+        <div class="mh-plate">Golden State</div>
+      </div>
+    </div>
+  </div>
+  <div class="mh-score">
+    <div class="mh-score-row">
+      <div class="mh-team">
+        <div class="mh-tname">Houston Rockets ⭐</div>
+        <div class="mh-tsub">✈️ AWAY</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="mh-nums">
+          <span class="mh-num win">82</span>
+          <span class="mh-sep">–</span>
+          <span class="mh-num">78</span>
+        </div>
+        <div class="mh-clock"><span class="hot">Q3 8:44</span> · Chase Center</div>
+      </div>
+      <div class="mh-team r">
+        <div class="mh-tname">Warriors</div>
+        <div class="mh-tsub">🏠 HOME</div>
+      </div>
+    </div>
+    <div class="mh-context">🔥 Rockets up 4 — Şengün with 18 pts & 9 reb. Chase Center getting loud.</div>
+    <div class="mh-btn">📡 Open Gamecast</div>
+  </div>
+</div>
+
+<!-- MY TEAMS -->
+
+<div class="sh fu"><div class="sl">My Teams <span class="sl-sub">4 FOLLOWING</span></div></div>
+<div class="teams-strip fu">
+  <div class="t-chip">
+    <div class="t-ring" style="border-color:rgba(206,17,65,0.35);">
+      <div class="neon-ring"></div>
+      <img src="https://a.espncdn.com/i/teamlogos/nba/500/hou.png" onerror="this.style.display='none'" alt="Rockets">
+    </div>
+    <div class="t-abbr">ROCKETS</div>
+    <div class="t-when">🔴 LIVE</div>
+  </div>
+  <div class="t-chip">
+    <div class="t-ring" style="border-color:rgba(0,107,182,0.3);">
+      <img src="https://a.espncdn.com/i/teamlogos/nba/500/ny.png" onerror="this.style.display='none'" alt="Knicks">
+    </div>
+    <div class="t-abbr">KNICKS</div>
+    <div class="t-when soon">8:30 PM</div>
+  </div>
+  <div class="t-chip">
+    <div class="t-ring" style="border-color:rgba(200,16,46,0.3);">
+      <img src="https://a.espncdn.com/i/teamlogos/nba/500/atl.png" onerror="this.style.display='none'" alt="Hawks">
+    </div>
+    <div class="t-abbr">HAWKS</div>
+    <div class="t-when soon">Tonight</div>
+  </div>
+  <div class="t-chip">
+    <div class="t-ring" style="border-color:rgba(235,110,31,0.3);">
+      <img src="https://a.espncdn.com/i/teamlogos/mlb/500/hou.png" onerror="this.style.display='none'" alt="Astros">
+    </div>
+    <div class="t-abbr">ASTROS</div>
+    <div class="t-when soon">7:10 PM</div>
+  </div>
+  <div class="t-chip">
+    <div class="add-btn">+</div>
+    <div class="t-abbr">ADD</div>
+    <div class="t-when soon">&nbsp;</div>
+  </div>
+</div>
+
+<!-- IN ONE BREATH -->
+
+<div class="breath fu">
+  <div class="b-top">
+    <span class="b-icon">✦</span>
+    <span class="b-lbl">In One Breath</span>
+    <div class="b-ai"><div class="b-pulse"></div>AI · LIVE</div>
+  </div>
+  <div class="b-txt">
+    <strong>Your Rockets are up 4 in the 3rd</strong> at Golden State — Şengün is taking over. NBA Playoffs: Toronto is upsetting Cleveland. <strong>15 MLB games today</strong>, Guardians leading Baltimore 4–0. NFL Draft in 9 days.
+  </div>
+  <div class="b-pills">
+    <div class="bpill fire">🔥 Rockets UP</div>
+    <div class="bpill upset">⚠️ CLE upset alert</div>
+    <div class="bpill muted">15 MLB games</div>
+    <div class="bpill muted">NFL Draft Apr 25</div>
+  </div>
+</div>
+
+<!-- TODAY'S GAMES -->
+
+<div class="sh fu"><div class="sl">Today's Games</div><div class="sa">See all →</div></div>
+<div class="sport-tabs fu">
+  <div class="stab on" onclick="switchTab(this)">NBA <span class="cnt">2</span></div>
+  <div class="stab" onclick="switchTab(this)">MLB <span class="cnt b">15</span></div>
+  <div class="stab" onclick="switchTab(this)">MLS</div>
+  <div class="stab" onclick="switchTab(this)">NFL</div>
+</div>
+
+<div class="games">
+  <div class="gr my-g fu">
+    <div class="gr-inner">
+      <div class="gr-top">
+        <div class="gr-meta">NBA · YOUR TEAM</div>
+        <div class="gr-tag gt-live"><div class="live-dot"></div>Q3 8:44</div>
+      </div>
+      <div class="gr-matchup">
+        <div class="gr-team">
+          <div class="gr-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/hou.png" onerror="this.style.display='none'" alt="HOU"></div>
+          <div class="gr-name w">Houston Rockets ⭐</div>
+          <div class="gr-sc lead">82</div>
+        </div>
+        <div class="gr-div"></div>
+        <div class="gr-team">
+          <div class="gr-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/gs.png" onerror="this.style.display='none'" alt="GSW"></div>
+          <div class="gr-name">Golden State Warriors</div>
+          <div class="gr-sc">78</div>
+        </div>
+      </div>
+      <div class="gr-foot">Şengün 18 PTS 9 REB · <span class="gr-pick">★ YOUR PICK: HOU ✓</span></div>
+    </div>
+  </div>
+
+  <div class="gr upset-g fu">
+    <div class="gr-inner">
+      <div class="gr-top">
+        <div class="gr-meta">NBA · PLAYOFFS R1</div>
+        <div class="gr-tag gt-upset">⚠️ UPSET ALERT</div>
+      </div>
+      <div class="gr-matchup">
+        <div class="gr-team">
+          <div class="gr-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/cle.png" onerror="this.style.display='none'" alt="CLE"></div>
+          <div class="gr-name">#4 Cleveland Cavs</div>
+          <div class="gr-sc">71</div>
+        </div>
+        <div class="gr-div"></div>
+        <div class="gr-team">
+          <div class="gr-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/tor.png" onerror="this.style.display='none'" alt="TOR"></div>
+          <div class="gr-name w">#5 Toronto Raptors</div>
+          <div class="gr-sc lead">74</div>
+        </div>
+      </div>
+      <div class="gr-foot"><span style="color:var(--neon);">● LIVE Q3 4:55</span> · TNT</div>
+    </div>
+  </div>
+
+  <div class="gr my-g fu">
+    <div class="gr-inner">
+      <div class="gr-top">
+        <div class="gr-meta">NBA · PLAYOFFS R1 · MY TEAM</div>
+        <div class="gr-tag gt-soon">Tonight 8:30 PM</div>
+      </div>
+      <div class="gr-matchup">
+        <div class="gr-team">
+          <div class="gr-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/ny.png" onerror="this.style.display='none'" alt="NYK"></div>
+          <div class="gr-name">#3 New York Knicks ⭐</div>
+          <div class="gr-sc" style="color:var(--txt3);">—</div>
+        </div>
+        <div class="gr-div"></div>
+        <div class="gr-team">
+          <div class="gr-logo"><img src="https://a.espncdn.com/i/teamlogos/nba/500/atl.png" onerror="this.style.display='none'" alt="ATL"></div>
+          <div class="gr-name">#6 Atlanta Hawks ⭐</div>
+          <div class="gr-sc" style="color:var(--txt3);">—</div>
+        </div>
+      </div>
+      <div class="gr-foot">Knicks lead series 1–0 · ESPN · <span class="gr-pick">Both your teams!</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- DRAFT BAR -->
+
+<div class="draft fu">
+  <div class="d-icon">🏆</div>
+  <div class="d-body">
+    <div class="d-title">Draft Center</div>
+    <div class="d-sub">NFL Draft starts April 25 · 9 days away</div>
+    <div class="d-chips">
+      <div class="dc nfl">NFL</div>
+      <div class="dc nba">NBA</div>
+      <div class="dc nhl">NHL</div>
+      <div class="dc mlb">MLB</div>
+    </div>
+  </div>
+  <div style="font-size:20px;color:var(--txt3);">›</div>
+</div>
+
+<!-- HEADLINES -->
+
+<div class="sh fu"><div class="sl">Headlines</div><div class="sa">See all →</div></div>
+
+<div class="hh fu">
+  <div class="hh-top">
+    <div class="hh-bg"></div>
+    <div class="hh-sport-bg">🥊</div>
+    <div class="hh-grad"></div>
+    <div class="hh-badge">UFC</div>
+    <div class="hh-age">15h ago</div>
+  </div>
+  <div class="hh-content">
+    <div class="hh-hl">Ronda Rousey hits out at Kayla Harrison ahead of MMA return</div>
+    <div class="hh-row">
+      <div class="hh-src">ESPN</div>
+      <div class="hh-listen">🔊 Listen</div>
+    </div>
+  </div>
+</div>
+
+<div class="bucket fu">
+  <div class="bkt-head">
+    <div class="bkt-bar" style="background:#C9082A;"></div>
+    <div class="bkt-name">🏆 Playoff Race</div>
+    <div class="bkt-n">4</div>
+  </div>
+  <div class="ni"><div class="ni-dot" style="background:var(--amber);"></div><div class="ni-txt"><div class="ni-hl">UFC 327: Who should challenge Carlos Ulberg first?</div><div class="ni-meta">UFC · ESPN · 2h ago</div></div><div class="ni-arr">›</div></div>
+  <div class="ni"><div class="ni-dot" style="background:var(--amber);"></div><div class="ni-txt"><div class="ni-hl">MMA pound-for-pound: Suarez seizes women's top 10 spot</div><div class="ni-meta">MMA · ESPN · 4h ago</div></div><div class="ni-arr">›</div></div>
+</div>
+
+<div class="bucket fu" style="margin-top:6px;margin-bottom:8px;">
+  <div class="bkt-head">
+    <div class="bkt-bar" style="background:var(--blue);"></div>
+    <div class="bkt-name">📦 Around the League</div>
+    <div class="bkt-n">3</div>
+  </div>
+  <div class="ni"><div class="ni-dot" style="background:var(--blue);"></div><div class="ni-txt"><div class="ni-hl">Nationals outlast Pirates 8–7 in wild back-and-forth game</div><div class="ni-meta">MLB · ESPN · 1h ago</div></div><div class="ni-arr">›</div></div>
+  <div class="ni"><div class="ni-dot" style="background:var(--blue);"></div><div class="ni-txt"><div class="ni-hl">Giants sweep Reds 3–0 behind dominant starting pitching</div><div class="ni-meta">MLB · ESPN · 2h ago</div></div><div class="ni-arr">›</div></div>
+</div>
+
+</div><!-- scroll -->
+
+<!-- FLOATING PILL NAV -->
+
+<div class="float-nav">
+  <div class="fn on">
+    <div class="fn-ico on">⌂</div>
+    <div class="fn-lbl on">Home</div>
+  </div>
+  <div class="fn">
+    <div class="fn-ico">📊</div>
+    <div class="fn-badge">2</div>
+    <div class="fn-lbl">Scores</div>
+  </div>
+  <div class="fn">
+    <div class="fn-ico">◫</div>
+    <div class="fn-lbl">Sports</div>
+  </div>
+  <div class="fn">
+    <div class="fn-ico">📋</div>
+    <div class="fn-lbl">Stands</div>
+  </div>
+  <div class="fn">
+    <div class="fn-ico">📰</div>
+    <div class="fn-lbl">News</div>
+  </div>
+</div>
+
+</div></div>
+
+<script>
+function switchTab(el){
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+}
+document.querySelectorAll('.fn').forEach(item=>{
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.fn').forEach(i=>{
+      i.classList.remove('on');
+      i.querySelector('.fn-ico').classList.remove('on');
+      i.querySelector('.fn-lbl').classList.remove('on');
+    });
+    item.classList.add('on');
+    item.querySelector('.fn-ico').classList.add('on');
+    item.querySelector('.fn-lbl').classList.add('on');
+  });
+});
+</script>
+
+</body>
+</html>

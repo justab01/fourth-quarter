@@ -16,8 +16,12 @@ This project is a pnpm workspace monorepo using TypeScript to build a comprehens
 The project is structured as a pnpm workspace monorepo, separating deployable applications (`artifacts/`) from shared libraries (`lib/`). TypeScript 5.9 is used throughout, with composite projects for efficient type-checking and builds.
 
 **UI/UX Decisions (Mobile Application - `@workspace/mobile`):**
-- **Theme:** "Livescore Dark" with a near-black background, dark charcoal cards, red live badges, white text, muted gray secondary elements, orange accent, gold AI elements, and green for wins.
-- **Navigation:** Five bottom tabs (Home, Scores, Sports, Standings, News) with a dark tab bar. Profile access is via a circular avatar button in tab headers.
+- **Theme:** "Warm Dark Sports OS" — #0A0805 warm near-black background, #16130D card surfaces, rgba(255,200,100,0.07) borders, #E8820C amber primary accent, #F0ECE4 cream text, #8C8070 secondary text, #00FF87 neon green for LIVE indicators.
+- **Background gradient:** Radial amber glow at 20%/80% and warm orange glow at 80%/20% for depth.
+- **Fonts:** Plus Jakarta Sans (400/600/700/800) for body/UI, Oswald (400/500/700) for scores/display numbers, DM Mono (400/500) for data/tags/timestamps, Inter (kept for golf page compatibility).
+- **Navigation:** Custom floating pill nav (bottom 20px, blur, amber border, #0E0C09 bg) replacing standard tab bar. Active tab has amber background glow. LIVE badge on Scores uses neon green. All 5 tabs use the same floating pill component.
+- **Hero Game Card:** Redesigned with 220px stadium section (dark gradient + team color glows + 90x90 logos at corners), centered LIVE pill (neon green), Oswald 56px scores below, "Open Gamecast" button with amber gradient.
+- **Section Headers:** 18px weight-800 Plus Jakarta Sans with 4px amber left bar accent.
 - **Key Components:** `GameCard` (hero and compact), `NewsCard`, `RecapCard`, `SearchModal`, `GameCardSkeleton`, `NewsCardSkeleton`, `ErrorBoundary/Fallback`.
 - **Gamecast Engine:** Features `ArenaRenderer` for sport-specific SVG courts/fields with live overlays, `LiveTrackerPanel` for universal live event tracking with situation cards and narrative, and `MomentumGraph` for analytical momentum waves.
 

@@ -1,0 +1,147 @@
+Great question. Here’s the exact prompt to give Replit — copy this word for word into your Replit AI chat.
+
+PASTE THIS INTO REPLIT AI:
+
+I need you to redesign the Home screen of this app to match a new design I have. Here are the exact changes to make:
+1. FONTS — Replace all fonts with these (add to your Google Fonts import):
+
+https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&family=Oswald:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap
+
+
+	•	Body text, team names, headlines, nav labels → 'Plus Jakarta Sans', -apple-system, sans-serif
+	•	Big scores and numbers only → 'Oswald', sans-serif
+	•	Tags, timestamps, live indicators, metadata → 'DM Mono', monospace
+	•	Remove Bebas Neue everywhere
+2. COLOR SYSTEM — Replace the background and border colors:
+
+Background: #0A0805 (warm dark, not pure black)
+Cards/surfaces: #16130D
+Borders: rgba(255,200,100,0.07)
+Primary accent: #E8820C (warm amber, not orange)
+Text primary: #F0ECE4
+Text secondary: #8C8070
+Text muted: #4A4035
+Live green: #00FF87 (neon green with glow)
+
+
+Add this background gradient to the body:
+
+background-image:
+  radial-gradient(ellipse 70% 50% at 20% 80%, rgba(232,130,12,0.07) 0%, transparent 60%),
+  radial-gradient(ellipse 50% 40% at 80% 20%, rgba(255,100,30,0.05) 0%, transparent 55%);
+
+
+3. FEATURED GAME CARD — Redesign with this structure:
+	•	Full-width card with a height: 220px stadium atmosphere section on top
+	•	Background uses team color gradients bleeding in from left (team A color) and right (team B color) as radial gradients
+	•	Left team logo and right team logo both loaded from ESPN CDN: https://a.espncdn.com/i/teamlogos/{sport}/500/{teamAbbr}.png
+	•	Logos are 90x90px, positioned at bottom-left and bottom-right of the stadium section
+	•	Centered LIVE pill at top: neon green dot + “LIVE · Q3 8:44” text, frosted glass background
+	•	Score section below: team name left, score center in Oswald font at 58px, team name right
+	•	“Open Gamecast” button with amber border and gradient
+4. MY TEAMS STRIP — Fix to use real ESPN logos:
+Replace all letter initials with actual images:
+
+NBA logos: https://a.espncdn.com/i/teamlogos/nba/500/{abbr}.png
+MLB logos: https://a.espncdn.com/i/teamlogos/mlb/500/{abbr}.png
+NFL logos: https://a.espncdn.com/i/teamlogos/nfl/500/{abbr}.png
+NHL logos: https://a.espncdn.com/i/teamlogos/nhl/500/{abbr}.png
+
+
+Common abbrs: hou, ny, atl, gs, okc, mem, cle, tor, bal, col
+Each team circle should be 54px, show the real logo at 38px, have a warm colored border matching that team’s primary color. For any team currently LIVE, add a pulsing neon green ring using this CSS:
+
+position:absolute; inset:-3px; border-radius:50%;
+border:2px solid #00FF87;
+box-shadow:0 0 8px #00FF87, inset 0 0 6px rgba(0,255,135,0.1);
+animation: neon-ring 2.2s ease-in-out infinite;
+
+
+5. GAME ROW CARDS — Same logo fix:
+Every game row currently shows letter initials. Replace with real ESPN CDN logo images at 25x25px. Always include onerror fallback:
+
+<Image 
+  source={{uri: `https://a.espncdn.com/i/teamlogos/nba/500/${teamAbbr}.png`}}
+  style={{width:25, height:25}}
+  resizeMode="contain"
+/>
+
+
+6. FLOATING NAV — Replace the bottom tab bar:
+Remove the current bottom tab bar. Add a floating pill nav that:
+	•	Position: fixed, bottom 20px, centered horizontally
+	•	Width: min(356px, 100vw - 28px)
+	•	Background: rgba(14,12,9,0.94) with backdrop-filter blur 32px
+	•	Border: 1px solid rgba(255,200,100,0.1)
+	•	Border radius: 32px
+	•	Box shadow includes a warm amber glow: 0 0 80px rgba(232,130,12,0.08)
+	•	Active tab has background rgba(232,130,12,0.12) and amber icon glow
+	•	Make this the nav on ALL screens, not just home
+7. LIVE DATA — Make everything pull from real ESPN API:
+For scores and games, use this endpoint pattern (already in your codebase):
+
+https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard
+
+
+	•	Refresh every 30 seconds when a game is live
+	•	Show real scores, real quarter/inning/period
+	•	The “In One Breath” AI summary should pull from today’s actual ESPN scoreboard data and pass it to your Claude API call as context
+For team logos, pull the logo URL directly from the ESPN teams API response — it’s in team.logos[0].href. Use that URL directly in the Image component instead of hardcoding.
+8. SECTION HEADERS — Style update:
+All section titles (My Teams, Today’s Games, Headlines) should use Plus Jakarta Sans at 18px weight 800 with a 3px amber left border bar before the text, like this:
+
+display:flex; align-items:center; gap:10px;
+::before { content:''; width:3px; height:20px; background:#E8820C; border-radius:2px; }
+
+
+9. IN ONE BREATH CARD — Make it actually live:
+The card should:
+	1.	On mount, fetch today’s ESPN scoreboard for NBA, MLB, NFL
+	2.	Pass the real game data as context to the Claude API: "Today's games: [list of real games with scores]"
+	3.	Display Claude’s response as the summary text
+	4.	Refresh every 5 minutes
+	5.	Show a pulsing neon green dot while it’s generating
+10. DO NOT change:
+	•	The layout order (greeting → my team hero → my teams strip → in one breath → today’s games → draft center → headlines)
+	•	The existing navigation routing
+	•	The existing ESPN API integration
+	•	The existing preferences/onboarding system
+	•	The existing React Query caching setup
+
+Then after it makes changes, paste this follow-up:
+
+Now test these 5 things and fix any that are broken:
+	1.	Open the app fresh — do the ESPN logos load in My Teams strip? If any show a broken image, check the abbreviation. Common issues: Golden State is gs not gsw, New York Knicks is ny not nyk
+	2.	Do the game rows show real logos instead of letter circles?
+	3.	Does the floating nav appear on Home, Scores, Sports, Standings, and News screens? It should be the same component on all 5 tabs
+	4.	Is the featured game card pulling a real live or upcoming game, or is it showing placeholder data?
+	5.	Open the app and wait 30 seconds — do scores update automatically for any live games?
+Fix all 5 before considering this done.
+
+One more thing to tell Replit separately:
+
+The font Plus Jakarta Sans needs to be imported in the React Native project differently than web. In React Native use Expo Google Fonts:
+
+npx expo install @expo-google-fonts/plus-jakarta-sans @expo-google-fonts/oswald @expo-google-fonts/dm-mono expo-font
+
+
+Then at the top of your app entry point:
+
+import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold } from '@expo-google-fonts/plus-jakarta-sans';
+import { Oswald_600SemiBold } from '@expo-google-fonts/oswald';
+import { DMMono_500Medium } from '@expo-google-fonts/dm-mono';
+
+
+Load them before rendering:
+
+const [fontsLoaded] = useFonts({
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+  Oswald_600SemiBold,
+  DMMono_500Medium,
+});
+if (!fontsLoaded) return null;
+
+
+That’s the complete instruction set. Give Replit all three blocks in order and it should be able to implement the full design system, real logos, live data, and floating nav across the whole app.​​​​​​​​​​​​​​​​
