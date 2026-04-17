@@ -1,0 +1,966 @@
+before I tell you to do anything, I’m sending you code run this code so I can see what it looks like <!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>4Q · Basketball Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Barlow+Condensed:ital,wght@0,600;0,700;0,900;1,900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange:#FF4D00;--orange2:#FF7A3D;--orange3:rgba(255,77,0,0.12);
+  --bg:#08080A;--bg2:#0E0E12;--bg3:#131318;--bg4:#18181E;--bg5:#1E1E26;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+  --text:#F0F0F0;--text2:#909090;--text3:#505050;
+  --green:#00D46A;--red:#FF4444;--blue:#3A8FFF;--gold:#FFB700;--purple:#9B5FFF;
+  --nba:#C9082A;--wnba:#FF6B35;--ncaam:#003087;--ncaaw:#E31837;
+  --playoff-green:rgba(0,212,106,0.12);--playoff-blue:rgba(58,143,255,0.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg);}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* PHONE */
+.wrap{display:flex;justify-content:center;background:#030305;min-height:100vh;padding:20px 0;}
+.phone{width:min(393px,100vw);background:var(–bg);min-height:100vh;position:relative;overflow:hidden;box-shadow:0 0 80px rgba(0,0,0,0.9),0 0 0 1px rgba(255,255,255,0.04);}
+@media(max-width:420px){.wrap{padding:0;}.phone{width:100vw;}}
+
+/* STATUS */
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-family:‘JetBrains Mono’,monospace;font-size:12px;font-weight:600;}
+
+/* HEADER */
+.hdr{padding:8px 16px 0;display:flex;align-items:center;gap:10px;}
+.back{width:34px;height:34px;border-radius:9px;background:var(–bg3);border:1px solid var(–border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;}
+.hdr-center{flex:1;}
+.sport-row{display:flex;align-items:center;gap:8px;}
+.sport-title{font-family:‘Bebas Neue’,cursive;font-size:26px;letter-spacing:0.05em;color:#fff;}
+.live-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(0,212,106,0.12);border:1px solid rgba(0,212,106,0.3);border-radius:100px;padding:3px 9px;font-family:‘JetBrains Mono’,monospace;font-size:10px;font-weight:600;color:var(–green);letter-spacing:0.05em;}
+.ld{width:5px;height:5px;border-radius:50%;background:var(–green);animation:lp 1.4s ease-in-out infinite;}
+@keyframes lp{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,212,106,0.5)}50%{opacity:0.5;box-shadow:0 0 0 5px rgba(0,212,106,0)}}
+.srch{width:34px;height:34px;border-radius:9px;background:var(–bg3);border:1px solid var(–border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;}
+
+/* LEAGUE CHIPS — ONE ROW ONLY, NO DUPLICATES */
+.league-chips{display:flex;gap:6px;padding:12px 16px 0;overflow-x:auto;scrollbar-width:none;}
+.league-chips::-webkit-scrollbar{display:none;}
+.lc{flex-shrink:0;padding:6px 16px;border-radius:100px;font-size:13px;font-weight:700;letter-spacing:0.02em;cursor:pointer;transition:all 0.2s;border:1px solid var(–border);background:var(–bg3);color:var(–text3);white-space:nowrap;}
+.lc.nba-active{background:rgba(201,8,42,0.15);border-color:rgba(201,8,42,0.5);color:#ff4d6b;}
+.lc.wnba-active{background:rgba(255,107,53,0.15);border-color:rgba(255,107,53,0.5);color:#ff9a6b;}
+.lc.ncaam-active{background:rgba(0,48,135,0.3);border-color:rgba(100,148,255,0.5);color:#6494FF;}
+.lc.ncaaw-active{background:rgba(227,24,55,0.15);border-color:rgba(227,24,55,0.5);color:#ff6b7a;}
+.lc.all-active{background:rgba(255,77,0,0.12);border-color:rgba(255,77,0,0.4);color:var(–orange2);}
+
+/* SCROLL BODY */
+.body{height:calc(100vh - 158px);overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:80px;}
+.body::-webkit-scrollbar{display:none;}
+
+/* SECTION HEADS */
+.sh{display:flex;align-items:center;justify-content:space-between;padding:20px 16px 10px;}
+.sl{font-family:‘JetBrains Mono’,monospace;font-size:10px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:var(–text3);}
+.sa{font-size:12px;font-weight:700;color:var(–orange);letter-spacing:0.05em;cursor:pointer;font-family:‘JetBrains Mono’,monospace;}
+
+/* ══════════════════════════
+LIVE GAMES STRIP
+══════════════════════════ */
+.games-strip{display:flex;gap:10px;padding:0 16px 4px;overflow-x:auto;scrollbar-width:none;}
+.games-strip::-webkit-scrollbar{display:none;}
+.game-card{flex-shrink:0;width:220px;background:var(–bg3);border:1px solid var(–border);border-radius:14px;padding:14px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.game-card.live-game{border-color:rgba(0,212,106,0.25);background:linear-gradient(135deg,rgba(0,212,106,0.05),var(–bg3));}
+.game-card:active{transform:scale(0.97);}
+.gc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.gc-league{font-family:‘JetBrains Mono’,monospace;font-size:9px;font-weight:600;letter-spacing:0.15em;color:var(–text3);}
+.gc-live{display:flex;align-items:center;gap:4px;font-family:‘JetBrains Mono’,monospace;font-size:9px;font-weight:600;color:var(–green);letter-spacing:0.1em;}
+.gc-upcoming{font-family:‘JetBrains Mono’,monospace;font-size:9px;color:var(–text3);}
+.gc-matchup{display:flex;flex-direction:column;gap:6px;}
+.gc-team{display:flex;align-items:center;justify-content:space-between;}
+.gc-team-name{font-size:14px;font-weight:700;color:var(–text);}
+.gc-team-name.leader{color:#fff;}
+.gc-score{font-family:‘JetBrains Mono’,monospace;font-size:18px;font-weight:600;color:#fff;}
+.gc-score.leader{color:var(–orange);}
+.gc-divider{height:1px;background:var(–border);margin:4px 0;}
+.gc-status{font-family:‘JetBrains Mono’,monospace;font-size:10px;color:var(–orange);margin-top:8px;font-weight:600;}
+.gc-tag{display:inline-block;background:rgba(255,77,0,0.12);border:1px solid rgba(255,77,0,0.25);border-radius:4px;padding:2px 7px;font-family:‘JetBrains Mono’,monospace;font-size:9px;color:var(–orange2);letter-spacing:0.1em;}
+
+/* ══════════════════════════
+PLAYER SPOTLIGHT CARDS
+Fixed: real players from multiple teams,
+full names, readable stats, proper images
+══════════════════════════ */
+.spotlight-scroll{display:flex;gap:10px;padding:0 16px 4px;overflow-x:auto;scrollbar-width:none;}
+.spotlight-scroll::-webkit-scrollbar{display:none;}
+
+.player-card{
+flex-shrink:0;width:150px;
+background:var(–bg3);border:1px solid var(–border);
+border-radius:14px;overflow:hidden;cursor:pointer;
+transition:all 0.2s;position:relative;
+}
+.player-card:active{transform:scale(0.97);}
+.pc-top{
+height:100px;position:relative;overflow:hidden;
+display:flex;align-items:flex-end;justify-content:center;
+}
+.pc-gradient{
+position:absolute;inset:0;
+background:linear-gradient(to bottom,transparent 40%,var(–bg3) 100%);
+z-index:1;
+}
+.pc-number{
+position:absolute;top:8px;left:8px;
+font-family:‘Bebas Neue’,cursive;font-size:11px;
+letter-spacing:0.1em;color:rgba(255,255,255,0.5);
+z-index:2;
+}
+.pc-rank{
+position:absolute;top:6px;right:6px;
+width:22px;height:22px;border-radius:50%;
+display:flex;align-items:center;justify-content:center;
+font-family:‘JetBrains Mono’,monospace;font-size:9px;font-weight:700;
+z-index:2;
+}
+.pc-rank.r1{background:var(–gold);color:#000;}
+.pc-rank.r2{background:#A8A8A8;color:#000;}
+.pc-rank.r3{background:#CD7F32;color:#000;}
+.pc-rank.rn{background:var(–bg5);color:var(–text3);}
+.pc-avatar{
+width:72px;height:72px;border-radius:50%;
+display:flex;align-items:center;justify-content:center;
+font-family:‘Bebas Neue’,cursive;font-size:24px;letter-spacing:0.05em;
+border:2px solid var(–border2);
+position:relative;z-index:2;margin-bottom:-8px;
+flex-shrink:0;
+}
+.pc-body{padding:12px 10px 12px;}
+.pc-name{font-size:14px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:2px;}
+.pc-team{font-size:11px;color:var(–text3);margin-bottom:8px;font-weight:600;}
+.pc-stat-row{display:flex;gap:6px;flex-wrap:wrap;}
+.pc-stat{
+background:var(–bg5);border-radius:5px;padding:3px 7px;
+font-family:‘JetBrains Mono’,monospace;font-size:10px;font-weight:600;
+color:var(–text2);white-space:nowrap;
+}
+.pc-stat.hot{background:rgba(255,77,0,0.12);color:var(–orange2);}
+.pc-tag{
+margin-top:6px;font-size:10px;font-weight:700;
+color:var(–text3);letter-spacing:0.03em;
+font-style:italic;line-height:1.4;
+}
+
+/* ══════════════════════════
+PLAYOFF BRACKET PREVIEW
+══════════════════════════ */
+.bracket-section{padding:0 16px;}
+.bracket-tabs{display:flex;gap:0;background:var(–bg3);border:1px solid var(–border);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.bt{flex:1;padding:9px 0;text-align:center;font-size:12px;font-weight:700;color:var(–text3);cursor:pointer;transition:all 0.2s;font-family:‘Barlow Condensed’,sans-serif;letter-spacing:0.08em;border-right:1px solid var(–border);}
+.bt:last-child{border-right:none;}
+.bt.active{background:rgba(201,8,42,0.15);color:#ff4d6b;}
+
+.matchup-card{background:var(–bg3);border:1px solid var(–border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s;}
+.matchup-card:hover{background:var(–bg4);}
+.mc-series{font-family:‘JetBrains Mono’,monospace;font-size:9px;font-weight:600;letter-spacing:0.2em;color:var(–text3);margin-bottom:10px;text-transform:uppercase;}
+.mc-team-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
+.mc-seed{font-family:‘JetBrains Mono’,monospace;font-size:11px;font-weight:600;color:var(–text3);width:16px;text-align:center;}
+.mc-seed.top-seed{color:var(–gold);}
+.mc-logo{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;border:1px solid var(–border2);}
+.mc-name{font-size:14px;font-weight:700;color:var(–text);flex:1;}
+.mc-name.winner{color:#fff;}
+.mc-wins{font-family:‘JetBrains Mono’,monospace;font-size:16px;font-weight:600;color:var(–text3);}
+.mc-wins.leading{color:var(–orange);}
+.mc-wins.won{color:var(–green);}
+.mc-divider{height:1px;background:var(–border);margin:2px 0;}
+.mc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.mc-status{font-family:‘JetBrains Mono’,monospace;font-size:10px;color:var(–text3);}
+.mc-status.live{color:var(–green);}
+.mc-tag{font-family:‘JetBrains Mono’,monospace;font-size:9px;background:rgba(255,77,0,0.1);border:1px solid rgba(255,77,0,0.2);color:var(–orange2);padding:2px 7px;border-radius:3px;letter-spacing:0.1em;}
+
+/* ══════════════════════════
+STANDINGS — REBUILT
+══════════════════════════ */
+.standings-section{padding:0 16px;}
+.conf-label{
+font-family:‘Bebas Neue’,cursive;font-size:18px;letter-spacing:0.08em;
+color:var(–text2);padding:14px 0 8px;
+display:flex;align-items:center;gap:10px;
+}
+.conf-dot{width:8px;height:8px;border-radius:50%;}
+
+/* Zone separators */
+.zone-sep{
+display:flex;align-items:center;gap:8px;padding:6px 0;
+}
+.zone-sep-line{flex:1;height:1px;}
+.zone-sep-text{font-family:‘JetBrains Mono’,monospace;font-size:8px;font-weight:700;letter-spacing:0.2em;white-space:nowrap;padding:2px 8px;border-radius:3px;}
+
+/* Standing rows */
+.std-header{
+display:grid;grid-template-columns:48px 1fr 36px 36px 44px 36px;
+gap:0;padding:8px 10px;
+background:var(–bg4);border:1px solid var(–border);border-radius:8px 8px 0 0;
+font-family:‘JetBrains Mono’,monospace;font-size:9px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(–text3);
+}
+.std-header .tr{text-align:right;}
+.std-row{
+display:grid;grid-template-columns:48px 1fr 36px 36px 44px 36px;
+gap:0;padding:10px 10px;
+border:1px solid var(–border);border-top:none;
+background:var(–bg2);cursor:pointer;transition:background 0.15s;
+position:relative;overflow:hidden;align-items:center;
+}
+.std-row:last-child{border-radius:0 0 8px 8px;}
+.std-row:hover{background:var(–bg3);}
+.std-row::before{content:’’;position:absolute;left:0;top:0;bottom:0;width:3px;}
+.std-row.playoff-in::before{background:var(–green);}
+.std-row.playin::before{background:var(–gold);}
+.std-row.playoff-out::before{background:transparent;}
+
+/* Zone backgrounds */
+.std-row.playoff-in{background:rgba(0,212,106,0.03);}
+.std-row.playin{background:rgba(255,183,0,0.03);}
+
+/* Rank cell */
+.std-rank{display:flex;align-items:center;gap:4px;font-family:‘JetBrains Mono’,monospace;font-size:12px;}
+.std-rank .rn{color:var(–text2);font-weight:600;}
+.std-rank .clinch{font-size:8px;color:var(–text3);font-weight:700;background:var(–bg5);padding:1px 4px;border-radius:2px;}
+.std-rank .clinch.z{color:var(–gold);}
+.std-rank .clinch.y{color:var(–green);}
+.std-rank .clinch.x{color:var(–blue);}
+.std-rank .clinch.pb{color:var(–gold);}
+
+/* Team cell */
+.std-team{display:flex;align-items:center;gap:8px;}
+.std-logo{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;border:1px solid var(–border);}
+.std-name-wrap{}
+.std-name{font-size:13px;font-weight:700;color:var(–text);}
+.std-streak{display:flex;align-items:center;gap:3px;margin-top:1px;}
+.streak-badge{font-family:‘JetBrains Mono’,monospace;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;}
+.streak-w{background:rgba(0,212,106,0.1);color:var(–green);}
+.streak-l{background:rgba(255,68,68,0.1);color:var(–red);}
+.streak-fire{font-size:10px;}
+
+/* Stat cells */
+.std-w,.std-l,.std-pct,.std-gb{text-align:right;font-family:‘JetBrains Mono’,monospace;font-size:12px;font-weight:600;color:var(–text2);}
+.std-w.leader-w{color:#fff;}
+.std-gb{color:var(–text3);font-size:11px;}
+
+/* Move arrows */
+.move-up{color:var(–green);font-size:8px;}
+.move-dn{color:var(–red);font-size:8px;}
+
+/* ══════════════════════════
+OFFSEASON STATE — WNBA
+Real content, not just emoji
+══════════════════════════ */
+.offseason-card{
+margin:0 16px;
+background:var(–bg3);border:1px solid var(–border);border-radius:14px;overflow:hidden;
+}
+.oc-banner{
+height:80px;display:flex;align-items:center;justify-content:space-between;
+padding:0 20px;
+background:linear-gradient(135deg,#1a0a00,#2d1500,#1a0a00);
+position:relative;overflow:hidden;
+}
+.oc-banner::before{content:’’;position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(255,107,53,0.2) 0%,transparent 60%);}
+.oc-banner-text{position:relative;z-index:1;}
+.oc-season{font-family:‘Bebas Neue’,cursive;font-size:22px;letter-spacing:0.05em;color:#fff;}
+.oc-date{font-family:‘JetBrains Mono’,monospace;font-size:11px;color:var(–wnba);margin-top:2px;}
+.oc-emoji{font-size:40px;position:relative;z-index:1;}
+.oc-body{padding:14px 16px;}
+.oc-countdown{
+display:flex;gap:0;margin-bottom:14px;
+background:var(–bg4);border:1px solid var(–border);border-radius:8px;overflow:hidden;
+}
+.oc-count-item{flex:1;padding:10px 0;text-align:center;border-right:1px solid var(–border);}
+.oc-count-item:last-child{border-right:none;}
+.oc-count-n{font-family:‘Bebas Neue’,cursive;font-size:28px;color:var(–wnba);line-height:1;}
+.oc-count-l{font-family:‘JetBrains Mono’,monospace;font-size:9px;color:var(–text3);letter-spacing:0.1em;margin-top:2px;}
+.oc-news-title{font-family:‘JetBrains Mono’,monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(–text3);margin-bottom:8px;}
+.oc-news-item{padding:10px 0;border-bottom:1px solid var(–border);display:flex;gap:10px;align-items:flex-start;}
+.oc-news-item:last-child{border-bottom:none;}
+.oc-news-dot{width:6px;height:6px;border-radius:50%;background:var(–wnba);flex-shrink:0;margin-top:5px;}
+.oc-news-text{font-size:13px;font-weight:600;color:var(–text2);line-height:1.4;}
+.oc-news-time{font-family:‘JetBrains Mono’,monospace;font-size:10px;color:var(–text3);margin-top:2px;}
+
+/* ══════════════════════════
+NCAA WOMEN’S STATE
+Not empty — shows last results + preseason
+══════════════════════════ */
+.ncaaw-hero{
+margin:0 16px;
+background:linear-gradient(135deg,rgba(227,24,55,0.08),var(–bg3));
+border:1px solid rgba(227,24,55,0.2);border-radius:14px;padding:16px;margin-bottom:10px;
+}
+.ncaaw-champ-label{font-family:‘JetBrains Mono’,monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(–text3);margin-bottom:6px;}
+.ncaaw-champ{font-family:‘Bebas Neue’,cursive;font-size:28px;letter-spacing:0.05em;color:#fff;margin-bottom:4px;}
+.ncaaw-champ span{color:var(–ncaaw);}
+.ncaaw-champ-sub{font-size:13px;color:var(–text2);}
+.result-row{background:var(–bg3);border:1px solid var(–border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.res-teams{font-size:13px;font-weight:700;color:var(–text);}
+.res-score{font-family:‘JetBrains Mono’,monospace;font-size:14px;font-weight:600;color:#fff;}
+.res-meta{font-size:10px;color:var(–text3);font-family:‘JetBrains Mono’,monospace;margin-top:2px;}
+.res-badge{background:var(–bg5);border:1px solid var(–border);border-radius:3px;padding:2px 6px;font-family:‘JetBrains Mono’,monospace;font-size:9px;color:var(–text3);}
+
+/* ══════════════════════════
+BOTTOM NAV
+══════════════════════════ */
+.bnav{position:absolute;bottom:0;left:0;right:0;background:rgba(8,8,10,0.95);backdrop-filter:blur(20px);border-top:1px solid var(–border);display:flex;padding:8px 0 20px;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;}
+.ni-icon{font-size:20px;opacity:0.35;}
+.ni-icon.a{opacity:1;}
+.ni-label{font-family:‘JetBrains Mono’,monospace;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(–text3);}
+.ni-label.a{color:var(–orange);}
+
+/* ══════════════════════════
+PANEL SYSTEM
+══════════════════════════ */
+.panel{display:none;animation:fadeUp 0.25s ease-out both;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* MISC */
+.fade{animation:fadeUp 0.3s ease-out both;}
+.fade:nth-child(2){animation-delay:0.05s}
+.fade:nth-child(3){animation-delay:0.10s}
+.fade:nth-child(4){animation-delay:0.15s}
+.fade:nth-child(5){animation-delay:0.20s}
+.fade:nth-child(6){animation-delay:0.25s}
+.fade:nth-child(7){animation-delay:0.30s}
+.fade:nth-child(8){animation-delay:0.35s}
+.fade:nth-child(9){animation-delay:0.40s}
+.fade:nth-child(10){animation-delay:0.45s}
+.fade:nth-child(11){animation-delay:0.50s}
+.fade:nth-child(12){animation-delay:0.55s}
+</style>
+
+</head>
+<body>
+<div class="wrap"><div class="phone">
+
+<div class="status"><span>9:41</span><span>●●●● 5G 🔋</span></div>
+
+<div class="hdr">
+  <div class="back">←</div>
+  <div class="hdr-center">
+    <div class="sport-row">
+      <span style="font-size:20px;">🏀</span>
+      <span class="sport-title">Basketball</span>
+      <div class="live-badge"><div class="ld"></div>2 Live</div>
+    </div>
+  </div>
+  <div class="srch">🔍</div>
+</div>
+
+<!-- ONE chip bar, no duplicates -->
+
+<div class="league-chips">
+  <div class="lc all-active" onclick="showPanel('all',this)">All</div>
+  <div class="lc" onclick="showPanel('nba',this)">NBA</div>
+  <div class="lc" onclick="showPanel('wnba',this)">WNBA</div>
+  <div class="lc" onclick="showPanel('ncaam',this)">NCAA Men's</div>
+  <div class="lc" onclick="showPanel('ncaaw',this)">NCAA Women's</div>
+</div>
+
+<div class="body">
+
+<!-- ════════════ ALL PANEL ════════════ -->
+
+<div class="panel active" id="panel-all">
+
+  <!-- Live Games -->
+
+  <div class="sh"><div class="sl"><span style="color:var(--green);margin-right:4px;">●</span> LIVE NOW</div><div class="sa">All →</div></div>
+  <div class="games-strip">
+    <div class="game-card live-game fade">
+      <div class="gc-top">
+        <span class="gc-league">NBA · PLAYOFFS · GAME 1</span>
+        <div class="gc-live"><div class="ld"></div>Q4 2:14</div>
+      </div>
+      <div class="gc-matchup">
+        <div class="gc-team"><span class="gc-team-name leader">OKC Thunder</span><span class="gc-score leader">98</span></div>
+        <div class="gc-divider"></div>
+        <div class="gc-team"><span class="gc-team-name">Memphis Grizzlies</span><span class="gc-score">91</span></div>
+      </div>
+      <div class="gc-status">SGA 31 PTS · 7 AST</div>
+      <div class="gc-tag">MUST WATCH</div>
+    </div>
+    <div class="game-card live-game fade">
+      <div class="gc-top">
+        <span class="gc-league">NBA · PLAYOFFS · GAME 1</span>
+        <div class="gc-live"><div class="ld"></div>Q3 4:55</div>
+      </div>
+      <div class="gc-matchup">
+        <div class="gc-team"><span class="gc-team-name">Cleveland Cavs</span><span class="gc-score">71</span></div>
+        <div class="gc-divider"></div>
+        <div class="gc-team"><span class="gc-team-name leader">Toronto Raptors</span><span class="gc-score leader">74</span></div>
+      </div>
+      <div class="gc-status">UPSET ALERT 🚨</div>
+      <div class="gc-tag">BUBBLE</div>
+    </div>
+    <div class="game-card fade">
+      <div class="gc-top">
+        <span class="gc-league">NBA · PLAYOFFS</span>
+        <div class="gc-upcoming">Tonight 8:30 PM ET</div>
+      </div>
+      <div class="gc-matchup">
+        <div class="gc-team"><span class="gc-team-name">New York Knicks</span><span class="gc-score" style="color:var(--text3);">—</span></div>
+        <div class="gc-divider"></div>
+        <div class="gc-team"><span class="gc-team-name">Atlanta Hawks</span><span class="gc-score" style="color:var(--text3);">—</span></div>
+      </div>
+      <div class="gc-status" style="color:var(--text3);">ESPN · Knicks lead series 1-0</div>
+    </div>
+  </div>
+
+  <!-- Player Spotlight — NBA stars, DIFFERENT teams -->
+
+  <div class="sh"><div class="sl">🔥 PLAYERS TO WATCH</div><div class="sa">More →</div></div>
+  <div class="spotlight-scroll">
+
+```
+<div class="player-card fade">
+  <div class="pc-top" style="background:linear-gradient(135deg,#001a3d,#003087);">
+    <div class="pc-gradient"></div>
+    <div class="pc-rank r1">1</div>
+    <div class="pc-avatar" style="background:linear-gradient(135deg,#003087,#C9082A);color:#fff;">SGA</div>
+  </div>
+  <div class="pc-body">
+    <div class="pc-name">Shai Gilgeous-Alexander</div>
+    <div class="pc-team">OKC Thunder</div>
+    <div class="pc-stat-row">
+      <div class="pc-stat hot">31.4 PPG</div>
+      <div class="pc-stat">6.1 AST</div>
+    </div>
+    <div class="pc-tag">MVP favorite · playoffs beast</div>
+  </div>
+</div>
+
+<div class="player-card fade">
+  <div class="pc-top" style="background:linear-gradient(135deg,#006532,#00471B);">
+    <div class="pc-gradient"></div>
+    <div class="pc-rank r2">2</div>
+    <div class="pc-avatar" style="background:linear-gradient(135deg,#006532,#0F4F23);color:#fff;">JS</div>
+  </div>
+  <div class="pc-body">
+    <div class="pc-name">Jayson Tatum</div>
+    <div class="pc-team">Boston Celtics</div>
+    <div class="pc-stat-row">
+      <div class="pc-stat hot">26.9 PPG</div>
+      <div class="pc-stat">8.1 REB</div>
+    </div>
+    <div class="pc-tag">2024 champion · locked in</div>
+  </div>
+</div>
+
+<div class="player-card fade">
+  <div class="pc-top" style="background:linear-gradient(135deg,#1D1160,#0C2340);">
+    <div class="pc-gradient"></div>
+    <div class="pc-rank r3">3</div>
+    <div class="pc-avatar" style="background:linear-gradient(135deg,#1D1160,#c8a400);color:#fff;">JH</div>
+  </div>
+  <div class="pc-body">
+    <div class="pc-name">James Harden</div>
+    <div class="pc-team">Cleveland Cavs</div>
+    <div class="pc-stat-row">
+      <div class="pc-stat hot">24.2 PPG</div>
+      <div class="pc-stat">10.8 AST</div>
+    </div>
+    <div class="pc-tag">Playoff mode activated</div>
+  </div>
+</div>
+
+<div class="player-card fade">
+  <div class="pc-top" style="background:linear-gradient(135deg,#1D428A,#FFC72C);">
+    <div class="pc-gradient"></div>
+    <div class="pc-rank rn">4</div>
+    <div class="pc-avatar" style="background:linear-gradient(135deg,#1D428A,#003DA5);color:#fff;">LJ</div>
+  </div>
+  <div class="pc-body">
+    <div class="pc-name">LeBron James</div>
+    <div class="pc-team">LA Lakers</div>
+    <div class="pc-stat-row">
+      <div class="pc-stat hot">23.7 PPG</div>
+      <div class="pc-stat">7.8 AST</div>
+    </div>
+    <div class="pc-tag">Y23 · still running it</div>
+  </div>
+</div>
+
+<div class="player-card fade">
+  <div class="pc-top" style="background:linear-gradient(135deg,#00788C,#00471B);">
+    <div class="pc-gradient"></div>
+    <div class="pc-rank rn">5</div>
+    <div class="pc-avatar" style="background:linear-gradient(135deg,#00788C,#005566);color:#fff;">VW</div>
+  </div>
+  <div class="pc-body">
+    <div class="pc-name">Victor Wembanyama</div>
+    <div class="pc-team">San Antonio Spurs</div>
+    <div class="pc-stat-row">
+      <div class="pc-stat hot">24.5 PPG</div>
+      <div class="pc-stat">10.6 REB</div>
+    </div>
+    <div class="pc-tag">ROY · the alien is real</div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- NBA Playoff Bracket -->
+
+  <div class="sh"><div class="sl">🏆 2026 NBA PLAYOFFS</div><div class="sa">Full bracket →</div></div>
+  <div class="bracket-section">
+    <div class="bracket-tabs">
+      <div class="bt active">East</div>
+      <div class="bt">West</div>
+      <div class="bt">Finals</div>
+    </div>
+
+```
+<!-- East matchups -->
+<div class="matchup-card fade">
+  <div class="mc-series">EAST FIRST ROUND · SERIES TIED 0-0</div>
+  <div class="mc-team-row">
+    <div class="mc-seed top-seed">1</div>
+    <div class="mc-logo" style="background:rgba(23,57,148,0.3);color:#1d90ff;">DET</div>
+    <div class="mc-name winner">Detroit Pistons</div>
+    <div class="mc-wins leading">—</div>
+  </div>
+  <div class="mc-divider"></div>
+  <div class="mc-team-row">
+    <div class="mc-seed">8</div>
+    <div class="mc-logo" style="background:rgba(200,16,46,0.2);color:#c8102e;">MIA</div>
+    <div class="mc-name">Miami Heat</div>
+    <div class="mc-wins">—</div>
+  </div>
+  <div class="mc-footer">
+    <div class="mc-status">Game 1 tonight · 7:00 PM ET</div>
+    <div class="mc-tag">TNT</div>
+  </div>
+</div>
+
+<div class="matchup-card fade">
+  <div class="mc-series">EAST FIRST ROUND · CLE LEADS 1-0</div>
+  <div class="mc-team-row">
+    <div class="mc-seed">4</div>
+    <div class="mc-logo" style="background:rgba(134,0,56,0.3);color:#860038;">CLE</div>
+    <div class="mc-name winner">Cleveland Cavaliers</div>
+    <div class="mc-wins leading">71</div>
+  </div>
+  <div class="mc-divider"></div>
+  <div class="mc-team-row">
+    <div class="mc-seed">5</div>
+    <div class="mc-logo" style="background:rgba(206,17,65,0.2);color:#ce1141;">TOR</div>
+    <div class="mc-name">Toronto Raptors</div>
+    <div class="mc-wins">74</div>
+  </div>
+  <div class="mc-footer">
+    <div class="mc-status live"><div class="ld" style="display:inline-block;margin-right:4px;"></div>LIVE · Q3 4:55 · UPSET ALERT</div>
+  </div>
+</div>
+
+<div class="matchup-card fade">
+  <div class="mc-series">EAST FIRST ROUND · SERIES TIED 0-0</div>
+  <div class="mc-team-row">
+    <div class="mc-seed top-seed">2</div>
+    <div class="mc-logo" style="background:rgba(0,101,63,0.3);color:#007a33;">BOS</div>
+    <div class="mc-name winner">Boston Celtics</div>
+    <div class="mc-wins leading">—</div>
+  </div>
+  <div class="mc-divider"></div>
+  <div class="mc-team-row">
+    <div class="mc-seed">7</div>
+    <div class="mc-logo" style="background:rgba(85,37,130,0.3);color:#855282;">ORL</div>
+    <div class="mc-name">Orlando Magic</div>
+    <div class="mc-wins">—</div>
+  </div>
+  <div class="mc-footer">
+    <div class="mc-status">Game 1 tonight · 8:30 PM ET</div>
+    <div class="mc-tag">ESPN</div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- NBA Standings -->
+
+  <div class="sh" style="margin-top:8px;"><div class="sl">STANDINGS</div><div class="sa">Full →</div></div>
+  <div class="standings-section">
+
+```
+<div class="conf-label">
+  <div class="conf-dot" style="background:#3A8FFF;"></div>
+  Eastern Conference
+</div>
+
+<div class="std-header">
+  <div>#</div><div>TEAM</div>
+  <div class="tr">W</div><div class="tr">L</div><div class="tr">PCT</div><div class="tr">GB</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">1</span><span class="clinch z">z</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(23,57,148,0.25);color:#1d90ff;border-color:rgba(23,57,148,0.4);">DET</div>
+    <div class="std-name-wrap"><div class="std-name">Detroit Pistons</div><div class="std-streak"><span class="streak-badge streak-w">W3</span></div></div>
+  </div>
+  <div class="std-w leader-w">60</div><div class="std-l">22</div><div class="std-pct">.732</div><div class="std-gb">—</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">2</span><span class="clinch y">y</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(0,101,63,0.25);color:#007a33;">BOS</div>
+    <div class="std-name-wrap"><div class="std-name">Boston Celtics</div><div class="std-streak"><span class="streak-badge streak-w">W2</span></div></div>
+  </div>
+  <div class="std-w">56</div><div class="std-l">26</div><div class="std-pct">.683</div><div class="std-gb">4</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">3</span><span class="clinch x">x</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(0,107,182,0.25);color:#006bb6;">NYK</div>
+    <div class="std-name-wrap"><div class="std-name">New York Knicks</div><div class="std-streak"><span class="streak-badge streak-l">L1</span></div></div>
+  </div>
+  <div class="std-w">53</div><div class="std-l">29</div><div class="std-pct">.646</div><div class="std-gb">7</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">4</span><span class="clinch x">x</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(134,0,56,0.25);color:#860038;">CLE</div>
+    <div class="std-name-wrap"><div class="std-name">Cleveland Cavs</div><div class="std-streak"><span class="streak-badge streak-w">W1</span></div></div>
+  </div>
+  <div class="std-w">52</div><div class="std-l">30</div><div class="std-pct">.634</div><div class="std-gb">8</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">5</span><span class="clinch x">x</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(206,17,65,0.25);color:#ce1141;">TOR</div>
+    <div class="std-name-wrap"><div class="std-name">Toronto Raptors</div><div class="std-streak"><span class="streak-badge streak-w">W2</span></div></div>
+  </div>
+  <div class="std-w">46</div><div class="std-l">36</div><div class="std-pct">.561</div><div class="std-gb">14</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">6</span><span class="clinch y">y</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(200,16,46,0.25);color:#e13a5e;">ATL</div>
+    <div class="std-name-wrap"><div class="std-name">Atlanta Hawks</div><div class="std-streak"><span class="streak-badge streak-w">W1</span></div></div>
+  </div>
+  <div class="std-w">46</div><div class="std-l">36</div><div class="std-pct">.561</div><div class="std-gb">14</div>
+</div>
+
+<!-- Play-In separator -->
+<div style="padding:4px 0;">
+  <div class="zone-sep">
+    <div class="zone-sep-line" style="background:linear-gradient(90deg,var(--gold),transparent);"></div>
+    <div class="zone-sep-text" style="background:rgba(255,183,0,0.1);border:1px solid rgba(255,183,0,0.2);color:var(--gold);">PLAY-IN</div>
+    <div class="zone-sep-line" style="background:linear-gradient(270deg,var(--gold),transparent);"></div>
+  </div>
+</div>
+
+<div class="std-row playin fade">
+  <div class="std-rank"><span class="rn">7</span><span class="clinch pb" style="background:rgba(255,183,0,0.1);">pb</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(237,23,76,0.25);color:#ed174c;">PHI</div>
+    <div class="std-name-wrap"><div class="std-name">Philadelphia 76ers</div></div>
+  </div>
+  <div class="std-w">45</div><div class="std-l">37</div><div class="std-pct">.549</div><div class="std-gb">15</div>
+</div>
+
+<div class="std-row playin fade">
+  <div class="std-rank"><span class="rn">8</span><span class="clinch pb" style="background:rgba(255,183,0,0.1);">pb</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(0,125,197,0.25);color:#007dc5;">ORL</div>
+    <div class="std-name-wrap"><div class="std-name">Orlando Magic</div></div>
+  </div>
+  <div class="std-w">45</div><div class="std-l">37</div><div class="std-pct">.549</div><div class="std-gb">15</div>
+</div>
+
+<!-- Western Conference -->
+<div class="conf-label" style="margin-top:8px;">
+  <div class="conf-dot" style="background:#FF4D00;"></div>
+  Western Conference
+</div>
+
+<div class="std-header">
+  <div>#</div><div>TEAM</div>
+  <div class="tr">W</div><div class="tr">L</div><div class="tr">PCT</div><div class="tr">GB</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">1</span><span class="clinch z">z</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(0,125,195,0.25);color:#007DC5;">OKC</div>
+    <div class="std-name-wrap"><div class="std-name">OKC Thunder</div><div class="std-streak"><span class="streak-badge streak-w">W5</span><span class="streak-fire">🔥</span></div></div>
+  </div>
+  <div class="std-w leader-w">64</div><div class="std-l">18</div><div class="std-pct">.780</div><div class="std-gb">—</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">2</span><span class="clinch y">y</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(196,206,211,0.15);color:#aaa;">SAS</div>
+    <div class="std-name-wrap"><div class="std-name">San Antonio Spurs</div><div class="std-streak"><span class="streak-badge streak-l">L1</span></div></div>
+  </div>
+  <div class="std-w">62</div><div class="std-l">20</div><div class="std-pct">.756</div><div class="std-gb">2</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">3</span><span class="clinch x">x</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(13,61,133,0.3);color:#0E4FA8;">DEN</div>
+    <div class="std-name-wrap"><div class="std-name">Denver Nuggets</div><div class="std-streak"><span class="streak-badge streak-w">W2</span></div></div>
+  </div>
+  <div class="std-w">54</div><div class="std-l">28</div><div class="std-pct">.659</div><div class="std-gb">10</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">4</span><span class="clinch y">y</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(85,37,130,0.25);color:#552583;">LAL</div>
+    <div class="std-name-wrap"><div class="std-name">LA Lakers</div><div class="std-streak"><span class="streak-badge streak-w">W3</span></div></div>
+  </div>
+  <div class="std-w">53</div><div class="std-l">29</div><div class="std-pct">.646</div><div class="std-gb">11</div>
+</div>
+
+<div class="std-row playoff-in fade">
+  <div class="std-rank"><span class="rn">5</span><span class="clinch x">x</span></div>
+  <div class="std-team">
+    <div class="std-logo" style="background:rgba(206,17,65,0.25);color:#CE1141;">HOU</div>
+    <div class="std-name-wrap"><div class="std-name">Houston Rockets</div><div class="std-streak"><span class="streak-badge streak-w">W1</span></div></div>
+  </div>
+  <div class="std-w">52</div><div class="std-l">30</div><div class="std-pct">.634</div><div class="std-gb">12</div>
+</div>
+```
+
+  </div>
+
+</div><!-- end panel-all -->
+
+<!-- ════════════ NBA PANEL ════════════ -->
+
+<div class="panel" id="panel-nba">
+  <div class="sh"><div class="sl"><span style="color:var(--red);">●</span> NBA · PLAYOFFS 2026</div></div>
+
+  <!-- Playoff bracket full -->
+
+  <div class="bracket-section">
+    <div class="bracket-tabs">
+      <div class="bt active">East</div><div class="bt">West</div><div class="bt">Finals</div>
+    </div>
+    <div class="matchup-card fade"><div class="mc-series">EAST · R1 · OKC LEADS 1-0</div>
+      <div class="mc-team-row"><div class="mc-seed top-seed">1</div><div class="mc-logo" style="background:rgba(0,125,195,0.2);color:#007DC5;">OKC</div><div class="mc-name winner">OKC Thunder</div><div class="mc-wins leading">98</div></div>
+      <div class="mc-divider"></div>
+      <div class="mc-team-row"><div class="mc-seed">8</div><div class="mc-logo" style="background:rgba(93,47,147,0.2);color:#5D2F93;">MEM</div><div class="mc-name">Memphis Grizzlies</div><div class="mc-wins">91</div></div>
+      <div class="mc-footer"><div class="mc-status live"><div class="ld" style="display:inline-block;margin-right:4px;"></div>LIVE · Q4 2:14</div><div class="mc-tag">MUST WATCH</div></div>
+    </div>
+    <div class="matchup-card fade"><div class="mc-series">EAST · R1 · SERIES EVEN</div>
+      <div class="mc-team-row"><div class="mc-seed top-seed">2</div><div class="mc-logo" style="background:rgba(0,101,63,0.2);color:#007a33;">BOS</div><div class="mc-name winner">Boston Celtics</div><div class="mc-wins">—</div></div>
+      <div class="mc-divider"></div>
+      <div class="mc-team-row"><div class="mc-seed">7</div><div class="mc-logo" style="background:rgba(0,125,197,0.2);color:#007dc5;">ORL</div><div class="mc-name">Orlando Magic</div><div class="mc-wins">—</div></div>
+      <div class="mc-footer"><div class="mc-status">Tonight 8:30 PM ET · ESPN</div></div>
+    </div>
+  </div>
+
+  <!-- NBA Player Spotlight -->
+
+  <div class="sh" style="margin-top:8px;"><div class="sl">🔥 NBA STARS THIS WEEK</div></div>
+  <div class="spotlight-scroll">
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#001a3d,#003087);"><div class="pc-gradient"></div><div class="pc-rank r1">1</div><div class="pc-avatar" style="background:linear-gradient(135deg,#003087,#001a5e);color:#fff;">SGA</div></div><div class="pc-body"><div class="pc-name">Shai Gilgeous-Alexander</div><div class="pc-team">OKC Thunder</div><div class="pc-stat-row"><div class="pc-stat hot">31.4 PPG</div><div class="pc-stat">6.1 AST</div></div><div class="pc-tag">MVP locked in</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#006532,#003311);"><div class="pc-gradient"></div><div class="pc-rank r2">2</div><div class="pc-avatar" style="background:linear-gradient(135deg,#006532,#004422);color:#fff;">JT</div></div><div class="pc-body"><div class="pc-name">Jayson Tatum</div><div class="pc-team">Boston Celtics</div><div class="pc-stat-row"><div class="pc-stat hot">26.9 PPG</div><div class="pc-stat">8.1 REB</div></div><div class="pc-tag">Championship hunger</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#552583,#1D428A);"><div class="pc-gradient"></div><div class="pc-rank r3">3</div><div class="pc-avatar" style="background:linear-gradient(135deg,#552583,#3a1a6b);color:#FFC72C;">AD</div></div><div class="pc-body"><div class="pc-name">Anthony Davis</div><div class="pc-team">LA Lakers</div><div class="pc-stat-row"><div class="pc-stat hot">24.7 PPG</div><div class="pc-stat">12.6 REB</div></div><div class="pc-tag">Dominant in the paint</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#002B5C,#001f44);"><div class="pc-gradient"></div><div class="pc-rank rn">4</div><div class="pc-avatar" style="background:linear-gradient(135deg,#002B5C,#001530);color:#fff;">JB</div></div><div class="pc-body"><div class="pc-name">Jaylen Brown</div><div class="pc-team">Boston Celtics</div><div class="pc-stat-row"><div class="pc-stat hot">23.0 PPG</div><div class="pc-stat">5.5 REB</div></div><div class="pc-tag">2-way lockdown</div></div></div>
+  </div>
+</div><!-- end panel-nba -->
+
+<!-- ════════════ WNBA PANEL ════════════ -->
+
+<div class="panel" id="panel-wnba">
+
+  <!-- Off-season but REAL content -->
+
+  <div class="sh"><div class="sl">WNBA 2026 SEASON</div></div>
+
+  <div class="offseason-card fade">
+    <div class="oc-banner">
+      <div class="oc-banner-text">
+        <div class="oc-season">SEASON OPENS MAY 16</div>
+        <div class="oc-date">⛹️‍♀️ WNBA 2026 · 30th Season</div>
+      </div>
+      <div class="oc-emoji">🏀</div>
+    </div>
+    <div class="oc-body">
+      <div class="oc-countdown">
+        <div class="oc-count-item"><div class="oc-count-n" id="days-count">30</div><div class="oc-count-l">DAYS</div></div>
+        <div class="oc-count-item"><div class="oc-count-n" id="hrs-count">04</div><div class="oc-count-l">HOURS</div></div>
+        <div class="oc-count-item"><div class="oc-count-n" id="min-count">22</div><div class="oc-count-l">MINS</div></div>
+        <div class="oc-count-item"><div class="oc-count-n" id="sec-count">10</div><div class="oc-count-l">SECS</div></div>
+      </div>
+      <div class="oc-news-title">LATEST WNBA NEWS</div>
+      <div class="oc-news-item fade"><div class="oc-news-dot"></div><div><div class="oc-news-text">Valkyries flip Flau'jae Johnson to Storm in blockbuster trade</div><div class="oc-news-time">Apr 14 · WNBA</div></div></div>
+      <div class="oc-news-item fade"><div class="oc-news-dot"></div><div><div class="oc-news-text">Indiana Fever open at New York Liberty on Apr 25 — opener sellout</div><div class="oc-news-time">Apr 13 · WNBA</div></div></div>
+      <div class="oc-news-item fade"><div class="oc-news-dot"></div><div><div class="oc-news-text">Caitlin Clark expected to play full season — no rest plan</div><div class="oc-news-time">Apr 12 · WNBA</div></div></div>
+      <div class="oc-news-item fade"><div class="oc-news-dot"></div><div><div class="oc-news-text">Arike Ogunbowale signs max extension with Dallas Wings</div><div class="oc-news-time">Apr 11 · WNBA</div></div></div>
+    </div>
+  </div>
+
+  <div class="sh" style="margin-top:8px;"><div class="sl">🌟 PLAYERS TO WATCH IN 2026</div></div>
+  <div class="spotlight-scroll">
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#002D62,#001a3d);"><div class="pc-gradient"></div><div class="pc-rank r1">1</div><div class="pc-avatar" style="background:linear-gradient(135deg,#002D62,#FF6B35);color:#fff;">CC</div></div><div class="pc-body"><div class="pc-name">Caitlin Clark</div><div class="pc-team">Indiana Fever</div><div class="pc-stat-row"><div class="pc-stat hot">19.2 PPG</div><div class="pc-stat">8.4 AST</div></div><div class="pc-tag">Year 2 · must stop</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#6F2DA8,#3a1570);"><div class="pc-gradient"></div><div class="pc-rank r2">2</div><div class="pc-avatar" style="background:linear-gradient(135deg,#6F2DA8,#4a1a80);color:#fff;">SA</div></div><div class="pc-body"><div class="pc-name">Sabrina Ionescu</div><div class="pc-team">NY Liberty</div><div class="pc-stat-row"><div class="pc-stat hot">17.4 PPG</div><div class="pc-stat">6.7 AST</div></div><div class="pc-tag">Champ DNA</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#007A33,#004422);"><div class="pc-gradient"></div><div class="pc-rank r3">3</div><div class="pc-avatar" style="background:linear-gradient(135deg,#007A33,#005522);color:#fff;">AO</div></div><div class="pc-body"><div class="pc-name">Arike Ogunbowale</div><div class="pc-team">Dallas Wings</div><div class="pc-stat-row"><div class="pc-stat hot">22.8 PPG</div><div class="pc-stat">4.1 AST</div></div><div class="pc-tag">Bucket getter</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#BA0C2F,#7a0820);"><div class="pc-gradient"></div><div class="pc-rank rn">4</div><div class="pc-avatar" style="background:linear-gradient(135deg,#BA0C2F,#8a0520);color:#fff;">RH</div></div><div class="pc-body"><div class="pc-name">Rhyne Howard</div><div class="pc-team">Atlanta Dream</div><div class="pc-stat-row"><div class="pc-stat hot">19.2 PPG</div><div class="pc-stat">4.4 REB</div></div><div class="pc-tag">2022 ROY · rising</div></div></div>
+  </div>
+
+</div><!-- end panel-wnba -->
+
+<!-- ════════════ NCAA MEN'S PANEL ════════════ -->
+
+<div class="panel" id="panel-ncaam">
+  <div class="sh"><div class="sl">NCAA MEN'S · 2026 DRAFT SEASON</div></div>
+
+  <!-- 2026 Draft spotlight instead of "NBA season starts in October" -->
+
+  <div style="margin:0 16px;background:linear-gradient(135deg,rgba(0,48,135,0.15),var(--bg3));border:1px solid rgba(100,148,255,0.2);border-radius:14px;padding:16px;margin-bottom:10px;" class="fade">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;color:var(--text3);margin-bottom:6px;">2026 NBA DRAFT · JUN 26</div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:0.05em;color:#fff;margin-bottom:4px;">Cooper Flagg <span style="color:#6494FF;">— #1 OVERALL</span></div>
+    <div style="font-size:13px;color:var(--text2);">Duke · 17.2 PPG, 8.2 REB · Projected lottery: Top 5 picks all ranked</div>
+    <div style="display:flex;gap:8px;margin-top:12px;overflow-x:auto;scrollbar-width:none;">
+      <div style="flex-shrink:0;background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center;min-width:70px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#6494FF;">#1</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;margin-top:2px;">C. Flagg</div>
+        <div style="font-size:9px;color:var(--text3);">Duke</div>
+      </div>
+      <div style="flex-shrink:0;background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center;min-width:70px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text2);">#2</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;margin-top:2px;">T. Johnson</div>
+        <div style="font-size:9px;color:var(--text3);">Texas</div>
+      </div>
+      <div style="flex-shrink:0;background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center;min-width:70px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text2);">#3</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;margin-top:2px;">D. Harper</div>
+        <div style="font-size:9px;color:var(--text3);">Rutgers</div>
+      </div>
+      <div style="flex-shrink:0;background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center;min-width:70px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text2);">#4</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;margin-top:2px;">V. Edgecombe</div>
+        <div style="font-size:9px;color:var(--text3);">Baylor</div>
+      </div>
+      <div style="flex-shrink:0;background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center;min-width:70px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text2);">#5</div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;margin-top:2px;">K. Knueppel</div>
+        <div style="font-size:9px;color:var(--text3);">Duke</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><div class="sl">🎓 TOP PROSPECTS</div><div class="sa">Full board →</div></div>
+  <div class="spotlight-scroll">
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#003087,#00218f);"><div class="pc-gradient"></div><div class="pc-rank r1">1</div><div class="pc-avatar" style="background:linear-gradient(135deg,#003087,#002266);color:#fff;">CF</div></div><div class="pc-body"><div class="pc-name">Cooper Flagg</div><div class="pc-team">Duke Blue Devils</div><div class="pc-stat-row"><div class="pc-stat hot">17.2 PPG</div><div class="pc-stat">8.2 REB</div></div><div class="pc-tag">#1 projected pick · generational</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#BF5700,#7a3600);"><div class="pc-gradient"></div><div class="pc-rank r2">2</div><div class="pc-avatar" style="background:linear-gradient(135deg,#BF5700,#8a2800);color:#fff;">TJ</div></div><div class="pc-body"><div class="pc-name">Tre Johnson</div><div class="pc-team">Texas Longhorns</div><div class="pc-stat-row"><div class="pc-stat hot">22.0 PPG</div><div class="pc-stat">4.3 AST</div></div><div class="pc-tag">Elite scorer · top 3 lock</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#154733,#0a2b1f);"><div class="pc-gradient"></div><div class="pc-rank r3">3</div><div class="pc-avatar" style="background:linear-gradient(135deg,#154733,#0a2b1f);color:#fff;">DH</div></div><div class="pc-body"><div class="pc-name">Dylan Harper</div><div class="pc-team">Rutgers Scarlet K.</div><div class="pc-stat-row"><div class="pc-stat hot">19.8 PPG</div><div class="pc-stat">4.8 AST</div></div><div class="pc-tag">Top-5 lock · pro-ready</div></div></div>
+  </div>
+</div><!-- end panel-ncaam -->
+
+<!-- ════════════ NCAA WOMEN'S PANEL ════════════ -->
+
+<div class="panel" id="panel-ncaaw">
+
+  <!-- REAL content — 2026 champion + recent results -->
+
+  <div class="sh"><div class="sl">NCAA WOMEN'S BASKETBALL</div></div>
+
+  <div class="ncaaw-hero fade">
+    <div class="ncaaw-champ-label">🏆 2026 NATIONAL CHAMPION</div>
+    <div class="ncaaw-champ">South Carolina <span>Gamecocks</span></div>
+    <div class="ncaaw-champ-sub">4th championship · Dawn Staley's dynasty continues</div>
+  </div>
+
+  <div style="padding:0 16px;margin-bottom:8px;">
+    <div class="sh" style="padding:14px 0 8px;"><div class="sl">RECENT RESULTS</div></div>
+    <div class="result-row fade">
+      <div><div class="res-teams">South Carolina vs UCLA</div><div class="res-meta">Apr 5 · Mortgage Matchup Center · NCAAW</div></div>
+      <div style="text-align:right;"><div class="res-score">79–51</div><div class="res-badge">FINAL</div></div>
+    </div>
+    <div class="result-row fade">
+      <div><div class="res-teams">UConn vs Notre Dame</div><div class="res-meta">Apr 4 · Final Four · NCAAW</div></div>
+      <div style="text-align:right;"><div class="res-score">68–62</div><div class="res-badge">FINAL</div></div>
+    </div>
+    <div class="result-row fade">
+      <div><div class="res-teams">LSU vs Iowa</div><div class="res-meta">Apr 3 · Elite Eight · NCAAW</div></div>
+      <div style="text-align:right;"><div class="res-score">74–71</div><div class="res-badge">FINAL</div></div>
+    </div>
+  </div>
+
+  <div class="sh"><div class="sl">🌟 TOP PLAYERS</div></div>
+  <div class="spotlight-scroll">
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#73000A,#3d0005);"><div class="pc-gradient"></div><div class="pc-rank r1">1</div><div class="pc-avatar" style="background:linear-gradient(135deg,#73000A,#4a0008);color:#fff;">PI</div></div><div class="pc-body"><div class="pc-name">Paige Bueckers</div><div class="pc-team">UConn Huskies</div><div class="pc-stat-row"><div class="pc-stat hot">24.1 PPG</div><div class="pc-stat">5.9 AST</div></div><div class="pc-tag">POY · elite scorer</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#461D7C,#2a0f4d);"><div class="pc-gradient"></div><div class="pc-rank r2">2</div><div class="pc-avatar" style="background:linear-gradient(135deg,#461D7C,#2e0e55);color:#FDD023;">AC</div></div><div class="pc-body"><div class="pc-name">Angel Reese</div><div class="pc-team">LSU Tigers</div><div class="pc-stat-row"><div class="pc-stat hot">17.3 PPG</div><div class="pc-stat">13.1 REB</div></div><div class="pc-tag">Rebounding machine</div></div></div>
+    <div class="player-card fade"><div class="pc-top" style="background:linear-gradient(135deg,#73000A,#3d0005);"><div class="pc-gradient"></div><div class="pc-rank r3">3</div><div class="pc-avatar" style="background:linear-gradient(135deg,#73000A,#4a0008);color:#fff;">TT</div></div><div class="pc-body"><div class="pc-name">Te-Hina Paopao</div><div class="pc-team">South Carolina</div><div class="pc-stat-row"><div class="pc-stat hot">15.2 PPG</div><div class="pc-stat">4.4 AST</div></div><div class="pc-tag">Champion point guard</div></div></div>
+  </div>
+
+</div><!-- end panel-ncaaw -->
+
+</div><!-- body -->
+
+<!-- BOTTOM NAV -->
+
+<div class="bnav">
+  <div class="ni"><div class="ni-icon">⌂</div><div class="ni-label">Home</div></div>
+  <div class="ni"><div class="ni-icon">📊</div><div class="ni-label">Scores</div></div>
+  <div class="ni"><div class="ni-icon a">🏀</div><div class="ni-label a">Sports</div></div>
+  <div class="ni"><div class="ni-icon">📋</div><div class="ni-label">Stands</div></div>
+  <div class="ni"><div class="ni-icon">📰</div><div class="ni-label">News</div></div>
+</div>
+
+</div></div>
+
+<script>
+// Panel switching — one chip bar, no duplicates
+const panels = {
+  all:'all-active', nba:'nba-active', wnba:'wnba-active',
+  ncaam:'ncaam-active', ncaaw:'ncaaw-active'
+};
+
+function showPanel(id, el) {
+  // Hide all
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  // Reset chips
+  document.querySelectorAll('.lc').forEach(c=>{
+    c.className='lc';
+  });
+  // Activate clicked chip
+  el.classList.add(panels[id]);
+}
+
+// Bracket tab switching
+document.querySelectorAll('.bt').forEach(bt=>{
+  bt.addEventListener('click',()=>{
+    bt.closest('.bracket-tabs').querySelectorAll('.bt').forEach(b=>b.classList.remove('active'));
+    bt.classList.add('active');
+  });
+});
+
+// WNBA countdown to May 16 2026
+function updateCountdown(){
+  const target = new Date('2026-05-16T19:00:00');
+  const now = new Date();
+  const diff = target - now;
+  if(diff<=0){document.getElementById('days-count').textContent='LIVE';return;}
+  const d=Math.floor(diff/86400000);
+  const h=Math.floor((diff%86400000)/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  const s=Math.floor((diff%60000)/1000);
+  document.getElementById('days-count').textContent=String(d).padStart(2,'0');
+  document.getElementById('hrs-count').textContent=String(h).padStart(2,'0');
+  document.getElementById('min-count').textContent=String(m).padStart(2,'0');
+  document.getElementById('sec-count').textContent=String(s).padStart(2,'0');
+}
+updateCountdown();
+setInterval(updateCountdown,1000);
+</script>
+
+</body>
+</html>
