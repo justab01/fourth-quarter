@@ -335,6 +335,7 @@ function TopMovers({ standings }: { standings: StandingEntry[] }) {
     <View style={moverS.row}>
       {hotStreak && (
         <View style={moverS.chip}>
+          <TeamLogo uri={hotStreak.logoUrl} name={hotStreak.teamName} size={20} fontSize={8} />
           <Ionicons name="flame" size={11} color={C.accentGold} />
           <Text style={moverS.chipText} numberOfLines={1}>
             {hotStreak.teamName.split(" ").slice(-1)[0]} {hotStreak.streak}
@@ -343,6 +344,7 @@ function TopMovers({ standings }: { standings: StandingEntry[] }) {
       )}
       {coldStreak && (
         <View style={[moverS.chip, { borderColor: `${C.live}40`, backgroundColor: `${C.live}12` }]}>
+          <TeamLogo uri={coldStreak.logoUrl} name={coldStreak.teamName} size={20} fontSize={8} />
           <Ionicons name="trending-down" size={11} color={C.live} />
           <Text style={[moverS.chipText, { color: C.live }]} numberOfLines={1}>
             {coldStreak.teamName.split(" ").slice(-1)[0]} {coldStreak.streak}

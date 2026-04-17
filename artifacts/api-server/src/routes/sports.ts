@@ -2410,6 +2410,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
       date: string;
       opponent: string;
       opponentId: string;
+      opponentLogo: string | null;
       homeAway: "home" | "away";
       result: string;
       score: string;
@@ -2427,6 +2428,10 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
       });
       const opponent = meta.opponent?.abbreviation ?? meta.opponent?.displayName ?? "";
       const opponentId = meta.opponent?.id ?? "";
+      const opponentLogo: string | null =
+        meta.opponent?.logo
+        ?? meta.opponent?.logos?.[0]?.href
+        ?? (opponentId ? `https://a.espncdn.com/i/teamlogos/${(glPath.split("/")[1] ?? cfg.espnPath.split("/")[1] ?? "").toLowerCase()}/500/${opponentId}.png` : null);
       const teamId = meta.team?.id ?? "";
       const homeAway: "home" | "away" = meta.homeTeamId === teamId ? "home" : "away";
       const homeScore = meta.homeTeamScore ?? "";
@@ -2437,7 +2442,7 @@ router.get("/sports/athlete/:league/:athleteId/gamelog", async (req, res) => {
       const result = meta.gameResult ?? "";
       const date = meta.gameDate ?? "";
       if (!opponent || (Object.keys(statsMap).length === 0 && !result)) return null;
-      return { date, opponent, opponentId, homeAway, result, score, stats: statsMap };
+      return { date, opponent, opponentId, opponentLogo, homeAway, result, score, stats: statsMap };
     }
 
     function classifySeasonType(displayName: string): string {

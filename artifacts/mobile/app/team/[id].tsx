@@ -299,6 +299,23 @@ const wig = StyleSheet.create({
   standingsLinkText: { color: C.accent, fontSize: 12, fontWeight: "700" },
 });
 
+function findOpponentTeam(opponent: string, league: string) {
+  const cleaned = opponent.replace(/^(vs\.?|@)\s+/i, "").trim().toLowerCase();
+  if (!cleaned) return null;
+  return ALL_TEAMS.find(t => {
+    if (t.league !== league) return false;
+    const n = t.name.toLowerCase();
+    return n.includes(cleaned) || cleaned.includes(n.split(" ").slice(0, -1).join(" "));
+  }) ?? null;
+}
+
+function espnTeamLogoUrl(league: string, abbr: string): string {
+  const path = league.toLowerCase() === "ncaabb" || league.toLowerCase() === "ncaaf"
+    ? `mens-college-basketball/500-dark/${abbr.toLowerCase()}.png`
+    : `${league.toLowerCase()}/500/${abbr.toLowerCase()}.png`;
+  return `https://a.espncdn.com/i/teamlogos/${path}`;
+}
+
 function ScoresTab({ team }: { team: TeamData }) {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14 }}>
@@ -307,13 +324,22 @@ function ScoresTab({ team }: { team: TeamData }) {
       {team.recentGames.map((g, i) => {
         const isWin = g.result === "W";
         const isDraw = g.result === "D";
+        const isHome = g.opponent.trim().toLowerCase().startsWith("vs");
+        const oppTeam = findOpponentTeam(g.opponent, team.league);
+        const oppLogoUri = oppTeam ? espnTeamLogoUrl(oppTeam.league, oppTeam.abbr) : null;
+        const oppName = oppTeam?.name ?? g.opponent.replace(/^(vs\.?|@)\s+/i, "").trim();
+        const oppDisplay = oppTeam ? oppTeam.name : g.opponent;
         return (
           <View key={i} style={sec.gameRow}>
             <View style={[sec.resultBadge, { backgroundColor: isWin ? "rgba(32,110,107,0.2)" : isDraw ? "rgba(104,124,136,0.2)" : "rgba(200,60,60,0.15)" }]}>
               <Text style={[sec.resultText, { color: isWin ? "#48ADA9" : isDraw ? C.accentBlue : "#E06060" }]}>{g.result}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={sec.gameOpp}>{g.opponent}</Text>
+            <TeamLogo uri={oppLogoUri} name={oppName} size={36} fontSize={11} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={sec.gameOpp} numberOfLines={1}>
+                <Text style={sec.gamePrefix}>{isHome ? "vs " : "@ "}</Text>
+                {oppDisplay}
+              </Text>
               <Text style={sec.gameDate}>{g.date}</Text>
             </View>
             <Text style={[sec.gameScore, { color: isWin ? "#48ADA9" : isDraw ? C.textSecondary : "#E06060" }]}>{g.score}</Text>
@@ -919,6 +945,7 @@ const sec = StyleSheet.create({
   resultBadge: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   resultText: { fontSize: 13, fontWeight: "800" },
   gameOpp: { color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  gamePrefix: { color: C.textTertiary, fontSize: 13, fontWeight: "600" },
   gameDate: { color: C.textTertiary, fontSize: 12, marginTop: 2 },
   gameScore: { fontSize: 15, fontWeight: "800", fontFamily: "Inter_700Bold" },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },

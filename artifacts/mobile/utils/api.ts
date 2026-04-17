@@ -452,6 +452,7 @@ export interface GameLogEntry {
   date: string;
   opponent: string;
   opponentId: string;
+  opponentLogo?: string | null;
   homeAway: "home" | "away";
   result: string;
   score: string;
