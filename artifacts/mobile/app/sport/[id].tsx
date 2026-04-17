@@ -21,6 +21,7 @@ import { getSportById, getSportByLeague, type SportCategory, type LeagueGroup, g
 import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
 import { GameCard, TeamLogo } from "@/components/GameCard";
+import { BasketballHub } from "@/components/BasketballHub";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
@@ -1564,7 +1565,16 @@ export default function SportBoardScreen() {
     return upcoming[0] ?? null;
   }, [archetype, upcomingData, activeLeague]);
 
-  const liveCount = filteredGames.filter((g) => g.status === "live").length;
+  // For basketball, count live games across ALL basketball leagues regardless of active chip,
+  // so the badge stays consistent as the user switches between hub panels.
+  const liveCount = useMemo(() => {
+    if (sportId === "basketball") {
+      const all: Game[] = (gamesData as any)?.games ?? [];
+      const BBALL = new Set(["NBA", "WNBA", "NCAAB", "NCAAW"]);
+      return all.filter((g) => BBALL.has(g.league) && g.status === "live").length;
+    }
+    return filteredGames.filter((g) => g.status === "live").length;
+  }, [sportId, gamesData, filteredGames]);
   const accentColor = sport?.color ?? C.accent;
 
   if (!sport) {
@@ -2782,6 +2792,10 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
   ) : null;
 
   const renderSections = () => {
+    // Basketball Hub — overrides default rendering with panel-based layout
+    if (sportId === "basketball") {
+      return <BasketballHub activeLeague={activeLeague} todayDate={todayDate} />;
+    }
     switch (archetype) {
       case "seasonal":
         return (
@@ -2926,20 +2940,29 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
                   onPress={() => setActiveLeague(`cg:${group.label}`)}
                 />
               ))
-            : visibleLeagues.map((l) => (
-                <LeagueChip
-                  key={l.key}
-                  label={l.label}
-                  active={activeLeague === l.key}
-                  accentColor={accentColor}
-                  onPress={() => setActiveLeague(l.key)}
-                />
-              ))
+            : visibleLeagues.map((l) => {
+                // Basketball: per-league accent so each chip shows its own brand color when active
+                const BBALL_ACCENT: Record<string, string> = {
+                  NBA: "#C9082A", WNBA: "#FF6B35", NCAAB: "#003087", NCAAW: "#E31837",
+                };
+                const chipAccent = sportId === "basketball" && BBALL_ACCENT[l.key]
+                  ? BBALL_ACCENT[l.key]
+                  : accentColor;
+                return (
+                  <LeagueChip
+                    key={l.key}
+                    label={l.label}
+                    active={activeLeague === l.key}
+                    accentColor={chipAccent}
+                    onPress={() => setActiveLeague(l.key)}
+                  />
+                );
+              })
           }
         </ScrollView>
 
         {/* ── Active Filter Banner ─────────────────────────────────────────────── */}
-        {activeLeague !== "all" && (
+        {activeLeague !== "all" && sportId !== "basketball" && (
           <View style={[styles.activeFilterBanner, { borderColor: accentColor + "44" }]}>
             <Text style={styles.activeFilterText}>
               Showing {activeLeague.startsWith("cg:") ? activeLeague.slice(3) : (sport?.leagues.find(l => l.key === activeLeague)?.label ?? activeLeague)} only
@@ -2960,7 +2983,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       </LinearGradient>
 
       {/* ── Sub-Navigation for multi-league sports ─────────────────────────────── */}
-      {subNavConfig && (
+      {subNavConfig && sportId !== "basketball" && (
         <SubNavigation
           config={subNavConfig}
           activeSubTab={activeSubTab}
@@ -2970,7 +2993,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       )}
 
       {/* ── Live Games Strip ─────────────────────────────────────────────────────── */}
-      {liveCount > 0 && (
+      {liveCount > 0 && sportId !== "basketball" && (
         <View style={styles.liveStripContainer}>
           <View style={styles.liveStripHeader}>
             <View style={styles.liveStripPulse}>

@@ -126,6 +126,9 @@ export const api = {
 
   getTopAthletes: (league: string, limit = 10) =>
     apiFetch<{ athletes: TopAthlete[] }>(`/sports/top-athletes/${encodeURIComponent(league)}?limit=${limit}`),
+
+  getNextGame: (league: string) =>
+    apiFetch<{ game: Game | null }>(`/sports/next-game/${encodeURIComponent(league)}`),
 };
 
 export interface SeasonalEvent {
@@ -609,4 +612,5 @@ export interface TopAthlete {
   country: string | null;
   team: string | null;
   league: string;
+  athleteId: string | null;
 }

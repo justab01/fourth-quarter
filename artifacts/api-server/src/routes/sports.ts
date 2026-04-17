@@ -1783,15 +1783,19 @@ interface TournamentRound {
   }[];
 }
 
-async function fetchNCAABTournament(): Promise<TournamentRound[]> {
-  const cacheKey = "ncaab-tournament";
+async function fetchNCAATournament(league: "NCAAB" | "NCAAW" = "NCAAB"): Promise<TournamentRound[]> {
+  const cacheKey = `${league.toLowerCase()}-tournament`;
   const cached = getCached<TournamentRound[]>(cacheKey);
   if (cached) return cached;
+
+  const sportPath = league === "NCAAW"
+    ? "basketball/womens-college-basketball"
+    : "basketball/mens-college-basketball";
 
   try {
     const year = new Date().getMonth() >= 9 ? new Date().getFullYear() + 1 : new Date().getFullYear();
     const json = await espnFetch(
-      `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=${year}0301-${year}0410&groups=100&limit=100`
+      `https://site.api.espn.com/apis/site/v2/sports/${sportPath}/scoreboard?dates=${year}0301-${year}0410&groups=100&limit=100`
     ) as any;
     const events = json.events ?? [];
     if (events.length === 0) {
@@ -1846,10 +1850,53 @@ async function fetchNCAABTournament(): Promise<TournamentRound[]> {
   }
 }
 
+router.get("/sports/next-game/:league", async (req, res) => {
+  const league = (req.params.league ?? "").toUpperCase();
+  if (!(league in LEAGUE_CONFIG)) {
+    res.status(400).json({ error: `Unsupported league: ${league}` });
+    return;
+  }
+  const cacheKey = `next-game-${league}`;
+  const cached = getCached<{ game: GameShape | null }>(cacheKey);
+  if (cached) { res.json(cached); return; }
+  try {
+    // Search a 90-day forward window in 30-day chunks
+    const now = new Date();
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    let next: GameShape | null = null;
+    for (let chunk = 0; chunk < 4 && !next; chunk++) {
+      const start = new Date(now.getTime() + chunk * 30 * 86400_000);
+      const end = new Date(now.getTime() + (chunk + 1) * 30 * 86400_000);
+      const dateRange = `${fmt(start)}-${fmt(end)}`;
+      const cfg = LEAGUE_CONFIG[league]!;
+      try {
+        const json = await espnFetch(
+          `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard?dates=${dateRange}&limit=200`
+        ) as any;
+        const events = (json.events ?? [])
+          .filter((e: any) => new Date(e.date).getTime() >= now.getTime())
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        if (events.length > 0) {
+          const games = await fetchLeagueGames(league, fmt(new Date(events[0].date)));
+          next = games.find((g) => g.status !== "finished") ?? games[0] ?? null;
+        }
+      } catch { /* keep searching */ }
+    }
+    const payload = { game: next };
+    setCached(cacheKey, payload, 600_000);
+    res.json(payload);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch next game" });
+  }
+});
+
 router.get("/sports/standings", async (req, res) => {
   const league = ((req.query.league as string) ?? "NBA").toUpperCase();
   const standings = await fetchLeagueStandings(league);
-  const tournament = league === "NCAAB" ? await fetchNCAABTournament() : [];
+  const tournament = (league === "NCAAB" || league === "NCAAW")
+    ? await fetchNCAATournament(league as "NCAAB" | "NCAAW")
+    : [];
   res.json({ standings, tournament });
 });
 
@@ -3996,6 +4043,7 @@ interface TopAthleteEntry {
   country: string | null;
   team: string | null;
   league: string;
+  athleteId: string | null;
 }
 
 router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
@@ -4027,6 +4075,7 @@ router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
             country: entry.athlete?.flag?.alt ?? null,
             team: null,
             league,
+            athleteId: entry.athlete?.id != null ? String(entry.athlete.id) : null,
           });
         }
       }
@@ -4100,6 +4149,7 @@ router.get("/sports/top-athletes/:league", async (req, res): Promise<void> => {
             country: null,
             team: teamName,
             league,
+            athleteId: player.id != null ? String(player.id) : null,
           });
         }
       } catch (e) {
