@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { api, DraftPick, DraftTeam, DraftProspect, DraftData } from "@/utils/api";
+import { goToTeam } from "@/utils/navHelpers";
 
 const C = Colors.dark;
 
@@ -560,10 +561,7 @@ function TeamNeedCard({
         onPressOut={() =>
           Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start()
         }
-        onPress={() => {
-          const slug = team.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-          router.push(`/team/${league}-${slug}` as any);
-        }}
+        onPress={() => goToTeam(team.name, league)}
         style={s.teamCard}
       >
         <Image source={{ uri: team.logo }} style={s.teamLogo} resizeMode="contain" />
