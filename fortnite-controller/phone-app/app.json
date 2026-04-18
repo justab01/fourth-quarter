@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Fortnite Controller",
+    "slug": "fortnite-controller-phone",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "fortnitecontrollerphone",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.personal.fortnitecontroller.phone",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app needs local network access to connect to your iPad."
+      }
+    },
+    "android": {
+      "package": "com.personal.fortnitecontroller.phone"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
