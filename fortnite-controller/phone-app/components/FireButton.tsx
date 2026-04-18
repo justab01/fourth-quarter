@@ -34,6 +34,7 @@ export function FireButton({ onPress }: FireButtonProps) {
 
   return (
     <Pressable onPress={handlePress}>
+      {/* @ts-expect-error - React 18/19 type compatibility issue with react-native-reanimated */}
       <Animated.View style={[styles.button, animatedStyle]}>
         <View style={styles.inner}>
           <View style={styles.core} />

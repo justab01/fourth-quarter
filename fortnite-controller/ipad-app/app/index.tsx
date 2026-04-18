@@ -1,5 +1,6 @@
 // fortnite-controller/ipad-app/app/index.tsx
-import { View, Text, StyleSheet, useEffect, useState, Dimensions } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { getWebSocketServer } from '../services/WebSocketServer';
 import { getTouchSimulator } from '../services/TouchSimulator';
 import { ControllerMessage } from '@fortnite-controller/shared';
@@ -23,7 +24,7 @@ export default function ReceiverScreen() {
 
     server.onMessage((message: ControllerMessage) => {
       touchSimulator.handleMessage(message);
-      setMessageCount((c) => c + 1);
+      setMessageCount((c: number) => c + 1);
     });
 
     server.start()

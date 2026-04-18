@@ -8,7 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@fortnite-controller/shared": "*",
+    "@fortnite-controller/shared": "workspace:*",
     "expo": "~51.0.0",
     "expo-router": "~3.5.0",
     "react": "18.2.0",

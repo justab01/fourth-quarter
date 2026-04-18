@@ -1,6 +1,0 @@
-{
-  "name": "fortnite-controller",
-  "version": "1.0.0",
-  "private": true,
-  "workspaces": ["shared", "phone-app", "ipad-app"]
-}

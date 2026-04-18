@@ -35,7 +35,7 @@ export function Joystick({ onMove, side }: JoystickProps) {
           onMove(x, y);
         }, 16); // ~60fps
       },
-      onPanResponderMove: (_, gestureState) => {
+      onPanResponderMove: (_: unknown, gestureState: { dx: number; dy: number }) => {
         let { dx, dy } = gestureState;
 
         // Clamp to max distance
@@ -92,6 +92,7 @@ export function Joystick({ onMove, side }: JoystickProps) {
     <View style={[styles.container, side === 'left' ? styles.left : styles.right]}>
       <View style={styles.joystickArea} {...panResponder.panHandlers}>
         <View style={styles.joystickBackground}>
+          {/* @ts-expect-error - React 18/19 type compatibility issue with react-native-reanimated */}
           <Animated.View style={[styles.knob, animatedStyle]} />
         </View>
       </View>

@@ -38,6 +38,9 @@ packages:
   - lib/*
   - lib/integrations/*
   - scripts
+  - fortnite-controller/shared
+  - fortnite-controller/phone-app
+  - fortnite-controller/ipad-app
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1
@@ -156,3 +159,8 @@ overrides:
   # drizzle-kit uses esbuild internally on an older version that's vulnerable, this overrides it
   "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
   esbuild: "0.27.3"
+  # Fortnite controller apps need React 18 types (expo requirement)
+  "@fortnite-controller/phone-app>@types/react": "18.2.0"
+  "@fortnite-controller/ipad-app>@types/react": "18.2.0"
+  "react-native>@types/react": "18.2.0"
+  "@react-native/codegen>@types/react": "18.2.0"
