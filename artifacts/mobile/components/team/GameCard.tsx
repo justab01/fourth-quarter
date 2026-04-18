@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { TeamLogo } from "@/components/GameCard";
 import type { TeamData } from "@/constants/teamData";
 
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
   teamInfo: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   opponentPrefix: { color: C.textTertiary, fontSize: 12 },
   opponentName: { color: C.text, fontSize: 14, fontWeight: "600" },
-  score: { fontSize: 16, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  score: { fontSize: 16, fontWeight: "800", fontFamily: FONTS.bodyBold },
   expanded: {
     paddingHorizontal: 14,
     paddingBottom: 14,

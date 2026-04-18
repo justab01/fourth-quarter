@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { formatStatRank } from "@/constants/teamStatsConfig";
 import type { TeamData } from "@/constants/teamData";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 
 const C = Colors.dark;
 
@@ -66,7 +67,7 @@ const styles = StyleSheet.create({
 const progress = StyleSheet.create({
   container: { gap: 4 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
-  value: { color: C.text, fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  value: { color: C.text, fontSize: 16, fontWeight: "700", fontFamily: FONTS.bodyBold },
   rank: { fontSize: 12, fontWeight: "700" },
   track: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.1)", overflow: "hidden" },
   fill: { height: 6, borderRadius: 3 },

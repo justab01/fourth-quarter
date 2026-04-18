@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Image } from "react-nati
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { getSportStatsConfig } from "@/constants/teamStatsConfig";
 import type { TeamData, Player } from "@/constants/teamData";
 
@@ -144,9 +145,9 @@ const playerCard = StyleSheet.create({
   avatarNum: { fontSize: 16, fontWeight: "900" },
   star: { position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   starText: { fontSize: 8 },
-  name: { color: C.text, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  name: { color: C.text, fontSize: 14, fontWeight: "600", fontFamily: FONTS.bodySemiBold },
   meta: { color: C.textSecondary, fontSize: 12, marginTop: 2 },
   statsWrap: { alignItems: "flex-end" },
-  statValue: { fontSize: 14, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  statValue: { fontSize: 14, fontWeight: "800", fontFamily: FONTS.bodyBold },
   statLabel: { fontSize: 10, color: C.textTertiary, marginTop: 2 },
 });

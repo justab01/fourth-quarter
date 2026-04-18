@@ -7,6 +7,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { TeamLogo } from "@/components/GameCard";
 import { getSportStatsConfig, generatePersonalityBadge, type PersonalityBadge } from "@/constants/teamStatsConfig";
 import type { TeamData } from "@/constants/teamData";
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
   iconBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.25)" },
   teamIdentity: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 12 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  teamName: { color: "#fff", fontSize: 24, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  teamName: { color: "#fff", fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold },
   streakBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
   streakText: { fontSize: 11, fontWeight: "800" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   statCardWrap: { flex: 1, minWidth: "45%", backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 12 },
   statValueRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  statValue: { fontSize: 22, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  statValue: { fontSize: 22, fontWeight: "900", fontFamily: FONTS.bodyBold },
   statLabel: { fontSize: 11, color: C.textSecondary, marginTop: 4 },
   rankBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   rankText: { fontSize: 11, fontWeight: "800" },

@@ -4,6 +4,7 @@ import React from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 
 const C = Colors.dark;
 
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: { paddingHorizontal: 8 },
   tabItem: { alignItems: "center", paddingHorizontal: 14, paddingVertical: 12 },
-  tabText: { color: C.textTertiary, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, fontFamily: "Inter_600SemiBold" },
+  tabText: { color: C.textTertiary, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, fontFamily: FONTS.bodySemiBold },
   tabTextActive: { color: C.text },
   tabUnderline: { position: "absolute", bottom: 0, left: 8, right: 8, height: 2.5, borderRadius: 2 },
 });
