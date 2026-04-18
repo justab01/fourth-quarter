@@ -363,6 +363,41 @@ function SportHeroOverlay({ sportId, accentColor }: { sportId: string; accentCol
       </View>
     );
   }
+  // Motorsports: Checkered flag / speed lines
+  if (sportId === "motorsports") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.speedLines}>
+          {[...Array(6)].map((_, i) => (
+            <View key={i} style={[heroOverlayStyles.speedLine, { top: 10 + i * 12, width: 60 + i * 10 }]} />
+          ))}
+        </View>
+      </View>
+    );
+  }
+  // Olympics/XGames: Medal podium
+  if (sportId === "olympics" || sportId === "xgames") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.podium}>
+          <View style={[heroOverlayStyles.podiumStep, { height: 20, left: 0 }]} />
+          <View style={[heroOverlayStyles.podiumStep, { height: 30, left: 25 }]} />
+          <View style={[heroOverlayStyles.podiumStep, { height: 15, left: 50 }]} />
+        </View>
+      </View>
+    );
+  }
+  // College: Brackets
+  if (sportId === "college") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.bracketLines}>
+          <View style={heroOverlayStyles.bracketLeft} />
+          <View style={heroOverlayStyles.bracketRight} />
+        </View>
+      </View>
+    );
+  }
   return null;
 }
 
@@ -508,6 +543,68 @@ const heroOverlayStyles = StyleSheet.create({
     right: 0,
     height: 2,
     backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  // Motorsports
+  speedLines: {
+    position: "absolute",
+    right: 20,
+    top: 5,
+    width: 120,
+    height: 80,
+  },
+  speedLine: {
+    position: "absolute",
+    right: 0,
+    height: 2,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 1,
+  },
+  // Olympics/XGames
+  podium: {
+    position: "absolute",
+    right: 30,
+    bottom: 10,
+    width: 75,
+    height: 35,
+    flexDirection: "row",
+    alignItems: "flex-end",
+  },
+  podiumStep: {
+    position: "absolute",
+    bottom: 0,
+    width: 22,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 2,
+  },
+  // College brackets
+  bracketLines: {
+    position: "absolute",
+    right: 20,
+    top: 15,
+    width: 80,
+    height: 60,
+  },
+  bracketLeft: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: 30,
+    height: 25,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  bracketRight: {
+    position: "absolute",
+    left: 50,
+    top: 35,
+    width: 30,
+    height: 25,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
   },
 });
 
