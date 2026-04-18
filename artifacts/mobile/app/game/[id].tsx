@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, type PlayerStatLine } from "@/utils/api";
 import { LEAGUE_COLORS } from "@/constants/sports";
 import { goToTeam, goToPlayer } from "@/utils/navHelpers";
@@ -505,8 +506,8 @@ const wpb = StyleSheet.create({
   },
   labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   teamBlock: { alignItems: "flex-start", minWidth: 60 },
-  pct: { fontSize: 22, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 26 },
-  teamLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 1, fontFamily: "Inter_600SemiBold", marginTop: 1 },
+  pct: { fontSize: 22, fontWeight: "900", fontFamily: FONTS.bodyBold, lineHeight: 26 },
+  teamLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 1, fontFamily: FONTS.bodySemiBold, marginTop: 1 },
   centerLabel: { color: C.textTertiary, fontSize: 9, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase", textAlign: "center" },
   track: { flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", backgroundColor: C.cardBorder },
   fill: { height: "100%" },
@@ -668,7 +669,7 @@ const prev = StyleSheet.create({
   },
   aiBadgeText: { color: "#fff", fontSize: 8, fontWeight: "900", letterSpacing: 0.8 },
   loading: { color: C.textTertiary, fontSize: 13, fontStyle: "italic" },
-  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
+  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: FONTS.body },
   footer: { color: C.textTertiary, fontSize: 10, fontWeight: "500", letterSpacing: 0.3 },
 });
 
@@ -721,7 +722,7 @@ const aic = StyleSheet.create({
   liveRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   liveDot: { width: 5, height: 5, borderRadius: 3 },
   liveText: { fontSize: 9, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" },
-  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
+  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: FONTS.body },
 });
 
 // ─── Key Moments horizontal strip ─────────────────────────────────────────────
@@ -914,7 +915,7 @@ function PlayerBoxscore({ teamName, teamLogo, players, league, dc, overrideCols,
               <Text style={s.boxPlayer} numberOfLines={1}>{player.name}</Text>
               {(isGK || isGoalie) && (
                 <View style={{ backgroundColor: `${dc}22`, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1, marginLeft: 4 }}>
-                  <Text style={{ color: dc, fontSize: 9, fontWeight: "800", fontFamily: "Inter_700Bold" }}>{isGK ? "GK" : "G"}</Text>
+                  <Text style={{ color: dc, fontSize: 9, fontWeight: "800", fontFamily: FONTS.bodyBold }}>{isGK ? "GK" : "G"}</Text>
                 </View>
               )}
             </View>
@@ -990,7 +991,7 @@ const s = StyleSheet.create({
   // nav
   nav: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 10 },
   navBack: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  navTitle: { flex: 1, textAlign: "center", color: C.text, fontSize: 15, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  navTitle: { flex: 1, textAlign: "center", color: C.text, fontSize: 15, fontWeight: "700", fontFamily: FONTS.bodyBold },
   navRight: { width: 40, alignItems: "flex-end", justifyContent: "center" },
 
   loading: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
@@ -1011,14 +1012,14 @@ const s = StyleSheet.create({
 
   heroTeams: { flexDirection: "row", alignItems: "center", width: "100%", gap: 8 },
   heroTeamCol: { flex: 1, alignItems: "flex-start", gap: 8 },
-  heroTeamName: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: "Inter_700Bold", lineHeight: 17 },
+  heroTeamName: { color: C.text, fontSize: 13, fontWeight: "700", fontFamily: FONTS.bodyBold, lineHeight: 17 },
   heroTeamLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "600", letterSpacing: 0.8 },
   heroScoreBlock: { alignItems: "center", gap: 6, minWidth: 130 },
   heroScoreRow: { flexDirection: "row", alignItems: "baseline", gap: 4 },
-  heroScore: { fontSize: 56, fontWeight: "900", color: C.text, fontFamily: "Inter_700Bold", lineHeight: 62 },
+  heroScore: { fontSize: 56, fontWeight: "900", color: C.text, fontFamily: FONTS.bodyBold, lineHeight: 62 },
   heroScoreSep: { fontSize: 32, color: C.textTertiary, fontWeight: "300" },
   heroScoreDim: { color: C.textTertiary },
-  vsText: { fontSize: 28, fontWeight: "900", color: C.textTertiary, fontFamily: "Inter_700Bold" },
+  vsText: { fontSize: 28, fontWeight: "900", color: C.textTertiary, fontFamily: FONTS.bodyBold },
   clockPill: {
     borderWidth: 1, borderRadius: 14,
     paddingHorizontal: 12, paddingVertical: 3,
@@ -1031,7 +1032,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 10,
     marginTop: 4,
   },
-  watchText: { fontSize: 13, fontWeight: "800", letterSpacing: 0.4, fontFamily: "Inter_700Bold" },
+  watchText: { fontSize: 13, fontWeight: "800", letterSpacing: 0.4, fontFamily: FONTS.bodyBold },
 
   // tab bar
   tabBarWrap: { backgroundColor: C.background, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.cardBorder },
@@ -1041,7 +1042,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 13,
     borderBottomWidth: 2.5, borderBottomColor: "transparent",
   },
-  tabLabel: { color: C.textTertiary, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  tabLabel: { color: C.textTertiary, fontSize: 13, fontWeight: "600", fontFamily: FONTS.bodySemiBold },
 
   // content
   content: { paddingBottom: 60 },
@@ -1075,7 +1076,7 @@ const s = StyleSheet.create({
   // section headers
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
   sectionAccent: { width: 4, height: 18, borderRadius: 2 },
-  sectionTitle: { fontSize: 17, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.2 },
+  sectionTitle: { fontSize: 17, fontWeight: "800", color: C.text, fontFamily: FONTS.bodyBold, letterSpacing: -0.2 },
 
   // plays
   playsCard: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
@@ -1085,9 +1086,9 @@ const s = StyleSheet.create({
   playIconCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
   playBody: { flex: 1, gap: 3 },
   playMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
-  playTime: { color: C.textTertiary, fontSize: 11, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  playTime: { color: C.textTertiary, fontSize: 11, fontWeight: "600", fontFamily: FONTS.bodySemiBold },
   playTeam: { fontSize: 11, fontWeight: "700" },
-  playDesc: { color: C.text, fontSize: 14, lineHeight: 20, fontFamily: "Inter_400Regular" },
+  playDesc: { color: C.text, fontSize: 14, lineHeight: 20, fontFamily: FONTS.body },
   playBadge: {
     paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: 8, borderWidth: 1,
@@ -1099,7 +1100,7 @@ const s = StyleSheet.create({
   // quick stats
   quickStats: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
   quickStatRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12 },
-  quickStatVal: { fontSize: 14, fontWeight: "700", color: C.text, fontFamily: "Inter_700Bold", minWidth: 48 },
+  quickStatVal: { fontSize: 14, fontWeight: "700", color: C.text, fontFamily: FONTS.bodyBold, minWidth: 48 },
   quickStatMid: { flex: 1, gap: 4 },
   quickStatKey: { color: C.textTertiary, fontSize: 11, fontWeight: "600", textAlign: "center", letterSpacing: 0.5 },
   quickStatBar: { flexDirection: "row", height: 3, borderRadius: 2, overflow: "hidden" },
@@ -1108,7 +1109,7 @@ const s = StyleSheet.create({
   aiCard: { backgroundColor: C.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: C.cardBorder, gap: 10 },
   aiHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
   aiTitle: { fontSize: 13, fontWeight: "700", letterSpacing: 0.5 },
-  aiText: { color: C.textSecondary, fontSize: 14, lineHeight: 22, fontFamily: "Inter_400Regular" },
+  aiText: { color: C.textSecondary, fontSize: 14, lineHeight: 22, fontFamily: FONTS.body },
 
   // stats table
   statsCard: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
@@ -1121,7 +1122,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
     gap: 8,
   },
-  statVal: { fontSize: 14, fontWeight: "700", color: C.text, fontFamily: "Inter_700Bold", minWidth: 50 },
+  statVal: { fontSize: 14, fontWeight: "700", color: C.text, fontFamily: FONTS.bodyBold, minWidth: 50 },
   statMid: { flex: 1, gap: 4 },
   statKey: { color: C.textTertiary, fontSize: 11, textAlign: "center", letterSpacing: 0.5 },
   statBar: { flexDirection: "row", height: 3, borderRadius: 2, overflow: "hidden" },
@@ -1129,21 +1130,21 @@ const s = StyleSheet.create({
   // box score
   boxCard: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
   boxTeamHeader: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-  boxTeamName: { fontSize: 14, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  boxTeamName: { fontSize: 14, fontWeight: "800", fontFamily: FONTS.bodyBold },
   boxRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
   boxHeaderRow: { backgroundColor: "rgba(255,255,255,0.03)" },
   boxHeaderText: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
   boxPlayerCell: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
-  boxPlayer: { flex: 1, color: C.text, fontSize: 13, fontFamily: "Inter_500Medium" },
-  boxStat: { width: 44, color: C.textSecondary, fontSize: 12, textAlign: "center", fontFamily: "Inter_500Medium" },
+  boxPlayer: { flex: 1, color: C.text, fontSize: 13, fontFamily: FONTS.bodyMedium },
+  boxStat: { width: 44, color: C.textSecondary, fontSize: 12, textAlign: "center", fontFamily: FONTS.bodyMedium },
   starterDot: { width: 5, height: 5, borderRadius: 3, flexShrink: 0 },
-  boxNote: { color: C.textTertiary, fontSize: 10, padding: 10, fontFamily: "Inter_400Regular" },
+  boxNote: { color: C.textTertiary, fontSize: 10, padding: 10, fontFamily: FONTS.body },
 
   // lineups
   lineupSection: { gap: 6 },
   lineupTeamHeader: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
-  lineupTeamName: { fontSize: 15, fontWeight: "800", fontFamily: "Inter_700Bold" },
-  rosterLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 1, fontFamily: "Inter_700Bold", marginTop: 4 },
+  lineupTeamName: { fontSize: 15, fontWeight: "800", fontFamily: FONTS.bodyBold },
+  rosterLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 1, fontFamily: FONTS.bodyBold, marginTop: 4 },
   playerRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
     backgroundColor: C.card, borderRadius: 12,
@@ -1155,12 +1156,12 @@ const s = StyleSheet.create({
   playerHeadshot: { width: 38, height: 38, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" },
   playerHeadshotPlaceholder: { width: 38, height: 38, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
   playerHeadshotInitial: { color: C.textTertiary, fontSize: 14, fontWeight: "700" },
-  playerName: { flex: 1, color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
+  playerName: { flex: 1, color: C.text, fontSize: 15, fontFamily: FONTS.bodyMedium },
 
-  empty: { color: C.textTertiary, fontSize: 14, textAlign: "center", paddingVertical: 20, fontFamily: "Inter_400Regular" },
+  empty: { color: C.textTertiary, fontSize: 14, textAlign: "center", paddingVertical: 20, fontFamily: FONTS.body },
   emptyBoxState: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 24 },
   emptyBoxIcon: { fontSize: 36, marginBottom: 12 },
-  emptyBoxTitle: { color: C.text, fontSize: 17, fontFamily: "Inter_700Bold", marginBottom: 8, textAlign: "center" },
-  emptyBoxMsg: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20, marginBottom: 12 },
-  emptyBoxHint: { fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  emptyBoxTitle: { color: C.text, fontSize: 17, fontFamily: FONTS.bodyBold, marginBottom: 8, textAlign: "center" },
+  emptyBoxMsg: { color: C.textSecondary, fontSize: 14, fontFamily: FONTS.body, textAlign: "center", lineHeight: 20, marginBottom: 12 },
+  emptyBoxHint: { fontSize: 13, fontFamily: FONTS.bodySemiBold, textAlign: "center" },
 });

@@ -8,6 +8,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, type NewsArticle } from "@/utils/api";
 import { LEAGUE_COLORS } from "@/constants/sports";
 
@@ -409,7 +410,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   navBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8 },
   backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  navSource: { flex: 1, textAlign: "center", color: C.textTertiary, fontSize: 14, fontFamily: "Inter_500Medium" },
+  navSource: { flex: 1, textAlign: "center", color: C.textTertiary, fontSize: 14, fontFamily: FONTS.bodyMedium },
   scroll: { paddingHorizontal: 20, gap: 14 },
 
   heroWrap: { marginHorizontal: -20, height: 200, overflow: "hidden" },
@@ -419,7 +420,7 @@ const s = StyleSheet.create({
   tag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   tagText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.5 },
 
-  title: { fontSize: 24, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold", lineHeight: 32 },
+  title: { fontSize: 24, fontWeight: "800", color: C.text, fontFamily: FONTS.bodyBold, lineHeight: 32 },
 
   meta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sourceRow: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -428,7 +429,7 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center",
   },
   sourceIconText: { color: C.text, fontSize: 11, fontWeight: "700" },
-  sourceName: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium" },
+  sourceName: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.bodyMedium },
   metaRight: { flexDirection: "row", alignItems: "center", gap: 6 },
   time: { color: C.textTertiary, fontSize: 12 },
   dot: { width: 3, height: 3, borderRadius: 2, backgroundColor: C.textTertiary },
@@ -444,7 +445,7 @@ const s = StyleSheet.create({
   },
   whyHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
   whyLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
-  whyText: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  whyText: { color: C.textSecondary, fontSize: 14, fontFamily: FONTS.body, lineHeight: 20 },
 
   // Reading Modes section
   modesSection: { gap: 10, paddingBottom: 4 },
@@ -465,7 +466,7 @@ const s = StyleSheet.create({
   pillLabel: { color: C.textSecondary, fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
 
   modeDescRow: { paddingHorizontal: 2 },
-  modeDesc: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
+  modeDesc: { color: C.textTertiary, fontSize: 12, fontFamily: FONTS.body, lineHeight: 17 },
 
   sportChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -479,7 +480,7 @@ const s = StyleSheet.create({
   loadingRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12 },
   loadingText: { fontSize: 14, fontWeight: "600" },
 
-  body: { color: C.text, fontSize: 16, lineHeight: 26, fontFamily: "Inter_400Regular" },
+  body: { color: C.text, fontSize: 16, lineHeight: 26, fontFamily: FONTS.body },
 
   // Related
   relatedSection: { gap: 8 },
@@ -508,7 +509,7 @@ const s = StyleSheet.create({
     gap: 8, backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 14, paddingVertical: 14, borderWidth: 1, marginTop: 4,
   },
-  readMoreText: { fontSize: 15, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  readMoreText: { fontSize: 15, fontWeight: "600", fontFamily: FONTS.bodySemiBold },
 
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
   emptyText: { color: C.textTertiary, fontSize: 16 },
@@ -527,7 +528,7 @@ const pick = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     alignSelf: "center", marginBottom: 18,
   },
-  title: { color: "#fff", fontSize: 20, fontWeight: "800", fontFamily: "Inter_700Bold", textAlign: "center" },
+  title: { color: "#fff", fontSize: 20, fontWeight: "800", fontFamily: FONTS.bodyBold, textAlign: "center" },
   sub: { color: "rgba(255,255,255,0.4)", fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 20, lineHeight: 19 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
   btn: {

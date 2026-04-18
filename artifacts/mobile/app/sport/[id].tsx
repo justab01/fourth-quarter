@@ -17,6 +17,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { getSportById, getSportByLeague, type SportCategory, type LeagueGroup, getArchetypeStyle } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
@@ -371,7 +372,7 @@ function AthleteSpotlight({
               <Image source={{ uri: athlete.headshot }} style={styles.spotlightHeadshot} />
             ) : (
               <View style={[styles.spotlightHeadshot, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
-                <Text style={{ color: accentColor, fontSize: 20, fontFamily: "Inter_700Bold" }}>
+                <Text style={{ color: accentColor, fontSize: 20, fontFamily: FONTS.bodyBold }}>
                   {athlete.name.charAt(0)}
                 </Text>
               </View>
@@ -447,7 +448,7 @@ function RankingsTable({
             <Image source={{ uri: entry.headshot }} style={styles.rankHeadshot} />
           ) : (
             <View style={[styles.rankHeadshot, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
-              <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold" }}>
+              <Text style={{ color: accentColor, fontSize: 10, fontFamily: FONTS.bodyBold }}>
                 {entry.name.charAt(0)}
               </Text>
             </View>
@@ -512,7 +513,7 @@ function GolfLeaderboard({
             <Image source={{ uri: entry.headshot }} style={styles.rankHeadshot} />
           ) : (
             <View style={[styles.rankHeadshot, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
-              <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold" }}>
+              <Text style={{ color: accentColor, fontSize: 10, fontFamily: FONTS.bodyBold }}>
                 {entry.name.charAt(0)}
               </Text>
             </View>
@@ -607,7 +608,7 @@ function TournamentDraw({
                 <Text style={{
                   color: round.matches.some(m => m.status === "live") ? "#fff" : accentColor,
                   fontSize: 10,
-                  fontFamily: "Inter_700Bold",
+                  fontFamily: FONTS.bodyBold,
                   letterSpacing: 0.5,
                 }}>
                   {round.name.toUpperCase()}
@@ -657,7 +658,7 @@ function DrawMatchCard({
     }}>
       <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 3 }}>
         {match.seed1 != null && (
-          <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold", width: 20, textAlign: "right" }}>
+          <Text style={{ color: accentColor, fontSize: 10, fontFamily: FONTS.bodyBold, width: 20, textAlign: "right" }}>
             [{match.seed1}]
           </Text>
         )}
@@ -666,7 +667,7 @@ function DrawMatchCard({
           <Image source={{ uri: match.headshot1 }} style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6 }} />
         ) : (
           <View style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6, backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: accentColor, fontSize: 8, fontFamily: "Inter_700Bold" }}>{match.player1.charAt(0)}</Text>
+            <Text style={{ color: accentColor, fontSize: 8, fontFamily: FONTS.bodyBold }}>{match.player1.charAt(0)}</Text>
           </View>
         )}
         <Text
@@ -684,7 +685,7 @@ function DrawMatchCard({
         {(isLive || isFinished) && match.score1 != null && (
           <Text style={{
             fontSize: 13,
-            fontFamily: "Inter_700Bold",
+            fontFamily: FONTS.bodyBold,
             color: p1Won ? C.text : C.textTertiary,
             minWidth: 20,
             textAlign: "right",
@@ -699,7 +700,7 @@ function DrawMatchCard({
 
       <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 3 }}>
         {match.seed2 != null && (
-          <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold", width: 20, textAlign: "right" }}>
+          <Text style={{ color: accentColor, fontSize: 10, fontFamily: FONTS.bodyBold, width: 20, textAlign: "right" }}>
             [{match.seed2}]
           </Text>
         )}
@@ -708,7 +709,7 @@ function DrawMatchCard({
           <Image source={{ uri: match.headshot2 }} style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6 }} />
         ) : (
           <View style={{ width: 20, height: 20, borderRadius: 10, marginLeft: 6, backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: accentColor, fontSize: 8, fontFamily: "Inter_700Bold" }}>{match.player2.charAt(0)}</Text>
+            <Text style={{ color: accentColor, fontSize: 8, fontFamily: FONTS.bodyBold }}>{match.player2.charAt(0)}</Text>
           </View>
         )}
         <Text
@@ -726,7 +727,7 @@ function DrawMatchCard({
         {(isLive || isFinished) && match.score2 != null && (
           <Text style={{
             fontSize: 13,
-            fontFamily: "Inter_700Bold",
+            fontFamily: FONTS.bodyBold,
             color: p2Won ? C.text : C.textTertiary,
             minWidth: 20,
             textAlign: "right",
@@ -738,7 +739,7 @@ function DrawMatchCard({
       </View>
 
       {isLive && match.setScores && (
-        <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_600SemiBold", textAlign: "center", marginTop: 4 }}>
+        <Text style={{ color: accentColor, fontSize: 10, fontFamily: FONTS.bodySemiBold, textAlign: "center", marginTop: 4 }}>
           {match.setScores}
         </Text>
       )}
@@ -793,13 +794,13 @@ function CountdownTimer({ targetDate, accentColor }: { targetDate: string; accen
           }}>
             <Text style={{
               fontSize: 22,
-              fontFamily: "Inter_700Bold",
+              fontFamily: FONTS.bodyBold,
               color: accentColor,
             }}>{s.value}</Text>
           </View>
           <Text style={{
             fontSize: 9,
-            fontFamily: "Inter_600SemiBold",
+            fontFamily: FONTS.bodySemiBold,
             color: C.textTertiary,
             marginTop: 4,
             letterSpacing: 0.5,
@@ -847,34 +848,34 @@ function SeasonalEventCard({
         </View>
         <Text style={{
           fontSize: 11,
-          fontFamily: "Inter_600SemiBold",
+          fontFamily: FONTS.bodySemiBold,
           color: accentColor,
         }}>{event.league}</Text>
       </View>
 
       <Text style={{
         fontSize: 15,
-        fontFamily: "Inter_700Bold",
+        fontFamily: FONTS.bodyBold,
         color: C.text,
         marginBottom: 4,
       }}>{event.name}</Text>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
         <Ionicons name="calendar-outline" size={12} color={C.textSecondary} />
-        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textSecondary }}>
+        <Text style={{ fontSize: 12, fontFamily: FONTS.body, color: C.textSecondary }}>
           {dateStr}{endStr}
         </Text>
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: event.disciplines ? 8 : 0 }}>
         <Ionicons name="location-outline" size={12} color={C.textSecondary} />
-        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textSecondary }}>
+        <Text style={{ fontSize: 12, fontFamily: FONTS.body, color: C.textSecondary }}>
           {event.location}{event.venue ? ` — ${event.venue}` : ""}
         </Text>
       </View>
 
       {event.description && (
-        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textTertiary, marginTop: 4 }}>
+        <Text style={{ fontSize: 12, fontFamily: FONTS.body, color: C.textTertiary, marginTop: 4 }}>
           {event.description}
         </Text>
       )}
@@ -888,7 +889,7 @@ function SeasonalEventCard({
               paddingHorizontal: 8,
               paddingVertical: 3,
             }}>
-              <Text style={{ fontSize: 10, fontFamily: "Inter_600SemiBold", color: accentColor }}>{d}</Text>
+              <Text style={{ fontSize: 10, fontFamily: FONTS.bodySemiBold, color: accentColor }}>{d}</Text>
             </View>
           ))}
         </View>
@@ -1021,7 +1022,7 @@ function NextEventCard({
             color: isLive ? "#fff" : accentColor,
           }]}>{isLive ? "LIVE" : "NEXT EVENT"}</Text>
         </View>
-        <Text style={[styles.eventMeta, { color: accentColor, fontFamily: "Inter_700Bold" }]}>{event.league}</Text>
+        <Text style={[styles.eventMeta, { color: accentColor, fontFamily: FONTS.bodyBold }]}>{event.league}</Text>
       </View>
       <Text style={[styles.eventName, { fontSize: 16, marginBottom: 6 }]} numberOfLines={2}>{event.name}</Text>
       <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
@@ -1051,13 +1052,13 @@ function NextEventCard({
           borderTopColor: C.separator,
           gap: 12,
         }}>
-          <Text style={{ color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold", flex: 1, textAlign: "right" }} numberOfLines={1}>
+          <Text style={{ color: C.text, fontSize: 14, fontFamily: FONTS.bodySemiBold, flex: 1, textAlign: "right" }} numberOfLines={1}>
             {event.homeTeam}
           </Text>
           <View style={{ backgroundColor: accentColor + "22", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ color: accentColor, fontSize: 11, fontFamily: "Inter_700Bold" }}>VS</Text>
+            <Text style={{ color: accentColor, fontSize: 11, fontFamily: FONTS.bodyBold }}>VS</Text>
           </View>
-          <Text style={{ color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold", flex: 1 }} numberOfLines={1}>
+          <Text style={{ color: C.text, fontSize: 14, fontFamily: FONTS.bodySemiBold, flex: 1 }} numberOfLines={1}>
             {event.awayTeam}
           </Text>
         </View>
@@ -1093,16 +1094,16 @@ function SeasonalAthleteChip({
         alignItems: "center",
         justifyContent: "center",
       }}>
-        <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: accentColor }}>{initials}</Text>
+        <Text style={{ fontSize: 16, fontFamily: FONTS.bodyBold, color: accentColor }}>{initials}</Text>
       </View>
-      <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: C.text, textAlign: "center" }} numberOfLines={1}>
+      <Text style={{ fontSize: 11, fontFamily: FONTS.bodySemiBold, color: C.text, textAlign: "center" }} numberOfLines={1}>
         {flag} {athlete.name.split(" ").slice(-1)[0]}
       </Text>
-      <Text style={{ fontSize: 9, fontFamily: "Inter_400Regular", color: C.textSecondary, textAlign: "center" }} numberOfLines={1}>
+      <Text style={{ fontSize: 9, fontFamily: FONTS.body, color: C.textSecondary, textAlign: "center" }} numberOfLines={1}>
         {athlete.event}
       </Text>
       {athlete.achievement && (
-        <Text style={{ fontSize: 8, fontFamily: "Inter_600SemiBold", color: accentColor, textAlign: "center" }} numberOfLines={1}>
+        <Text style={{ fontSize: 8, fontFamily: FONTS.bodySemiBold, color: accentColor, textAlign: "center" }} numberOfLines={1}>
           {athlete.achievement}
         </Text>
       )}
@@ -2186,33 +2187,33 @@ export default function SportBoardScreen() {
               {nextRace.countdownMs === 0 ? "LIVE" : "NEXT RACE"}
             </Text>
           </View>
-          <Text style={{ fontSize: 10, color: C.textSecondary, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5 }}>
+          <Text style={{ fontSize: 10, color: C.textSecondary, fontFamily: FONTS.bodySemiBold, letterSpacing: 0.5 }}>
             {racingLeague ?? "F1"}
           </Text>
         </View>
-        <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: C.text, marginBottom: 4 }}>
+        <Text style={{ fontSize: 18, fontFamily: FONTS.bodyBold, color: C.text, marginBottom: 4 }}>
           {nextRace.name}
         </Text>
         {nextRace.circuit && (
-          <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: C.textSecondary, marginBottom: 2 }}>
+          <Text style={{ fontSize: 13, fontFamily: FONTS.body, color: C.textSecondary, marginBottom: 2 }}>
             {nextRace.circuit}
           </Text>
         )}
         {nextRace.location && nextRace.location !== nextRace.circuit && (
-          <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: C.textTertiary, marginBottom: 8 }}>
+          <Text style={{ fontSize: 12, fontFamily: FONTS.body, color: C.textTertiary, marginBottom: 8 }}>
             {nextRace.location}
           </Text>
         )}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
           <Ionicons name="calendar-outline" size={14} color={accentColor} />
-          <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: C.text }}>
+          <Text style={{ fontSize: 13, fontFamily: FONTS.bodySemiBold, color: C.text }}>
             {new Date(nextRace.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
           </Text>
         </View>
         {nextRace.countdownMs > 0 && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
             <Ionicons name="time-outline" size={14} color={accentColor} />
-            <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: accentColor }}>
+            <Text style={{ fontSize: 13, fontFamily: FONTS.bodySemiBold, color: accentColor }}>
               {formatCountdown(nextRace.countdownMs)}
             </Text>
           </View>
@@ -2259,12 +2260,12 @@ export default function SportBoardScreen() {
               {race.circuit && <Text style={styles.eventMeta} numberOfLines={1}>{race.circuit}</Text>}
             </View>
             {race.results.length > 0 && (
-              <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: accentColor, marginTop: 2 }}>
+              <Text style={{ fontSize: 11, fontFamily: FONTS.bodySemiBold, color: accentColor, marginTop: 2 }}>
                 {"P1: "}{race.results[0].driver}{race.results.length > 1 ? ` · P2: ${race.results[1].driver}` : ""}
               </Text>
             )}
             {race.qualifying && race.qualifying.length > 0 && race.results.length === 0 && (
-              <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: C.textSecondary, marginTop: 2 }}>
+              <Text style={{ fontSize: 11, fontFamily: FONTS.body, color: C.textSecondary, marginTop: 2 }}>
                 {"Pole: "}{race.qualifying[0].driver}
               </Text>
             )}
@@ -2629,23 +2630,23 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       }}>
         <Text style={{
           fontSize: 10,
-          fontFamily: "Inter_700Bold",
+          fontFamily: FONTS.bodyBold,
           color: accentColor,
           letterSpacing: 1,
         }}>NEXT EVENT</Text>
         <Text style={{
           fontSize: 17,
-          fontFamily: "Inter_700Bold",
+          fontFamily: FONTS.bodyBold,
           color: C.text,
           textAlign: "center",
         }}>{nextEvent.name}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Ionicons name="location-outline" size={13} color={C.textSecondary} />
-          <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: C.textSecondary }}>
+          <Text style={{ fontSize: 13, fontFamily: FONTS.body, color: C.textSecondary }}>
             {nextEvent.location}
           </Text>
         </View>
-        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: C.textSecondary }}>
+        <Text style={{ fontSize: 12, fontFamily: FONTS.bodySemiBold, color: C.textSecondary }}>
           {new Date(nextEvent.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
         </Text>
         <CountdownTimer targetDate={nextEvent.date} accentColor={accentColor} />
@@ -2742,7 +2743,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
                 ]}
               >
                 <View style={{ flex: 0.3, flexDirection: "row", alignItems: "center" }}>
-                  <Text style={[styles.inlineStandingsCell, { flex: undefined, fontFamily: "Inter_700Bold", color: entry.rank <= 3 ? accentColor : (idx < 6 ? C.text : C.textTertiary) }]}>
+                  <Text style={[styles.inlineStandingsCell, { flex: undefined, fontFamily: FONTS.bodyBold, color: entry.rank <= 3 ? accentColor : (idx < 6 ? C.text : C.textTertiary) }]}>
                     {entry.playoffSeed ?? entry.rank}
                     {entry.clinched ? ` ${entry.clinched}` : ""}
                   </Text>
@@ -2760,7 +2761,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
                     <Image source={{ uri: entry.logoUrl }} style={styles.inlineStandingsLogo} />
                   ) : (
                     <View style={[styles.inlineStandingsLogo, { backgroundColor: accentColor + "22", alignItems: "center", justifyContent: "center" }]}>
-                      <Text style={{ color: accentColor, fontSize: 10, fontFamily: "Inter_700Bold" }}>
+                      <Text style={{ color: accentColor, fontSize: 10, fontFamily: FONTS.bodyBold }}>
                         {entry.teamName.charAt(0)}
                       </Text>
                     </View>
@@ -2804,7 +2805,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Event Calendar</Text>
-        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: C.textSecondary }}>
+        <Text style={{ fontSize: 12, fontFamily: FONTS.bodySemiBold, color: C.textSecondary }}>
           {seasonalData?.season}
         </Text>
       </View>
@@ -3222,7 +3223,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontSize: 22,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
   },
   liveTag: {
@@ -3242,7 +3243,7 @@ const styles = StyleSheet.create({
   },
   liveTagText: {
     fontSize: 11,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.electricLime,
     letterSpacing: 0.5,
   },
@@ -3264,7 +3265,7 @@ const styles = StyleSheet.create({
   },
   leagueChipText: {
     fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.textSecondary,
     letterSpacing: 0.2,
   },
@@ -3277,7 +3278,7 @@ const styles = StyleSheet.create({
   whyWatchText: {
     flex: 1,
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     lineHeight: 16,
   },
@@ -3295,7 +3296,7 @@ const styles = StyleSheet.create({
   },
   activeFilterText: {
     fontSize: 13,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
     color: C.text,
   },
   clearFilterBtn: {
@@ -3305,7 +3306,7 @@ const styles = StyleSheet.create({
   },
   clearFilterText: {
     fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
 
   content: {
@@ -3331,14 +3332,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: C.text,
     letterSpacing: -0.5,
   },
   seeAllBtn: {},
   seeAllText: {
     fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     letterSpacing: 0.2,
   },
 
@@ -3364,17 +3365,17 @@ const styles = StyleSheet.create({
   },
   athleteInitials: {
     fontSize: 16,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   athleteName: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     textAlign: "center",
   },
   athletePos: {
     fontSize: 10,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     textAlign: "center",
   },
@@ -3401,7 +3402,7 @@ const styles = StyleSheet.create({
   leagueLinkLabel: {
     flex: 1,
     fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
   },
 
@@ -3425,13 +3426,13 @@ const styles = StyleSheet.create({
   newsRowText: {
     flex: 1,
     fontSize: 15,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
     color: C.text,
     lineHeight: 21,
   },
   newsRowMeta: {
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textTertiary,
     marginTop: 2,
   },
@@ -3451,13 +3452,13 @@ const styles = StyleSheet.create({
   },
   emptyCardTitle: {
     fontSize: 16,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     textAlign: "center",
   },
   emptyCardSub: {
     fontSize: 13,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     textAlign: "center",
     lineHeight: 19,
@@ -3478,7 +3479,7 @@ const styles = StyleSheet.create({
   },
   phaseBadgeText: {
     fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     letterSpacing: 0.5,
   },
   emptyCenter: {
@@ -3488,7 +3489,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
   },
 
@@ -3508,23 +3509,23 @@ const styles = StyleSheet.create({
   },
   eventTypeText: {
     fontSize: 9,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     letterSpacing: 0.5,
   },
   eventName: {
     fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     lineHeight: 19,
   },
   eventMeta: {
     fontSize: 11,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
   },
   eventScore: {
     fontSize: 15,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     marginLeft: 8,
   },
@@ -3539,7 +3540,7 @@ const styles = StyleSheet.create({
   },
   rankingsGroupTitle: {
     fontSize: 15,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     flex: 1,
     marginBottom: 4,
@@ -3553,7 +3554,7 @@ const styles = StyleSheet.create({
   },
   rankNum: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textSecondary,
     width: 24,
     textAlign: "right",
@@ -3568,18 +3569,18 @@ const styles = StyleSheet.create({
   },
   rankName: {
     fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
   },
   rankSub: {
     fontSize: 10,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     marginTop: 1,
   },
   rankPoints: {
     fontSize: 12,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textSecondary,
     minWidth: 40,
     textAlign: "right",
@@ -3590,7 +3591,7 @@ const styles = StyleSheet.create({
   },
   rankExpandText: {
     fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
 
   lbLiveDot: {
@@ -3601,13 +3602,13 @@ const styles = StyleSheet.create({
   },
   leaderboardTourName: {
     fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     marginBottom: 2,
   },
   leaderboardVenue: {
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     marginBottom: 10,
   },
@@ -3633,7 +3634,7 @@ const styles = StyleSheet.create({
   },
   lbHeaderCell: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textTertiary,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -3657,7 +3658,7 @@ const styles = StyleSheet.create({
   },
   lbCell: {
     fontSize: 13,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
     color: C.textSecondary,
     textAlign: "center",
   },
@@ -3681,7 +3682,7 @@ const styles = StyleSheet.create({
   },
   lbPlayerName: {
     fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     flex: 1,
     letterSpacing: -0.2,
@@ -3780,13 +3781,13 @@ const styles = StyleSheet.create({
   },
   offSeasonTitle: {
     fontSize: 15,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     textAlign: "center",
   },
   offSeasonSub: {
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     textAlign: "center",
   },
@@ -3799,7 +3800,7 @@ const styles = StyleSheet.create({
   },
   inlineStandingsGroupTitle: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     paddingHorizontal: 12,
     paddingTop: 12,
@@ -3815,7 +3816,7 @@ const styles = StyleSheet.create({
   },
   inlineStandingsHeaderCell: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -3833,7 +3834,7 @@ const styles = StyleSheet.create({
   },
   inlineStandingsCell: {
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     textAlign: "center",
     flex: 0.5,
@@ -3845,7 +3846,7 @@ const styles = StyleSheet.create({
   },
   inlineStandingsTeam: {
     fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     maxWidth: 120,
   },
@@ -3873,7 +3874,7 @@ const styles = StyleSheet.create({
   },
   bracketConferenceTitle: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     letterSpacing: 1,
     marginBottom: 8,
     textAlign: "center",
@@ -3900,25 +3901,25 @@ const styles = StyleSheet.create({
   },
   bracketTeamName: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     flexShrink: 1,
   },
   bracketRecord: {
     fontSize: 10,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textTertiary,
     marginTop: 1,
   },
   bracketSeed: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     minWidth: 16,
     textAlign: "right",
   },
   bracketSeedLow: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textSecondary,
     minWidth: 16,
     textAlign: "right",
@@ -3937,12 +3938,12 @@ const styles = StyleSheet.create({
   },
   activeTournamentName: {
     fontSize: 17,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
   },
   activeTournamentVenue: {
     fontSize: 13,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
   },
   majorBadge: {
@@ -3954,7 +3955,7 @@ const styles = StyleSheet.create({
   },
   majorBadgeText: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#1a1a1a",
     letterSpacing: 0.8,
   },
@@ -3965,7 +3966,7 @@ const styles = StyleSheet.create({
   },
   majorBadgeSmallText: {
     fontSize: 8,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#1a1a1a",
     letterSpacing: 0.5,
   },
@@ -3993,13 +3994,13 @@ const styles = StyleSheet.create({
   },
   liveStripTitle: {
     fontSize: 11,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.electricLime,
     letterSpacing: 1,
   },
   liveStripCount: {
     fontSize: 11,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     flex: 1,
     marginLeft: 4,
@@ -4028,7 +4029,7 @@ const styles = StyleSheet.create({
   },
   liveGameTeamName: {
     fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     maxWidth: 50,
   },
@@ -4039,7 +4040,7 @@ const styles = StyleSheet.create({
   },
   liveGameScore: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
   },
   liveGameQuarter: {
@@ -4048,7 +4049,7 @@ const styles = StyleSheet.create({
   },
   liveGameQuarterText: {
     fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: "#E53935",
   },
 
@@ -4065,7 +4066,7 @@ const styles = StyleSheet.create({
   },
   liveGolfTitle: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     flex: 1,
     marginRight: 8,
@@ -4077,7 +4078,7 @@ const styles = StyleSheet.create({
   },
   liveGolfBadgeText: {
     fontSize: 9,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     letterSpacing: 0.5,
   },
   liveGolfLeader: {
@@ -4090,20 +4091,20 @@ const styles = StyleSheet.create({
   },
   liveGolfLeaderPos: {
     fontSize: 16,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: C.textTertiary,
     width: 24,
   },
   liveGolfLeaderName: {
     flex: 1,
     fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     marginHorizontal: 8,
   },
   liveGolfLeaderScore: {
     fontSize: 16,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
   },
   liveGolfMiniLb: {
     gap: 4,
@@ -4115,20 +4116,20 @@ const styles = StyleSheet.create({
   },
   liveGolfMiniPos: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.textTertiary,
     width: 24,
   },
   liveGolfMiniName: {
     flex: 1,
     fontSize: 12,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
     color: C.textSecondary,
     marginHorizontal: 8,
   },
   liveGolfMiniScore: {
     fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
   },
 
@@ -4143,7 +4144,7 @@ const styles = StyleSheet.create({
   },
   subTabText: {
     fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
   },
 
@@ -4174,7 +4175,7 @@ const styles = StyleSheet.create({
   },
   spotlightRankText: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#fff",
   },
   spotlightHeadshot: {
@@ -4185,13 +4186,13 @@ const styles = StyleSheet.create({
   },
   spotlightName: {
     fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
     textAlign: "center",
   },
   spotlightTeam: {
     fontSize: 10,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     marginTop: 2,
   },
@@ -4203,13 +4204,13 @@ const styles = StyleSheet.create({
   },
   spotlightStatText: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
 
   // Section subtitle
   sectionSubTitle: {
     fontSize: 14,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
   },
 
@@ -4244,7 +4245,7 @@ const styles = StyleSheet.create({
   },
   golfHeroMajorText: {
     fontSize: 9,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: "#000",
     letterSpacing: 0.15,
   },
@@ -4262,7 +4263,7 @@ const styles = StyleSheet.create({
   },
   golfHeroLiveText: {
     fontSize: 9,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#4DCC70",
     letterSpacing: 0.1,
   },
@@ -4275,7 +4276,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 3,
     fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: "#888880",
     letterSpacing: 0.05,
   },
@@ -4290,7 +4291,7 @@ const styles = StyleSheet.create({
   },
   golfHeroTournament: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     letterSpacing: 0.08,
     textTransform: "uppercase",
     color: C.textTertiary,
@@ -4322,7 +4323,7 @@ const styles = StyleSheet.create({
   },
   golfHeroAvatarInitials: {
     fontSize: 14,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: C.text,
   },
   golfHeroPlayerInfo: {
@@ -4330,7 +4331,7 @@ const styles = StyleSheet.create({
   },
   golfHeroPlayerName: {
     fontSize: 22,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     fontWeight: "700",
     color: C.text,
     lineHeight: 26,
@@ -4346,12 +4347,12 @@ const styles = StyleSheet.create({
   },
   golfHeroScoreNum: {
     fontSize: 40,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     lineHeight: 44,
   },
   golfHeroScoreLabel: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.textSecondary,
     letterSpacing: 0.05,
   },
@@ -4369,12 +4370,12 @@ const styles = StyleSheet.create({
   },
   golfHeroStatNum: {
     fontSize: 16,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: C.text,
   },
   golfHeroStatLabel: {
     fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.textTertiary,
     marginTop: 2,
     letterSpacing: 0.05,
@@ -4403,13 +4404,13 @@ const styles = StyleSheet.create({
   },
   golfInsightLabel: {
     fontSize: 9,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     letterSpacing: 0.2,
     textTransform: "uppercase",
   },
   golfInsightText: {
     fontSize: 13,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: "#C8C8C0",
     lineHeight: 21,
   },
@@ -4421,7 +4422,7 @@ const styles = StyleSheet.create({
   },
   golfInsightUpdatingText: {
     fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.textTertiary,
     letterSpacing: 0.1,
   },
@@ -4460,7 +4461,7 @@ const styles = StyleSheet.create({
   },
   golfLiveBadgeText: {
     fontSize: 9,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#4DCC70",
     letterSpacing: 0.1,
   },
@@ -4473,7 +4474,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 3,
     fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: "#888880",
     letterSpacing: 0.05,
   },
@@ -4488,7 +4489,7 @@ const styles = StyleSheet.create({
   },
   golfLiveTournament: {
     fontSize: 15,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     fontWeight: "700",
     color: C.text,
     marginBottom: 4,
@@ -4496,7 +4497,7 @@ const styles = StyleSheet.create({
   },
   golfLiveVenue: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.textTertiary,
     letterSpacing: 0.04,
     marginBottom: 14,
@@ -4516,7 +4517,7 @@ const styles = StyleSheet.create({
   },
   golfLivePos: {
     width: 28,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     fontSize: 11,
     color: C.textTertiary,
   },
@@ -4540,13 +4541,13 @@ const styles = StyleSheet.create({
   },
   golfLiveAvatarText: {
     fontSize: 9,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: "#C8C8C0",
     letterSpacing: 0.02,
   },
   golfLiveName: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     flex: 1,
   },
@@ -4556,7 +4557,7 @@ const styles = StyleSheet.create({
   },
   golfLiveScore: {
     fontSize: 15,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     textAlign: "right",
     minWidth: 40,
   },
@@ -4571,12 +4572,12 @@ const styles = StyleSheet.create({
   },
   golfLivePurse: {
     fontSize: 11,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textTertiary,
   },
   golfLiveOpenBtn: {
     fontSize: 11,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     fontWeight: "700",
     color: "#3DAA5C",
     letterSpacing: 0.05,
@@ -4599,7 +4600,7 @@ const styles = StyleSheet.create({
   golfLbHeaderCell: {
     flex: 0.5,
     fontSize: 9,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     letterSpacing: 0.15,
     textTransform: "uppercase",
     color: C.textTertiary,
@@ -4634,7 +4635,7 @@ const styles = StyleSheet.create({
   },
   golfLbPosNum: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     fontWeight: "600",
     color: C.text,
   },
@@ -4667,7 +4668,7 @@ const styles = StyleSheet.create({
   },
   golfLbAvatarText: {
     fontSize: 10,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: "#C8C8C0",
     letterSpacing: -0.02,
   },
@@ -4676,20 +4677,20 @@ const styles = StyleSheet.create({
   },
   golfLbPlayerName: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     lineHeight: 18,
   },
   golfLbPlayerSub: {
     fontSize: 10,
     color: C.textTertiary,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     marginTop: 1,
   },
   golfLbCell: {
     flex: 0.5,
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textSecondary,
     textAlign: "right",
   },
@@ -4712,7 +4713,7 @@ const styles = StyleSheet.create({
   },
   golfLbCutText: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     fontWeight: "600",
     color: "#E05252",
     letterSpacing: 0.1,
@@ -4751,26 +4752,26 @@ const styles = StyleSheet.create({
   },
   golfScheduleMajorText: {
     fontSize: 9,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: "#000",
     letterSpacing: 0.5,
   },
   golfScheduleName: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     marginBottom: 4,
     paddingRight: 40,
   },
   golfScheduleCourse: {
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
     marginBottom: 8,
   },
   golfScheduleDate: {
     fontSize: 12,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
     color: C.textSecondary,
   },
   golfScheduleFooter: {
@@ -4781,7 +4782,7 @@ const styles = StyleSheet.create({
   },
   golfScheduleLocation: {
     fontSize: 10,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textTertiary,
     flex: 1,
     textAlign: "right",
@@ -4804,14 +4805,14 @@ const styles = StyleSheet.create({
   },
   golfSecLabelText: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     letterSpacing: 0.25,
     textTransform: "uppercase",
     color: "#444440",
   },
   golfSeeAll: {
     fontSize: 12,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#C9A84C",
     letterSpacing: 0.05,
   },
@@ -4847,7 +4848,7 @@ const styles = StyleSheet.create({
   },
   golfUpcomingMajorText: {
     fontSize: 8,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: "#000",
     letterSpacing: 0.15,
   },
@@ -4859,19 +4860,19 @@ const styles = StyleSheet.create({
   },
   golfUpcomingName: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     marginBottom: 3,
     lineHeight: 17,
   },
   golfUpcomingDate: {
     fontSize: 10,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.textTertiary,
   },
   golfUpcomingVenue: {
     fontSize: 11,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: "#444440",
     marginTop: 3,
   },
@@ -4905,12 +4906,12 @@ const styles = StyleSheet.create({
   },
   golfRankingsPosNum: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textSecondary,
   },
   golfRankingsAvatarText: {
     fontSize: 10,
-    fontFamily: "Inter_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     color: "#C8C8C0",
     letterSpacing: -0.5,
   },
@@ -4919,13 +4920,13 @@ const styles = StyleSheet.create({
   },
   golfRankingsName: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     lineHeight: 18,
   },
   golfRankingsCountry: {
     fontSize: 10,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textTertiary,
     marginTop: 1,
   },
@@ -4934,18 +4935,18 @@ const styles = StyleSheet.create({
   },
   golfRankingsMovement: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     marginBottom: 2,
   },
   golfRankingsPoints: {
     fontSize: 12,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.textSecondary,
     textAlign: "right",
   },
   golfRankingsPointsLabel: {
     fontSize: 9,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textTertiary,
     textAlign: "right",
   },

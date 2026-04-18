@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { getTeamById, teamColor, type TeamData } from "@/constants/teamData";
 import { ALL_TEAMS, ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { usePreferences } from "@/context/PreferencesContext";
