@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Fortnite Controller Receiver",
+    "slug": "fortnite-controller-receiver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "fortnitecontroller",
+    "platforms": ["ios"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.personal.fortnitecontroller.receiver",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app needs local network access to receive controller inputs from your phone."
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

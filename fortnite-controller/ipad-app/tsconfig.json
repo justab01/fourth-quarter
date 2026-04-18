@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@fortnite-controller/shared": ["../shared/src"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}
