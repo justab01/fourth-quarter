@@ -675,7 +675,7 @@ function DrawMatchCard({
             flex: 1,
             marginLeft: 6,
             fontSize: 12,
-            fontFamily: p1Won ? "Inter_700Bold" : "Inter_400Regular",
+            fontFamily: p1Won ? FONTS.bodyBold : FONTS.body,
             color: isFinished && !p1Won ? C.textTertiary : C.text,
           }}
           numberOfLines={1}
@@ -717,7 +717,7 @@ function DrawMatchCard({
             flex: 1,
             marginLeft: 6,
             fontSize: 12,
-            fontFamily: p2Won ? "Inter_700Bold" : "Inter_400Regular",
+            fontFamily: p2Won ? FONTS.bodyBold : FONTS.body,
             color: isFinished && !p2Won ? C.textTertiary : C.text,
           }}
           numberOfLines={1}

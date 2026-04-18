@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 import Colors from "@/constants/colors";
+import { FONTS } from "@/constants/typography";
 import { useSearch } from "@/context/SearchContext";
 
 const C = Colors.dark;
@@ -35,6 +36,6 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 14,
     color: Colors.dark.textSecondary,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
 });
