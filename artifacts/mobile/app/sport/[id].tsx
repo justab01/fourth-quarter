@@ -1860,6 +1860,85 @@ export default function SportBoardScreen() {
     </View>
   ) : null;
 
+  // Golf Live Games Section - Horizontal scroll in main content
+  const GolfLiveGamesSection = golfGames.length > 0 ? (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.liveStripPulse}>
+          <Animated.View style={{
+            width: 8, height: 8, borderRadius: 4, backgroundColor: accentColor,
+            opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+            transform: [{ scale: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }]
+          }} />
+        </View>
+        <Text style={styles.sectionTitle}>Live Tournaments</Text>
+        <Text style={styles.sectionSubTitle}>{golfGames.length} live</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+      >
+        {golfGames.map((game) => {
+          const leaderboard = (game as any).leaderboard ?? [];
+          const leader = leaderboard[0];
+          return (
+            <Pressable
+              key={game.id}
+              style={styles.golfLiveCard}
+              onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+            >
+              <View style={styles.golfLiveCardGrass}>
+                <View style={styles.golfLiveBadge}>
+                  <Animated.View style={{
+                    width: 5, height: 5, borderRadius: 2.5, backgroundColor: "#4DCC70",
+                    opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+                  }} />
+                  <Text style={styles.golfLiveBadgeText}>LIVE</Text>
+                </View>
+                <Text style={styles.golfLiveRound}>{game.round ?? "RND 1"}</Text>
+                <Text style={styles.golfLiveFlag}>🏌️</Text>
+              </View>
+              <View style={styles.golfLiveCardBody}>
+                <Text style={styles.golfLiveTournament}>{game.eventTitle ?? "Tournament"}</Text>
+                <Text style={styles.golfLiveVenue}>⛳ {game.venue ?? "Course"}</Text>
+                <View style={styles.golfLiveDivider} />
+                {leader && (
+                  <View style={styles.golfLiveLeaderRow}>
+                    <Text style={[styles.golfLivePos, { color: "#E8C96A" }]}>1</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flex: 1 }}>
+                      <View style={styles.golfLiveAvatarPlaceholder}>
+                        <Text style={styles.golfLiveAvatarText}>
+                          {leader.name?.split(" ").map((w: string) => w[0]).join("").slice(0, 2) ?? "?"}
+                        </Text>
+                      </View>
+                      <View>
+                        <Text style={styles.golfLiveName} numberOfLines={1}>{leader.name ?? "Leader"}</Text>
+                        <Text style={styles.golfLiveCountry}>{leader.score ?? "-"}</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.golfLiveScore, { color: getGolfScoreColor(leader.toPar ?? 0) }]}>
+                      {leader.score ?? "-"}
+                    </Text>
+                  </View>
+                )}
+                {leaderboard.slice(1, 3).map((p: any, i: number) => (
+                  <View key={i} style={styles.golfLiveLeaderRow}>
+                    <Text style={styles.golfLivePos}>T{p.position ?? i + 2}</Text>
+                    <Text style={styles.golfLiveName} numberOfLines={1}>{p.name}</Text>
+                    <Text style={[styles.golfLiveScore, { color: getGolfScoreColor(p.toPar ?? 0) }]}>
+                      {p.score}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  ) : null;
+
   const GolfLeaderboardSection = golfGames.length > 0 && lbEntries.length === 0 ? (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -2810,6 +2889,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       case "golf":
         return (
           <>
+            {GolfLiveGamesSection}
             {ApiLeaderboardSection}
             {GolfScheduleSection}
             {GolfRankingsSection}
@@ -2993,7 +3073,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       )}
 
       {/* ── Live Games Strip ─────────────────────────────────────────────────────── */}
-      {liveCount > 0 && sportId !== "basketball" && (
+      {liveCount > 0 && sportId !== "basketball" && archetype !== "golf" && (
         <View style={styles.liveStripContainer}>
           <View style={styles.liveStripHeader}>
             <View style={styles.liveStripPulse}>
