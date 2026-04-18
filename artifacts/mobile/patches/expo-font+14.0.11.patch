@@ -1,0 +1,21 @@
+diff --git a/node_modules/expo-font/build/ExpoFontLoader.web.js b/node_modules/expo-font/build/ExpoFontLoader.web.js
+--- a/node_modules/expo-font/build/ExpoFontLoader.web.js
++++ b/node_modules/expo-font/build/ExpoFontLoader.web.js
+@@ -1,4 +1,7 @@
+ import { CodedError } from 'expo-modules-core';
++// Polyfill for registerWebModule if not exported (fixes Expo SDK 54 web issue)
++const registerWebModule = (require('expo-modules-core').registerWebModule) || ((impl, name) => impl);
++
+ import FontObserver from 'fontfaceobserver';
+ import { FontDisplay } from './Font.types';
+diff --git a/node_modules/expo-font/build/ExpoFontUtils.web.js b/node_modules/expo-font/build/ExpoFontUtils.web.js
+--- a/node_modules/expo-font/build/ExpoFontUtils.web.js
++++ b/node_modules/expo-font/build/ExpoFontUtils.web.js
+@@ -1,4 +1,6 @@
+-import { NativeModule, registerWebModule, UnavailabilityError } from 'expo-modules-core';
++import { NativeModule, UnavailabilityError } from 'expo-modules-core';
++// Polyfill for registerWebModule if not exported (fixes Expo SDK 54 web issue)
++const registerWebModule = (require('expo-modules-core').registerWebModule) || ((impl, name) => new impl());
+ class ExpoFontUtils extends NativeModule {
+     async renderToImageAsync(glyphs, options) {
+         throw new UnavailabilityError('expo-font', 'renderToImageAsync');

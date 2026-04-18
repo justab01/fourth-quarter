@@ -3,6 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "main": "expo-router/entry",
+  "pnpm": {
+    "patchedDependencies": {
+      "expo-font@14.0.11": "patches/expo-font+14.0.11.patch",
+      "expo-speech@55.0.13": "patches/expo-speech+55.0.13.patch"
+    }
+  },
   "scripts": {
     "dev": "EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN pnpm exec expo start --localhost --port $PORT",
     "build": "node scripts/build.js",

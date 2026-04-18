@@ -255,7 +255,7 @@ importers:
         version: 16.0.8(expo@54.0.33)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       expo-speech:
         specifier: ^55.0.9
-        version: 55.0.9(expo@54.0.33)
+        version: 55.0.13(expo@54.0.33)
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -361,7 +361,7 @@ importers:
         version: 2.28.0(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react-native-keyboard-controller:
         specifier: ^1.20.6
-        version: 1.21.0(react-native-reanimated@4.1.6(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+        version: 1.21.5(react-native-reanimated@4.1.6(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react-native-reanimated:
         specifier: ~4.1.1
         version: 4.1.6(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -4446,8 +4446,8 @@ packages:
     resolution: {integrity: sha512-IGR++flYH70rhLyeXF0Phle56/k4cee87WeQ4mamS+MkVAVP+dDlOHf2nN06Z9Y2KhU0Gp1k+y61KkghF7HdhA==}
     engines: {node: '>=20.16.0'}
 
-  expo-speech@55.0.9:
-    resolution: {integrity: sha512-xDUHeMb3Zp9ICHscSzwCtmeRMCYD/zSPoQn75yjEjgQUzyIwfthUpEiUGwIo1DUC728PdRSvBegnYqv+3MQJPA==}
+  expo-speech@55.0.13:
+    resolution: {integrity: sha512-DZzwe9Z6NhHmNi5ICwYE9BgcNmE3U8t0pSlg1vs18f6omyD88e1ZqCJ0as1aWgZYO3WtbcwWqCTboV8QMwtOow==}
     peerDependencies:
       expo: '*'
 
@@ -6593,8 +6593,8 @@ packages:
       react: '*'
       react-native: '*'
 
-  react-native-keyboard-controller@1.21.0:
-    resolution: {integrity: sha512-mLHJysehhSzYoM8BAD2DSjVZEcF69t16ZCJrCAos6sfVtbB3tL+kgGZFX+jNVz/f9BEhqnBFO0EA1tc/V6Hkgw==}
+  react-native-keyboard-controller@1.21.5:
+    resolution: {integrity: sha512-wxR+vpJ+2g6QMQCP1mRQKySDUietf5xLntZ76cUNHOGsjyqk6LtznXwHBG9YsR9E/b2IrHXISylwqPnIit6Y6A==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -13041,7 +13041,7 @@ snapshots:
 
   expo-server@1.0.5: {}
 
-  expo-speech@55.0.9(expo@54.0.33):
+  expo-speech@55.0.13(expo@54.0.33):
     dependencies:
       expo: 54.0.33(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(graphql@15.8.0)(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
 
@@ -15684,7 +15684,7 @@ snapshots:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0)
 
-  react-native-keyboard-controller@1.21.0(react-native-reanimated@4.1.6(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+  react-native-keyboard-controller@1.21.5(react-native-reanimated@4.1.6(@babel/core@7.29.0)(react-native-worklets@0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
     dependencies:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.29.0)(@react-native-community/cli@13.6.4)(@types/react@19.1.17)(react@19.1.0)
