@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { useSearch } from "@/context/SearchContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import { api } from "@/utils/api";
@@ -78,8 +79,8 @@ const row = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
-  label: { color: C.text, fontSize: 15, fontFamily: "Inter_500Medium" },
-  sub: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  label: { color: C.text, fontSize: 15, fontFamily: FONTS.bodyMedium },
+  sub: { color: C.textTertiary, fontSize: 12, fontFamily: FONTS.body, marginTop: 1 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginRight: 4 },
   badgeText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.4 },
 });
@@ -434,7 +435,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.text,
     fontSize: 16,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   cancelBtn: {
     paddingHorizontal: 4,
@@ -444,7 +445,7 @@ const styles = StyleSheet.create({
     color: C.accent,
     fontSize: 15,
     fontWeight: "600",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
   results: {
     maxHeight: 580,
@@ -469,7 +470,7 @@ const styles = StyleSheet.create({
   quickChipText: {
     color: C.textSecondary,
     fontSize: 13,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
   },
   noResults: {
     alignItems: "center",
@@ -479,11 +480,11 @@ const styles = StyleSheet.create({
   noResultsTitle: {
     color: C.textSecondary,
     fontSize: 17,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
   noResultsSub: {
     color: C.textTertiary,
     fontSize: 14,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
 });

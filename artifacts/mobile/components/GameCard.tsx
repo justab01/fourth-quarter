@@ -5,6 +5,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import type { Game } from "@/utils/api";
 import { goToTeam } from "@/utils/navHelpers";
 import {
@@ -122,7 +123,7 @@ export function TeamLogo({
           onError={() => setFailed(true)}
         />
       ) : (
-        <Text style={{ color: "#fff", fontSize: fontSize ?? size * 0.32, fontWeight: "900", fontFamily: "Inter_700Bold" }}>
+        <Text style={{ color: "#fff", fontSize: fontSize ?? size * 0.32, fontWeight: "900", fontFamily: FONTS.bodyBold }}>
           {abbr}
         </Text>
       )}
@@ -271,7 +272,7 @@ const nerd = StyleSheet.create({
   },
   chip: { flex: 1, gap: 2 },
   chipLabel: { fontSize: 7, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
-  chipVal: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  chipVal: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: FONTS.bodyBold },
   divider: { width: StyleSheet.hairlineWidth, height: 28, backgroundColor: "rgba(255,255,255,0.1)", marginHorizontal: 8 },
   probRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   probBarBg: { width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.1)", overflow: "hidden" },
@@ -708,21 +709,21 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                     {isLive ? "LIVE" : isFinished ? "FINAL" : formatTime(game.startTime)}
                   </Text>
                 </View>
-                <Text style={{ color: C.text, fontSize: 13, fontFamily: "Inter_700Bold", marginLeft: 8, flex: 1 }} numberOfLines={1}>
+                <Text style={{ color: C.text, fontSize: 13, fontFamily: FONTS.bodyBold, marginLeft: 8, flex: 1 }} numberOfLines={1}>
                   {game.eventTitle ?? "Tournament"}
                 </Text>
-                <Text style={{ fontSize: 10, color: leagueColor, fontFamily: "Inter_700Bold" }}>{game.league}</Text>
+                <Text style={{ fontSize: 10, color: leagueColor, fontFamily: FONTS.bodyBold }}>{game.league}</Text>
               </View>
 
               {lb.slice(0, 5).map((entry: any, i: number) => (
                 <View key={i} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 3 }}>
-                  <Text style={{ color: i === 0 ? leagueColor : C.textSecondary, fontSize: 11, fontFamily: "Inter_700Bold", width: 20, textAlign: "right" }}>
+                  <Text style={{ color: i === 0 ? leagueColor : C.textSecondary, fontSize: 11, fontFamily: FONTS.bodyBold, width: 20, textAlign: "right" }}>
                     {entry.position}
                   </Text>
-                  <Text style={{ color: i === 0 ? C.text : C.textSecondary, fontSize: 12, fontFamily: i === 0 ? "Inter_700Bold" : "Inter_400Regular", marginLeft: 8, flex: 1 }} numberOfLines={1}>
+                  <Text style={{ color: i === 0 ? C.text : C.textSecondary, fontSize: 12, fontFamily: i === 0 ? FONTS.bodyBold : FONTS.body, marginLeft: 8, flex: 1 }} numberOfLines={1}>
                     {entry.name}
                   </Text>
-                  <Text style={{ color: i === 0 ? C.text : C.textSecondary, fontSize: 12, fontFamily: "Inter_700Bold", minWidth: 35, textAlign: "right" }}>
+                  <Text style={{ color: i === 0 ? C.text : C.textSecondary, fontSize: 12, fontFamily: FONTS.bodyBold, minWidth: 35, textAlign: "right" }}>
                     {entry.score}
                   </Text>
                 </View>
@@ -788,7 +789,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                   <Ionicons name="star" size={10} color={C.accent} />
                 </View>
               )}
-              <Text style={{ color: leagueColor, fontSize: 9, fontFamily: "Inter_700Bold", position: "absolute", top: 10, right: 12 }}>{game.league}</Text>
+              <Text style={{ color: leagueColor, fontSize: 9, fontFamily: FONTS.bodyBold, position: "absolute", top: 10, right: 12 }}>{game.league}</Text>
               <View style={[dflt.leagueAccent, { backgroundColor: leagueColor }]} />
             </View>
           </View>
@@ -924,10 +925,10 @@ const hero = StyleSheet.create({
   teamCol: { flex: 1, alignItems: "flex-start", gap: 6 },
   teamName: {
     color: C.text, fontSize: 14, fontWeight: "700",
-    fontFamily: "Inter_700Bold", lineHeight: 18, flex: 1,
+    fontFamily: FONTS.bodyBold, lineHeight: 18, flex: 1,
   },
   scoreBlock: { flexDirection: "row", alignItems: "baseline", gap: 4 },
-  score: { color: C.text, fontSize: 40, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 46 },
+  score: { color: C.text, fontSize: 40, fontWeight: "900", fontFamily: FONTS.bodyBold, lineHeight: 46 },
   scoreSep: { color: C.textTertiary, fontSize: 24, fontWeight: "300", lineHeight: 46 },
   scoreDim: { color: C.textTertiary },
   teamLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
@@ -941,7 +942,7 @@ const hero = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 8,
     borderWidth: 1.5, borderRadius: 28, paddingHorizontal: 22, paddingVertical: 11,
   },
-  ctaPillText: { fontSize: 13, fontWeight: "800", letterSpacing: 0.4, fontFamily: "Inter_700Bold" },
+  ctaPillText: { fontSize: 13, fontWeight: "800", letterSpacing: 0.4, fontFamily: FONTS.bodyBold },
   ctaChevron: { fontSize: 20, fontWeight: "700", lineHeight: 20 },
 });
 
@@ -962,9 +963,9 @@ const cpt = StyleSheet.create({
   ftLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, marginBottom: 2 },
   divider: { height: 1, backgroundColor: C.separator, marginLeft: 32 },
   row: { flexDirection: "row", alignItems: "center", gap: 7 },
-  teamName: { flex: 1, color: C.textSecondary, fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  teamName: { flex: 1, color: C.textSecondary, fontSize: 12, fontWeight: "600", fontFamily: FONTS.bodySemiBold },
   teamDim: { color: C.textTertiary },
-  score: { color: C.text, fontSize: 16, fontWeight: "800", fontFamily: "Inter_700Bold", minWidth: 24, textAlign: "right" },
+  score: { color: C.text, fontSize: 16, fontWeight: "800", fontFamily: FONTS.bodyBold, minWidth: 24, textAlign: "right" },
   scoreDim: { color: C.textTertiary },
   starRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 },
   starText: { color: C.accent, fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
@@ -1004,10 +1005,10 @@ const dflt = StyleSheet.create({
   },
   teamName: {
     flex: 1, color: C.text, fontSize: 13, fontWeight: "600",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
   teamDim: { color: C.textTertiary },
-  score: { color: C.text, fontSize: 18, fontWeight: "900", fontFamily: "Inter_700Bold", minWidth: 26, textAlign: "right" },
+  score: { color: C.text, fontSize: 18, fontWeight: "900", fontFamily: FONTS.bodyBold, minWidth: 26, textAlign: "right" },
   scoreDim: { color: C.textTertiary },
   scorePlaceholder: { minWidth: 26 },
   hSep: { height: 1, backgroundColor: C.separator, marginLeft: 36, marginVertical: 2 },
