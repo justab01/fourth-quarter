@@ -42,6 +42,9 @@ export default {
     liveGlow: "rgba(0,255,135,0.22)",
     liveGreen: green,
 
+    // Error/Loss
+    error: "#EF4444",
+
     // Tab bar / floating nav
     tabBarBg:         "rgba(14,12,9,0.94)",
     tabIconDefault:   "#4A4035",
@@ -51,6 +54,8 @@ export default {
     separator:    "rgba(255,200,100,0.07)",
     overlay:      "rgba(0,0,0,0.85)",
     glassLight:   "rgba(255,255,255,0.04)",
+    glassMedium:  "rgba(255,255,255,0.08)",
+    glassHeavy:   "rgba(255,255,255,0.12)",
     glassBorder:  "rgba(255,200,100,0.1)",
 
     // League accent colors
@@ -79,7 +84,9 @@ export default {
     f1:       "#E10600",
     nascar:   "#F39C12",
 
-    // Legacy compat
+    // DEPRECATED — DO NOT USE (will be removed)
+    // Replace C.electricLime with C.live
+    // Remove C.vividTeal, C.brandGraphite, C.charcoal, C.graphite
     vividTeal:      "#206E6B",
     brandGraphite:  "#504D47",
     electricLime:   "#BFFF00",
