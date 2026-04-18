@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 import { GameCard } from "@/components/GameCard";
@@ -729,7 +730,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 14, paddingBottom: 8, paddingHorizontal: 4,
   },
-  title: { fontSize: 26, fontWeight: "900", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  title: { fontSize: 26, fontWeight: "900", color: C.text, fontFamily: FONTS.bodyBold, letterSpacing: -0.5 },
   summaryRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
   liveDotSmall: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
   summaryText: { color: C.textTertiary, fontSize: 12, fontWeight: "600" },
@@ -795,7 +796,7 @@ const styles = StyleSheet.create({
   },
   myTeamsTitle: {
     fontSize: 12, fontWeight: "900", color: C.accentGold,
-    letterSpacing: 1.2, textTransform: "uppercase", fontFamily: "Inter_700Bold",
+    letterSpacing: 1.2, textTransform: "uppercase", fontFamily: FONTS.bodyBold,
     flex: 1,
   },
   myTeamsLiveBadge: { flexDirection: "row", alignItems: "center", gap: 4 },
@@ -810,7 +811,7 @@ const styles = StyleSheet.create({
   rivalryRow: { borderLeftWidth: 2, borderLeftColor: `${C.accentGold}60` },
 
   empty: { alignItems: "center", paddingVertical: 80, gap: 12 },
-  emptyTitle: { fontSize: 20, fontWeight: "800", color: C.textSecondary, fontFamily: "Inter_700Bold" },
+  emptyTitle: { fontSize: 20, fontWeight: "800", color: C.textSecondary, fontFamily: FONTS.bodyBold },
   emptyText: { fontSize: 14, color: C.textTertiary, textAlign: "center", paddingHorizontal: 24 },
 
   backTodayBtn: {

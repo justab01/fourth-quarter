@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { SPORT_CATEGORIES, type SportCategory } from "@/constants/sportCategories";
 import { useSearch } from "@/context/SearchContext";
 import { ProfileButton } from "@/components/ProfileButton";
@@ -237,14 +238,14 @@ const styles = StyleSheet.create({
   },
   headerEyebrow: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.accent,
     letterSpacing: 1.5,
     marginBottom: 2,
   },
   headerTitle: {
     fontSize: 26,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     letterSpacing: -0.5,
   },
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
   },
   quickChipText: {
     fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
   },
 
@@ -294,12 +295,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
   },
   sectionSub: {
     fontSize: 13,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
   },
 
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   },
   liveBadgeText: {
     fontSize: 10,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#fff",
   },
   cardEmoji: {
@@ -353,7 +354,7 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 16,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#fff",
     marginBottom: 3,
     textShadowColor: "rgba(0,0,0,0.5)",
@@ -362,7 +363,7 @@ const styles = StyleSheet.create({
   },
   cardTagline: {
     fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: "#fff",
     opacity: 0.9,
     textShadowColor: "rgba(0,0,0,0.5)",
@@ -385,7 +386,7 @@ const styles = StyleSheet.create({
   },
   phaseBadgeText: {
     fontSize: 9,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#fff",
     letterSpacing: 0.3,
   },

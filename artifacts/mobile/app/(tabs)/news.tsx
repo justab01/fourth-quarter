@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, type NewsArticle } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { NewsCard } from "@/components/NewsCard";

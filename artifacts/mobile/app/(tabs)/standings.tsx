@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, StandingEntry, TournamentRound, TournamentMatchup } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
@@ -314,7 +315,7 @@ const trnS = StyleSheet.create({
   matchupLogo: { width: 20, height: 20, borderRadius: 10 },
   seed: { fontSize: 10, color: C.textTertiary, fontWeight: "700" },
   teamName: { fontSize: 12, color: C.textSecondary, fontFamily: "PlusJakartaSans_400Regular", flex: 1 },
-  score: { fontSize: 14, color: C.textTertiary, fontWeight: "700", fontFamily: "DMMono_500Medium", minWidth: 24, textAlign: "right" },
+  score: { fontSize: 14, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.monoBold, minWidth: 24, textAlign: "right" },
   matchupDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 10 },
   liveIndicator: {
     position: "absolute", top: 4, right: 6, flexDirection: "row", alignItems: "center", gap: 3,
@@ -842,13 +843,13 @@ const styles = StyleSheet.create({
   myTeamBar: { position: "absolute", left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
 
   tdRank: { width: 30, flexDirection: "row", alignItems: "center", gap: 2, paddingLeft: 2 },
-  rankNum: { color: C.textSecondary, fontSize: 13, fontWeight: "600", fontFamily: "DMMono_500Medium", minWidth: 16 },
+  rankNum: { color: C.textSecondary, fontSize: 13, fontWeight: "600", fontFamily: FONTS.monoBold, minWidth: 16 },
 
   tdTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 7 },
   teamText: { color: C.textSecondary, fontSize: 13, fontFamily: "PlusJakartaSans_600SemiBold", flex: 1 },
   conferenceText: { color: C.textTertiary, fontSize: 10 },
 
-  tdStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 12, fontFamily: "DMMono_400Regular" },
+  tdStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 12, fontFamily: FONTS.mono },
   tdStreak: { width: 40, alignItems: "center" },
 
   whyItMatters: {
@@ -899,7 +900,7 @@ const styles = StyleSheet.create({
   },
   expandedStat: { alignItems: "center", gap: 4 },
   expandedStatLabel: { color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1 },
-  expandedStatVal: { fontSize: 15, fontWeight: "800", fontFamily: "DMMono_500Medium" },
+  expandedStatVal: { fontSize: 15, fontWeight: "800", fontFamily: FONTS.monoBold },
   expandedBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
