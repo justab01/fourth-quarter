@@ -69,6 +69,6 @@ const progress = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
   value: { color: C.text, fontSize: 16, fontWeight: "700", fontFamily: FONTS.bodyBold },
   rank: { fontSize: 12, fontWeight: "700" },
-  track: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.1)", overflow: "hidden" },
+  track: { height: 6, borderRadius: 3, backgroundColor: C.glassMedium, overflow: "hidden" },
   fill: { height: 6, borderRadius: 3 },
 });

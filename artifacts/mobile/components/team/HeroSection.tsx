@@ -85,14 +85,14 @@ export function HeroSection({ team, isFav, onBack, onToggleFav }: HeroSectionPro
       {/* Top bar */}
       <View style={styles.topBar}>
         <Pressable onPress={onBack} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Pressable onPress={onToggleFav} style={styles.iconBtn}>
-            <Ionicons name={isFav ? "star" : "star-outline"} size={20} color={isFav ? "#FFD700" : "#fff"} />
+            <Ionicons name={isFav ? "star" : "star-outline"} size={20} color={isFav ? "#FFD700" : C.text} />
           </Pressable>
           <Pressable style={styles.iconBtn}>
-            <Ionicons name="notifications-outline" size={20} color="#fff" />
+            <Ionicons name="notifications-outline" size={20} color={C.text} />
           </Pressable>
         </View>
       </View>
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   iconBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.25)" },
   teamIdentity: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 12 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  teamName: { color: "#fff", fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold },
+  teamName: { color: C.text, fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold },
   streakBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
   streakText: { fontSize: 11, fontWeight: "800" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },

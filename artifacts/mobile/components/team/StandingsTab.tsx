@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import type { TeamData } from "@/constants/teamData";
 
 const C = Colors.dark;
@@ -57,7 +58,7 @@ export function StandingsTab({ team }: StandingsTabProps) {
 
         {isInPlayoffs && (
           <View style={styles.playoffStatus}>
-            <Ionicons name="checkmark-circle" size={16} color="#48ADA9" />
+            <Ionicons name="checkmark-circle" size={16} color={C.accentTeal} />
             <Text style={styles.playoffStatusText}>Playoff position secured</Text>
           </View>
         )}
@@ -124,17 +125,17 @@ const styles = StyleSheet.create({
   playoffStat: { alignItems: "center", gap: 4 },
   statLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700" },
   statValue: { color: C.text, fontSize: 18, fontWeight: "800" },
-  magicNum: { color: "#48ADA9" },
+  magicNum: { color: C.accentTeal },
   playoffStatus: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "rgba(72,173,169,0.1)",
+    backgroundColor: `${C.accentTeal}15`,
     borderRadius: 8,
     paddingVertical: 8,
   },
-  playoffStatusText: { color: "#48ADA9", fontSize: 12, fontWeight: "700" },
+  playoffStatusText: { color: C.accentTeal, fontSize: 12, fontWeight: "700" },
   matchupCard: {
     backgroundColor: C.card,
     borderRadius: 16,

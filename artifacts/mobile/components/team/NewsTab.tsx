@@ -3,6 +3,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import type { TeamData } from "@/constants/teamData";
 
 const C = Colors.dark;

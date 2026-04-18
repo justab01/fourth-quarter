@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { GameCard } from "./GameCard";
 import type { TeamData } from "@/constants/teamData";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 
 const C = Colors.dark;
 
