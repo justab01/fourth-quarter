@@ -1,13 +1,19 @@
 // Fourth Quarter Typography Constants
-// Plus Jakarta Sans (body/UI), Oswald (scores/display), DM Mono (data/tags)
+// Inter (body/UI), Oswald (scores/display), DM Mono (data/tags)
 
 export const FONTS = {
+  // Display — Scores, headers, big numbers
   display: "Oswald_700Bold",
   displayMedium: "Oswald_500Medium",
-  body: "PlusJakartaSans_400Regular",
-  bodyMedium: "PlusJakartaSans_600SemiBold",
-  bodyBold: "PlusJakartaSans_700Bold",
-  bodyHeavy: "PlusJakartaSans_800ExtraBold",
+
+  // Body — All text content (Inter matches what's actually loaded)
+  body: "Inter_400Regular",
+  bodyMedium: "Inter_500Medium",
+  bodySemiBold: "Inter_600SemiBold",
+  bodyBold: "Inter_700Bold",
+  bodyHeavy: "Inter_800ExtraBold",
+
+  // Mono — Data, tags, league labels
   mono: "DMMono_400Regular",
   monoBold: "DMMono_500Medium",
 } as const;
@@ -20,6 +26,18 @@ export const FONT_SIZES = {
   body: 14,
   caption: 12,
   tiny: 10,
+  micro: 9,
+  small: 11,
+  medium: 13,
+  large: 15,
+  xlarge: 17,
+  xxlarge: 18,
+  huge: 22,
+  giant: 26,
+  massive: 30,
+  display: 40,
+  jumbo: 52,
+  colossal: 56,
 } as const;
 
 export const LINE_HEIGHTS = {
