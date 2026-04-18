@@ -269,6 +269,248 @@ const C = Colors.dark;
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
+// ── Sport-Specific Hero Visual Overlays ───────────────────────────────────────────
+function SportHeroOverlay({ sportId, accentColor }: { sportId: string; accentColor: string }) {
+  // Football: Field with hashmarks
+  if (sportId === "football") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.fieldLines}>
+          {[...Array(5)].map((_, i) => (
+            <View key={i} style={[heroOverlayStyles.hashmark, { top: 20 + i * 15 }]} />
+          ))}
+          <View style={heroOverlayStyles.endZone} />
+        </View>
+      </View>
+    );
+  }
+  // Basketball: Court with key and three-point arc
+  if (sportId === "basketball") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.courtKey}>
+          <View style={[heroOverlayStyles.courtLine, { width: 2, height: 40 }]} />
+          <View style={[heroOverlayStyles.courtArc, { borderColor: accentColor + "40" }]} />
+        </View>
+      </View>
+    );
+  }
+  // Baseball: Diamond with bases
+  if (sportId === "baseball") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.diamond}>
+          <View style={[heroOverlayStyles.base, { top: 0, left: 20 }]} />
+          <View style={[heroOverlayStyles.base, { top: 20, left: 0 }]} />
+          <View style={[heroOverlayStyles.base, { top: 20, left: 40 }]} />
+          <View style={[heroOverlayStyles.base, { top: 40, left: 20 }]} />
+        </View>
+      </View>
+    );
+  }
+  // Hockey: Ice with blue/red lines
+  if (sportId === "hockey") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={[heroOverlayStyles.iceLine, { backgroundColor: "#4A90D9", top: 25 }]} />
+        <View style={[heroOverlayStyles.iceLine, { backgroundColor: "#E74C3C", top: 30 }]} />
+        <View style={[heroOverlayStyles.iceLine, { backgroundColor: "#4A90D9", top: 35 }]} />
+      </View>
+    );
+  }
+  // Soccer: Pitch with penalty boxes
+  if (sportId === "soccer") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.pitchLine} />
+        <View style={heroOverlayStyles.penaltyBox} />
+        <View style={[heroOverlayStyles.penaltyBox, { right: 0, left: "auto" }]} />
+      </View>
+    );
+  }
+  // Tennis: Court with service boxes
+  if (sportId === "tennis") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.tennisCourt}>
+          <View style={heroOverlayStyles.serviceLine} />
+          <View style={[heroOverlayStyles.serviceLine, { top: 20 }]} />
+        </View>
+      </View>
+    );
+  }
+  // Golf: Grass texture
+  if (sportId === "golf") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.grassTexture}>
+          {[...Array(8)].map((_, i) => (
+            <View key={i} style={[heroOverlayStyles.grassStripe, { opacity: 0.03 + (i % 2) * 0.02 }]} />
+          ))}
+        </View>
+      </View>
+    );
+  }
+  // Combat: Ring/octagon
+  if (sportId === "combat") {
+    return (
+      <View style={heroOverlayStyles.container} pointerEvents="none">
+        <View style={heroOverlayStyles.ringRopes}>
+          <View style={[heroOverlayStyles.rope, { top: 10 }]} />
+          <View style={[heroOverlayStyles.rope, { top: 20 }]} />
+          <View style={[heroOverlayStyles.rope, { top: 30 }]} />
+        </View>
+      </View>
+    );
+  }
+  return null;
+}
+
+const heroOverlayStyles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: "hidden",
+  },
+  // Football
+  fieldLines: {
+    position: "absolute",
+    right: 20,
+    top: 10,
+    width: 80,
+    height: 100,
+  },
+  hashmark: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  endZone: {
+    position: "absolute",
+    right: 0,
+    top: 30,
+    width: 20,
+    height: 40,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  // Basketball
+  courtKey: {
+    position: "absolute",
+    right: 30,
+    top: 20,
+    width: 50,
+    height: 60,
+    alignItems: "center",
+  },
+  courtLine: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  courtArc: {
+    position: "absolute",
+    bottom: 0,
+    width: 40,
+    height: 20,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  // Baseball
+  diamond: {
+    position: "absolute",
+    right: 40,
+    top: 15,
+    width: 60,
+    height: 60,
+    transform: [{ rotate: "45deg" }],
+  },
+  base: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 2,
+  },
+  // Hockey
+  iceLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 2,
+  },
+  // Soccer
+  pitchLine: {
+    position: "absolute",
+    left: "50%",
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  penaltyBox: {
+    position: "absolute",
+    left: 0,
+    top: 15,
+    width: 30,
+    height: 50,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  // Tennis
+  tennisCourt: {
+    position: "absolute",
+    right: 30,
+    top: 10,
+    width: 50,
+    height: 50,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  serviceLine: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  // Golf
+  grassTexture: {
+    position: "absolute",
+    right: 20,
+    top: 10,
+    width: 100,
+    height: 60,
+    overflow: "hidden",
+  },
+  grassStripe: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: 12,
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  // Combat
+  ringRopes: {
+    position: "absolute",
+    right: 30,
+    top: 10,
+    width: 60,
+    height: 50,
+  },
+  rope: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+});
+
 // Sport-specific hero gradients for visual differentiation
 function getSportHeroGradient(sportId: string): [string, string, string] {
   const gradients: Record<string, [string, string, string]> = {
@@ -2964,6 +3206,9 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
         end={{ x: 1, y: 1 }}
         style={styles.heroGradient}
       >
+        {/* Sport-specific visual overlay */}
+        <SportHeroOverlay sportId={sportId} accentColor={accentColor} />
+
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
             <Ionicons name="chevron-back" size={22} color={C.text} />
