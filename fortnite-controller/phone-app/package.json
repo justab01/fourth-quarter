@@ -1,0 +1,25 @@
+{
+  "name": "@fortnite-controller/phone-app",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fortnite-controller/shared": "*",
+    "expo": "~51.0.0",
+    "expo-router": "~3.5.0",
+    "expo-haptics": "~12.0.0",
+    "react": "18.2.0",
+    "react-native": "0.74.0",
+    "react-native-gesture-handler": "~2.16.0",
+    "react-native-reanimated": "~3.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "~18.2.0",
+    "typescript": "^5.4.0"
+  }
+}
