@@ -1740,12 +1740,12 @@ export default function SportBoardScreen() {
                 }} />
                 <Text style={styles.golfLiveBadgeText}>LIVE</Text>
               </View>
-              <Text style={styles.golfLiveRound}>{leaderboardData.round ?? "RND 1"}</Text>
+              <Text style={styles.golfLiveRound}>{leaderboardData!.round ?? "RND 1"}</Text>
               <Text style={styles.golfLiveFlag}>🏌️</Text>
             </View>
             <View style={styles.golfLiveCardBody}>
-              <Text style={styles.golfLiveTournament}>{leaderboardData.tournament ?? "Tournament"}</Text>
-              <Text style={styles.golfLiveVenue}>⛳ {leaderboardData.venue ?? "Course"} · {leaderboardData.status === "live" ? "LIVE" : "FINAL"}</Text>
+              <Text style={styles.golfLiveTournament}>{leaderboardData!.tournament ?? "Tournament"}</Text>
+              <Text style={styles.golfLiveVenue}>⛳ {leaderboardData!.venue ?? "Course"} · {leaderboardData!.status === "live" ? "LIVE" : "FINAL"}</Text>
               <View style={styles.golfLiveDivider} />
 
               {lbEntries.slice(0, 5).map((entry: GolfLeaderboardEntry, idx: number) => (

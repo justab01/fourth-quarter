@@ -59,6 +59,7 @@
     "@expo-google-fonts/dm-mono": "^0.4.2",
     "@expo-google-fonts/oswald": "^0.4.2",
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "@react-navigation/bottom-tabs": "^7.15.9",
     "expo-av": "^16.0.8",
     "expo-speech": "^55.0.9"
   }
