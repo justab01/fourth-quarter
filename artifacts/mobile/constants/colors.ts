@@ -86,11 +86,6 @@ export default {
 
     // DEPRECATED — DO NOT USE (will be removed)
     // Replace C.electricLime with C.live
-    // Remove C.vividTeal, C.brandGraphite, C.charcoal, C.graphite
-    vividTeal:      "#206E6B",
-    brandGraphite:  "#504D47",
     electricLime:   "#BFFF00",
-    charcoal:       "#1F1F1F",
-    graphite:       "#2A2A2A",
   },
 };
