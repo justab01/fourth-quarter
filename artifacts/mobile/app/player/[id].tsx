@@ -23,7 +23,6 @@ import {
 } from "@/constants/athleteProfiles";
 import { api, type AthleteProfile as LiveProfile, type AthleteGameLog, type GameLogEntry, type GameLogSection, type GameLogCategory, type GameLogSectionType } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
-import { goToTeam } from "@/utils/navHelpers";
 
 // ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
 const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|NCAAW|NCAABB|NCAAHM|NCAAHW|NCAASM|NCAASW|NCAALM|NCAALW|NCAAVW|NCAAWP|NCAAFH|EPL|UCL|LIGA|BUN|SERA|LIG1|NWSL|UEL|UECL|FWCM|EURO|COPA|ATP|WTA|UFC|BELLATOR|PFL|BOXING|PGA|LPGA|LIV|F1|NASCAR|IRL|OLYMPICS|XGAMES)-(\d+)$/i;
@@ -1542,7 +1541,7 @@ function TennisOverview({ player, team, fallbackPlayer }: {
 
       {/* Player details */}
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Nationality", `${flag} ${natl}`],
           ["Tour", tour === "WTA" ? "WTA Women's Tour" : "ATP Men's Tour"],
           profile?.plays && ["Plays", profile.plays],
@@ -1551,10 +1550,10 @@ function TennisOverview({ player, team, fallbackPlayer }: {
           profile?.careerEarnings && ["Career Earnings", profile.careerEarnings],
           profile && ["Career W-L", `${profile.careerWins}-${profile.careerLosses}`],
           profile?.height && ["Height", profile.height],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -1665,7 +1664,7 @@ function CombatOverview({ player, team, fallbackPlayer }: {
 
       {/* Physical stats */}
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Sport", sportName],
           profile?.weightClass && ["Weight Class", profile.weightClass],
           profile?.nationality && ["Nationality", `${flag} ${profile.nationality}`],
@@ -1674,10 +1673,10 @@ function CombatOverview({ player, team, fallbackPlayer }: {
           profile?.weight && ["Weight", profile.weight],
           profile?.reach && ["Reach", profile.reach],
           profile?.titleDefenses != null && ["Title Defenses", String(profile.titleDefenses)],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -1736,14 +1735,14 @@ function XGamesOverview({ player, team, fallbackPlayer }: {
       )}
 
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Nationality", `${flag} ${natl}`],
           ["Sport", "X Games"],
           profile?.born && ["Born", profile.born.slice(0, 4)],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -1817,14 +1816,14 @@ function OlympicsOverview({ player, team, fallbackPlayer }: {
       )}
 
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Nationality", `${flag} ${natl}`],
           ["Discipline", profile?.discipline ?? fallbackPlayer?.position ?? "—"],
           profile?.born && ["Born", profile.born.slice(0, 4)],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -2249,7 +2248,7 @@ export default function PlayerScreen() {
                 </View>
               ) : null}
               <Text style={styles.heroName} numberOfLines={2}>{player.name}</Text>
-              <Pressable onPress={() => goToTeam(team.name, team.league)}>
+              <Pressable onPress={() => router.push({ pathname: "/team/[id]", params: { id: team.id } } as any)}>
                 <Text style={styles.heroTeamLink}>{team.name} · {team.league}</Text>
               </Pressable>
               <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>

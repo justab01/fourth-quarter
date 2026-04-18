@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Pressable, Platform, FlatList, ActivityIndicator, Animated, useWindowDimensions
+  Pressable, Platform, Dimensions, FlatList, ActivityIndicator, Animated
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,6 +23,7 @@ import { ALL_TEAMS } from "@/constants/allPlayers";
 import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
 
 const C = Colors.dark;
+const { width: SCREEN_W } = Dimensions.get("window");
 
 function getTeamEspnLogoUrl(teamName: string, league: string): string | null {
   const team = ALL_TEAMS.find(t => t.name === teamName);
@@ -182,17 +183,17 @@ function SectionHeading({ label, accentColor, onSeeAll, badge }: {
 const secStyles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 10 },
   accent: { width: 4, height: 18, borderRadius: 2, flexShrink: 0 },
-  label: { fontSize: 18, fontWeight: "800", color: C.text, fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: -0.3 },
+  label: { fontSize: 18, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
   arrowBtn: { flexDirection: "row", alignItems: "center", gap: 1 },
-  arrowLabel: { color: C.accent, fontSize: 13, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
+  arrowLabel: { color: C.accent, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 });
 
 function InOneBreath() {
   const { data, isLoading, refetch, isError } = useQuery({
     queryKey: ["in-one-breath"],
     queryFn: () => api.getInOneBreath(),
-    staleTime: 300_000,
-    refetchInterval: 300_000,
+    staleTime: 120_000,
+    refetchInterval: 120_000,
     retry: 1,
   });
   const [expanded, setExpanded] = useState(true);
@@ -270,12 +271,12 @@ const iobStyles = StyleSheet.create({
     borderRadius: 5, borderWidth: 1, borderColor: `${C.accent}40`,
   },
   aiText: { color: C.accent, fontSize: 8, fontWeight: "900", letterSpacing: 0.8 },
-  summary: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: "PlusJakartaSans_400Regular" },
+  summary: { color: "#AEAEB2", fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
   shimmerWrap: { gap: 7 },
-  shimmerLine: { height: 12, backgroundColor: "rgba(255,200,100,0.06)", borderRadius: 6 },
+  shimmerLine: { height: 12, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 6 },
   retryRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  retryText: { color: C.accent, fontSize: 13, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
-  errorText: { color: C.textSecondary, fontSize: 13, fontWeight: "600", fontFamily: "PlusJakartaSans_600SemiBold" },
+  retryText: { color: C.accent, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  errorText: { color: C.textSecondary, fontSize: 13, fontWeight: "500", fontFamily: "Inter_500Medium" },
 });
 
 function MoversChips({ allGames }: { allGames: Game[] }) {
@@ -319,7 +320,7 @@ const chipStyles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
     backgroundColor: "rgba(255,255,255,0.05)",
   },
-  chipText: { fontSize: 11, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
+  chipText: { fontSize: 11, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
 });
 
 function PersonalizeCard() {
@@ -359,45 +360,15 @@ const personS = StyleSheet.create({
     backgroundColor: `${C.accentGold}20`,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
-  title: { color: C.text, fontSize: 15, fontWeight: "800", fontFamily: "PlusJakartaSans_800ExtraBold", marginBottom: 2 },
-  sub: { color: C.textTertiary, fontSize: 12, fontFamily: "PlusJakartaSans_400Regular", lineHeight: 17 },
+  title: { color: C.text, fontSize: 15, fontWeight: "800", fontFamily: "Inter_700Bold", marginBottom: 2 },
+  sub: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
   badge: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: `${C.accent}20`, paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 10, borderWidth: 1, borderColor: `${C.accent}40`, flexShrink: 0,
   },
-  badgeText: { color: C.accent, fontSize: 12, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
+  badgeText: { color: C.accent, fontSize: 12, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
 });
-
-function LiveRingLogo({ uri, name, size, borderColor }: { uri?: string | null; name: string; size: number; borderColor?: string }) {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1100, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: 1100, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [pulseAnim]);
-  const ringOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] });
-  const ringScale  = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] });
-  return (
-    <View style={{ width: size + 8, height: size + 8, alignItems: "center", justifyContent: "center" }}>
-      <Animated.View style={{
-        position: "absolute",
-        width: size + 8, height: size + 8,
-        borderRadius: (size + 8) / 2,
-        borderWidth: 2.5,
-        borderColor: C.live,
-        opacity: ringOpacity,
-        transform: [{ scale: ringScale }],
-      }} />
-      <TeamLogo uri={uri} name={name} size={size} borderColor={borderColor} />
-    </View>
-  );
-}
 
 function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game[] }) {
   if (myTeams.length === 0) return null;
@@ -417,7 +388,7 @@ function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game
           let statusLine = "";
           let statusColor = C.textTertiary;
           if (live) {
-            statusLine = "LIVE";
+            statusLine = "● LIVE";
             statusColor = C.live;
           } else if (next) {
             const d = new Date(next.startTime);
@@ -438,11 +409,7 @@ function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game
                 ?? getTeamEspnLogoUrl(team, league);
           return (
             <Pressable key={team} onPress={() => goToTeam(team, league)} style={tileStyles.tile}>
-              {live ? (
-                <LiveRingLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
-              ) : (
-                <TeamLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
-              )}
+              <TeamLogo uri={logoUri} name={team} size={52} borderColor={`${color}55`} />
               <Text style={tileStyles.teamShort} numberOfLines={1}>{abbr}</Text>
               {statusLine ? (
                 <Text style={[tileStyles.status, { color: statusColor }]} numberOfLines={1}>{statusLine}</Text>
@@ -457,7 +424,7 @@ function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game
 
 const tileStyles = StyleSheet.create({
   tile: { alignItems: "center", gap: 4, width: 62 },
-  teamShort: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
+  teamShort: { color: C.text, fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
   status: { fontSize: 10, fontWeight: "600", textAlign: "center" },
 });
 
@@ -628,7 +595,7 @@ const widgetStyles = StyleSheet.create({
     alignItems: "center", paddingVertical: 36, gap: 8,
     backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.cardBorder,
   },
-  emptyText: { color: C.textTertiary, fontSize: 14, fontFamily: "PlusJakartaSans_400Regular" },
+  emptyText: { color: C.textTertiary, fontSize: 14, fontFamily: "Inter_400Regular" },
   groupedList: {
     backgroundColor: C.card, borderRadius: 16, overflow: "hidden",
     borderWidth: 1, borderColor: C.cardBorder,
@@ -636,7 +603,7 @@ const widgetStyles = StyleSheet.create({
   rowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginLeft: 70 },
   contextBanner: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 2 },
   contextText: {
-    fontSize: 11, color: C.accent, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 11, color: C.accent, fontWeight: "700", fontFamily: "Inter_600SemiBold",
     letterSpacing: 0.1,
   },
 });
@@ -684,7 +651,7 @@ const draftStyles = StyleSheet.create({
     backgroundColor: C.card, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12,
     borderWidth: 1, borderColor: `${C.accentGold}25`, overflow: "hidden",
   },
-  barLabel: { color: C.text, fontSize: 14, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
+  barLabel: { color: C.text, fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
   leagueRow: { flexDirection: "row", gap: 6 },
   leaguePill: {
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
@@ -778,7 +745,7 @@ const clusterStyles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
   },
   clusterIcon: { fontSize: 14 },
-  clusterLabel: { fontSize: 13, fontWeight: "800", fontFamily: "PlusJakartaSans_800ExtraBold", flex: 1 },
+  clusterLabel: { fontSize: 13, fontWeight: "800", fontFamily: "Inter_700Bold", flex: 1 },
   clusterCount: { color: C.textTertiary, fontSize: 11 },
   storyRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
@@ -786,11 +753,10 @@ const clusterStyles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
   },
   storyDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.textTertiary, flexShrink: 0 },
-  storyTitle: { flex: 1, color: C.textSecondary, fontSize: 13, fontFamily: "PlusJakartaSans_400Regular", lineHeight: 18 },
+  storyTitle: { flex: 1, color: C.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
 });
 
 export default function HubScreen() {
-  const { width: SCREEN_W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
   const { openSearch } = useSearch();
@@ -798,7 +764,7 @@ export default function HubScreen() {
   const [heroDot, setHeroDot] = useState(0);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const botPad = Platform.OS === "web" ? 120 : insets.bottom + 110;
+  const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
   const todayDate = (() => {
     const d = new Date();
@@ -996,23 +962,20 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 16, gap: 0 },
 
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingTop: 16, paddingBottom: 16 },
-  greeting: { fontSize: 13, color: C.textTertiary, fontFamily: "PlusJakartaSans_400Regular" },
+  greeting: { fontSize: 14, color: C.textTertiary, fontFamily: "Inter_400Regular" },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
-  name: { fontSize: 28, fontWeight: "900", color: C.text, fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: -0.5 },
-  teamBadge: {
-    backgroundColor: "rgba(232,130,12,0.1)", borderWidth: 1, borderColor: "rgba(232,130,12,0.22)",
-    paddingHorizontal: 9, paddingVertical: 3, borderRadius: 8,
-  },
+  name: { fontSize: 30, fontWeight: "900", color: C.text, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  teamBadge: { backgroundColor: C.accent, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   nerdBadge: { backgroundColor: `${C.accent}22`, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: `${C.accent}55` },
-  nerdBadgeText: { color: C.accent, fontSize: 10, fontFamily: "PlusJakartaSans_700Bold", letterSpacing: 0.5 },
-  teamBadgeText: { color: C.accentAmber2, fontSize: 11, fontWeight: "700", fontFamily: "DMMono_500Medium", letterSpacing: 0.6 },
+  nerdBadgeText: { color: C.accent, fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  teamBadgeText: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1 },
   headerRight: { flexDirection: "row", alignItems: "center", paddingTop: 18, gap: 10 },
   searchPill: {
     flexDirection: "row", alignItems: "center", gap: 7,
-    backgroundColor: C.card, borderWidth: 1, borderColor: `${C.accent}33`,
+    backgroundColor: C.card, borderWidth: 1.5, borderColor: `${C.accent}55`,
     paddingHorizontal: 14, paddingVertical: 9, borderRadius: 22,
   },
-  searchPillText: { color: C.accent, fontSize: 13, fontWeight: "700", fontFamily: "PlusJakartaSans_700Bold" },
+  searchPillText: { color: C.accent, fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
 
   heroSection: { marginHorizontal: -16 },
   heroScroll: { paddingHorizontal: 16 },
@@ -1023,7 +986,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 5,
     marginHorizontal: 16, marginTop: 6, marginBottom: 2,
   },
-  heroContextText: { color: C.accent, fontSize: 12, fontWeight: "600", fontFamily: "PlusJakartaSans_600SemiBold" },
+  heroContextText: { color: C.accent, fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
   section: { paddingVertical: 12, gap: 12 },
   cardList: { gap: 10 },

@@ -70,6 +70,57 @@ export function NewsCardSkeleton() {
   );
 }
 
+export function SportPageSkeleton() {
+  return (
+    <View style={styles.sportPage}>
+      {/* Hero section */}
+      <View style={styles.heroSection}>
+        <View style={styles.heroRow}>
+          <SkeletonBox style={{ width: 40, height: 40, borderRadius: 20 }} />
+          <SkeletonBox style={{ width: 80, height: 24, borderRadius: 6 }} />
+        </View>
+        <View style={styles.chipRow}>
+          <SkeletonBox style={{ width: 50, height: 28, borderRadius: 14 }} />
+          <SkeletonBox style={{ width: 60, height: 28, borderRadius: 14 }} />
+          <SkeletonBox style={{ width: 45, height: 28, borderRadius: 14 }} />
+          <SkeletonBox style={{ width: 55, height: 28, borderRadius: 14 }} />
+        </View>
+      </View>
+
+      {/* Live strip placeholder */}
+      <View style={styles.liveStrip}>
+        <View style={styles.liveStripHeader}>
+          <SkeletonBox style={{ width: 70, height: 14, borderRadius: 4 }} />
+        </View>
+        <View style={styles.liveStripCards}>
+          <SkeletonBox style={{ width: 140, height: 80, borderRadius: 12 }} />
+          <SkeletonBox style={{ width: 140, height: 80, borderRadius: 12 }} />
+          <SkeletonBox style={{ width: 140, height: 80, borderRadius: 12 }} />
+        </View>
+      </View>
+
+      {/* Games grid */}
+      <View style={styles.section}>
+        <SkeletonBox style={{ width: 120, height: 20, borderRadius: 6, marginBottom: 12 }} />
+        <View style={styles.gamesGrid}>
+          <GameCardSkeleton />
+          <GameCardSkeleton />
+          <GameCardSkeleton />
+        </View>
+      </View>
+
+      {/* News section */}
+      <View style={styles.section}>
+        <SkeletonBox style={{ width: 100, height: 20, borderRadius: 6, marginBottom: 12 }} />
+        <View style={styles.newsList}>
+          <NewsCardSkeleton />
+          <NewsCardSkeleton />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: C.card,
@@ -87,6 +138,48 @@ const styles = StyleSheet.create({
   teamRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
+  },
+  sportPage: {
+    flex: 1,
+    backgroundColor: C.background,
+  },
+  heroSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    gap: 12,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  chipRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  liveStrip: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  liveStripHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  liveStripCards: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  section: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  gamesGrid: {
+    gap: 12,
+  },
+  newsList: {
     gap: 12,
   },
 });

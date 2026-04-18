@@ -1,34 +1,43 @@
 import { Router, type IRouter } from "express";
-import { db } from "@workspace/db";
-import { userPreferences, insertUserPreferencesSchema } from "@workspace/db";
+import { db, userPreferences, insertUserPreferencesSchema } from "@workspace/db";
 
 const router: IRouter = Router();
+
+const defaultPrefs = (userId: string) => ({
+  userId,
+  name: "Sports Fan",
+  favoriteTeams: [],
+  favoriteLeagues: [],
+  favoritePlayers: [],
+  rivals: [],
+  darkMode: true,
+  notifications: true,
+});
 
 router.get("/user/preferences", async (req, res) => {
   const { userId } = req.query as { userId: string };
   if (!userId) {
-    return res.status(400).json({ error: "userId required" });
+    res.status(400).json({ error: "userId required" });
+    return;
+  }
+
+  // Return defaults if no database
+  if (!db) {
+    res.json(defaultPrefs(userId));
+    return;
   }
 
   try {
-    const prefs = await db.query.userPreferences.findFirst({
+    const prefs = await db!.query.userPreferences.findFirst({
       where: (u, { eq }) => eq(u.userId, userId),
     });
 
     if (!prefs) {
-      return res.json({
-        userId,
-        name: "Sports Fan",
-        favoriteTeams: [],
-        favoriteLeagues: [],
-        favoritePlayers: [],
-        rivals: [],
-        darkMode: true,
-        notifications: true,
-      });
+      res.json(defaultPrefs(userId));
+      return;
     }
 
-    return res.json({
+    res.json({
       userId: prefs.userId,
       name: prefs.name,
       favoriteTeams: prefs.favoriteTeams,
@@ -40,24 +49,21 @@ router.get("/user/preferences", async (req, res) => {
     });
   } catch (err) {
     console.error("Get prefs error:", err);
-    return res.json({
-      userId,
-      name: "Sports Fan",
-      favoriteTeams: [],
-      favoriteLeagues: [],
-      favoritePlayers: [],
-      rivals: [],
-      darkMode: true,
-      notifications: true,
-    });
+    res.json(defaultPrefs(userId));
   }
 });
 
 router.post("/user/preferences", async (req, res) => {
+  // Return success if no database (mock mode)
+  if (!db) {
+    res.json({ success: true });
+    return;
+  }
+
   try {
     const data = req.body;
-    
-    await db.insert(userPreferences)
+
+    await db!.insert(userPreferences)
       .values({
         userId: data.userId,
         name: data.name,
@@ -82,10 +88,10 @@ router.post("/user/preferences", async (req, res) => {
         },
       });
 
-    return res.json({ success: true });
+    res.json({ success: true });
   } catch (err) {
     console.error("Save prefs error:", err);
-    return res.status(500).json({ success: false });
+    res.status(500).json({ success: false });
   }
 });
 
