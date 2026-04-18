@@ -5,6 +5,7 @@ import { Platform, StyleSheet, View, Text, Pressable } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import { FONTS } from "@/constants/typography";
 import { api } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -150,7 +151,7 @@ const navStyles = StyleSheet.create({
     letterSpacing: 0.4,
     textTransform: "uppercase",
     color: C.tabIconDefault,
-    fontFamily: "PlusJakartaSans_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   labelActive: {
     color: C.accent,

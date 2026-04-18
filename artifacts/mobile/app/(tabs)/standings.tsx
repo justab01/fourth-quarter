@@ -314,7 +314,7 @@ const trnS = StyleSheet.create({
   },
   matchupLogo: { width: 20, height: 20, borderRadius: 10 },
   seed: { fontSize: 10, color: C.textTertiary, fontWeight: "700" },
-  teamName: { fontSize: 12, color: C.textSecondary, fontFamily: "PlusJakartaSans_400Regular", flex: 1 },
+  teamName: { fontSize: 12, color: C.textSecondary, fontFamily: FONTS.body, flex: 1 },
   score: { fontSize: 14, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.monoBold, minWidth: 24, textAlign: "right" },
   matchupDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 10 },
   liveIndicator: {
@@ -795,8 +795,8 @@ const styles = StyleSheet.create({
     paddingTop: 16, paddingBottom: 8,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
-  title: { fontSize: 32, fontWeight: "900", color: C.text, fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: -0.5 },
-  subtitle: { fontSize: 12, color: C.textTertiary, fontFamily: "PlusJakartaSans_400Regular", marginTop: 2 },
+  title: { fontSize: 32, fontWeight: "900", color: C.text, fontFamily: FONTS.bodyHeavy, letterSpacing: -0.5 },
+  subtitle: { fontSize: 12, color: C.textTertiary, fontFamily: FONTS.body, marginTop: 2 },
   leagueDot: { width: 10, height: 10, borderRadius: 5 },
 
   leagueScroll: { marginBottom: 12 },
@@ -846,7 +846,7 @@ const styles = StyleSheet.create({
   rankNum: { color: C.textSecondary, fontSize: 13, fontWeight: "600", fontFamily: FONTS.monoBold, minWidth: 16 },
 
   tdTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 7 },
-  teamText: { color: C.textSecondary, fontSize: 13, fontFamily: "PlusJakartaSans_600SemiBold", flex: 1 },
+  teamText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.bodySemiBold, flex: 1 },
   conferenceText: { color: C.textTertiary, fontSize: 10 },
 
   tdStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 12, fontFamily: FONTS.mono },
@@ -857,14 +857,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 6,
     backgroundColor: `${Colors.dark.accent}08`,
   },
-  wimText: { color: Colors.dark.accent, fontSize: 11, fontFamily: "PlusJakartaSans_400Regular", fontStyle: "italic" },
+  wimText: { color: Colors.dark.accent, fontSize: 11, fontFamily: FONTS.body, fontStyle: "italic" },
 
   confHeader: {
     flexDirection: "row", alignItems: "center", gap: 8,
     paddingHorizontal: 16, paddingVertical: 12, marginTop: 12,
   },
   confDot: { width: 8, height: 8, borderRadius: 4 },
-  confTitle: { fontSize: 14, fontWeight: "900", fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: 0.5 },
+  confTitle: { fontSize: 14, fontWeight: "900", fontFamily: FONTS.bodyHeavy, letterSpacing: 0.5 },
   confLine: { flex: 1, height: 1, backgroundColor: C.separator },
   confCount: { fontSize: 10, color: C.textTertiary, fontWeight: "600", marginLeft: 4 },
 
@@ -873,7 +873,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 8, marginTop: 6,
   },
   divisionDot: { width: 6, height: 6, borderRadius: 3 },
-  divisionTitle: { fontSize: 11, fontWeight: "800", fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: 0.8, textTransform: "uppercase" },
+  divisionTitle: { fontSize: 11, fontWeight: "800", fontFamily: FONTS.bodyHeavy, letterSpacing: 0.8, textTransform: "uppercase" },
   divisionLine: { flex: 1, height: 1, backgroundColor: C.separator },
 
   clinchBadge: {
@@ -909,5 +909,5 @@ const styles = StyleSheet.create({
   expandedBtnText: { fontSize: 12, fontWeight: "700" },
 
   legend: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 12 },
-  legendText: { color: C.textTertiary, fontSize: 11, fontFamily: "PlusJakartaSans_400Regular", flex: 1 },
+  legendText: { color: C.textTertiary, fontSize: 11, fontFamily: FONTS.body, flex: 1 },
 });
