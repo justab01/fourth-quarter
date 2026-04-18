@@ -3079,7 +3079,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
           <View style={styles.liveStripHeader}>
             <View style={styles.liveStripPulse}>
               <Animated.View style={{
-                width: 8, height: 8, borderRadius: 4, backgroundColor: C.electricLime,
+                width: 8, height: 8, borderRadius: 4, backgroundColor: C.live,
                 opacity: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
                 transform: [{ scale: shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }]
               }} />
@@ -3229,7 +3229,7 @@ const styles = StyleSheet.create({
   liveTag: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: C.electricLime + "25",
+    backgroundColor: C.live + "25",
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -3239,12 +3239,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: C.electricLime,
+    backgroundColor: C.live,
   },
   liveTagText: {
     fontSize: 11,
     fontFamily: FONTS.bodyBold,
-    color: C.electricLime,
+    color: C.live,
     letterSpacing: 0.5,
   },
   chipScroll: {
@@ -3419,7 +3419,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: C.electricLime,
+    backgroundColor: C.live,
     flexShrink: 0,
     marginTop: 5,
   },
@@ -3995,7 +3995,7 @@ const styles = StyleSheet.create({
   liveStripTitle: {
     fontSize: 11,
     fontFamily: FONTS.bodyBold,
-    color: C.electricLime,
+    color: C.live,
     letterSpacing: 1,
   },
   liveStripCount: {

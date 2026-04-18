@@ -78,8 +78,8 @@ function PulsingDot() {
 }
 const dot = StyleSheet.create({
   container: { width: 10, height: 10, alignItems: "center", justifyContent: "center" },
-  ring:      { position: "absolute", width: 10, height: 10, borderRadius: 5, backgroundColor: C.electricLime },
-  core:      { width: 6, height: 6, borderRadius: 3, backgroundColor: C.electricLime },
+  ring:      { position: "absolute", width: 10, height: 10, borderRadius: 5, backgroundColor: C.live },
+  core:      { width: 6, height: 6, borderRadius: 3, backgroundColor: C.live },
 });
 
 // ── Sport emoji badge (replaces team logos for individual sports) ─────────────
@@ -914,7 +914,7 @@ const hero = StyleSheet.create({
   leaguePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   leagueText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
   livePill: { flexDirection: "row", alignItems: "center", gap: 6 },
-  liveText: { color: C.electricLime, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
+  liveText: { color: C.live, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
   quarterText: { color: C.textSecondary, fontSize: 12, fontWeight: "500" },
   finalText: { color: C.textTertiary, fontSize: 11, fontWeight: "700", letterSpacing: 0.8 },
   timeText: { color: C.textSecondary, fontSize: 12, fontWeight: "500" },
@@ -934,7 +934,7 @@ const hero = StyleSheet.create({
   teamLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
   centerCol: { flex: 1, alignItems: "center", gap: 6 },
   vsText: { color: C.textTertiary, fontSize: 22, fontWeight: "800", letterSpacing: 2 },
-  timeRemaining: { color: C.electricLime, fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+  timeRemaining: { color: C.live, fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
   kickoffTime: { color: C.textSecondary, fontSize: 13, fontWeight: "600" },
   venue: { color: C.textTertiary, fontSize: 10, textAlign: "center" },
   ctaRow: { paddingHorizontal: 20, paddingBottom: 18, paddingTop: 4, alignItems: "center" },
@@ -956,8 +956,8 @@ const cpt = StyleSheet.create({
   stripe: { width: 3, borderRadius: 2, margin: 10, marginRight: 0, alignSelf: "stretch", flexShrink: 0 },
   body: { flex: 1, padding: 12, gap: 6 },
   livePill: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 },
-  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.electricLime },
-  liveText: { color: C.electricLime, fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  liveText: { color: C.live, fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
   quarter: { color: C.textTertiary, fontSize: 10, fontWeight: "500" },
   time: { color: C.textTertiary, fontSize: 11, fontWeight: "600", marginBottom: 2 },
   ftLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, marginBottom: 2 },
@@ -990,8 +990,8 @@ const dflt = StyleSheet.create({
     paddingVertical: 14, paddingHorizontal: 4, gap: 3, flexShrink: 0,
   },
   liveBadge: {
-    backgroundColor: C.electricLime, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 5,
-    shadowColor: C.electricLime, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2,
+    backgroundColor: C.live, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 5,
+    shadowColor: C.live, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2,
   },
   liveBadgeText: { color: "#000", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
   quarterText: { color: C.textTertiary, fontSize: 10, fontWeight: "500", textAlign: "center" },

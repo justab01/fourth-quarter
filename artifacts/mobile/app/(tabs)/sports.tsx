@@ -41,8 +41,8 @@ function PulsingLiveDot() {
   const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 0.2] });
   return (
     <View style={{ width: 6, height: 6, alignItems: "center", justifyContent: "center" }}>
-      <Animated.View style={{ position: "absolute", width: 6, height: 6, borderRadius: 3, backgroundColor: C.electricLime, transform: [{ scale }], opacity }} />
-      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.electricLime }} />
+      <Animated.View style={{ position: "absolute", width: 6, height: 6, borderRadius: 3, backgroundColor: C.live, transform: [{ scale }], opacity }} />
+      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.live }} />
     </View>
   );
 }
