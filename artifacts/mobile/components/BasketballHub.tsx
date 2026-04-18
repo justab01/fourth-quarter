@@ -7,6 +7,7 @@ import Colors from "@/constants/colors";
 import { FONTS } from "@/constants/typography";
 import { api, type Game, type StandingEntry, type TournamentRound, type TournamentMatchup, type TopAthlete, type DraftData } from "@/utils/api";
 import { TeamLogo } from "@/components/GameCard";
+import { goToTeam } from "@/utils/navHelpers";
 
 const playerSlug = (name: string) => name.toLowerCase().replace(/\s+/g, "-");
 // If we have a live ESPN athlete ID, deep-link via the canonical "LEAGUE-ID" format
@@ -768,7 +769,7 @@ function StandingsList({ standings, league }: { standings: StandingEntry[]; leag
               </View>
             )}
             <Pressable
-              onPress={() => router.push(`/team/${encodeURIComponent(s.teamName)}?league=${league}`)}
+              onPress={() => goToTeam(s.teamName, league)}
               style={[styles.stdRow, { backgroundColor: bg }]}
             >
               <View style={[styles.stdStripe, { backgroundColor: stripeColor }]} />
