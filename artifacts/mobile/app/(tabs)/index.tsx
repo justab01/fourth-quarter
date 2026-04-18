@@ -272,7 +272,7 @@ const iobStyles = StyleSheet.create({
     borderRadius: 5, borderWidth: 1, borderColor: `${C.accent}40`,
   },
   aiText: { color: C.accent, fontSize: 8, fontWeight: "900", letterSpacing: 0.8 },
-  summary: { color: "#AEAEB2", fontSize: 14, lineHeight: 21, fontFamily: FONTS.body },
+  summary: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: FONTS.body },
   shimmerWrap: { gap: 7 },
   shimmerLine: { height: 12, backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 6 },
   retryRow: { flexDirection: "row", alignItems: "center", gap: 6 },

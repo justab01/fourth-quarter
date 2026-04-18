@@ -777,7 +777,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 <View style={{ flex: 1 }}>
                   <Text style={dflt.teamName} numberOfLines={2}>{eventLabel}</Text>
                   {venueLabel ? (
-                    <Text style={{ fontSize: 11, color: "#AEAEB2", marginTop: 2 }} numberOfLines={1}>{venueLabel}</Text>
+                    <Text style={{ fontSize: 11, color: C.textSecondary, marginTop: 2 }} numberOfLines={1}>{venueLabel}</Text>
                   ) : null}
                 </View>
               </View>

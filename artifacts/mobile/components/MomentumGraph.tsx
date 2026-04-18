@@ -1,6 +1,9 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Path, Line, Rect, Circle, G, Text as SvgText, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
+import Colors from "@/constants/colors";
+
+const C = Colors.dark;
 
 // ─── Momentum Wave Graph ──────────────────────────────────────────────────────
 // Computes scoring momentum from play-by-play events and renders it as a
@@ -163,9 +166,9 @@ export function MomentumGraph({
         <Text style={styles.title}>Momentum</Text>
         <View style={[styles.momentumBadge, { borderColor: `${accentColor}60`, backgroundColor: `${accentColor}15` }]}>
           <View style={[styles.momentumDot, {
-            backgroundColor: momentumDir === "neutral" ? "#888" : accentColor
+            backgroundColor: momentumDir === "neutral" ? C.textSecondary : accentColor
           }]} />
-          <Text style={[styles.momentumText, { color: momentumDir === "neutral" ? "#888" : accentColor }]}>
+          <Text style={[styles.momentumText, { color: momentumDir === "neutral" ? C.textSecondary : accentColor }]}>
             {momentumText}
           </Text>
         </View>
@@ -314,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   winPct: {
-    color: "#8A8A8E",
+    color: C.textSecondary,
     fontSize: 10,
     fontWeight: "600",
   },

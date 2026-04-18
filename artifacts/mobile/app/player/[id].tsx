@@ -106,7 +106,7 @@ function getRoleInfo(position: string, league: string, group: string): { label: 
     if (["CM", "CDM", "CAM", "AM", "MF"].includes(pos)) return { label: "Midfielder", color: "#4A90D9", icon: "swap-horizontal" };
     return { label: "Defender", color: "#48ADA9", icon: "shield-outline" };
   }
-  return { label: group || pos, color: "#888", icon: "person" };
+  return { label: group || pos, color: C.textSecondary, icon: "person" };
 }
 
 function RoleBadge({ position, league, group, color }: { position: string; league: string; group: string; color: string }) {
@@ -384,7 +384,7 @@ function CareerStatsTab({ liveProfile, league, teamColor }: {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
         <ActivityIndicator color={teamColor} size="large" />
-        <Text style={{ color: "#AEAEB2", fontSize: 13, textAlign: "center" }}>Loading career stats…</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 13, textAlign: "center" }}>Loading career stats…</Text>
       </View>
     );
   }
@@ -393,7 +393,7 @@ function CareerStatsTab({ liveProfile, league, teamColor }: {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
         <Ionicons name="stats-chart-outline" size={44} color={C.textTertiary} />
-        <Text style={{ color: "#AEAEB2", fontSize: 14, textAlign: "center" }}>No career stats available for this athlete</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 14, textAlign: "center" }}>No career stats available for this athlete</Text>
       </View>
     );
   }
@@ -1039,7 +1039,7 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
       {(isError || filteredTotal === 0) ? (
         <View style={{ alignItems: "center", justifyContent: "center", padding: 48, gap: 12 }}>
           <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
-          <Text style={{ color: "#AEAEB2", fontSize: 15, fontWeight: "600", textAlign: "center" }}>
+          <Text style={{ color: C.textSecondary, fontSize: 15, fontWeight: "600", textAlign: "center" }}>
             {isError
               ? "Couldn't load game logs"
               : activeFilter !== "All"
@@ -1416,7 +1416,7 @@ function GameLogTab({
       {filteredEntries.length === 0 ? (
         <View style={{ alignItems: "center", justifyContent: "center", padding: 48, gap: 12 }}>
           <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
-          <Text style={{ color: "#AEAEB2", fontSize: 15, fontWeight: "600", textAlign: "center" }}>
+          <Text style={{ color: C.textSecondary, fontSize: 15, fontWeight: "600", textAlign: "center" }}>
             {activeFilter !== "All" ? `No games found for "${activeFilter}"` : "No games this season"}
           </Text>
         </View>
@@ -2027,7 +2027,7 @@ export default function PlayerScreen() {
     return (
       <View style={[styles.container, { paddingTop: topPad, alignItems: "center", justifyContent: "center" }]}>
         <ActivityIndicator color={C.accent} size="large" />
-        <Text style={{ color: "#AEAEB2", fontSize: 14, marginTop: 12 }}>Loading athlete…</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 14, marginTop: 12 }}>Loading athlete…</Text>
       </View>
     );
   }
@@ -2039,7 +2039,7 @@ export default function PlayerScreen() {
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: "#AEAEB2", fontSize: 16 }}>Athlete not found</Text>
+          <Text style={{ color: C.textSecondary, fontSize: 16 }}>Athlete not found</Text>
           <Text style={{ color: C.textTertiary, fontSize: 12, marginTop: 6, textAlign: "center", paddingHorizontal: 32 }}>
             Search for them by name using the search icon at the top of the app.
           </Text>
