@@ -438,7 +438,7 @@ const s = StyleSheet.create({
 
   // Why it matters
   whyCard: {
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: C.glassLight,
     borderRadius: 12, borderLeftWidth: 3,
     paddingHorizontal: 14, paddingVertical: 12,
     gap: 5,
@@ -459,7 +459,7 @@ const s = StyleSheet.create({
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 4, paddingVertical: 8, paddingHorizontal: 4,
     borderRadius: 20, borderWidth: 1.5,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: C.glassLight,
     borderColor: "rgba(255,255,255,0.1)",
   },
   pillEmoji: { fontSize: 12 },
@@ -521,7 +521,7 @@ const pick = StyleSheet.create({
     backgroundColor: "#1C1C1E",
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingTop: 14, paddingHorizontal: 20,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1, borderColor: C.glassMedium,
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,

@@ -630,7 +630,7 @@ export default function StandingsScreen() {
                           uri={entry.logoUrl}
                           name={entry.teamName}
                           size={24}
-                          borderColor={isMyTeam ? `${leagueMeta.color}55` : "rgba(255,255,255,0.08)"}
+                          borderColor={isMyTeam ? `${leagueMeta.color}55` : C.glassMedium}
                         />
                         <View style={{ flex: 1 }}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>

@@ -121,9 +121,9 @@ const fanS = StyleSheet.create({
   statVal: { fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold },
   statLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   insightCard: {
-    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 14,
+    backgroundColor: C.glassLight, borderRadius: 14,
     padding: 12, gap: 8,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1, borderColor: C.glassMedium,
   },
   insightRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   insightText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.body, flex: 1 },

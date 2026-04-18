@@ -373,9 +373,9 @@ function ModeStep({ selected, onSelect, onNext, botPad }: {
 const modeS = StyleSheet.create({
   card: {
     flexDirection: "row", alignItems: "center", gap: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: C.glassLight,
     borderRadius: 20, padding: 20,
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1.5, borderColor: C.glassMedium,
     marginBottom: 14,
   },
   cardActiveFan: {
@@ -535,7 +535,7 @@ const confirmS = StyleSheet.create({
   row: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
   iconBox: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: C.glassMedium,
     alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
@@ -545,7 +545,7 @@ const confirmS = StyleSheet.create({
   },
   rowValue: { color: C.text, fontSize: 17, fontWeight: "700", marginTop: 2, fontFamily: FONTS.bodyBold },
   teamNames: { color: C.textSecondary, fontSize: 12, marginTop: 2, fontFamily: FONTS.body },
-  sep: { height: 1, backgroundColor: "rgba(255,255,255,0.08)" },
+  sep: { height: 1, backgroundColor: C.glassMedium },
   pillWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 2 },
   pill: {
     flexDirection: "row", alignItems: "center", gap: 4,

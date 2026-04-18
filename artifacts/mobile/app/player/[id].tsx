@@ -637,7 +637,7 @@ function GameLogSkeleton() {
     <View style={{ padding: 16, gap: 20 }}>
       <View style={{ gap: 8 }}>
         <View style={{ width: 120, height: 16, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 4 }} />
-        <View style={{ width: "100%", height: 44, backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10 }} />
+        <View style={{ width: "100%", height: 44, backgroundColor: C.glassLight, borderRadius: 10 }} />
       </View>
       {[1, 2, 3].map(section => (
         <View key={section} style={{ gap: 10 }}>
@@ -657,7 +657,7 @@ function ResultBadge({ result, score }: { result: string; score: string }) {
   const isWin = result.toUpperCase() === "W";
   const isLoss = result.toUpperCase() === "L";
   const hasOT = score.toLowerCase().includes("ot");
-  const bg = isWin ? "rgba(76,175,80,0.15)" : isLoss ? "rgba(244,67,54,0.15)" : "rgba(255,255,255,0.08)";
+  const bg = isWin ? "rgba(76,175,80,0.15)" : isLoss ? "rgba(244,67,54,0.15)" : C.glassMedium;
   const color = isWin ? "#4CAF50" : isLoss ? "#F44336" : C.textSecondary;
   const displayScore = score.replace(/\s*ot/i, "").trim();
 
@@ -698,7 +698,7 @@ const GameRow = React.memo(function GameRow({ game, league, teamColor, quickStat
       }}
       style={({ pressed }) => [
         glS.gameRow,
-        pressed && { backgroundColor: "rgba(255,255,255,0.04)" },
+        pressed && { backgroundColor: C.glassLight },
       ]}
     >
       <View style={glS.gameRowTop}>
@@ -1079,7 +1079,7 @@ const glS = StyleSheet.create({
   seasonDropdownWrap: { paddingHorizontal: 16, marginBottom: 10, zIndex: 10 },
   seasonDropdown: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.glassMedium,
     paddingHorizontal: 16, height: 46,
   },
   seasonDropdownText: { color: C.text, fontSize: 15, fontWeight: "600", fontFamily: FONTS.bodySemiBold },
@@ -1089,7 +1089,7 @@ const glS = StyleSheet.create({
   },
   seasonDropdownItem: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)",
+    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.glassLight,
   },
   seasonDropdownItemText: { color: C.textSecondary, fontSize: 14, fontFamily: FONTS.bodyMedium },
   filterRow: { paddingHorizontal: 16, gap: 8, marginBottom: 12 },
@@ -1118,7 +1118,7 @@ const glS = StyleSheet.create({
     textTransform: "capitalize",
   },
   recordBadge: {
-    backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 8,
+    backgroundColor: C.glassMedium, borderRadius: 8,
     paddingHorizontal: 8, paddingVertical: 2,
   },
   recordText: { color: C.textSecondary, fontSize: 11, fontWeight: "700" },
@@ -1145,7 +1145,7 @@ const glS = StyleSheet.create({
   },
   monthDivider: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.06)" },
   monthAvgCard: {
-    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10,
+    backgroundColor: C.glassLight, borderRadius: 10,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
     padding: 12, marginBottom: 8,
   },
@@ -1159,7 +1159,7 @@ const glS = StyleSheet.create({
   monthAvgStatValue: { color: C.text, fontSize: 14, fontWeight: "700", fontFamily: FONTS.bodyBold, marginTop: 1 },
   gameRow: {
     paddingVertical: 12, paddingHorizontal: 12,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)",
+    borderBottomWidth: 1, borderBottomColor: C.glassLight,
     borderRadius: 6,
   },
   gameRowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -1192,7 +1192,7 @@ const glS = StyleSheet.create({
   expandedGrid: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
   expandedItem: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 6,
+    backgroundColor: C.glassLight, borderRadius: 6,
     paddingHorizontal: 8, paddingVertical: 4, marginBottom: 2,
   },
   expandedLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700" },
@@ -2403,6 +2403,6 @@ const bioTab = StyleSheet.create({
   label: { color: C.textTertiary, fontSize: 13, fontFamily: FONTS.bodyMedium },
   value: { color: C.text, fontSize: 14, fontFamily: FONTS.bodySemiBold },
   bioText: { color: C.textSecondary, fontSize: 14, lineHeight: 22, fontFamily: FONTS.body, marginTop: 12 },
-  noBioRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, padding: 12, backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10 },
+  noBioRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, padding: 12, backgroundColor: C.glassLight, borderRadius: 10 },
   noBioText: { color: C.textTertiary, fontSize: 13, fontFamily: FONTS.body, flex: 1 },
 });

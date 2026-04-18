@@ -109,7 +109,7 @@ export function TeamLogo({
   return (
     <View style={{
       width: size, height: size, borderRadius: r,
-      backgroundColor: "rgba(255,255,255,0.08)",
+      backgroundColor: C.glassMedium,
       borderWidth: 2,
       borderColor: borderColor ?? "rgba(255,255,255,0.12)",
       overflow: "hidden",
@@ -137,11 +137,11 @@ function CombatDivider({ label, color }: { label: string | null | undefined; col
   const short = label.length > 22 ? label.substring(0, 22) + "…" : label;
   return (
     <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 3 }}>
-      <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.08)" }} />
+      <View style={{ flex: 1, height: 1, backgroundColor: C.glassMedium }} />
       <Text style={{ color: `${color}AA`, fontSize: 8, fontWeight: "800", letterSpacing: 0.8, marginHorizontal: 6, textTransform: "uppercase" }}>
         {short}
       </Text>
-      <View style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.08)" }} />
+      <View style={{ flex: 1, height: 1, backgroundColor: C.glassMedium }} />
     </View>
   );
 }

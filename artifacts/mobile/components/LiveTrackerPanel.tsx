@@ -429,7 +429,7 @@ const runS = StyleSheet.create({
   container: {
     flexDirection: "row", alignItems: "center", gap: 8,
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1, borderColor: C.glassMedium,
     overflow: "hidden", position: "relative",
   },
   dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },

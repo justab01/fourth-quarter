@@ -623,7 +623,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   headerGradient: { paddingBottom: 0 },
   headerRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.glassMedium, alignItems: "center", justifyContent: "center" },
   headerCenter: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
   headerEmoji: { fontSize: 32 },
   headerTitle: { color: "#FFF", fontSize: 20, fontFamily: FONTS.bodyBold },
