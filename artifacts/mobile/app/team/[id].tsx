@@ -223,6 +223,18 @@ export default function TeamScreen() {
     if (espnData) {
       const espnConverted = espnTeamToTeamData(espnData);
       if (staticTeam) {
+        // Build a map of static roster stats by player name
+        const staticStatsMap = new Map<string, Record<string, string | number>>();
+        staticTeam.roster.forEach(p => {
+          if (p.stats && Object.keys(p.stats).length > 0) {
+            staticStatsMap.set(p.name.toLowerCase(), p.stats);
+          }
+        });
+        // Merge ESPN roster with static stats
+        const mergedRoster = espnConverted.roster.map(p => {
+          const staticStats = staticStatsMap.get(p.name.toLowerCase());
+          return staticStats ? { ...p, stats: staticStats } : p;
+        });
         return {
           ...staticTeam,
           color: espnConverted.color !== "#333333" ? espnConverted.color : staticTeam.color,
@@ -230,7 +242,7 @@ export default function TeamScreen() {
           logoUrl: espnConverted.logoUrl ?? staticTeam.logoUrl ?? null,
           coach: espnConverted.coach !== "—" ? espnConverted.coach : staticTeam.coach,
           stadium: espnConverted.stadium !== "—" ? espnConverted.stadium : staticTeam.stadium,
-          roster: espnConverted.roster,
+          roster: mergedRoster,
         };
       }
       return espnConverted;

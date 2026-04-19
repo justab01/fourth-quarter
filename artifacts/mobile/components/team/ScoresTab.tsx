@@ -59,7 +59,7 @@ export function ScoresTab({ team }: ScoresTabProps) {
           <Text style={[styles.link, { color: team.color }]}>View Full →</Text>
         </View>
 
-        <View style={[styles.playoffCard, { backgroundColor: team.color + "15", borderColor: team.color + "40", shadowColor: team.color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }]}>
+        <View style={[styles.playoffCard, { backgroundColor: team.color + "15", borderColor: team.color + "30", shadowColor: team.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 8 }]}>
           <View style={styles.playoffHeader}>
             <View style={[styles.teamLogoSmall, { backgroundColor: team.color + "25", borderColor: team.color + "40" }]}>
               <Text style={styles.teamEmoji}>{team.league === "NBA" ? "🏀" : team.league === "NFL" ? "🏈" : team.league === "MLB" ? "⚾" : "⚽"}</Text>
@@ -118,12 +118,20 @@ export function ScoresTab({ team }: ScoresTabProps) {
                 </View>
                 <View style={styles.playerStats}>
                   <View style={styles.playerStatBox}>
-                    <Text style={[styles.playerStatValue, { color: team.color }]}>—</Text>
-                    <Text style={styles.playerStatLabel}>PPG</Text>
+                    <Text style={styles.playerStatText}>
+                      <Text style={[styles.playerStatValue, { color: team.color }]}>
+                        {player.stats?.PPG != null ? (typeof player.stats.PPG === 'number' ? player.stats.PPG.toFixed(1) : player.stats.PPG) : player.stats?.PTS ?? "—"}
+                      </Text>
+                      <Text style={styles.playerStatLabel}> PPG</Text>
+                    </Text>
                   </View>
                   <View style={styles.playerStatBox}>
-                    <Text style={styles.playerStatValue}>—</Text>
-                    <Text style={styles.playerStatLabel}>REB</Text>
+                    <Text style={styles.playerStatText}>
+                      <Text style={styles.playerStatValue}>
+                        {player.stats?.REB != null ? (typeof player.stats.REB === 'number' ? player.stats.REB.toFixed(1) : player.stats.REB) : player.stats?.RPG ?? "—"}
+                      </Text>
+                      <Text style={styles.playerStatLabel}> REB</Text>
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -196,9 +204,10 @@ const styles = StyleSheet.create({
   playerName: { fontSize: 13, fontWeight: "700", fontFamily: FONTS.bodyBold, color: C.text },
   playerMeta: { fontSize: 10, color: C.textSecondary, marginTop: 1 },
   playerStats: { flexDirection: "row", gap: 4 },
-  playerStatBox: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", borderRadius: 6, paddingVertical: 6, alignItems: "center" },
-  playerStatValue: { fontSize: 13, fontWeight: "700", fontFamily: FONTS.bodyBold, color: C.text },
-  playerStatLabel: { fontSize: 9, color: C.textTertiary },
+  playerStatBox: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", borderRadius: 6, paddingVertical: 4, alignItems: "center" },
+  playerStatText: { fontSize: 12 },
+  playerStatValue: { fontSize: 12, fontWeight: "700", fontFamily: FONTS.bodyBold, color: C.text },
+  playerStatLabel: { fontSize: 12, color: C.textTertiary },
   rosterMore: { textAlign: "center", color: C.textTertiary, fontSize: 11, marginTop: 6 },
 
   // News Preview

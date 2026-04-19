@@ -55,10 +55,11 @@ function getStreakInfo(games: TeamData["recentGames"]): { emoji: string; count: 
   return { emoji: "❄️", count: streak };
 }
 
-function getRankStyle(rank: string): { bg: string; color: string } {
+function getRankStyle(rank: string, teamColor: string): { bg: string; gradient?: [string, string]; color: string; isBad?: boolean } {
   const num = parseInt(rank) || 20;
-  if (num <= 3) return { bg: "#FFD700", color: "#000" };
-  if (num <= 10) return { bg: "#CE1141", color: "#fff" };
+  if (num <= 3) return { bg: "#FFD700", gradient: ["#FFD700", "#FFA500"] as [string, string], color: "#000" };
+  if (num <= 10) return { bg: teamColor, color: "#fff" };
+  if (num >= 20) return { bg: "rgba(224,96,96,0.3)", color: "#E06060", isBad: true };
   return { bg: "rgba(255,255,255,0.1)", color: C.textSecondary };
 }
 
@@ -77,7 +78,8 @@ export function HeroSection({ team, isFav, onBack, onToggleFav }: HeroSectionPro
 
   return (
     <LinearGradient
-      colors={[team.color, `${team.color}CC`, C.background]}
+      colors={[team.color, team.color + "99", team.color + "40", C.background]}
+      locations={[0, 0.3, 0.6, 1]}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -133,16 +135,29 @@ export function HeroSection({ team, isFav, onBack, onToggleFav }: HeroSectionPro
       {/* Stats Grid */}
       <View style={styles.statsGrid}>
         {team.stats.slice(0, 4).map((stat, i) => {
-          const rankStyle = getRankStyle(stat.rank);
+          const rankStyle = getRankStyle(stat.rank, team.color);
           return (
             <View key={i} style={styles.statCardWrap}>
-              <View style={styles.statValueRow}>
-                <Text style={[styles.statValue, { color: team.color }]}>{stat.value}</Text>
-                <View style={[styles.rankBadge, { backgroundColor: rankStyle.bg }]}>
-                  <Text style={[styles.rankText, { color: rankStyle.color }]}>{stat.rank}</Text>
+              <View style={styles.statContentRow}>
+                <View>
+                  <Text style={[styles.statValue, rankStyle.isBad && { color: "#E06060" }]}>{stat.value}</Text>
+                  <Text style={styles.statLabel}>{stat.label}</Text>
                 </View>
+                {rankStyle.gradient ? (
+                  <LinearGradient
+                    colors={rankStyle.gradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.rankBadge}
+                  >
+                    <Text style={[styles.rankText, { color: rankStyle.color }]}>{stat.rank}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={[styles.rankBadge, { backgroundColor: rankStyle.bg }]}>
+                    <Text style={[styles.rankText, { color: rankStyle.color }]}>{stat.rank}</Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.statLabel}>{stat.label}</Text>
             </View>
           );
         })}
@@ -166,9 +181,9 @@ const styles = StyleSheet.create({
   metaHighlight: { fontSize: 12, fontWeight: "700" },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   statCardWrap: { flex: 1, minWidth: "45%", backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 12 },
-  statValueRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  statValue: { fontSize: 22, fontWeight: "900", fontFamily: FONTS.bodyBold },
-  statLabel: { fontSize: 11, color: C.textSecondary, marginTop: 4 },
+  statContentRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
+  statValue: { fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold, color: C.text },
+  statLabel: { fontSize: 11, color: C.textSecondary, marginTop: 2 },
   rankBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   rankText: { fontSize: 11, fontWeight: "800" },
 });

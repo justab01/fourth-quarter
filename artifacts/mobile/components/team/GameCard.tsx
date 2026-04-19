@@ -16,9 +16,10 @@ interface GameCardProps {
   game: TeamData["recentGames"][0];
   teamColor: string;
   isWin: boolean;
+  teamName?: string;
 }
 
-export function GameCard({ game, teamColor, isWin }: GameCardProps) {
+export function GameCard({ game, teamColor, isWin, teamName = "Rockets" }: GameCardProps) {
   const [expanded, setExpanded] = useState(false);
   const rotation = useRef(new Animated.Value(0)).current;
 
@@ -43,6 +44,19 @@ export function GameCard({ game, teamColor, isWin }: GameCardProps) {
   const scores = game.score.split("-").map(s => parseInt(s.trim()) || 0);
   const teamScore = isWin ? Math.max(...scores) : Math.min(...scores);
   const oppScore = isWin ? Math.min(...scores) : Math.max(...scores);
+
+  // Get quarter scores or generate placeholder
+  const qScores = game.quarterScores || {
+    home: isHome ? (isWin ? scores : [scores[1] || 0]) : (isWin ? scores : [scores[0] || 0]),
+    away: isHome ? (isWin ? [scores[1] || 0] : scores) : (isWin ? [scores[0] || 0] : scores),
+  };
+
+  // Get top performers or placeholder
+  const homePerformer = game.topPerformers?.home?.[0] || { name: "J. Green", points: 28, rebounds: 6, assists: 5 };
+  const awayPerformer = game.topPerformers?.away?.[0] || { name: "A. Davis", points: 32, rebounds: 12, assists: 4 };
+
+  const homePerf = isHome ? homePerformer : awayPerformer;
+  const awayPerf = isHome ? awayPerformer : homePerformer;
 
   return (
     <View style={[styles.card, isWin && styles.winCard]}>
@@ -80,7 +94,56 @@ export function GameCard({ game, teamColor, isWin }: GameCardProps) {
 
       {expanded && (
         <View style={styles.expanded}>
-          <Text style={styles.expandedHint}>Tap to see quarter scores, player spotlight, and team comparison</Text>
+          {/* Quarter Scores */}
+          <View style={styles.qtrHeader}>
+            <Text style={styles.qtrLabel}>Q1</Text>
+            <Text style={styles.qtrLabel}>Q2</Text>
+            <Text style={styles.qtrLabel}>Q3</Text>
+            <Text style={styles.qtrLabel}>Q4</Text>
+            <Text style={styles.qtrFinal}>FINAL</Text>
+          </View>
+          <View style={styles.qtrRow}>
+            <View style={styles.qtrTeam}>
+              <Text style={[styles.qtrTeamName, isWin && styles.qtrWin]}>{teamName}</Text>
+              <View style={styles.qtrScores}>
+                {(isHome ? qScores.home : qScores.away).slice(0, 4).map((s, i) => (
+                  <Text key={i} style={[styles.qtrNum, isWin && styles.qtrWin]}>{s}</Text>
+                ))}
+                <Text style={[styles.qtrTotal, isWin && styles.qtrWin]}>{teamScore}</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.qtrRow}>
+            <View style={styles.qtrTeam}>
+              <Text style={styles.qtrTeamName}>{oppName}</Text>
+              <View style={styles.qtrScores}>
+                {(isHome ? qScores.away : qScores.home).slice(0, 4).map((s, i) => (
+                  <Text key={i} style={styles.qtrNum}>{s}</Text>
+                ))}
+                <Text style={styles.qtrTotal}>{oppScore}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Top Performers */}
+          <View style={styles.performers}>
+            <View style={styles.perfCard}>
+              <Text style={[styles.perfTeam, { color: teamColor }]}>{teamName}</Text>
+              <View style={styles.perfPlayer}>
+                {isWin && <Text style={styles.perfStar}>⭐</Text>}
+                <Text style={styles.perfName}>{homePerf.name}</Text>
+              </View>
+              <Text style={styles.perfStats}>{homePerf.points} PTS | {homePerf.rebounds} REB | {homePerf.assists} AST</Text>
+            </View>
+            <View style={styles.perfCard}>
+              <Text style={styles.perfTeam}>{oppName}</Text>
+              <View style={styles.perfPlayer}>
+                {!isWin && <Text style={styles.perfStar}>⭐</Text>}
+                <Text style={styles.perfName}>{awayPerf.name}</Text>
+              </View>
+              <Text style={styles.perfStats}>{awayPerf.points} PTS | {awayPerf.rebounds} REB | {awayPerf.assists} AST</Text>
+            </View>
+          </View>
         </View>
       )}
     </View>
@@ -179,11 +242,103 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: C.separator,
     paddingTop: 12,
+    gap: 12,
   },
-  expandedHint: {
+  qtrHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 4,
+    gap: 8,
+  },
+  qtrLabel: {
     color: C.textTertiary,
-    fontSize: 11,
+    fontSize: 10,
+    width: 24,
     textAlign: "center",
+    fontFamily: FONTS.body,
+  },
+  qtrFinal: {
+    color: C.textTertiary,
+    fontSize: 10,
+    width: 40,
+    textAlign: "center",
+    fontWeight: "700",
+    fontFamily: FONTS.bodyBold,
+  },
+  qtrRow: {
+    marginBottom: 6,
+  },
+  qtrTeam: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  qtrTeamName: {
+    color: C.text,
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: FONTS.bodySemiBold,
+    width: 80,
+  },
+  qtrWin: {
+    color: "#48ADA9",
+  },
+  qtrScores: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  qtrNum: {
+    color: C.textSecondary,
+    fontSize: 12,
+    width: 24,
+    textAlign: "center",
+    fontFamily: FONTS.body,
+  },
+  qtrTotal: {
+    color: C.text,
+    fontSize: 12,
+    width: 40,
+    textAlign: "center",
+    fontWeight: "700",
+    fontFamily: FONTS.bodyBold,
+  },
+  performers: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  perfCard: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  perfTeam: {
+    color: C.textSecondary,
+    fontSize: 10,
+    fontWeight: "700",
+    fontFamily: FONTS.bodyBold,
+    marginBottom: 6,
+  },
+  perfPlayer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  perfStar: {
+    fontSize: 10,
+  },
+  perfName: {
+    color: C.text,
+    fontSize: 13,
+    fontWeight: "700",
+    fontFamily: FONTS.bodyBold,
+  },
+  perfStats: {
+    color: C.textTertiary,
+    fontSize: 10,
     fontFamily: FONTS.body,
   },
 });
