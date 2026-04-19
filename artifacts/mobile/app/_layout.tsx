@@ -52,7 +52,7 @@ function RootLayoutNav() {
       if (params.get("dev_skip_onboarding") === "1") {
         savePreferences({
           ...preferences,
-          name: preferences.name || "Abraham",
+          name: preferences.name || "Fan",
           favoriteLeagues: preferences.favoriteLeagues?.length ? preferences.favoriteLeagues : ["NBA"],
           appMode: preferences.appMode || "fan",
           onboardingComplete: true,

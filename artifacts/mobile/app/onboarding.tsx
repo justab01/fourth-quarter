@@ -27,7 +27,7 @@ export default function OnboardingScreen() {
   const [selectedSports, setSelectedSports] = useState<string[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [selectedMode, setSelectedMode] = useState<"fan" | "nerd">("fan");
-  const [userName, setUserName] = useState("Abraham");
+  const [userName, setUserName] = useState("");
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
