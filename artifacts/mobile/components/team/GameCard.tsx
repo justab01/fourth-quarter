@@ -21,7 +21,8 @@ interface GameCardProps {
   league?: string;
 }
 
-export function GameCard({ game, teamColor, isWin, teamName = "Rockets", league = "NBA" }: GameCardProps) {
+export function GameCard({ game, teamColor, isWin, teamName, league = "NBA" }: GameCardProps) {
+  const myTeam = teamName ?? "Team";
   const [expanded, setExpanded] = useState(false);
   const rotation = useRef(new Animated.Value(0)).current;
 
@@ -47,22 +48,26 @@ export function GameCard({ game, teamColor, isWin, teamName = "Rockets", league 
   const teamScore = isWin ? Math.max(...scores) : Math.min(...scores);
   const oppScore = isWin ? Math.min(...scores) : Math.max(...scores);
 
-  // Get quarter scores or generate placeholder
-  const qScores = game.quarterScores || {
-    home: isHome ? (isWin ? scores : [scores[1] || 0]) : (isWin ? scores : [scores[0] || 0]),
-    away: isHome ? (isWin ? [scores[1] || 0] : scores) : (isWin ? [scores[0] || 0] : scores),
-  };
+  // Real per-period scoring only — no synthetic fallback.
+  const qScores = game.quarterScores ?? null;
+  const hasQuarterScores =
+    !!qScores && qScores.home.length > 0 && qScores.away.length > 0;
 
-  // Get top performers or placeholder
-  const homePerformer = game.topPerformers?.home?.[0] || { name: "J. Green", points: 28, rebounds: 6, assists: 5 };
-  const awayPerformer = game.topPerformers?.away?.[0] || { name: "A. Davis", points: 32, rebounds: 12, assists: 4 };
-
+  // Real top performers only — no fake players.
+  const homePerformer = game.topPerformers?.home?.[0] ?? null;
+  const awayPerformer = game.topPerformers?.away?.[0] ?? null;
   const homePerf = isHome ? homePerformer : awayPerformer;
   const awayPerf = isHome ? awayPerformer : homePerformer;
+  const hasPerformers = !!(homePerf || awayPerf);
+
+  const expandable = hasQuarterScores || hasPerformers;
 
   return (
     <View style={[styles.card, isWin && styles.winCard]}>
-      <Pressable onPress={toggleExpand} style={styles.mainRow}>
+      <Pressable
+        onPress={expandable ? toggleExpand : undefined}
+        style={styles.mainRow}
+      >
         {/* W/L Badge */}
         <View style={[styles.resultBadge, { backgroundColor: isWin ? "rgba(72,173,169,0.2)" : "rgba(224,96,96,0.15)" }]}>
           <Text style={[styles.resultText, { color: isWin ? "#48ADA9" : "#E06060" }]}>{game.result}</Text>
@@ -93,63 +98,84 @@ export function GameCard({ game, teamColor, isWin, teamName = "Rockets", league 
           <Text style={styles.gameDate}>{game.date || "—"}</Text>
         </View>
 
-        <Animated.View style={{ transform: [{ rotate }] }}>
-          <Ionicons name="chevron-down" size={18} color={C.textTertiary} />
-        </Animated.View>
+        {expandable ? (
+          <Animated.View style={{ transform: [{ rotate }] }}>
+            <Ionicons name="chevron-down" size={18} color={C.textTertiary} />
+          </Animated.View>
+        ) : (
+          <View style={{ width: 18 }} />
+        )}
       </Pressable>
 
-      {expanded && (
+      {expanded && expandable && (
         <View style={styles.expanded}>
-          {/* Quarter Scores */}
-          <View style={styles.qtrHeader}>
-            <Text style={styles.qtrLabel}>Q1</Text>
-            <Text style={styles.qtrLabel}>Q2</Text>
-            <Text style={styles.qtrLabel}>Q3</Text>
-            <Text style={styles.qtrLabel}>Q4</Text>
-            <Text style={styles.qtrFinal}>FINAL</Text>
-          </View>
-          <View style={styles.qtrRow}>
-            <View style={styles.qtrTeam}>
-              <Text style={[styles.qtrTeamName, isWin && styles.qtrWin]}>{teamName}</Text>
-              <View style={styles.qtrScores}>
-                {(isHome ? qScores.home : qScores.away).slice(0, 4).map((s, i) => (
-                  <Text key={i} style={[styles.qtrNum, isWin && styles.qtrWin]}>{s}</Text>
-                ))}
-                <Text style={[styles.qtrTotal, isWin && styles.qtrWin]}>{teamScore}</Text>
+          {hasQuarterScores && qScores && (
+            <>
+              <View style={styles.qtrHeader}>
+                {(isHome ? qScores.home : qScores.away)
+                  .slice(0, 4)
+                  .map((_, i) => (
+                    <Text key={i} style={styles.qtrLabel}>{`Q${i + 1}`}</Text>
+                  ))}
+                <Text style={styles.qtrFinal}>FINAL</Text>
               </View>
-            </View>
-          </View>
-          <View style={styles.qtrRow}>
-            <View style={styles.qtrTeam}>
-              <Text style={styles.qtrTeamName}>{oppName}</Text>
-              <View style={styles.qtrScores}>
-                {(isHome ? qScores.away : qScores.home).slice(0, 4).map((s, i) => (
-                  <Text key={i} style={styles.qtrNum}>{s}</Text>
-                ))}
-                <Text style={styles.qtrTotal}>{oppScore}</Text>
+              <View style={styles.qtrRow}>
+                <View style={styles.qtrTeam}>
+                  <Text style={[styles.qtrTeamName, isWin && styles.qtrWin]}>{myTeam}</Text>
+                  <View style={styles.qtrScores}>
+                    {(isHome ? qScores.home : qScores.away).slice(0, 4).map((s, i) => (
+                      <Text key={i} style={[styles.qtrNum, isWin && styles.qtrWin]}>{s}</Text>
+                    ))}
+                    <Text style={[styles.qtrTotal, isWin && styles.qtrWin]}>{teamScore}</Text>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
+              <View style={styles.qtrRow}>
+                <View style={styles.qtrTeam}>
+                  <Text style={styles.qtrTeamName}>{oppName}</Text>
+                  <View style={styles.qtrScores}>
+                    {(isHome ? qScores.away : qScores.home).slice(0, 4).map((s, i) => (
+                      <Text key={i} style={styles.qtrNum}>{s}</Text>
+                    ))}
+                    <Text style={styles.qtrTotal}>{oppScore}</Text>
+                  </View>
+                </View>
+              </View>
+            </>
+          )}
 
-          {/* Top Performers */}
-          <View style={styles.performers}>
-            <View style={styles.perfCard}>
-              <Text style={[styles.perfTeam, { color: teamColor }]}>{teamName}</Text>
-              <View style={styles.perfPlayer}>
-                {isWin && <Text style={styles.perfStar}>⭐</Text>}
-                <Text style={styles.perfName}>{homePerf.name}</Text>
-              </View>
-              <Text style={styles.perfStats}>{homePerf.points} PTS | {homePerf.rebounds} REB | {homePerf.assists} AST</Text>
+          {hasPerformers && (
+            <View style={styles.performers}>
+              {homePerf && (
+                <View style={styles.perfCard}>
+                  <Text style={[styles.perfTeam, { color: teamColor }]}>{myTeam}</Text>
+                  <View style={styles.perfPlayer}>
+                    {isWin && <Text style={styles.perfStar}>⭐</Text>}
+                    <Text style={styles.perfName}>{homePerf.name}</Text>
+                  </View>
+                  <Text style={styles.perfStats}>
+                    {homePerf.points} PTS
+                    {homePerf.rebounds != null ? ` | ${homePerf.rebounds} REB` : ""}
+                    {homePerf.assists != null ? ` | ${homePerf.assists} AST` : ""}
+                  </Text>
+                </View>
+              )}
+              {awayPerf && (
+                <View style={styles.perfCard}>
+                  <Text style={styles.perfTeam}>{oppName}</Text>
+                  <View style={styles.perfPlayer}>
+                    {!isWin && <Text style={styles.perfStar}>⭐</Text>}
+                    <Text style={styles.perfName}>{awayPerf.name}</Text>
+                  </View>
+                  <Text style={styles.perfStats}>
+                    {awayPerf.points} PTS
+                    {awayPerf.rebounds != null ? ` | ${awayPerf.rebounds} REB` : ""}
+                    {awayPerf.assists != null ? ` | ${awayPerf.assists} AST` : ""}
+                  </Text>
+                </View>
+              )}
             </View>
-            <View style={styles.perfCard}>
-              <Text style={styles.perfTeam}>{oppName}</Text>
-              <View style={styles.perfPlayer}>
-                {!isWin && <Text style={styles.perfStar}>⭐</Text>}
-                <Text style={styles.perfName}>{awayPerf.name}</Text>
-              </View>
-              <Text style={styles.perfStats}>{awayPerf.points} PTS | {awayPerf.rebounds} REB | {awayPerf.assists} AST</Text>
-            </View>
-          </View>
+          )}
         </View>
       )}
     </View>
