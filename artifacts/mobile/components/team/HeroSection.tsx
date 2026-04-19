@@ -56,7 +56,11 @@ function getStreakInfo(games: TeamData["recentGames"]): { emoji: string; count: 
 }
 
 function getRankStyle(rank: string, teamColor: string): { bg: string; gradient?: [string, string]; color: string; isBad?: boolean } {
-  const num = parseInt(rank) || 20;
+  // "—" means rank not available from ESPN — show neutral badge, never red
+  if (!rank || rank === "—") return { bg: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)" };
+  const num = parseInt(rank);
+  // Fallback to neutral when rank is nonsensical (> league size or NaN)
+  if (isNaN(num) || num > 32) return { bg: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)" };
   if (num <= 3) return { bg: "#FFD700", gradient: ["#FFD700", "#FFA500"] as [string, string], color: "#000" };
   if (num <= 10) return { bg: teamColor, color: "#fff" };
   if (num >= 20) return { bg: "rgba(224,96,96,0.3)", color: "#E06060", isBad: true };

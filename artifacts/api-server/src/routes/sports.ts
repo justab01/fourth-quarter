@@ -1282,20 +1282,33 @@ function normalizeName(s: string): string {
 
 type HeroStatEntry = { label: string; value: string; rank: string };
 
-function extractHeroStats(league: string, statsJson: any): HeroStatEntry[] {
+function extractHeroStats(league: string, statsJson: any, recordJson?: any): HeroStatEntry[] {
   try {
-    if (!statsJson) return [];
-    const categories: any[] = statsJson?.splits?.categories ?? statsJson?.statistics?.splits?.categories ?? [];
-    if (!categories.length) return [];
+    // ESPN statistics endpoint returns data at results.stats.categories[]
+    // Fallback to legacy splits.categories path for future-proofing
+    const categories: any[] = (
+      statsJson?.results?.stats?.categories ??
+      statsJson?.splits?.categories ??
+      statsJson?.statistics?.splits?.categories ??
+      []
+    );
 
-    const statMap: Record<string, { raw: number; rank: number; display: string }> = {};
+    const statMap: Record<string, { raw: number; rank: number | null; display: string }> = {};
     for (const cat of categories) {
       for (const s of cat.stats ?? []) {
         if (s.name && s.value != null) {
           const key = s.name.toLowerCase();
-          statMap[key] = { raw: Number(s.value), rank: s.rank ?? 99, display: s.displayValue ?? String(s.value) };
+          // s.rank is null/undefined when ESPN doesn't provide a league rank for this stat
+          statMap[key] = { raw: Number(s.value), rank: s.rank != null ? Number(s.rank) : null, display: s.displayValue ?? String(s.value) };
         }
       }
+    }
+
+    // Also pull from the team record endpoint (avgPointsAgainst, avgPointsFor, differential)
+    const recordStats: any[] = recordJson?.team?.record?.items?.[0]?.stats ?? [];
+    const recordMap: Record<string, number> = {};
+    for (const s of recordStats) {
+      if (s.name && s.value != null) recordMap[s.name.toLowerCase()] = Number(s.value);
     }
 
     const fmtRank = (r: number): string => {
@@ -1309,8 +1322,19 @@ function extractHeroStats(league: string, statsJson: any): HeroStatEntry[] {
         const s = statMap[k.toLowerCase()];
         if (s) {
           const value = fmt ? fmt(s.raw) : s.display;
-          return { label, value, rank: fmtRank(s.rank) };
+          // Only show a rank badge when ESPN provides a real league ranking (rank ≤ league size)
+          const rank = s.rank != null && s.rank <= 32 ? fmtRank(s.rank) : "—";
+          return { label, value, rank };
         }
+      }
+      return null;
+    };
+
+    // Pull a value purely from the record map (no rank available — use 15 as neutral)
+    const pickRecord = (keys: string[], label: string, fmt: (v: number) => string): HeroStatEntry | null => {
+      for (const k of keys) {
+        const v = recordMap[k.toLowerCase()];
+        if (v != null) return { label, value: fmt(v), rank: "—" };
       }
       return null;
     };
@@ -1318,51 +1342,67 @@ function extractHeroStats(league: string, statsJson: any): HeroStatEntry[] {
     const out: HeroStatEntry[] = [];
 
     if (league === "NBA" || league === "WNBA" || league === "NCAAB" || league === "NCAAW") {
+      // ESPN stat names: avgPoints, threePointPct, threePointFieldGoalPct, avgAssists
       const ppg = pick(["avgpoints", "avgpointspergame", "pointspergame"], "PPG", v => v.toFixed(1));
-      const opp = pick(["avgpointsallowed", "oppavgpoints", "opponentpointspergame", "avgopponentpoints"], "OPP PPG", v => v.toFixed(1));
-      const thr = pick(["threepointfieldgoalpercentage", "avgthreepointpct", "threepointpct", "3ptpct"], "3P%", v => `${(v > 1 ? v : v * 100).toFixed(1)}%`);
+      const opp = pick(["avgpointsallowed", "oppavgpoints", "opponentpointspergame", "avgopponentpoints"], "OPP PPG", v => v.toFixed(1))
+        ?? pickRecord(["avgpointsagainst"], "OPP PPG", v => v.toFixed(1));
+      const thr = pick(["threepointpct", "threepointfieldgoalpercentage", "threepointfieldgoalpct", "avgthreepointpct", "3ptpct"], "3P%", v => `${(v > 1 ? v : v * 100).toFixed(1)}%`);
       const net = pick(["netrating", "netrtg", "nettingrating"], "NET RTG", v => (v > 0 ? `+${v.toFixed(1)}` : v.toFixed(1)));
+      // Compute NET RTG from record differential if dedicated stat missing
+      const netFallback = !net && recordMap["differential"] != null
+        ? { label: "NET RTG", value: recordMap["differential"] > 0 ? `+${recordMap["differential"].toFixed(1)}` : recordMap["differential"].toFixed(1), rank: "—" } as HeroStatEntry
+        : null;
       if (ppg) out.push(ppg);
       if (opp) out.push(opp);
-      if (net || thr) out.push(net ?? thr!);
-      if (net && thr) out.push(thr);
-      else if (!net && !thr) {
+      const netEntry = net ?? netFallback;
+      if (netEntry || thr) out.push(netEntry ?? thr!);
+      if (netEntry && thr) out.push(thr);
+      else if (!netEntry && !thr) {
         const ast = pick(["avgassists", "assistspergame"], "APG", v => v.toFixed(1));
         if (ast) out.push(ast);
       }
     } else if (league === "NFL" || league === "NCAAF") {
-      const ppgOff = pick(["avgpoints", "avgpointspergame", "pointspergame"], "PPG OFF", v => v.toFixed(1));
-      const ppgDef = pick(["avgpointsallowed", "avgopponentpoints", "opponentpointspergame"], "PPG DEF", v => v.toFixed(1));
-      const passYds = pick(["avgpassingyards", "avgpassyards", "avgpassingydspergame", "passingyardspergame"], "PASS Y/G", v => v.toFixed(1));
+      // ESPN NFL stats: totalPointsPerGame (in passing+rushing cats), netPassingYardsPerGame
+      const ppgOff = pick(["totalpointspergame", "avgpoints", "avgpointspergame", "pointspergame"], "PPG OFF", v => v.toFixed(1));
+      const ppgDef = pick(["avgpointsallowed", "avgopponentpoints", "opponentpointspergame"], "PPG DEF", v => v.toFixed(1))
+        ?? pickRecord(["avgpointsagainst"], "PPG DEF", v => v.toFixed(1));
+      const passYds = pick(["netpassingyardspergame", "avgpassingyards", "avgpassyards", "avgpassingydspergame", "passingyardspergame"], "PASS Y/G", v => v.toFixed(1));
+      const rushYds = pick(["rushingyardspergame", "avgrushyards", "avgrushingyards"], "RUSH Y/G", v => v.toFixed(1));
       const toDiff = pick(["turnoverdiff", "turnovermargin", "turnoverspercentage"], "TO DIFF", v => (v > 0 ? `+${Math.round(v)}` : `${Math.round(v)}`));
       if (ppgOff) out.push(ppgOff);
       if (ppgDef) out.push(ppgDef);
       if (passYds) out.push(passYds);
+      else if (rushYds) out.push(rushYds);
       if (toDiff) out.push(toDiff);
-    } else if (league === "MLB" || league === "NCAABB") {
-      const avg = pick(["avg", "batavg", "battingavg", "teamavg"], "TEAM AVG", v => v.toFixed(3));
-      const era = pick(["era", "earnedrunavg", "teamera"], "TEAM ERA", v => v.toFixed(2));
-      const hr = pick(["homeruns", "homerunspergame", "avghomeruns"], "HR", v => Math.round(v).toString());
-      const k9 = pick(["strikeoutspernine", "k9", "strikeoutspernine", "avgstrikeouts"], "K/9", v => v.toFixed(1));
+      else if (out.length < 4 && rushYds && passYds) out.push(rushYds);
+    } else if (league === "MLB") {
+      const avg = pick(["avg", "batavg", "battingavg", "teamavg", "battingaveragepergame"], "TEAM AVG", v => v.toFixed(3));
+      const era = pick(["era", "earnedrunavg", "teamera", "earnedrunaveragepergame"], "ERA", v => v.toFixed(2));
+      const hr = pick(["homeruns", "homerunspergame", "avghomeruns", "homerunstotal"], "HR", v => Math.round(v).toString());
+      const k9 = pick(["strikeoutspernine", "k9", "avgstrikeouts", "strikeoutspernineinnings"], "K/9", v => v.toFixed(1));
       if (avg) out.push(avg);
       if (era) out.push(era);
       if (hr) out.push(hr);
       if (k9) out.push(k9);
     } else if (league === "NHL") {
-      const gpg = pick(["goalspergame", "goalsperperiod", "avggoals"], "G/G", v => v.toFixed(2));
-      const gaa = pick(["goalsagainstavg", "goalsagainstpergame", "gaa", "avggoalsagainst"], "GAA", v => v.toFixed(2));
+      // ESPN NHL stats: goalsPerGame, goalsAgainstPerGame, powerPlayPct, penaltyKillPct
+      const gpg = pick(["goalspergame", "goalsperperiod", "avggoals", "goalspergameadjusted"], "G/G", v => v.toFixed(2));
+      const gaa = pick(["goalsagainstavg", "goalsagainstpergame", "gaa", "avggoalsagainst", "goalsagainstpergameadjusted"], "GAA", v => v.toFixed(2));
+      const pp = pick(["powerplaypct", "powerplaypercentage", "pppct", "powerplaygoalspct"], "PP%", v => v.toFixed(1) + "%");
+      const pk = pick(["penaltykillpct", "penaltykillpercentage", "pkpct", "shorthandedpct"], "PK%", v => v.toFixed(1) + "%");
       const svp = pick(["savepct", "savepctg", "goaltendingsavepct", "svpct"], "SV%", v => `${(v > 1 ? v : v * 100).toFixed(1)}%`);
-      const pp = pick(["powerplaypct", "powerplaypercentage", "pppct"], "PP%", v => v.toFixed(1) + "%");
       if (gpg) out.push(gpg);
       if (gaa) out.push(gaa);
-      if (svp) out.push(svp);
       if (pp) out.push(pp);
+      else if (svp) out.push(svp);
+      if (pk) out.push(pk);
+      else if (svp && pp) out.push(svp);
     } else {
       // Soccer (EPL, MLS, UCL, LIGA, etc.) and other sports
-      const gf = pick(["goalsperperiod", "goalspergame", "goalsperformat", "avggoals", "goals"], "GF/G", v => v.toFixed(2));
+      const gf = pick(["goalspergame", "goalsperperiod", "goalsperformat", "avggoals", "goals"], "GF/G", v => v.toFixed(2));
       const ga = pick(["goalsagainst", "goalsagainstperperiod", "goalsagainstpergame", "avggoalsagainst"], "GA/G", v => v.toFixed(2));
-      const poss = pick(["possessionpct", "possessionpercentage", "avgpossession"], "POSS%", v => `${(v > 1 ? v : v * 100).toFixed(0)}%`);
-      const xg = pick(["xg", "expectedgoals", "avgxg"], "xG", v => v.toFixed(2));
+      const poss = pick(["possessionpct", "possessionpercentage", "avgpossession", "possessionpercentagepergame"], "POSS%", v => `${(v > 1 ? v : v * 100).toFixed(0)}%`);
+      const xg = pick(["xg", "expectedgoals", "avgxg", "expectedgoalspergame"], "xG", v => v.toFixed(2));
       if (gf) out.push(gf);
       if (ga) out.push(ga);
       if (poss) out.push(poss);
@@ -1449,15 +1489,22 @@ router.get("/sports/team", async (req, res) => {
       }
     }
 
-    // 5. Fetch season statistics for hero tiles
+    // 5. Fetch season statistics + record data for hero tiles (parallel)
     const statsUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/teams/${espnTeamId}/statistics`;
-    const statsJson = await espnFetch(statsUrl).catch(() => null) as any;
-    const heroStats = extractHeroStats(leagueKey, statsJson);
+    const recordUrl = `https://site.web.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/teams/${espnTeamId}?enable=stats`;
+    const [statsJson, recordJson] = await Promise.all([
+      espnFetch(statsUrl).catch(() => null),
+      espnFetch(recordUrl).catch(() => null),
+    ]) as [any, any];
+    const heroStats = extractHeroStats(leagueKey, statsJson, recordJson);
 
     // 6. Extract record + standing from teams list
     const recordEntry = (match.team as any).record?.items?.[0];
-    const recordStr = (recordEntry?.summary as string | undefined) ?? null;
-    const standingStr: string | null = null; // populated from standings separately
+    const recordStr = (recordEntry?.summary as string | undefined)
+      ?? (recordJson as any)?.team?.record?.items?.[0]?.summary
+      ?? null;
+    // standingSummary comes from the web API record endpoint (e.g. "9th West", "1st in Premier League")
+    const standingStr: string | null = (recordJson as any)?.team?.standingSummary ?? null;
 
     const result = {
       espnTeamId,
