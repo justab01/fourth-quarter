@@ -39,20 +39,40 @@ export function GameCard({ game, teamColor, isWin }: GameCardProps) {
   const isHome = game.opponent.trim().toLowerCase().startsWith("vs");
   const oppName = game.opponent.replace(/^(vs\.?|@)\s+/i, "").trim();
 
+  // Parse scores from game.score (format: "112-105" or similar)
+  const scores = game.score.split("-").map(s => parseInt(s.trim()) || 0);
+  const teamScore = isWin ? Math.max(...scores) : Math.min(...scores);
+  const oppScore = isWin ? Math.min(...scores) : Math.max(...scores);
+
   return (
     <View style={[styles.card, isWin && styles.winCard]}>
       <Pressable onPress={toggleExpand} style={styles.mainRow}>
+        {/* W/L Badge */}
         <View style={[styles.resultBadge, { backgroundColor: isWin ? "rgba(72,173,169,0.2)" : "rgba(224,96,96,0.15)" }]}>
           <Text style={[styles.resultText, { color: isWin ? "#48ADA9" : "#E06060" }]}>{game.result}</Text>
         </View>
+
+        {/* Opponent */}
         <View style={styles.teamInfo}>
-          <TeamLogo name={oppName.substring(0, 3).toUpperCase()} size={32} />
+          <View style={[styles.opponentLogo, { backgroundColor: isWin ? "rgba(72,173,169,0.15)" : "rgba(255,255,255,0.06)" }]}>
+            <TeamLogo name={oppName.substring(0, 3).toUpperCase()} size={32} />
+          </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.opponentPrefix}>{isHome ? "vs " : "@ "}</Text>
-            <Text style={styles.opponentName}>{oppName}</Text>
+            <Text style={[styles.opponentName, !isWin && styles.opponentNameLoss]}>{oppName}</Text>
           </View>
         </View>
-        <Text style={[styles.score, { color: isWin ? "#48ADA9" : C.text }]}>{game.score}</Text>
+
+        {/* Scores */}
+        <View style={styles.scoreBox}>
+          <View style={styles.scoreRow}>
+            <Text style={[styles.scoreMain, { color: isWin ? "#48ADA9" : "rgba(255,255,255,0.6)" }]}>{teamScore}</Text>
+            <Text style={styles.scoreDash}>-</Text>
+            <Text style={[styles.scoreOther, { color: isWin ? "rgba(255,255,255,0.6)" : C.text }]}>{oppScore}</Text>
+          </View>
+          <Text style={styles.gameDate}>{game.date || "—"}</Text>
+        </View>
+
         <Animated.View style={{ transform: [{ rotate }] }}>
           <Ionicons name="chevron-down" size={18} color={C.textTertiary} />
         </Animated.View>
@@ -82,15 +102,77 @@ const styles = StyleSheet.create({
   mainRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
+    padding: 12,
     gap: 12,
   },
-  resultBadge: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  resultText: { fontSize: 13, fontWeight: "800" },
-  teamInfo: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
-  opponentPrefix: { color: C.textTertiary, fontSize: 12 },
-  opponentName: { color: C.text, fontSize: 14, fontWeight: "600" },
-  score: { fontSize: 16, fontWeight: "800", fontFamily: FONTS.bodyBold },
+  resultBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resultText: {
+    fontSize: 12,
+    fontWeight: "800",
+    fontFamily: FONTS.bodyBold,
+  },
+  teamInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  opponentLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  opponentPrefix: {
+    color: C.textTertiary,
+    fontSize: 11,
+    fontFamily: FONTS.body,
+  },
+  opponentName: {
+    color: C.text,
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: FONTS.bodySemiBold,
+  },
+  opponentNameLoss: {
+    color: "rgba(255,255,255,0.7)",
+  },
+  scoreBox: {
+    alignItems: "flex-end",
+    minWidth: 60,
+  },
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  scoreMain: {
+    fontSize: 20,
+    fontWeight: "900",
+    fontFamily: FONTS.bodyHeavy,
+  },
+  scoreDash: {
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 16,
+  },
+  scoreOther: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: FONTS.bodySemiBold,
+  },
+  gameDate: {
+    color: C.textTertiary,
+    fontSize: 10,
+    marginTop: 2,
+    fontFamily: FONTS.body,
+  },
   expanded: {
     paddingHorizontal: 14,
     paddingBottom: 14,
@@ -98,5 +180,10 @@ const styles = StyleSheet.create({
     borderTopColor: C.separator,
     paddingTop: 12,
   },
-  expandedHint: { color: C.textTertiary, fontSize: 12, textAlign: "center" },
+  expandedHint: {
+    color: C.textTertiary,
+    fontSize: 11,
+    textAlign: "center",
+    fontFamily: FONTS.body,
+  },
 });

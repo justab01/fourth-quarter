@@ -59,7 +59,7 @@ export function ScoresTab({ team }: ScoresTabProps) {
           <Text style={[styles.link, { color: team.color }]}>View Full →</Text>
         </View>
 
-        <View style={[styles.playoffCard, { backgroundColor: team.color + "15", borderColor: team.color + "40" }]}>
+        <View style={[styles.playoffCard, { backgroundColor: team.color + "15", borderColor: team.color + "40", shadowColor: team.color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }]}>
           <View style={styles.playoffHeader}>
             <View style={[styles.teamLogoSmall, { backgroundColor: team.color + "25", borderColor: team.color + "40" }]}>
               <Text style={styles.teamEmoji}>{team.league === "NBA" ? "🏀" : team.league === "NFL" ? "🏈" : team.league === "MLB" ? "⚾" : "⚽"}</Text>
