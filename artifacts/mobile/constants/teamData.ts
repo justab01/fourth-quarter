@@ -183,6 +183,20 @@ const TEAM_COLORS: Record<string, [string, string]> = {
   "st-louis-city-sc":          ["#C8102E", "#002B5C"],
   "toronto-fc":                ["#B81137", "#313F48"],
   "vancouver-whitecaps":       ["#00245D", "#009BDA"],
+  // NHL – core
+  "new-york-rangers":          ["#0038A8", "#CE1126"],
+  "boston-bruins":             ["#FFB81C", "#000000"],
+  "tampa-bay-lightning":       ["#002868", "#FFFFFF"],
+  "colorado-avalanche":        ["#6F263D", "#236192"],
+  "edmonton-oilers":           ["#041E42", "#FF4C00"],
+  "vegas-golden-knights":      ["#B4975A", "#333F42"],
+  // EPL – core
+  "liverpool":                 ["#C8102E", "#00B2A9"],
+  "manchester-city":           ["#6CABDD", "#1C2C5B"],
+  "arsenal":                   ["#EF0107", "#063672"],
+  "manchester-united":         ["#DA291C", "#FBE122"],
+  "chelsea":                   ["#034694", "#DBA111"],
+  "tottenham":                 ["#132257", "#FFFFFF"],
 };
 
 export function teamColor(id: string): [string, string] {
@@ -319,6 +333,8 @@ const nuggetsRoster: Player[] = [
 ];
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
+const [rangersC1, rangersC2] = teamColor("new-york-rangers");
+const [liverpoolC1, liverpoolC2] = teamColor("liverpool");
 const [rocketC1, rocketC2] = teamColor("houston-rockets");
 const [texansC1, texansC2] = teamColor("houston-texans");
 const [thunderC1, thunderC2] = teamColor("oklahoma-city-thunder");
@@ -360,6 +376,76 @@ export const TEAM_REGISTRY: Record<string, TeamData> = {
       { label: "OPP PPG", value: "111.8", rank: "8th" },
       { label: "NET RTG", value: "+4.1", rank: "7th" },
       { label: "3P%", value: "36.9%", rank: "14th" },
+    ],
+  },
+  "nhl-new-york-rangers": {
+    id: "nhl-new-york-rangers",
+    name: "New York Rangers",
+    shortName: "Rangers",
+    abbr: "NYR",
+    league: "NHL",
+    division: "Metropolitan",
+    color: rangersC1, colorSecondary: rangersC2,
+    record: "47-22-7", standing: "2nd in Metro",
+    coach: "Peter Laviolette",
+    stadium: "Madison Square Garden",
+    city: "New York, NY",
+    founded: 1926,
+    roster: [
+      { id: "artemi-panarin", name: "Artemi Panarin", number: "10", position: "LW", age: 33, height: "5'11\"", weight: "170 lbs", college: "—", birthdate: "Oct 30, 1991", group: "Forwards", stats: { G: 38, A: 62, PTS: 100, "+/-": 22, PPG: 14, SOG: 281, "S%": "13.5%" } },
+      { id: "mika-zibanejad", name: "Mika Zibanejad", number: "93", position: "C", age: 32, height: "6'2\"", weight: "207 lbs", college: "—", birthdate: "Apr 18, 1993", group: "Forwards", stats: { G: 28, A: 41, PTS: 69, "+/-": 8, PPG: 10, SOG: 224, "S%": "12.5%" } },
+      { id: "adam-fox", name: "Adam Fox", number: "23", position: "D", age: 27, height: "5'11\"", weight: "183 lbs", college: "Harvard", birthdate: "Feb 17, 1998", group: "Defensemen", stats: { G: 11, A: 53, PTS: 64, "+/-": 17, PPG: 5, SOG: 146, TOI: "24:18" } },
+      { id: "igor-shesterkin", name: "Igor Shesterkin", number: "31", position: "G", age: 29, height: "6'1\"", weight: "187 lbs", college: "—", birthdate: "Dec 30, 1995", group: "Goalies", stats: { W: 33, L: 14, "OT": 4, GAA: 2.41, "SV%": ".921", SO: 5 } },
+      { id: "chris-kreider", name: "Chris Kreider", number: "20", position: "LW", age: 33, height: "6'3\"", weight: "226 lbs", college: "Boston College", birthdate: "Apr 30, 1991", group: "Forwards", stats: { G: 35, A: 22, PTS: 57, "+/-": 9, PPG: 18, SOG: 198, "S%": "17.7%" } },
+      { id: "jacob-trouba", name: "Jacob Trouba", number: "8", position: "D", age: 31, height: "6'3\"", weight: "209 lbs", college: "Michigan", birthdate: "Feb 26, 1994", group: "Defensemen", stats: { G: 4, A: 18, PTS: 22, "+/-": 6, HITS: 188, BLK: 113, TOI: "21:46" } },
+    ],
+    recentGames: [
+      { date: "Mar 18", opponent: "vs Boston", result: "W", score: "4-2" },
+      { date: "Mar 16", opponent: "@ Tampa Bay", result: "W", score: "5-3" },
+      { date: "Mar 14", opponent: "vs Philadelphia", result: "L", score: "1-3" },
+      { date: "Mar 12", opponent: "@ Pittsburgh", result: "W", score: "3-2 OT" },
+      { date: "Mar 10", opponent: "vs Carolina", result: "W", score: "4-1" },
+    ],
+    stats: [
+      { label: "G/G", value: "3.42", rank: "5th" },
+      { label: "GAA", value: "2.68", rank: "6th" },
+      { label: "PP%", value: "26.1%", rank: "3rd" },
+      { label: "PK%", value: "82.4%", rank: "8th" },
+    ],
+  },
+  "epl-liverpool": {
+    id: "epl-liverpool",
+    name: "Liverpool",
+    shortName: "Liverpool",
+    abbr: "LIV",
+    league: "EPL",
+    division: "Premier League",
+    color: liverpoolC1, colorSecondary: liverpoolC2,
+    record: "23-7-4", standing: "1st in Premier League",
+    coach: "Arne Slot",
+    stadium: "Anfield",
+    city: "Liverpool, England",
+    founded: 1892,
+    roster: [
+      { id: "mohamed-salah", name: "Mohamed Salah", number: "11", position: "FW", age: 33, height: "5'9\"", weight: "157 lbs", college: "—", birthdate: "Jun 15, 1992", group: "Forwards", stats: { G: 24, A: 14, SH: 112, KEY_PASS: 68, MIN: 2780, "xG": 21.8 } },
+      { id: "virgil-van-dijk", name: "Virgil van Dijk", number: "4", position: "CB", age: 33, height: "6'4\"", weight: "203 lbs", college: "—", birthdate: "Jul 8, 1991", group: "Defenders", stats: { G: 3, A: 1, BLK: 38, INT: 42, CLR: 124, "Pass%": "91%" } },
+      { id: "alisson-becker", name: "Alisson", number: "1", position: "GK", age: 32, height: "6'3\"", weight: "201 lbs", college: "—", birthdate: "Oct 2, 1992", group: "Goalkeepers", stats: { GA: 22, SV: 87, "SV%": "79.8%", CS: 12, MIN: 2880 } },
+      { id: "trent-alexander-arnold", name: "Trent Alexander-Arnold", number: "66", position: "RB", age: 26, height: "5'9\"", weight: "152 lbs", college: "—", birthdate: "Oct 7, 1998", group: "Defenders", stats: { G: 3, A: 9, KEY_PASS: 78, CRS: 142, "Pass%": "87%" } },
+      { id: "luis-diaz", name: "Luis Díaz", number: "7", position: "LW", age: 28, height: "5'10\"", weight: "143 lbs", college: "—", birthdate: "Jan 13, 1997", group: "Forwards", stats: { G: 11, A: 5, SH: 64, DRBB: 89, KEY_PASS: 42, MIN: 2410 } },
+      { id: "ryan-gravenberch", name: "Ryan Gravenberch", number: "38", position: "CM", age: 22, height: "6'3\"", weight: "172 lbs", college: "—", birthdate: "May 16, 2002", group: "Midfielders", stats: { G: 3, A: 6, KEY_PASS: 38, "Pass%": "89%", TKL: 64, INT: 38 } },
+    ],
+    recentGames: [
+      { date: "Mar 16", opponent: "vs Manchester City", result: "W", score: "2-0" },
+      { date: "Mar 13", opponent: "@ PSG (UCL)", result: "W", score: "1-0" },
+      { date: "Mar 9", opponent: "vs Southampton", result: "W", score: "3-1" },
+      { date: "Mar 5", opponent: "vs Newcastle", result: "D", score: "2-2" },
+      { date: "Mar 1", opponent: "@ Aston Villa", result: "W", score: "2-1" },
+    ],
+    stats: [
+      { label: "GF", value: "2.45", rank: "1st" },
+      { label: "GA", value: "0.94", rank: "1st" },
+      { label: "POSS %", value: "61.2%", rank: "2nd" },
+      { label: "xG", value: "2.18", rank: "1st" },
     ],
   },
   "nfl-houston-texans": {
@@ -772,6 +858,18 @@ export const PLAYER_TEAM_MAP: Record<string, string> = {
   "aaron-judge": "mlb-new-york-yankees",
   "juan-soto": "mlb-new-york-yankees",
   "gerrit-cole": "mlb-new-york-yankees",
+  "artemi-panarin": "nhl-new-york-rangers",
+  "mika-zibanejad": "nhl-new-york-rangers",
+  "adam-fox": "nhl-new-york-rangers",
+  "igor-shesterkin": "nhl-new-york-rangers",
+  "chris-kreider": "nhl-new-york-rangers",
+  "jacob-trouba": "nhl-new-york-rangers",
+  "mohamed-salah": "epl-liverpool",
+  "virgil-van-dijk": "epl-liverpool",
+  "alisson-becker": "epl-liverpool",
+  "trent-alexander-arnold": "epl-liverpool",
+  "luis-diaz": "epl-liverpool",
+  "ryan-gravenberch": "epl-liverpool",
 };
 
 export function getTeamById(id: string): TeamData | null {
