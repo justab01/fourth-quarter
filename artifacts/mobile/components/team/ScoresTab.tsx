@@ -46,6 +46,8 @@ export function ScoresTab({ team }: ScoresTabProps) {
               game={game}
               teamColor={team.color}
               isWin={game.result === "W"}
+              teamName={team.shortName}
+              league={team.league}
             />
           ))
         )}

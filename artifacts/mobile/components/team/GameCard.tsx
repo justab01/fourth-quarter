@@ -9,6 +9,7 @@ import Colors from "@/constants/colors";
 import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { TeamLogo } from "@/components/GameCard";
 import type { TeamData } from "@/constants/teamData";
+import { resolveOpponentLogoUrl } from "@/utils/teamLogos";
 
 const C = Colors.dark;
 
@@ -17,9 +18,10 @@ interface GameCardProps {
   teamColor: string;
   isWin: boolean;
   teamName?: string;
+  league?: string;
 }
 
-export function GameCard({ game, teamColor, isWin, teamName = "Rockets" }: GameCardProps) {
+export function GameCard({ game, teamColor, isWin, teamName = "Rockets", league = "NBA" }: GameCardProps) {
   const [expanded, setExpanded] = useState(false);
   const rotation = useRef(new Animated.Value(0)).current;
 
@@ -69,7 +71,11 @@ export function GameCard({ game, teamColor, isWin, teamName = "Rockets" }: GameC
         {/* Opponent */}
         <View style={styles.teamInfo}>
           <View style={[styles.opponentLogo, { backgroundColor: isWin ? "rgba(72,173,169,0.15)" : "rgba(255,255,255,0.06)" }]}>
-            <TeamLogo name={oppName.substring(0, 3).toUpperCase()} size={32} />
+            <TeamLogo
+              uri={resolveOpponentLogoUrl(oppName, league)}
+              name={oppName}
+              size={32}
+            />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.opponentPrefix}>{isHome ? "vs " : "@ "}</Text>
