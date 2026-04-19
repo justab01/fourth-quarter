@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roster - Combined (Cards + Position Groups + Depth Chart)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0F0F0F; color: #fff; }
+
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+    .roster-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+    .roster-card:hover { background: rgba(255,255,255,0.08); }
+
+    .team-red { color: #CE1141; }
+    .team-bg-red { background: #CE1141; }
+    .team-red-20 { background: rgba(206,17,65,0.15); border-color: rgba(206,17,65,0.3); }
+    .starter-glow { box-shadow: 0 0 20px rgba(206,17,65,0.2); }
+
+    .position-header {
+      background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 100%);
+      border-left: 3px solid;
+    }
+    .position-guards { border-left-color: #CE1141; }
+    .position-forwards { border-left-color: #E6A817; }
+    .position-centers { border-left-color: #48ADA9; }
+
+    .starter-badge {
+      background: linear-gradient(135deg, #CE1141 0%, #8B0000 100%);
+      box-shadow: 0 2px 8px rgba(206,17,65,0.3);
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="max-w-lg mx-auto">
+    <h1 class="text-xl font-bold mb-1 text-center">Roster</h1>
+    <p class="text-gray-500 text-sm mb-6 text-center">Cards + Position Groups + Starters Prominent</p>
+
+    <div class="card overflow-hidden">
+      <!-- Header -->
+      <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+        <h3 class="font-bold">Houston Rockets</h3>
+        <div class="flex items-center gap-3 text-sm">
+          <span class="text-gray-400">17 players</span>
+          <span class="text-gray-600">|</span>
+          <span class="team-red font-semibold">5 starters</span>
+        </div>
+      </div>
+
+      <!-- Guards -->
+      <div class="position-header position-guards px-4 py-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-300">Guards</span>
+            <span class="text-xs text-gray-600">6 players</span>
+          </div>
+          <span class="text-xs text-gray-500">PG • SG</span>
+        </div>
+      </div>
+
+      <!-- Starter Guards -->
+      <div class="p-3 space-y-2">
+        <!-- Starter 1 - J. Green -->
+        <div class="roster-card p-3 starter-glow team-red-20">
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl team-red-20 flex items-center justify-center border border-red-500/40 relative">
+              <span class="text-2xl">👤</span>
+              <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full starter-badge flex items-center justify-center">
+                <span class="text-xs">⭐</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="font-bold">Jalen Green</span>
+                <span class="px-1.5 py-0.5 rounded text-xs font-bold team-bg-red text-white">SG</span>
+              </div>
+              <div class="text-xs text-gray-400">#4 • 6'5" • 3rd year</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xl font-black team-red">21.8</div>
+              <div class="text-xs text-gray-500">PPG</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 mt-2">
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold team-red">21.8</div>
+              <div class="text-xs text-gray-500">PTS</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">4.2</div>
+              <div class="text-xs text-gray-500">REB</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">3.6</div>
+              <div class="text-xs text-gray-500">AST</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">42.5%</div>
+              <div class="text-xs text-gray-500">FG%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Starter 2 - VanVleet -->
+        <div class="roster-card p-3 starter-glow team-red-20">
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl team-red-20 flex items-center justify-center border border-red-500/40 relative">
+              <span class="text-2xl">👤</span>
+              <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full starter-badge flex items-center justify-center">
+                <span class="text-xs">⭐</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="font-bold">Fred VanVleet</span>
+                <span class="px-1.5 py-0.5 rounded text-xs font-bold team-bg-red text-white">PG</span>
+              </div>
+              <div class="text-xs text-gray-400">#5 • 6'0" • 8th year</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xl font-black">16.2</div>
+              <div class="text-xs text-gray-500">PPG</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 mt-2">
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">16.2</div>
+              <div class="text-xs text-gray-500">PTS</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">3.8</div>
+              <div class="text-xs text-gray-500">REB</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold team-red">7.4</div>
+              <div class="text-xs text-gray-500">AST</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">38.2%</div>
+              <div class="text-xs text-gray-500">FG%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bench Guards -->
+      <div class="px-4 pb-2">
+        <div class="text-xs text-gray-500 mb-2">Bench</div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="roster-card p-2.5">
+            <div class="flex items-center gap-2 mb-1.5">
+              <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <span class="text-lg">👤</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">A. Green</div>
+                <div class="text-xs text-gray-500">#0 • G</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold">8.4</div>
+                <div class="text-xs text-gray-500">PPG</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 text-center text-xs">
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">3.2</span>
+                <span class="text-gray-500 ml-0.5">AST</span>
+              </div>
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">35.8%</span>
+                <span class="text-gray-500 ml-0.5">3PT</span>
+              </div>
+            </div>
+          </div>
+          <div class="roster-card p-2.5">
+            <div class="flex items-center gap-2 mb-1.5">
+              <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <span class="text-lg">👤</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">Holiday</div>
+                <div class="text-xs text-gray-500">#3 • G</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold">6.8</div>
+                <div class="text-xs text-gray-500">PPG</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 text-center text-xs">
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">2.1</span>
+                <span class="text-gray-500 ml-0.5">AST</span>
+              </div>
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">38.2%</span>
+                <span class="text-gray-500 ml-0.5">3PT</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-2">
+          <span class="text-xs text-gray-600">+ 2 more guards</span>
+        </div>
+      </div>
+
+      <!-- Forwards -->
+      <div class="position-header position-forwards px-4 py-2.5 mt-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-300">Forwards</span>
+            <span class="text-xs text-gray-600">5 players</span>
+          </div>
+          <span class="text-xs text-gray-500">SF • PF</span>
+        </div>
+      </div>
+
+      <div class="p-3 space-y-2">
+        <!-- Starter - Brooks -->
+        <div class="roster-card p-3 starter-glow team-red-20">
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl team-red-20 flex items-center justify-center border border-red-500/40 relative">
+              <span class="text-2xl">👤</span>
+              <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full starter-badge flex items-center justify-center">
+                <span class="text-xs">⭐</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="font-bold">Dillon Brooks</span>
+                <span class="px-1.5 py-0.5 rounded text-xs font-bold team-bg-red text-white">SF</span>
+              </div>
+              <div class="text-xs text-gray-400">#0 • 6'6" • 7th year</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xl font-black">13.5</div>
+              <div class="text-xs text-gray-500">PPG</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 mt-2">
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">13.5</div>
+              <div class="text-xs text-gray-500">PTS</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">3.2</div>
+              <div class="text-xs text-gray-500">REB</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">2.1</div>
+              <div class="text-xs text-gray-500">AST</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">42.8%</div>
+              <div class="text-xs text-gray-500">FG%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bench Forwards - compact grid -->
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <div class="roster-card p-2.5">
+            <div class="flex items-center gap-2 mb-1.5">
+              <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <span class="text-lg">👤</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">Thompson</div>
+                <div class="text-xs text-gray-500">#1 • PF</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold team-red">11.2</div>
+                <div class="text-xs text-gray-500">PPG</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 text-center text-xs">
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">6.8</span>
+                <span class="text-gray-500 ml-0.5">REB</span>
+              </div>
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">2.4</span>
+                <span class="text-gray-500 ml-0.5">AST</span>
+              </div>
+            </div>
+          </div>
+          <div class="roster-card p-2.5">
+            <div class="flex items-center gap-2 mb-1.5">
+              <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <span class="text-lg">👤</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">Smith Jr.</div>
+                <div class="text-xs text-gray-500">#1 • PF</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold">10.8</div>
+                <div class="text-xs text-gray-500">PPG</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 text-center text-xs">
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">5.4</span>
+                <span class="text-gray-500 ml-0.5">REB</span>
+              </div>
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">1.2</span>
+                <span class="text-gray-500 ml-0.5">AST</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="text-center">
+          <span class="text-xs text-gray-600">+ 2 more forwards</span>
+        </div>
+      </div>
+
+      <!-- Centers -->
+      <div class="position-header position-centers px-4 py-2.5 mt-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-300">Centers</span>
+            <span class="text-xs text-gray-600">3 players</span>
+          </div>
+          <span class="text-xs text-gray-500">C</span>
+        </div>
+      </div>
+
+      <div class="p-3 space-y-2">
+        <!-- Starter - Sengun -->
+        <div class="roster-card p-3 starter-glow team-red-20">
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl team-red-20 flex items-center justify-center border border-red-500/40 relative">
+              <span class="text-2xl">👤</span>
+              <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full starter-badge flex items-center justify-center">
+                <span class="text-xs">⭐</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="font-bold">Alperen Sengun</span>
+                <span class="px-1.5 py-0.5 rounded text-xs font-bold team-bg-red text-white">C</span>
+              </div>
+              <div class="text-xs text-gray-400">#28 • 6'11" • 4th year</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xl font-black team-red">19.4</div>
+              <div class="text-xs text-gray-500">PPG</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 mt-2">
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold team-red">19.4</div>
+              <div class="text-xs text-gray-500">PTS</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold team-red">10.2</div>
+              <div class="text-xs text-gray-500">REB</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">5.1</div>
+              <div class="text-xs text-gray-500">AST</div>
+            </div>
+            <div class="bg-black/30 rounded py-1.5 text-center">
+              <div class="text-sm font-bold">54.2%</div>
+              <div class="text-xs text-gray-500">FG%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bench Centers -->
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <div class="roster-card p-2.5">
+            <div class="flex items-center gap-2 mb-1.5">
+              <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <span class="text-lg">👤</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">Adams</div>
+                <div class="text-xs text-gray-500">#12 • C</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold">5.2</div>
+                <div class="text-xs text-gray-500">PPG</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 text-center text-xs">
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">6.4</span>
+                <span class="text-gray-500 ml-0.5">REB</span>
+              </div>
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">1.8</span>
+                <span class="text-gray-500 ml-0.5">AST</span>
+              </div>
+            </div>
+          </div>
+          <div class="roster-card p-2.5">
+            <div class="flex items-center gap-2 mb-1.5">
+              <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                <span class="text-lg">👤</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">Landale</div>
+                <div class="text-xs text-gray-500">#2 • C</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold">2.8</div>
+                <div class="text-xs text-gray-500">PPG</div>
+              </div>
+            </div>
+            <div class="flex gap-1.5 text-center text-xs">
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">2.1</span>
+                <span class="text-gray-500 ml-0.5">REB</span>
+              </div>
+              <div class="flex-1 bg-black/20 rounded py-1">
+                <span class="font-medium">0.6</span>
+                <span class="text-gray-500 ml-0.5">AST</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-4 py-3 border-t border-white/10 bg-white/[0.02]">
+        <div class="text-center text-xs text-gray-500">
+          Tap any player card for full stats • <span class="team-red">⭐</span> = Starter
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="mt-6 p-4 card text-sm">
+      <div class="font-bold mb-2">Key Elements Combined:</div>
+      <ul class="space-y-1 text-gray-400">
+        <li>✓ <span class="text-white">Position groups</span> — Guards, Forwards, Centers sections</li>
+        <li>✓ <span class="text-white">Starter prominence</span> — Larger cards, team color glow, ⭐ badge</li>
+        <li>✓ <span class="text-white">Card-based display</span> — Headshot, number, position, 3-4 key stats</li>
+        <li>✓ <span class="text-white">Bench compact</span> — Smaller cards in 2-column grid</li>
+        <li>✓ <span class="text-white">Team colors</span> — Starters get the team color accent</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expanded Game Card Options</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0F0F0F; color: #fff; }
+
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+    .card-expanded { border-radius: 20px; overflow: hidden; }
+
+    .team-red { color: #CE1141; }
+    .team-bg-red { background: #CE1141; }
+    .team-red-20 { background: rgba(206,17,65,0.2); border-color: rgba(206,17,65,0.4); }
+    .team-green { color: #48ADA9; }
+    .team-bg-green { background: #48ADA9; }
+    .team-green-20 { background: rgba(72,173,169,0.2); border-color: rgba(72,173,169,0.4); }
+
+    .quarter-bar { background: rgba(255,255,255,0.06); border-radius: 4px; }
+
+    .timeline-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .timeline-line { height: 2px; background: rgba(255,255,255,0.1); }
+
+    .stat-row { display: flex; justify-content: space-between; align-items: center; }
+    .stat-bar-bg { background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; height: 4px; }
+
+    .winner-glow { box-shadow: 0 0 20px rgba(72,173,169,0.3); }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-2xl md:text-3xl font-black mb-2">Expanded Game Card Options</h1>
+    <p class="text-gray-400 mb-8">When user taps a compact game, this stylish detail card expands</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Option 1: Quarter-by-Quarter Scoring -->
+      <div>
+        <h2 class="text-lg font-bold mb-1">Option 1: Quarter-by-Quarter Scoring</h2>
+        <p class="text-gray-500 text-sm mb-4">Period scores in horizontal bar layout, final score prominent</p>
+
+        <div class="card card-expanded winner-glow">
+          <!-- Header -->
+          <div class="team-bg-green px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🏀</span>
+              <span class="text-sm font-bold">Final</span>
+            </div>
+            <div class="text-xs text-white/70">Jan 15, 2026</div>
+          </div>
+
+          <!-- Teams + Final Score -->
+          <div class="p-4 border-b border-white/10">
+            <div class="flex items-center justify-between">
+              <!-- Away Team (Winner) -->
+              <div class="flex items-center gap-3 flex-1">
+                <div class="w-12 h-12 rounded-xl bg-green-700/30 flex items-center justify-center text-2xl border border-green-500/30">🚀</div>
+                <div>
+                  <div class="font-bold">Rockets</div>
+                  <div class="text-xs text-gray-500">Away</div>
+                </div>
+              </div>
+
+              <!-- Score -->
+              <div class="text-center px-4">
+                <div class="flex items-center gap-3">
+                  <span class="text-3xl font-black team-green">112</span>
+                  <span class="text-xl text-gray-500">-</span>
+                  <span class="text-2xl font-semibold text-gray-400">105</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="px-2 py-0.5 rounded text-xs font-bold team-bg-green text-black">W</span>
+                  <span class="text-xs text-gray-500">Final</span>
+                </div>
+              </div>
+
+              <!-- Home Team -->
+              <div class="flex items-center gap-3 flex-1 justify-end">
+                <div class="text-right">
+                  <div class="font-bold">Lakers</div>
+                  <div class="text-xs text-gray-500">Home</div>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-purple-700/30 flex items-center justify-center text-2xl border border-purple-500/30">💜</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quarter Scoring -->
+          <div class="p-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Scoring by Quarter</div>
+
+            <!-- Quarter labels -->
+            <div class="grid grid-cols-5 gap-2 text-center text-xs text-gray-500 mb-2">
+              <div>Q1</div>
+              <div>Q2</div>
+              <div>Q3</div>
+              <div>Q4</div>
+              <div class="font-bold text-white/70">FINAL</div>
+            </div>
+
+            <!-- Rockets scores -->
+            <div class="grid grid-cols-5 gap-2 text-center mb-3">
+              <div class="quarter-bar p-2">
+                <span class="font-bold team-green">28</span>
+              </div>
+              <div class="quarter-bar p-2">
+                <span class="font-bold team-green">32</span>
+              </div>
+              <div class="quarter-bar p-2">
+                <span class="font-bold">26</span>
+              </div>
+              <div class="quarter-bar p-2">
+                <span class="font-bold">26</span>
+              </div>
+              <div class="p-2 rounded-lg team-green-20 border">
+                <span class="font-black team-green">112</span>
+              </div>
+            </div>
+
+            <!-- Lakers scores -->
+            <div class="grid grid-cols-5 gap-2 text-center">
+              <div class="quarter-bar p-2">
+                <span class="font-bold">24</span>
+              </div>
+              <div class="quarter-bar p-2">
+                <span class="font-bold">28</span>
+              </div>
+              <div class="quarter-bar p-2">
+                <span class="font-bold">27</span>
+              </div>
+              <div class="quarter-bar p-2">
+                <span class="font-bold">26</span>
+              </div>
+              <div class="p-2 rounded-lg bg-white/5 border border-white/10">
+                <span class="font-bold">105</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-3">✓ See how game unfolded quarter by quarter • ✗ Less context on key moments</p>
+      </div>
+
+      <!-- Option 2: Match Timeline -->
+      <div>
+        <h2 class="text-lg font-bold mb-1">Option 2: Match Timeline</h2>
+        <p class="text-gray-500 text-sm mb-4">Visual timeline with key moments and lead changes</p>
+
+        <div class="card card-expanded">
+          <!-- Header -->
+          <div class="team-bg-green px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🏀</span>
+              <span class="text-sm font-bold">Final</span>
+            </div>
+            <div class="text-xs text-white/70">Jan 15, 2026</div>
+          </div>
+
+          <!-- Teams + Score -->
+          <div class="p-4 border-b border-white/10">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green-700/30 flex items-center justify-center text-xl">🚀</div>
+                <span class="font-bold">Rockets</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-2xl font-black team-green">112</span>
+                <span class="text-gray-500">-</span>
+                <span class="text-xl font-semibold text-gray-400">105</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-bold">Lakers</span>
+                <div class="w-10 h-10 rounded-xl bg-purple-700/30 flex items-center justify-center text-xl">💜</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="p-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Game Flow</div>
+
+            <!-- Visual timeline -->
+            <div class="relative mb-4">
+              <!-- Lead bar -->
+              <div class="h-8 rounded-lg overflow-hidden flex">
+                <div class="team-bg-green" style="width: 65%;"></div>
+                <div class="bg-purple-700" style="width: 35%;"></div>
+              </div>
+              <!-- Center line -->
+              <div class="absolute inset-y-0 left-1/2 w-0.5 bg-white/20"></div>
+            </div>
+
+            <!-- Key moments -->
+            <div class="space-y-2">
+              <div class="flex items-center gap-3 p-2 rounded-lg team-green-20 border">
+                <div class="timeline-dot team-bg-green"></div>
+                <div class="text-xs text-gray-400">Q2 4:23</div>
+                <div class="flex-1 text-sm">
+                  <span class="font-semibold">J. Green 3-pointer</span>
+                  <span class="text-gray-500"> — Rockets take lead for good</span>
+                </div>
+                <span class="text-xs font-bold team-green">+7</span>
+              </div>
+
+              <div class="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/10">
+                <div class="timeline-dot bg-yellow-500"></div>
+                <div class="text-xs text-gray-400">Q3 8:12</div>
+                <div class="flex-1 text-sm">
+                  <span class="font-semibold">Sengun dunk</span>
+                  <span class="text-gray-500"> — Biggest lead +15</span>
+                </div>
+                <span class="text-xs font-bold text-yellow-400">+15</span>
+              </div>
+
+              <div class="flex items-center gap-3 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                <div class="timeline-dot bg-purple-500"></div>
+                <div class="text-xs text-gray-400">Q4 2:45</div>
+                <div class="flex-1 text-sm">
+                  <span class="font-semibold">Davis block + layup</span>
+                  <span class="text-gray-500"> — Lakers cut lead to 5</span>
+                </div>
+                <span class="text-xs font-bold text-purple-400">+5</span>
+              </div>
+
+              <div class="flex items-center gap-3 p-2 rounded-lg team-green-20 border">
+                <div class="timeline-dot team-bg-green"></div>
+                <div class="text-xs text-gray-400">Q4 0:12</div>
+                <div class="flex-1 text-sm">
+                  <span class="font-semibold">VanVleet FTs seal it</span>
+                  <span class="text-gray-500"> — Final lead +7</span>
+                </div>
+                <span class="text-xs font-bold team-green">W</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-3">✓ Story of the game at a glance • ✗ Takes more space</p>
+      </div>
+
+      <!-- Option 3: Player Spotlight -->
+      <div>
+        <h2 class="text-lg font-bold mb-1">Option 3: Player Spotlight</h2>
+        <p class="text-gray-500 text-sm mb-4">Top performer from each team with headshot and stat line</p>
+
+        <div class="card card-expanded winner-glow">
+          <!-- Header -->
+          <div class="team-bg-green px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🏀</span>
+              <span class="text-sm font-bold">Final • Rockets win 112-105</span>
+            </div>
+            <div class="text-xs text-white/70">Jan 15, 2026</div>
+          </div>
+
+          <!-- Player Spotlights -->
+          <div class="p-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Top Performers</div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Rockets Player -->
+              <div class="p-3 rounded-xl team-green-20 border">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-14 h-14 rounded-full bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center text-2xl border-2 border-green-400">
+                    🏀
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-400 mb-0.5">🚀 ROCKETS</div>
+                    <div class="font-bold text-lg">J. Green</div>
+                    <div class="text-xs text-green-400 font-semibold">⭐ Player of the Game</div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="p-2 rounded-lg bg-black/20">
+                    <div class="text-xl font-black">28</div>
+                    <div class="text-xs text-gray-500">PTS</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-black/20">
+                    <div class="text-xl font-black">6</div>
+                    <div class="text-xs text-gray-500">REB</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-black/20">
+                    <div class="text-xl font-black">5</div>
+                    <div class="text-xs text-gray-500">AST</div>
+                  </div>
+                </div>
+                <div class="mt-2 text-xs text-center text-gray-400">
+                  FG: 10/18 (55.6%) • 3PT: 6/10
+                </div>
+              </div>
+
+              <!-- Lakers Player -->
+              <div class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="w-14 h-14 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-2xl border-2 border-purple-400">
+                    🏀
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-400 mb-0.5">💜 LAKERS</div>
+                    <div class="font-bold text-lg">A. Davis</div>
+                    <div class="text-xs text-purple-400">Top Scorer</div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="p-2 rounded-lg bg-black/20">
+                    <div class="text-xl font-black">32</div>
+                    <div class="text-xs text-gray-500">PTS</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-black/20">
+                    <div class="text-xl font-black">12</div>
+                    <div class="text-xs text-gray-500">REB</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-black/20">
+                    <div class="text-xl font-black">4</div>
+                    <div class="text-xs text-gray-500">BLK</div>
+                  </div>
+                </div>
+                <div class="mt-2 text-xs text-center text-gray-400">
+                  FG: 13/22 (59.1%) • FT: 6/8
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Score -->
+          <div class="px-4 pb-4">
+            <div class="flex items-center justify-center gap-4 py-2 rounded-lg bg-white/5">
+              <span class="font-bold team-green">Rockets 112</span>
+              <span class="text-gray-500">vs</span>
+              <span class="font-semibold text-gray-400">Lakers 105</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-3">✓ See who starred in the game • ✗ Miss team-level story</p>
+      </div>
+
+      <!-- Option 4: Team Comparison Mini-Stats -->
+      <div>
+        <h2 class="text-lg font-bold mb-1">Option 4: Team Comparison Mini-Stats</h2>
+        <p class="text-gray-500 text-sm mb-4">Side-by-side comparison of key team stats</p>
+
+        <div class="card card-expanded winner-glow">
+          <!-- Header -->
+          <div class="team-bg-green px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🏀</span>
+              <span class="text-sm font-bold">Final • Rockets 112 - 105 Lakers</span>
+            </div>
+            <div class="text-xs text-white/70">Jan 15, 2026</div>
+          </div>
+
+          <!-- Team Comparison -->
+          <div class="p-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Team Comparison</div>
+
+            <!-- Teams header -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-green-700/30 flex items-center justify-center">🚀</div>
+                <span class="font-bold text-sm">Rockets</span>
+              </div>
+              <span class="text-xs text-gray-500">vs</span>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm">Lakers</span>
+                <div class="w-8 h-8 rounded-lg bg-purple-700/30 flex items-center justify-center">💜</div>
+              </div>
+            </div>
+
+            <!-- Stats comparison -->
+            <div class="space-y-3">
+              <!-- FG% -->
+              <div class="flex items-center gap-3">
+                <span class="w-12 text-right text-sm font-bold team-green">48.2%</span>
+                <div class="flex-1 h-2 rounded-full overflow-hidden flex">
+                  <div class="team-bg-green" style="width: 52%;"></div>
+                  <div class="bg-purple-600" style="width: 48%;"></div>
+                </div>
+                <span class="w-12 text-sm font-semibold text-gray-400">44.6%</span>
+              </div>
+              <div class="flex justify-between px-1">
+                <span class="text-xs text-green-400">FG%</span>
+                <span class="text-xs text-gray-500">Won by 3.6%</span>
+              </div>
+
+              <!-- 3PT% -->
+              <div class="flex items-center gap-3">
+                <span class="w-12 text-right text-sm font-bold team-green">42.5%</span>
+                <div class="flex-1 h-2 rounded-full overflow-hidden flex">
+                  <div class="team-bg-green" style="width: 62%;"></div>
+                  <div class="bg-purple-600" style="width: 38%;"></div>
+                </div>
+                <span class="w-12 text-sm font-semibold text-gray-400">34.2%</span>
+              </div>
+              <div class="flex justify-between px-1">
+                <span class="text-xs text-green-400">3PT%</span>
+                <span class="text-xs text-gray-500">Won by 8.3%</span>
+              </div>
+
+              <!-- Rebounds -->
+              <div class="flex items-center gap-3">
+                <span class="w-12 text-right text-sm font-semibold text-gray-300">42</span>
+                <div class="flex-1 h-2 rounded-full overflow-hidden flex">
+                  <div class="bg-gray-500" style="width: 47%;"></div>
+                  <div class="bg-purple-600" style="width: 53%;"></div>
+                </div>
+                <span class="w-12 text-sm font-bold text-purple-400">48</span>
+              </div>
+              <div class="flex justify-between px-1">
+                <span class="text-xs text-gray-500">Rebounds</span>
+                <span class="text-xs text-purple-400">Lost by 6</span>
+              </div>
+
+              <!-- Turnovers -->
+              <div class="flex items-center gap-3">
+                <span class="w-12 text-right text-sm font-bold team-green">11</span>
+                <div class="flex-1 h-2 rounded-full overflow-hidden flex">
+                  <div class="team-bg-green" style="width: 65%;"></div>
+                  <div class="bg-red-600" style="width: 35%;"></div>
+                </div>
+                <span class="w-12 text-sm font-semibold text-red-400">16</span>
+              </div>
+              <div class="flex justify-between px-1">
+                <span class="text-xs text-green-400">Turnovers (lower = better)</span>
+                <span class="text-xs text-gray-500">Won by 5</span>
+              </div>
+
+              <!-- Assists -->
+              <div class="flex items-center gap-3">
+                <span class="w-12 text-right text-sm font-bold team-green">28</span>
+                <div class="flex-1 h-2 rounded-full overflow-hidden flex">
+                  <div class="team-bg-green" style="width: 58%;"></div>
+                  <div class="bg-purple-600" style="width: 42%;"></div>
+                </div>
+                <span class="w-12 text-sm font-semibold text-gray-400">22</span>
+              </div>
+              <div class="flex justify-between px-1">
+                <span class="text-xs text-green-400">Assists</span>
+                <span class="text-xs text-gray-500">Won by 6</span>
+              </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="mt-4 p-3 rounded-lg team-green-20 border text-center">
+              <span class="text-sm font-semibold">Rockets won <span class="font-bold team-green">4 of 5</span> stat categories</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-3">✓ Quick stat comparison • ✗ Miss individual performances</p>
+      </div>
+
+    </div>
+
+    <!-- Combination Suggestion -->
+    <div class="card p-6 mt-8">
+      <h2 class="text-xl font-bold mb-4">Or Combine Them?</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 rounded-xl bg-gradient-to-r from-green-900/20 to-teal-900/20 border border-green-500/30">
+          <h3 class="font-bold mb-2 text-green-400">Combo A: Scoring + Players</h3>
+          <p class="text-sm text-gray-400">Quarter-by-quarter scores + top performer cards from each team</p>
+        </div>
+        <div class="p-4 rounded-xl bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/30">
+          <h3 class="font-bold mb-2 text-blue-400">Combo B: Timeline + Comparison</h3>
+          <p class="text-sm text-gray-400">Key moments timeline + team stat comparison bars</p>
+        </div>
+        <div class="p-4 rounded-xl bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-500/30">
+          <h3 class="font-bold mb-2 text-yellow-400">Combo C: Players + Comparison</h3>
+          <p class="text-sm text-gray-400">Player spotlight cards + team stat bars below</p>
+        </div>
+        <div class="p-4 rounded-xl bg-gradient-to-r from-red-900/20 to-pink-900/20 border border-red-500/30">
+          <h3 class="font-bold mb-2 text-red-400">Combo D: Full Detail</h3>
+          <p class="text-sm text-gray-400">Quarter scores + key plays + top players (tabbed or stacked)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stat Panel Options - Houston Rockets</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0F0F0F; color: #fff; }
+    .team-red { color: #CE1141; }
+    .team-silver { color: #C4CED4; }
+    .bg-team-red { background: #CE1141; }
+    .bg-team-red-20 { background: rgba(206, 17, 65, 0.2); }
+    .bg-team-red-40 { background: rgba(206, 17, 65, 0.4); }
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+    .stat-bar { background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+    .stat-fill { height: 100%; border-radius: 4px; }
+    .rank-badge { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    .glow-red { box-shadow: 0 0 30px rgba(206, 17, 65, 0.3); }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  </style>
+</head>
+<body class="p-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-black mb-2">Houston Rockets Stats Panel</h1>
+    <p class="text-gray-400 mb-8">Six different approaches to displaying team statistics</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+
+      <!-- Option 1: Progress Bars -->
+      <div class="card p-6">
+        <h2 class="text-lg font-bold mb-1">Option 1: Progress Bars</h2>
+        <p class="text-gray-500 text-sm mb-4">Filled bars show league ranking position</p>
+
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-gray-300">Points Per Game</span>
+              <span class="font-bold">112.4 <span class="text-gray-500">(8th)</span></span>
+            </div>
+            <div class="stat-bar h-3">
+              <div class="stat-fill bg-team-red" style="width: 73%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-gray-300">Defensive Rating</span>
+              <span class="font-bold">108.2 <span class="text-gray-500">(12th)</span></span>
+            </div>
+            <div class="stat-bar h-3">
+              <div class="stat-fill" style="width: 60%; background: #48ADA9"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-gray-300">3-Point %</span>
+              <span class="font-bold">36.8% <span class="text-gray-500">(5th)</span></span>
+            </div>
+            <div class="stat-bar h-3">
+              <div class="stat-fill bg-team-red" style="width: 83%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-gray-300">Rebounds Per Game</span>
+              <span class="font-bold">44.6 <span class="text-gray-500">(18th)</span></span>
+            </div>
+            <div class="stat-bar h-3">
+              <div class="stat-fill bg-yellow-500" style="width: 40%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-gray-300">Turnovers Per Game</span>
+              <span class="font-bold">13.2 <span class="text-gray-500">(22nd)</span></span>
+            </div>
+            <div class="stat-bar h-3">
+              <div class="stat-fill bg-red-400" style="width: 27%"></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-4">✓ Easy to scan rankings • ✗ Less context on "good vs bad"</p>
+      </div>
+
+      <!-- Option 2: Team vs League -->
+      <div class="card p-6">
+        <h2 class="text-lg font-bold mb-1">Option 2: Team vs League</h2>
+        <p class="text-gray-500 text-sm mb-4">Side-by-side comparison with league average</p>
+
+        <div class="space-y-3">
+          <div class="bg-team-red-20 rounded-xl p-4 border border-red-500/30">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-gray-400 text-sm">POINTS PER GAME</span>
+              <span class="text-green-400 text-sm font-semibold">+4.2 above avg</span>
+            </div>
+            <div class="flex items-end gap-6">
+              <div class="text-center">
+                <div class="text-3xl font-black team-red">112.4</div>
+                <div class="text-xs text-gray-500">ROCKETS</div>
+              </div>
+              <div class="text-4xl text-gray-600 mb-1">vs</div>
+              <div class="text-center">
+                <div class="text-2xl font-bold text-gray-400">108.2</div>
+                <div class="text-xs text-gray-500">LEAGUE AVG</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white/5 rounded-xl p-4 border border-white/10">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-gray-400 text-sm">DEFENSIVE RATING</span>
+              <span class="text-yellow-400 text-sm font-semibold">-0.8 below avg</span>
+            </div>
+            <div class="flex items-end gap-6">
+              <div class="text-center">
+                <div class="text-2xl font-bold text-gray-300">108.2</div>
+                <div class="text-xs text-gray-500">ROCKETS</div>
+              </div>
+              <div class="text-4xl text-gray-600 mb-1">vs</div>
+              <div class="text-center">
+                <div class="text-2xl font-bold text-gray-400">109.0</div>
+                <div class="text-xs text-gray-500">LEAGUE AVG</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-team-red-20 rounded-xl p-4 border border-red-500/30">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-gray-400 text-sm">3-POINT %</span>
+              <span class="text-green-400 text-sm font-semibold">+2.4% above avg</span>
+            </div>
+            <div class="flex items-end gap-6">
+              <div class="text-center">
+                <div class="text-3xl font-black team-red">36.8%</div>
+                <div class="text-xs text-gray-500">ROCKETS</div>
+              </div>
+              <div class="text-4xl text-gray-600 mb-1">vs</div>
+              <div class="text-center">
+                <div class="text-2xl font-bold text-gray-400">34.4%</div>
+                <div class="text-xs text-gray-500">LEAGUE AVG</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-4">✓ Clear "better/worse" context • ✗ Takes more space per stat</p>
+      </div>
+
+      <!-- Option 3: Ranked Categories -->
+      <div class="card p-6">
+        <h2 class="text-lg font-bold mb-1">Option 3: Ranked Categories</h2>
+        <p class="text-gray-500 text-sm mb-4">Stats grouped by category with rank badges</p>
+
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs font-bold text-gray-500 tracking-wider mb-2">OFFENSE</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-team-red-20 rounded-lg p-3 flex items-center gap-2">
+                <span class="rank-badge text-xs font-bold px-2 py-1 rounded text-black">3rd</span>
+                <div>
+                  <div class="text-sm font-semibold">112.4 PPG</div>
+                  <div class="text-xs text-gray-500">Points Per Game</div>
+                </div>
+              </div>
+              <div class="bg-white/5 rounded-lg p-3 flex items-center gap-2">
+                <span class="bg-yellow-500/80 text-xs font-bold px-2 py-1 rounded text-black">5th</span>
+                <div>
+                  <div class="text-sm font-semibold">36.8%</div>
+                  <div class="text-xs text-gray-500">3-Point %</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold text-gray-500 tracking-wider mb-2">DEFENSE</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-white/5 rounded-lg p-3 flex items-center gap-2">
+                <span class="bg-gray-600 text-xs font-bold px-2 py-1 rounded text-white">12th</span>
+                <div>
+                  <div class="text-sm font-semibold">108.2</div>
+                  <div class="text-xs text-gray-500">Def Rating</div>
+                </div>
+              </div>
+              <div class="bg-white/5 rounded-lg p-3 flex items-center gap-2">
+                <span class="bg-gray-600 text-xs font-bold px-2 py-1 rounded text-white">18th</span>
+                <div>
+                  <div class="text-sm font-semibold">44.6</div>
+                  <div class="text-xs text-gray-500">Rebounds</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold text-gray-500 tracking-wider mb-2">EFFICIENCY</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-red-500/10 rounded-lg p-3 flex items-center gap-2">
+                <span class="bg-red-600 text-xs font-bold px-2 py-1 rounded text-white">22nd</span>
+                <div>
+                  <div class="text-sm font-semibold">13.2</div>
+                  <div class="text-xs text-gray-500">Turnovers</div>
+                </div>
+              </div>
+              <div class="bg-white/5 rounded-lg p-3 flex items-center gap-2">
+                <span class="bg-gray-600 text-xs font-bold px-2 py-1 rounded text-white">8th</span>
+                <div>
+                  <div class="text-sm font-semibold">56.2%</div>
+                  <div class="text-xs text-gray-500">True Shooting</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-4">✓ Bragging rights clear • ✗ Doesn't show "how much better"</p>
+      </div>
+
+      <!-- Option 4: Stat Hero Cards -->
+      <div class="card p-6 glow-red">
+        <h2 class="text-lg font-bold mb-1">Option 4: Stat Hero Cards</h2>
+        <p class="text-gray-500 text-sm mb-4">Top standout stats with visual impact</p>
+
+        <div class="space-y-3">
+          <div class="bg-gradient-to-r from-red-600/30 to-orange-600/20 rounded-2xl p-4 border border-red-500/40">
+            <div class="flex items-center gap-3 mb-2">
+              <span class="text-2xl">🔥</span>
+              <span class="text-xs font-bold text-red-400 tracking-wider">SCORING MACHINE</span>
+            </div>
+            <div class="flex items-end justify-between">
+              <div>
+                <div class="text-4xl font-black">112.4</div>
+                <div class="text-sm text-gray-400">Points Per Game</div>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl font-bold text-yellow-400">3rd</div>
+                <div class="text-xs text-gray-500">in NBA</div>
+              </div>
+            </div>
+            <div class="mt-2 flex items-center gap-2 text-green-400 text-sm">
+              <span>↑ 2 spots from last week</span>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-r from-teal-600/30 to-cyan-600/20 rounded-2xl p-4 border border-teal-500/30">
+            <div class="flex items-center gap-3 mb-2">
+              <span class="text-2xl">🎯</span>
+              <span class="text-xs font-bold text-teal-400 tracking-wider">3-POINT THREAT</span>
+            </div>
+            <div class="flex items-end justify-between">
+              <div>
+                <div class="text-4xl font-black">36.8%</div>
+                <div class="text-sm text-gray-400">Three-Point Percentage</div>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl font-bold text-yellow-400">5th</div>
+                <div class="text-xs text-gray-500">in NBA</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-r from-gray-600/30 to-gray-700/20 rounded-2xl p-4 border border-gray-500/30">
+            <div class="flex items-center gap-3 mb-2">
+              <span class="text-2xl">⚠️</span>
+              <span class="text-xs font-bold text-gray-400 tracking-wider">AREA TO IMPROVE</span>
+            </div>
+            <div class="flex items-end justify-between">
+              <div>
+                <div class="text-4xl font-black text-red-400">13.2</div>
+                <div class="text-sm text-gray-400">Turnovers Per Game</div>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl font-bold text-red-400">22nd</div>
+                <div class="text-xs text-gray-500">in NBA</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-4">✓ Emotional impact, storytelling • ✗ Only shows top stats</p>
+      </div>
+
+      <!-- Option 5: Spider/Radar Chart -->
+      <div class="card p-6">
+        <h2 class="text-lg font-bold mb-1">Option 5: Spider Chart</h2>
+        <p class="text-gray-500 text-sm mb-4">Visual team profile at a glance</p>
+
+        <div class="flex justify-center mb-4">
+          <svg width="280" height="280" viewBox="0 0 280 280">
+            <!-- Background hexagon -->
+            <polygon points="140,20 240,80 240,200 140,260 40,200 40,80" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <polygon points="140,50 210,95 210,185 140,230 70,185 70,95" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <polygon points="140,80 180,110 180,170 140,200 100,170 100,110" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <polygon points="140,110 150,125 150,155 140,170 130,155 130,125" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+            <!-- Axis lines -->
+            <line x1="140" y1="20" x2="140" y2="260" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="40" y1="80" x2="240" y2="200" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <line x1="40" y1="200" x2="240" y2="80" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+            <!-- Team shape (Rockets) -->
+            <polygon points="140,35 220,100 200,185 140,220 80,175 75,95" fill="rgba(206,17,65,0.3)" stroke="#CE1141" stroke-width="2"/>
+
+            <!-- League average shape -->
+            <polygon points="140,70 190,110 180,165 140,190 95,160 90,115" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="4"/>
+
+            <!-- Data points -->
+            <circle cx="140" cy="35" r="4" fill="#CE1141"/>
+            <circle cx="220" cy="100" r="4" fill="#CE1141"/>
+            <circle cx="200" cy="185" r="4" fill="#CE1141"/>
+            <circle cx="140" cy="220" r="4" fill="#CE1141"/>
+            <circle cx="80" cy="175" r="4" fill="#CE1141"/>
+            <circle cx="75" cy="95" r="4" fill="#CE1141"/>
+          </svg>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-xs mb-4">
+          <div class="bg-team-red-20 rounded-lg p-2">
+            <div class="font-bold team-red">OFFENSE</div>
+            <div class="text-gray-400">85%</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-2">
+            <div class="font-bold">DEFENSE</div>
+            <div class="text-gray-400">62%</div>
+          </div>
+          <div class="bg-white/5 rounded-lg p-2">
+            <div class="font-bold">REBOUND</div>
+            <div class="text-gray-400">55%</div>
+          </div>
+        </div>
+
+        <div class="flex justify-center gap-4 text-xs">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-team-red"></div>
+            <span class="text-gray-400">Rockets</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded border border-gray-500 border-dashed"></div>
+            <span class="text-gray-400">League Avg</span>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-4">✓ Team identity at a glance • ✗ Hard to read exact values</p>
+      </div>
+
+      <!-- Option 6: League Leaderboard Mini -->
+      <div class="card p-6">
+        <h2 class="text-lg font-bold mb-1">Option 6: League Leaderboard Mini</h2>
+        <p class="text-gray-500 text-sm mb-4">Your team highlighted in stat rankings</p>
+
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs font-bold text-gray-500 tracking-wider mb-2">PPG LEADERS</div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-3 text-sm bg-white/5 rounded-lg px-3 py-2">
+                <span class="text-gray-500 w-6">1st</span>
+                <div class="w-6 h-6 rounded-full bg-green-700 flex items-center justify-center text-xs">☘️</div>
+                <span class="flex-1">Celtics</span>
+                <span class="font-bold">118.2</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm bg-white/5 rounded-lg px-3 py-2">
+                <span class="text-gray-500 w-6">2nd</span>
+                <div class="w-6 h-6 rounded-full bg-blue-800 flex items-center justify-center text-xs">🦌</div>
+                <span class="flex-1">Bucks</span>
+                <span class="font-bold">116.4</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm bg-team-red-20 rounded-lg px-3 py-2 border border-red-500/50">
+                <span class="font-bold team-red w-6">3rd</span>
+                <div class="w-6 h-6 rounded-full bg-team-red flex items-center justify-center text-xs">🚀</div>
+                <span class="flex-1 font-semibold">Rockets</span>
+                <span class="font-black team-red">112.4</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm bg-white/5 rounded-lg px-3 py-2">
+                <span class="text-gray-500 w-6">4th</span>
+                <div class="w-6 h-6 rounded-full bg-red-700 flex items-center justify-center text-xs">🦅</div>
+                <span class="flex-1">Hawks</span>
+                <span class="font-bold">111.8</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold text-gray-500 tracking-wider mb-2">DEFENSIVE RATING</div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-3 text-sm bg-white/5 rounded-lg px-3 py-2">
+                <span class="text-gray-500 w-6">11th</span>
+                <div class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs">🐺</div>
+                <span class="flex-1">Timberwolves</span>
+                <span class="font-bold">107.8</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm bg-white/5 rounded-lg px-3 py-2 border border-white/20">
+                <span class="text-gray-400 w-6">12th</span>
+                <div class="w-6 h-6 rounded-full bg-team-red flex items-center justify-center text-xs">🚀</div>
+                <span class="flex-1">Rockets</span>
+                <span class="font-bold">108.2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-gray-500 text-xs mt-4">✓ See competition context • ✗ More scrolling for many stats</p>
+      </div>
+
+    </div>
+
+    <div class="mt-8 p-6 card">
+      <h2 class="text-xl font-bold mb-4">Which approach feels right?</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+        <div class="bg-white/5 rounded-lg p-3">
+          <div class="font-bold mb-1">Option 1: Progress Bars</div>
+          <div class="text-gray-400">Simple ranking visualization</div>
+        </div>
+        <div class="bg-white/5 rounded-lg p-3">
+          <div class="font-bold mb-1">Option 2: Team vs League</div>
+          <div class="text-gray-400">Clear above/below average</div>
+        </div>
+        <div class="bg-white/5 rounded-lg p-3">
+          <div class="font-bold mb-1">Option 3: Ranked Categories</div>
+          <div class="text-gray-400">Bragging rights focus</div>
+        </div>
+        <div class="bg-yellow-500/20 rounded-lg p-3 border border-yellow-500/30">
+          <div class="font-bold mb-1 text-yellow-400">Option 4: Stat Hero Cards ⭐</div>
+          <div class="text-gray-400">Emotional storytelling</div>
+        </div>
+        <div class="bg-white/5 rounded-lg p-3">
+          <div class="font-bold mb-1">Option 5: Spider Chart</div>
+          <div class="text-gray-400">Team identity visual</div>
+        </div>
+        <div class="bg-white/5 rounded-lg p-3">
+          <div class="font-bold mb-1">Option 6: Leaderboard Mini</div>
+          <div class="text-gray-400">Competition context</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
