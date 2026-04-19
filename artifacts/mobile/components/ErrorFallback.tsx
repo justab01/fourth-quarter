@@ -12,6 +12,9 @@ import {
   useColorScheme,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Colors from "@/constants/colors";
+
+const C = Colors.dark;
 
 export type ErrorFallbackProps = {
   error: Error;
@@ -24,11 +27,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const insets = useSafeAreaInsets();
 
   const theme = {
-    background: isDark ? "#000000" : "#FFFFFF",
-    backgroundSecondary: isDark ? "#1C1C1E" : "#F2F2F7",
-    text: isDark ? "#FFFFFF" : "#000000",
-    textSecondary: isDark ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)",
-    link: "#007AFF",
+    background: isDark ? C.background : "#FFFFFF",
+    backgroundSecondary: isDark ? C.card : "#F2F2F7",
+    text: isDark ? C.text : "#000000",
+    textSecondary: isDark ? C.textSecondary : "rgba(0, 0, 0, 0.7)",
+    accent: isDark ? C.accent : "#EF7828",
     buttonText: "#FFFFFF",
   };
 
@@ -91,7 +94,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           style={({ pressed }) => [
             styles.button,
             {
-              backgroundColor: theme.link,
+              backgroundColor: theme.accent,
               opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
             },

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 
 const C = Colors.dark;
 
@@ -401,7 +402,7 @@ const sit = StyleSheet.create({
   },
   iconBg: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   body: { flex: 1, gap: 6 },
-  line: { fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  line: { fontSize: 14, fontWeight: "700", fontFamily: FONTS.bodyBold },
 });
 
 // ─── Scoring run chip ─────────────────────────────────────────────────────────
@@ -428,11 +429,11 @@ const runS = StyleSheet.create({
   container: {
     flexDirection: "row", alignItems: "center", gap: 8,
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1, borderColor: C.glassMedium,
     overflow: "hidden", position: "relative",
   },
   dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  runText: { fontSize: 17, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  runText: { fontSize: 17, fontWeight: "900", fontFamily: FONTS.bodyBold },
   teamText: { fontSize: 14, color: C.text, fontWeight: "600" },
   flameBg: {},
 });
@@ -461,7 +462,7 @@ const why = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
     borderWidth: 1, overflow: "hidden",
   },
-  text: { flex: 1, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold", lineHeight: 20 },
+  text: { flex: 1, fontSize: 14, fontWeight: "600", fontFamily: FONTS.bodySemiBold, lineHeight: 20 },
 });
 
 // ─── Baseball diamond state display ──────────────────────────────────────────
@@ -492,7 +493,7 @@ const bb = StyleSheet.create({
   dots: { flexDirection: "row", gap: 5 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   divider: { width: 1, height: 30, backgroundColor: C.separator },
-  countText: { fontSize: 16, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold" },
+  countText: { fontSize: 16, fontWeight: "800", color: C.text, fontFamily: FONTS.bodyBold },
 });
 
 // ─── Football situation display ───────────────────────────────────────────────
@@ -527,7 +528,7 @@ const fb = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", backgroundColor: C.card, borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
   statBox: { flex: 1, alignItems: "center", paddingVertical: 10, gap: 3 },
   statLabel: { color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
-  statVal: { fontSize: 16, fontWeight: "800", color: C.text, fontFamily: "Inter_700Bold" },
+  statVal: { fontSize: 16, fontWeight: "800", color: C.text, fontFamily: FONTS.bodyBold },
   divider: { width: 1, height: "100%", backgroundColor: C.separator },
   redZone: { flexDirection: "row", gap: 4 },
 });

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { usePreferences } from "@/context/PreferencesContext";
 
 const C = Colors.dark;
@@ -52,6 +53,6 @@ const styles = StyleSheet.create({
     color: C.accent,
     fontSize: 14,
     fontWeight: "800",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
 });

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unified Stats Panel - Multiple Sports</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0F0F0F; color: #fff; }
+
+    /* Team Colors */
+    .rockets-red { color: #CE1141; }
+    .rockets-bg { background: #CE1141; }
+    .rockets-gradient { background: linear-gradient(135deg, #CE1141 0%, #8B0000 100%); }
+
+    .chiefs-red { color: #E31837; }
+    .chiefs-bg { background: #E31837; }
+    .chiefs-gradient { background: linear-gradient(135deg, #E31837 0%, #B11226 100%); }
+
+    .yankees-navy { color: #003087; }
+    .yankees-bg { background: #003087; }
+    .yankees-gradient { background: linear-gradient(135deg, #003087 0%, #001A4D 100%); }
+
+    .rangers-blue { color: #006BB3; }
+    .rangers-bg { background: #006BB3; }
+    .rangers-gradient { background: linear-gradient(135deg, #006BB3 0%, #003D66 100%); }
+
+    .liverpool-red { color: #C8102E; }
+    .liverpool-bg { background: #C8102E; }
+    .liverpool-gradient { background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%); }
+
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+    .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+
+    .stat-bar { background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; height: 8px; }
+    .stat-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+    .spider-bg { fill: rgba(255,255,255,0.03); stroke: rgba(255,255,255,0.08); }
+    .spider-team { fill-opacity: 0.25; stroke-width: 2; }
+
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } }
+
+    .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); }
+    .stat-value { font-size: 24px; font-weight: 900; line-height: 1; }
+    .stat-rank { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+
+    .rank-gold { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #000; }
+    .rank-green { background: #48ADA9; color: #000; }
+    .rank-yellow { background: #E6A817; color: #000; }
+    .rank-red { background: #E06060; color: #fff; }
+
+    .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); margin: 16px 0; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl md:text-3xl font-black mb-2">Unified Stats Panel</h1>
+    <p class="text-gray-400 mb-6">Spider chart for team identity + Progress bars for detailed stats. Sport-specific metrics.</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+
+      <!-- ====== NBA: Houston Rockets ====== -->
+      <div class="card card-hover overflow-hidden">
+        <div class="rockets-gradient p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">🚀</div>
+            <div>
+              <div class="text-white/70 text-xs font-semibold tracking-wider">NBA</div>
+              <div class="text-xl font-black">Houston Rockets</div>
+              <div class="text-white/70 text-sm">52-28 · 2nd West</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <!-- Spider Chart -->
+          <div class="flex justify-center mb-4">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <!-- Background -->
+              <polygon points="100,15 165,50 165,150 100,185 35,150 35,50" class="spider-bg"/>
+              <polygon points="100,35 145,60 145,140 100,165 55,140 55,60" class="spider-bg"/>
+              <polygon points="100,55 125,70 125,130 100,145 75,130 75,70" class="spider-bg"/>
+
+              <!-- Axis lines -->
+              <line x1="100" y1="15" x2="100" y2="185" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="50" x2="165" y2="150" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="150" x2="165" y2="50" stroke="rgba(255,255,255,0.05)"/>
+
+              <!-- Rockets shape -->
+              <polygon points="100,25 155,65 140,140 100,165 60,135 55,60" class="spider-team" style="fill: #CE1141; stroke: #CE1141;"/>
+
+              <!-- Data points -->
+              <circle cx="100" cy="25" r="5" fill="#CE1141"/>
+              <circle cx="155" cy="65" r="5" fill="#CE1141"/>
+              <circle cx="140" cy="140" r="5" fill="#CE1141"/>
+              <circle cx="100" cy="165" r="5" fill="#CE1141"/>
+              <circle cx="60" cy="135" r="5" fill="#CE1141"/>
+              <circle cx="55" cy="60" r="5" fill="#CE1141"/>
+
+              <!-- Labels -->
+              <text x="100" y="8" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">OFF</text>
+              <text x="175" y="55" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">3PT</text>
+              <text x="175" y="155" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">AST</text>
+              <text x="100" y="198" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">REB</text>
+              <text x="25" y="155" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">DEF</text>
+              <text x="25" y="55" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">TOV</text>
+            </svg>
+          </div>
+
+          <!-- Team Identity Badge -->
+          <div class="text-center mb-4">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(206,17,65,0.2); border: 1px solid rgba(206,17,65,0.4);">
+              <span class="pulse-dot">🔥</span> FAST-PACED OFFENSE
+            </span>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <!-- NBA Stats -->
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Points Per Game</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #CE1141;">112.4</span>
+                  <span class="stat-rank rank-gold">3rd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 90%; background: linear-gradient(90deg, #CE1141, #FF6B6B);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">3-Point %</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #CE1141;">36.8%</span>
+                  <span class="stat-rank rank-gold">5th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 83%; background: linear-gradient(90deg, #CE1141, #FF6B6B);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Defensive Rating</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">108.2</span>
+                  <span class="stat-rank" style="background: rgba(255,255,255,0.1);">12th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 60%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Rebounds Per Game</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">44.6</span>
+                  <span class="stat-rank rank-yellow">18th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 40%; background: #E6A817;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Turnovers Per Game</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #E06060;">13.2</span>
+                  <span class="stat-rank rank-red">22nd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 27%; background: #E06060;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== NFL: Kansas City Chiefs ====== -->
+      <div class="card card-hover overflow-hidden">
+        <div class="chiefs-gradient p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">🏈</div>
+            <div>
+              <div class="text-white/70 text-xs font-semibold tracking-wider">NFL</div>
+              <div class="text-xl font-black">Kansas City Chiefs</div>
+              <div class="text-white/70 text-sm">14-3 · 1st AFC West</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <!-- Spider Chart -->
+          <div class="flex justify-center mb-4">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <polygon points="100,15 165,50 165,150 100,185 35,150 35,50" class="spider-bg"/>
+              <polygon points="100,35 145,60 145,140 100,165 55,140 55,60" class="spider-bg"/>
+              <polygon points="100,55 125,70 125,130 100,145 75,130 75,70" class="spider-bg"/>
+              <line x1="100" y1="15" x2="100" y2="185" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="50" x2="165" y2="150" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="150" x2="165" y2="50" stroke="rgba(255,255,255,0.05)"/>
+              <polygon points="100,20 160,60 145,145 100,170 50,130 45,55" class="spider-team" style="fill: #E31837; stroke: #E31837;"/>
+              <circle cx="100" cy="20" r="5" fill="#E31837"/>
+              <circle cx="160" cy="60" r="5" fill="#E31837"/>
+              <circle cx="145" cy="145" r="5" fill="#E31837"/>
+              <circle cx="100" cy="170" r="5" fill="#E31837"/>
+              <circle cx="50" cy="130" r="5" fill="#E31837"/>
+              <circle cx="45" cy="55" r="5" fill="#E31837"/>
+              <text x="100" y="8" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">PASS</text>
+              <text x="175" y="55" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">RUSH</text>
+              <text x="175" y="155" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">3RD%</text>
+              <text x="100" y="198" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">DEF</text>
+              <text x="25" y="155" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">TO</text>
+              <text x="25" y="55" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">RZ%</text>
+            </svg>
+          </div>
+
+          <div class="text-center mb-4">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(227,24,55,0.2); border: 1px solid rgba(227,24,55,0.4);">
+              <span class="pulse-dot">👑</span> CHAMPIONSHIP CALIBER
+            </span>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <!-- NFL Stats -->
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Passing Yards/Game</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #E31837;">286.4</span>
+                  <span class="stat-rank rank-gold">2nd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 93%; background: linear-gradient(90deg, #E31837, #FF6B6B);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">3rd Down %</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #E31837;">47.2%</span>
+                  <span class="stat-rank rank-gold">1st</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 95%; background: linear-gradient(90deg, #E31837, #FF6B6B);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Red Zone Efficiency</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #E31837;">62.8%</span>
+                  <span class="stat-rank rank-green">4th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 85%; background: linear-gradient(90deg, #E31837, #FF6B6B);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Rushing Yards/Game</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">112.5</span>
+                  <span class="stat-rank" style="background: rgba(255,255,255,0.1);">16th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 50%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Turnover Differential</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #48ADA9;">+8</span>
+                  <span class="stat-rank rank-green">6th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 75%; background: #48ADA9;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== MLB: New York Yankees ====== -->
+      <div class="card card-hover overflow-hidden">
+        <div class="yankees-gradient p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">⚾</div>
+            <div>
+              <div class="text-white/70 text-xs font-semibold tracking-wider">MLB</div>
+              <div class="text-xl font-black">New York Yankees</div>
+              <div class="text-white/70 text-sm">94-68 · 1st AL East</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <!-- Spider Chart -->
+          <div class="flex justify-center mb-4">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <polygon points="100,15 165,50 165,150 100,185 35,150 35,50" class="spider-bg"/>
+              <polygon points="100,35 145,60 145,140 100,165 55,140 55,60" class="spider-bg"/>
+              <polygon points="100,55 125,70 125,130 100,145 75,130 75,70" class="spider-bg"/>
+              <line x1="100" y1="15" x2="100" y2="185" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="50" x2="165" y2="150" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="150" x2="165" y2="50" stroke="rgba(255,255,255,0.05)"/>
+              <polygon points="100,30 150,55 150,145 100,160 50,140 55,60" class="spider-team" style="fill: #003087; stroke: #003087;"/>
+              <circle cx="100" cy="30" r="5" fill="#003087"/>
+              <circle cx="150" cy="55" r="5" fill="#003087"/>
+              <circle cx="150" cy="145" r="5" fill="#003087"/>
+              <circle cx="100" cy="160" r="5" fill="#003087"/>
+              <circle cx="50" cy="140" r="5" fill="#003087"/>
+              <circle cx="55" cy="60" r="5" fill="#003087"/>
+              <text x="100" y="8" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">RUNS</text>
+              <text x="175" y="55" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">HR</text>
+              <text x="175" y="155" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">AVG</text>
+              <text x="100" y="198" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">ERA</text>
+              <text x="25" y="155" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">WHIP</text>
+              <text x="25" y="55" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">SAVE%</text>
+            </svg>
+          </div>
+
+          <div class="text-center mb-4">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(0,48,135,0.2); border: 1px solid rgba(0,48,135,0.4);">
+              <span class="pulse-dot">⚡</span> POWER HITTERS
+            </span>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <!-- MLB Stats -->
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Home Runs</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #003087;">247</span>
+                  <span class="stat-rank rank-gold">1st</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 100%; background: linear-gradient(90deg, #003087, #4169E1);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Runs Per Game</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #003087;">5.28</span>
+                  <span class="stat-rank rank-gold">2nd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 95%; background: linear-gradient(90deg, #003087, #4169E1);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Team Batting Avg</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">.261</span>
+                  <span class="stat-rank" style="background: rgba(255,255,255,0.1);">8th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 65%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Team ERA</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #48ADA9;">3.72</span>
+                  <span class="stat-rank rank-green">7th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 70%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Save %</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">72.4%</span>
+                  <span class="stat-rank rank-yellow">14th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 55%; background: #E6A817;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== NHL: New York Rangers ====== -->
+      <div class="card card-hover overflow-hidden">
+        <div class="rangers-gradient p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">🏒</div>
+            <div>
+              <div class="text-white/70 text-xs font-semibold tracking-wider">NHL</div>
+              <div class="text-xl font-black">New York Rangers</div>
+              <div class="text-white/70 text-sm">47-22-7 · 1st Metro</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <!-- Spider Chart -->
+          <div class="flex justify-center mb-4">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <polygon points="100,15 165,50 165,150 100,185 35,150 35,50" class="spider-bg"/>
+              <polygon points="100,35 145,60 145,140 100,165 55,140 55,60" class="spider-bg"/>
+              <polygon points="100,55 125,70 125,130 100,145 75,130 75,70" class="spider-bg"/>
+              <line x1="100" y1="15" x2="100" y2="185" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="50" x2="165" y2="150" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="150" x2="165" y2="50" stroke="rgba(255,255,255,0.05)"/>
+              <polygon points="100,25 155,50 155,145 100,170 55,145 50,65" class="spider-team" style="fill: #006BB3; stroke: #006BB3;"/>
+              <circle cx="100" cy="25" r="5" fill="#006BB3"/>
+              <circle cx="155" cy="50" r="5" fill="#006BB3"/>
+              <circle cx="155" cy="145" r="5" fill="#006BB3"/>
+              <circle cx="100" cy="170" r="5" fill="#006BB3"/>
+              <circle cx="55" cy="145" r="5" fill="#006BB3"/>
+              <circle cx="50" cy="65" r="5" fill="#006BB3"/>
+              <text x="100" y="8" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">G/GP</text>
+              <text x="175" y="55" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">PP%</text>
+              <text x="175" y="155" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">PK%</text>
+              <text x="100" y="198" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">GAA</text>
+              <text x="25" y="155" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">SV%</text>
+              <text x="25" y="55" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">SOG</text>
+            </svg>
+          </div>
+
+          <div class="text-center mb-4">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(0,107,179,0.2); border: 1px solid rgba(0,107,179,0.4);">
+              <span class="pulse-dot">🛡️</span> ELITE GOALTENDING
+            </span>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <!-- NHL Stats -->
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Goals Against Avg</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #006BB3;">2.45</span>
+                  <span class="stat-rank rank-gold">1st</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 98%; background: linear-gradient(90deg, #006BB3, #4DA6FF);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Save %</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #006BB3;">.924</span>
+                  <span class="stat-rank rank-gold">2nd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 92%; background: linear-gradient(90deg, #006BB3, #4DA6FF);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Goals Per Game</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">3.42</span>
+                  <span class="stat-rank" style="background: rgba(255,255,255,0.1);">9th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 62%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Power Play %</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">22.8%</span>
+                  <span class="stat-rank rank-green">6th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 72%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Penalty Kill %</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #006BB3;">84.6%</span>
+                  <span class="stat-rank rank-gold">3rd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 85%; background: linear-gradient(90deg, #006BB3, #4DA6FF);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== EPL: Liverpool FC ====== -->
+      <div class="card card-hover overflow-hidden">
+        <div class="liverpool-gradient p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">⚽</div>
+            <div>
+              <div class="text-white/70 text-xs font-semibold tracking-wider">EPL</div>
+              <div class="text-xl font-black">Liverpool FC</div>
+              <div class="text-white/70 text-sm">23-7-4 · 1st</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <!-- Spider Chart -->
+          <div class="flex justify-center mb-4">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <polygon points="100,15 165,50 165,150 100,185 35,150 35,50" class="spider-bg"/>
+              <polygon points="100,35 145,60 145,140 100,165 55,140 55,60" class="spider-bg"/>
+              <polygon points="100,55 125,70 125,130 100,145 75,130 75,70" class="spider-bg"/>
+              <line x1="100" y1="15" x2="100" y2="185" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="50" x2="165" y2="150" stroke="rgba(255,255,255,0.05)"/>
+              <line x1="35" y1="150" x2="165" y2="50" stroke="rgba(255,255,255,0.05)"/>
+              <polygon points="100,22 158,50 158,148 100,172 48,140 45,55" class="spider-team" style="fill: #C8102E; stroke: #C8102E;"/>
+              <circle cx="100" cy="22" r="5" fill="#C8102E"/>
+              <circle cx="158" cy="50" r="5" fill="#C8102E"/>
+              <circle cx="158" cy="148" r="5" fill="#C8102E"/>
+              <circle cx="100" cy="172" r="5" fill="#C8102E"/>
+              <circle cx="48" cy="140" r="5" fill="#C8102E"/>
+              <circle cx="45" cy="55" r="5" fill="#C8102E"/>
+              <text x="100" y="8" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">GF</text>
+              <text x="175" y="55" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">xG</text>
+              <text x="175" y="155" text-anchor="start" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">POSS</text>
+              <text x="100" y="198" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">GA</text>
+              <text x="25" y="155" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">CS</text>
+              <text x="25" y="55" text-anchor="end" fill="rgba(255,255,255,0.7)" font-size="9" font-weight="600">PPDA</text>
+            </svg>
+          </div>
+
+          <div class="text-center mb-4">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(200,16,46,0.2); border: 1px solid rgba(200,16,46,0.4);">
+              <span class="pulse-dot">⚔️</span> HIGH PRESS ATTACK
+            </span>
+          </div>
+
+          <div class="section-divider"></div>
+
+          <!-- Soccer Stats -->
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Goals Scored</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #C8102E;">78</span>
+                  <span class="stat-rank rank-gold">1st</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 100%; background: linear-gradient(90deg, #C8102E, #FF6B6B);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">xG (Expected Goals)</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #C8102E;">72.4</span>
+                  <span class="stat-rank rank-gold">2nd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 95%; background: linear-gradient(90deg, #C8102E, #FF6B6B);"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Possession %</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">61.2%</span>
+                  <span class="stat-rank rank-green">4th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 78%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Goals Conceded</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value" style="color: #48ADA9;">28</span>
+                  <span class="stat-rank rank-gold">3rd</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 85%; background: #48ADA9;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="stat-label">Clean Sheets</span>
+                <div class="flex items-center gap-2">
+                  <span class="stat-value">16</span>
+                  <span class="stat-rank rank-green">5th</span>
+                </div>
+              </div>
+              <div class="stat-bar">
+                <div class="stat-fill" style="width: 70%; background: #48ADA9;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== Summary Card ====== -->
+      <div class="card p-6 md:col-span-2 xl:col-span-1">
+        <h2 class="text-xl font-bold mb-4">Design System</h2>
+
+        <div class="space-y-4 text-sm">
+          <div>
+            <div class="font-semibold mb-2" style="color: #CE1141;">Spider Chart (Team Identity)</div>
+            <ul class="text-gray-400 space-y-1">
+              <li>• 5-6 sport-specific metrics</li>
+              <li>• Instantly see team strengths/weaknesses</li>
+              <li>• Team color fill + border</li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2" style="color: #48ADA9;">Progress Bars (Detail)</div>
+            <ul class="text-gray-400 space-y-1">
+              <li>• Exact values + league ranking</li>
+              <li>• Color-coded by rank tier</li>
+              <li>• Gradient for top stats</li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2" style="color: #E6A817;">Sport-Specific Stats</div>
+            <ul class="text-gray-400 space-y-1">
+              <li>• <strong>NBA:</strong> PPG, 3PT%, DEF RTG, REB, TOV</li>
+              <li>• <strong>NFL:</strong> PASS YDS, 3RD%, RZ%, RUSH, TO DIFF</li>
+              <li>• <strong>MLB:</strong> HR, RPG, AVG, ERA, SAVE%</li>
+              <li>• <strong>NHL:</strong> GAA, SV%, G/GP, PP%, PK%</li>
+              <li>• <strong>Soccer:</strong> GF, xG, POSS, GA, CS</li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="font-semibold mb-2">Rank Badge Colors</div>
+            <div class="flex gap-2 flex-wrap">
+              <span class="stat-rank rank-gold">1st-5th</span>
+              <span class="stat-rank rank-green">6th-10th</span>
+              <span class="stat-rank rank-yellow">11th-20th</span>
+              <span class="stat-rank rank-red">21st+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

@@ -18,6 +18,21 @@ export type Player = {
   athleteId?: string;
 };
 
+export type GameData = {
+  date: string;
+  opponent: string;
+  result: string;
+  score: string;
+  quarterScores?: {
+    home: number[];
+    away: number[];
+  };
+  topPerformers?: {
+    home: { name: string; points: number; rebounds?: number; assists?: number; stat?: string }[];
+    away: { name: string; points: number; rebounds?: number; assists?: number; stat?: string }[];
+  };
+};
+
 export type TeamData = {
   id: string;
   name: string;
@@ -35,7 +50,7 @@ export type TeamData = {
   city: string;
   founded: number;
   roster: Player[];
-  recentGames: { date: string; opponent: string; result: string; score: string }[];
+  recentGames: GameData[];
   stats: { label: string; value: string; rank: string }[];
 };
 

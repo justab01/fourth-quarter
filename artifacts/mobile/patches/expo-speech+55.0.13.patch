@@ -1,0 +1,11 @@
+diff --git a/node_modules/expo-speech/build/ExponentSpeech.web.js b/node_modules/expo-speech/build/ExponentSpeech.web.js
+--- a/node_modules/expo-speech/build/ExponentSpeech.web.js
++++ b/node_modules/expo-speech/build/ExponentSpeech.web.js
+@@ -1,4 +1,6 @@
+-import { CodedError, NativeModule, registerWebModule } from 'expo-modules-core';
++import { CodedError, NativeModule } from 'expo-modules-core';
++// Polyfill for registerWebModule if not exported (fixes Expo SDK 54 web issue)
++const registerWebModule = (require('expo-modules-core').registerWebModule) || ((impl, name) => new impl());
+ import { VoiceQuality } from './Speech.types';
+ //https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance/text
+ const MAX_SPEECH_INPUT_LENGTH = 32767;

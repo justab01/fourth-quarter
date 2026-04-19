@@ -9,6 +9,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { usePreferences } from "@/context/PreferencesContext";
 import { TEAMS_BY_LEAGUE, SPORTS } from "@/constants/sports";
 import { SearchButton } from "@/components/SearchButton";
@@ -46,7 +47,7 @@ const statCard = StyleSheet.create({
     color: C.text,
     fontSize: 24,
     fontWeight: "900",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   label: {
     color: C.textTertiary,
@@ -110,22 +111,22 @@ const fanS = StyleSheet.create({
   section: { gap: 10, paddingVertical: 4 },
   heading: {
     fontSize: 18, fontWeight: "800", color: C.text,
-    fontFamily: "Inter_700Bold", letterSpacing: -0.2,
+    fontFamily: FONTS.bodyBold, letterSpacing: -0.2,
   },
   statsRow: { flexDirection: "row", gap: 10 },
   statBox: {
     flex: 1, backgroundColor: C.card, borderRadius: 16, padding: 16,
     alignItems: "center", borderWidth: 1, borderColor: C.cardBorder, gap: 4,
   },
-  statVal: { fontSize: 24, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  statVal: { fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold },
   statLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   insightCard: {
-    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 14,
+    backgroundColor: C.glassLight, borderRadius: 14,
     padding: 12, gap: 8,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1, borderColor: C.glassMedium,
   },
   insightRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-  insightText: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+  insightText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.body, flex: 1 },
 });
 
 export default function ProfileScreen() {
@@ -279,7 +280,7 @@ export default function ProfileScreen() {
                         {team.split(" ").map(w => w.charAt(0)).slice(0, 2).join("")}
                       </Text>
                     </View>
-                    <Text style={[styles.teamText, active && { color: C.text, fontFamily: "Inter_600SemiBold" }]}>
+                    <Text style={[styles.teamText, active && { color: C.text, fontFamily: FONTS.bodySemiBold }]}>
                       {team}
                     </Text>
                     {active && <Ionicons name="checkmark-circle" size={20} color={teamColor} />}
@@ -404,12 +405,12 @@ const settingRowS = StyleSheet.create({
   label: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
   },
   sublabel: {
     color: C.textTertiary,
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
     marginTop: 1,
   },
 });
@@ -428,7 +429,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "900",
     color: C.text,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     letterSpacing: -0.5,
   },
 
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 22,
     fontWeight: "900",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   nameRow: {
     flexDirection: "row",
@@ -481,12 +482,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
     color: C.text,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   nameInput: {
     color: C.text,
     fontSize: 20,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     borderBottomWidth: 1.5,
     borderBottomColor: C.accent,
     paddingBottom: 2,
@@ -495,7 +496,7 @@ const styles = StyleSheet.create({
     color: C.textTertiary,
     fontSize: 13,
     marginTop: 3,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   statsRow: {
     flexDirection: "row",
@@ -507,7 +508,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     color: C.text,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     letterSpacing: -0.2,
   },
   chipsWrap: {
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     fontSize: 13,
     fontWeight: "700",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
   teamsList: { gap: 8 },
   teamRow: {
@@ -555,13 +556,13 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 12,
     fontWeight: "800",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   teamText: {
     flex: 1,
     color: C.text,
     fontSize: 15,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
   },
   settingsCard: {
     backgroundColor: C.card,
@@ -587,7 +588,7 @@ const styles = StyleSheet.create({
     color: C.accent,
     fontSize: 15,
     fontWeight: "700",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
   footer: {
     alignItems: "center",
@@ -599,12 +600,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 3,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   footerSub: {
     color: C.textTertiary,
     fontSize: 11,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   modeCard: {
     backgroundColor: C.card,
@@ -627,12 +628,12 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     fontSize: 16,
     fontWeight: "700",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   modeSub: {
     color: C.textTertiary,
     fontSize: 12,
     marginTop: 2,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
 });

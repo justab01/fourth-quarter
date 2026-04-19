@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, DraftPick, DraftTeam, DraftProspect, DraftData } from "@/utils/api";
 import { goToTeam } from "@/utils/navHelpers";
 
@@ -622,23 +623,23 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   headerGradient: { paddingBottom: 0 },
   headerRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.08)", alignItems: "center", justifyContent: "center" },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.glassMedium, alignItems: "center", justifyContent: "center" },
   headerCenter: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
   headerEmoji: { fontSize: 32 },
-  headerTitle: { color: "#FFF", fontSize: 20, fontFamily: "Inter_700Bold" },
+  headerTitle: { color: "#FFF", fontSize: 20, fontFamily: FONTS.bodyBold },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  statusText: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
-  picksCount: { color: C.textSecondary, fontSize: 12, fontFamily: "Inter_400Regular" },
+  statusText: { fontSize: 10, fontFamily: FONTS.bodyBold, letterSpacing: 0.5 },
+  picksCount: { color: C.textSecondary, fontSize: 12, fontFamily: FONTS.body },
 
   tabBar: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.separator },
   tab: { flex: 1, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
-  tabText: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  tabText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.bodySemiBold },
 
   roundScroll: { maxHeight: 48 },
   roundScrollContent: { paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: "row" },
   roundPill: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16, backgroundColor: C.card },
-  roundPillText: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  roundPillText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.bodySemiBold },
 
   pickCard: {
     flexDirection: "row",
@@ -652,18 +653,18 @@ const s = StyleSheet.create({
     borderColor: C.separator,
   },
   pickNumberCol: { width: 36, alignItems: "center" },
-  pickNumber: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  pickNumber: { fontSize: 18, fontFamily: FONTS.bodyBold },
   tradeBadge: { marginTop: 2, backgroundColor: "rgba(239,120,40,0.2)", paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4 },
-  tradeBadgeText: { fontSize: 8, fontFamily: "Inter_700Bold", color: C.accent, letterSpacing: 0.5 },
+  tradeBadgeText: { fontSize: 8, fontFamily: FONTS.bodyBold, color: C.accent, letterSpacing: 0.5 },
   pickTeamLogo: { width: 32, height: 32, borderRadius: 16 },
   pickInfo: { flex: 1 },
-  pickPlayerName: { color: "#FFF", fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  pickTeamName: { color: "#FFF", fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  pickPlayerMeta: { color: C.textSecondary, fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  pickPlayerName: { color: "#FFF", fontSize: 15, fontFamily: FONTS.bodySemiBold },
+  pickTeamName: { color: "#FFF", fontSize: 14, fontFamily: FONTS.bodySemiBold },
+  pickPlayerMeta: { color: C.textSecondary, fontSize: 12, fontFamily: FONTS.body, marginTop: 1 },
   pickHeadshot: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.cardElevated },
   pickHeadshotPlaceholder: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   gradeBadge: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  gradeText: { color: "#FFF", fontSize: 12, fontFamily: "Inter_700Bold" },
+  gradeText: { color: "#FFF", fontSize: 12, fontFamily: FONTS.bodyBold },
 
   prospectCard: {
     flexDirection: "row",
@@ -677,16 +678,16 @@ const s = StyleSheet.create({
     borderColor: C.separator,
   },
   prospectRankCol: { width: 36, alignItems: "center" },
-  prospectRank: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  prospectRank: { fontSize: 16, fontFamily: FONTS.bodyBold },
   prospectHeadshot: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.cardElevated },
   prospectHeadshotPlaceholder: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
   prospectInfo: { flex: 1 },
-  prospectName: { color: "#FFF", fontSize: 16, fontFamily: "Inter_600SemiBold" },
-  prospectMeta: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
-  prospectSize: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  prospectName: { color: "#FFF", fontSize: 16, fontFamily: FONTS.bodySemiBold },
+  prospectMeta: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.body, marginTop: 2 },
+  prospectSize: { color: C.textTertiary, fontSize: 12, fontFamily: FONTS.body, marginTop: 1 },
   prospectGradeBadge: { alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
-  prospectGradeLabel: { fontSize: 8, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.6)", letterSpacing: 0.5 },
-  prospectGradeValue: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#FFF" },
+  prospectGradeLabel: { fontSize: 8, fontFamily: FONTS.bodySemiBold, color: "rgba(255,255,255,0.6)", letterSpacing: 0.5 },
+  prospectGradeValue: { fontSize: 18, fontFamily: FONTS.bodyBold, color: "#FFF" },
 
   teamCard: {
     flexDirection: "row",
@@ -701,21 +702,21 @@ const s = StyleSheet.create({
   },
   teamLogo: { width: 44, height: 44, borderRadius: 22 },
   teamInfo: { flex: 1 },
-  teamName: { color: "#FFF", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  teamName: { color: "#FFF", fontSize: 15, fontFamily: FONTS.bodySemiBold },
   teamMetaRow: { flexDirection: "row", gap: 8, marginTop: 2 },
-  teamRecord: { color: C.textSecondary, fontSize: 12, fontFamily: "Inter_400Regular" },
-  teamNextPick: { color: C.accentGold, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  teamRecord: { color: C.textSecondary, fontSize: 12, fontFamily: FONTS.body },
+  teamNextPick: { color: C.accentGold, fontSize: 12, fontFamily: FONTS.bodySemiBold },
   needsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 4, maxWidth: 120, justifyContent: "flex-end" },
   needPill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: `rgba(255,255,255,0.06)`, borderWidth: 1, borderColor: C.separator },
-  needPillText: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: C.textSecondary },
-  needMore: { fontSize: 10, fontFamily: "Inter_400Regular", color: C.textTertiary, alignSelf: "center" },
+  needPillText: { fontSize: 10, fontFamily: FONTS.bodySemiBold, color: C.textSecondary },
+  needMore: { fontSize: 10, fontFamily: FONTS.body, color: C.textTertiary, alignSelf: "center" },
 
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 80, gap: 12 },
-  emptyText: { color: C.textSecondary, fontSize: 16, fontFamily: "Inter_500Medium" },
-  emptySubtext: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  emptyText: { color: C.textSecondary, fontSize: 16, fontFamily: FONTS.bodyMedium },
+  emptySubtext: { color: C.textTertiary, fontSize: 13, fontFamily: FONTS.body },
 
-  loadingText: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_400Regular", marginTop: 16, textAlign: "center" },
-  errorText: { color: C.textSecondary, fontSize: 16, fontFamily: "Inter_500Medium", textAlign: "center" },
+  loadingText: { color: C.textSecondary, fontSize: 14, fontFamily: FONTS.body, marginTop: 16, textAlign: "center" },
+  errorText: { color: C.textSecondary, fontSize: 16, fontFamily: FONTS.bodyMedium, textAlign: "center" },
   retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, backgroundColor: C.card },
-  retryBtnText: { color: "#FFF", fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  retryBtnText: { color: "#FFF", fontSize: 14, fontFamily: FONTS.bodySemiBold },
 });

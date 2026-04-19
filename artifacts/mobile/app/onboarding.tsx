@@ -9,6 +9,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { SPORTS, TEAMS_BY_LEAGUE } from "@/constants/sports";
 import { usePreferences } from "@/context/PreferencesContext";
 
@@ -175,7 +176,7 @@ const btnS = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 10, paddingVertical: 17,
   },
-  text: { color: "#fff", fontSize: 17, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  text: { color: "#fff", fontSize: 17, fontWeight: "700", fontFamily: FONTS.bodyBold },
 });
 
 // ─── Welcome ──────────────────────────────────────────────────────────────────
@@ -289,7 +290,7 @@ function TeamsStep({ teams, selected, onToggle, onNext, botPad }: {
         keyboardShouldPersistTaps="handled"
       >
         {teams.length === 0 ? (
-          <Text style={{ color: C.textTertiary, textAlign: "center", marginTop: 32, fontFamily: "Inter_400Regular" }}>
+          <Text style={{ color: C.textTertiary, textAlign: "center", marginTop: 32, fontFamily: FONTS.body }}>
             No teams available for the selected sports
           </Text>
         ) : (
@@ -372,9 +373,9 @@ function ModeStep({ selected, onSelect, onNext, botPad }: {
 const modeS = StyleSheet.create({
   card: {
     flexDirection: "row", alignItems: "center", gap: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: C.glassLight,
     borderRadius: 20, padding: 20,
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1.5, borderColor: C.glassMedium,
     marginBottom: 14,
   },
   cardActiveFan: {
@@ -393,11 +394,11 @@ const modeS = StyleSheet.create({
   },
   cardTitle: {
     color: C.textSecondary, fontSize: 17, fontWeight: "800",
-    fontFamily: "Inter_700Bold", marginBottom: 4,
+    fontFamily: FONTS.bodyBold, marginBottom: 4,
   },
   cardDesc: {
     color: C.textTertiary, fontSize: 13,
-    fontFamily: "Inter_400Regular", lineHeight: 18,
+    fontFamily: FONTS.body, lineHeight: 18,
   },
 });
 
@@ -534,7 +535,7 @@ const confirmS = StyleSheet.create({
   row: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
   iconBox: {
     width: 36, height: 36, borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: C.glassMedium,
     alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
@@ -542,9 +543,9 @@ const confirmS = StyleSheet.create({
     color: C.textTertiary, fontSize: 11, fontWeight: "700",
     letterSpacing: 0.8, textTransform: "uppercase",
   },
-  rowValue: { color: C.text, fontSize: 17, fontWeight: "700", marginTop: 2, fontFamily: "Inter_700Bold" },
-  teamNames: { color: C.textSecondary, fontSize: 12, marginTop: 2, fontFamily: "Inter_400Regular" },
-  sep: { height: 1, backgroundColor: "rgba(255,255,255,0.08)" },
+  rowValue: { color: C.text, fontSize: 17, fontWeight: "700", marginTop: 2, fontFamily: FONTS.bodyBold },
+  teamNames: { color: C.textSecondary, fontSize: 12, marginTop: 2, fontFamily: FONTS.body },
+  sep: { height: 1, backgroundColor: C.glassMedium },
   pillWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 2 },
   pill: {
     flexDirection: "row", alignItems: "center", gap: 4,
@@ -637,13 +638,13 @@ const styles = StyleSheet.create({
     color: C.text,
     letterSpacing: 4,
     lineHeight: 46,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   tagline: {
     fontSize: 15,
     color: C.textSecondary,
     marginTop: 6,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   featureList: {
     gap: 12,
@@ -665,20 +666,20 @@ const styles = StyleSheet.create({
   featureText: {
     color: C.textSecondary,
     fontSize: 15,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
   },
 
   stepTitle: {
     fontSize: 30,
     fontWeight: "800",
     color: C.text,
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     lineHeight: 36,
   },
   stepSubtitle: {
     fontSize: 14,
     color: C.textSecondary,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
 
   sportsGrid: {
@@ -705,7 +706,7 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     fontSize: 13,
     fontWeight: "600",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
   sportLabelActive: {
     color: "#fff",
@@ -743,18 +744,18 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 14,
     fontWeight: "700",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   teamChipText: {
     color: C.textSecondary,
     fontSize: 15,
     fontWeight: "500",
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
   },
   teamChipTextActive: {
     color: C.text,
     fontWeight: "600",
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
   },
 
   nameInput: {
@@ -764,7 +765,7 @@ const styles = StyleSheet.create({
     paddingVertical: 17,
     color: C.text,
     fontSize: 18,
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
     borderWidth: 1,
     borderColor: C.cardBorder,
   },

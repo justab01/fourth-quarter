@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, type NewsArticle } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { NewsCard } from "@/components/NewsCard";
@@ -73,7 +74,7 @@ const nh = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 6 },
   bar: { width: 3, height: 18, borderRadius: 2 },
   emoji: { fontSize: 15 },
-  label: { fontSize: 14, fontWeight: "800", fontFamily: "PlusJakartaSans_800ExtraBold", letterSpacing: 0.2 },
+  label: { fontSize: 14, fontWeight: "800", fontFamily: FONTS.bodyHeavy, letterSpacing: 0.2 },
 });
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     color: C.text,
-    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontFamily: FONTS.bodyHeavy,
     letterSpacing: -0.5,
   },
   personalTag: {
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
     color: C.accent,
     fontSize: 12,
     fontWeight: "700",
-    fontFamily: "PlusJakartaSans_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
 
   filterScroll: { marginBottom: 8 },
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     fontSize: 13,
     fontWeight: "700",
-    fontFamily: "PlusJakartaSans_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
 
   narrativeList: { gap: 28, paddingVertical: 4 },
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: C.textSecondary,
-    fontFamily: "PlusJakartaSans_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
-  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: "PlusJakartaSans_400Regular" },
+  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: FONTS.body },
 });

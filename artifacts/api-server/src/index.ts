@@ -12,11 +12,7 @@ process.on("unhandledRejection", (reason) => {
   logger.error({ reason }, "Unhandled promise rejection — keeping server alive");
 });
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error("PORT environment variable is required but was not provided.");
-}
+const rawPort = process.env["PORT"] ?? "3001"; // Default to 3001 for local dev
 
 const port = Number(rawPort);
 

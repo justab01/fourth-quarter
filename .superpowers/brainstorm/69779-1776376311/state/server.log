@@ -1,0 +1,8 @@
+{"type":"server-started","port":61436,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:61436","screen_dir":"/Users/abrahamsadiq/Developer/hq/4th quater/.superpowers/brainstorm/69779-1776376311/content","state_dir":"/Users/abrahamsadiq/Developer/hq/4th quater/.superpowers/brainstorm/69779-1776376311/state"}
+{"type":"screen-added","file":"/Users/abrahamsadiq/Developer/hq/4th quater/.superpowers/brainstorm/69779-1776376311/content/priorities.html"}
+{"source":"user-event","type":"click","text":"D\n    \n      All of the Above\n      Comprehensive golf hub with live scoring, schedule, and rankings (more time investment)","choice":"all","id":null,"timestamp":1776376433880}
+{"type":"screen-added","file":"/Users/abrahamsadiq/Developer/hq/4th quater/.superpowers/brainstorm/69779-1776376311/content/approach.html"}
+{"source":"user-event","type":"click","text":"A\n    \n      All At Once\n      Build the complete golf hub in one implementation - live scoring, schedule, rankings, player profiles all together","choice":"all-at-once","id":null,"timestamp":1776376581279}
+{"type":"screen-added","file":"/Users/abrahamsadiq/Developer/hq/4th quater/.superpowers/brainstorm/69779-1776376311/content/waiting.html"}
+{"type":"screen-added","file":"/Users/abrahamsadiq/Developer/hq/4th quater/.superpowers/brainstorm/69779-1776376311/content/design.html"}
+{"type":"server-stopped","reason":"idle timeout"}

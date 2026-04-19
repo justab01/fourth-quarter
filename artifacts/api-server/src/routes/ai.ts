@@ -3,10 +3,13 @@ import OpenAI from "openai";
 
 const router: IRouter = Router();
 
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1",
-});
+// GROQ API client - optional for local dev
+const groq = process.env.GROQ_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1",
+    })
+  : null;
 
 const MODEL = "llama-3.1-8b-instant";
 
@@ -51,12 +54,18 @@ const CROSS_SPORT_SYSTEM = (targetSport: string) =>
 router.post("/ai/summarize", async (req, res) => {
   const { type, content, title } = req.body;
 
+  // Return fallback if no API key
+  if (!groq) {
+    res.json({ summary: "AI summaries require API configuration." });
+    return;
+  }
+
   try {
     const prompt = type === "article"
       ? `Summarize this sports article in 2-3 sentences for a fan. Be concise and highlight the most important points.\n\nTitle: ${title || ""}\n\nContent: ${content}`
       : `Give a quick 1-2 sentence summary of this game's current situation for a sports fan.\n\nDetails: ${content}`;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await groq!.chat.completions.create({
       model: MODEL,
       max_tokens: 150,
       messages: [
@@ -82,8 +91,18 @@ router.post("/ai/recap", async (req, res) => {
   const winScore  = Math.max(homeScore, awayScore);
   const loseScore = Math.min(homeScore, awayScore);
 
+  // Return fallback if no API key
+  if (!groq) {
+    res.json({
+      summary: `${winner} defeated ${loser} ${winScore}-${loseScore} in a ${league} matchup.`,
+      keyPlayer: "Team effort",
+      whatItMeans: "The result impacts playoff standings.",
+    });
+    return;
+  }
+
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await groq!.chat.completions.create({
       model: MODEL,
       max_tokens: 300,
       messages: [
@@ -133,22 +152,34 @@ router.post("/ai/rewrite", async (req, res) => {
     targetSport?: string;
   };
 
+  // Return fallback if no API key
+  if (!groq) {
+    res.json({ rewritten: content });
+    return;
+  }
+
   const fullText = `${title || ""} ${content}`;
   const sensitive = isSensitive(fullText);
   const sensitiveClause = sensitive ? SENSITIVE_ADDENDUM : "";
 
   let systemPrompt: string;
   if (mode === "cross-sport") {
-    if (!targetSport) return res.status(400).json({ error: "targetSport required for cross-sport mode" });
+    if (!targetSport) {
+      res.status(400).json({ error: "targetSport required for cross-sport mode" });
+      return;
+    }
     systemPrompt = CROSS_SPORT_SYSTEM(targetSport) + GUARDRAILS + sensitiveClause;
   } else {
     const base = REWRITE_PROMPTS[mode];
-    if (!base) return res.status(400).json({ error: "Invalid mode" });
+    if (!base) {
+      res.status(400).json({ error: "Invalid mode" });
+      return;
+    }
     systemPrompt = base + GUARDRAILS + sensitiveClause;
   }
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await groq!.chat.completions.create({
       model: MODEL,
       max_tokens: 200,
       messages: [
@@ -161,6 +192,51 @@ router.post("/ai/rewrite", async (req, res) => {
   } catch (err) {
     console.error("AI rewrite error:", err);
     res.json({ rewritten: content });
+  }
+});
+
+// ─── POST /ai/why-watch ───────────────────────────────────────────────────────
+router.post("/ai/why-watch", async (req, res) => {
+  const { sport, games, standings } = req.body as {
+    sport: string;
+    games?: Array<{ homeTeam: string; awayTeam: string; status: string; league: string }>;
+    standings?: Array<{ teamName: string; rank: number }>;
+  };
+
+  // Return fallback if no API key
+  if (!groq) {
+    res.json({ context: `Big moments happening in ${sport} today.` });
+    return;
+  }
+
+  try {
+    const gamesContext = games && games.length > 0
+      ? `Games today: ${games.slice(0, 5).map(g => `${g.awayTeam} @ ${g.homeTeam}${g.status === "live" ? " (LIVE)" : ""}`).join(", ")}`
+      : "No major games today.";
+    const standingsContext = standings && standings.length > 0
+      ? `Top teams: ${standings.slice(0, 3).map(s => `${s.teamName} (${s.rank})`).join(", ")}`
+      : "";
+
+    const completion = await groq!.chat.completions.create({
+      model: MODEL,
+      max_tokens: 100,
+      messages: [
+        {
+          role: "system",
+          content: "You are a sports analyst. Give a single compelling sentence (under 25 words) about why this sport is worth watching today. Focus on stakes, storylines, or exciting matchups. Be specific and punchy.",
+        },
+        {
+          role: "user",
+          content: `Sport: ${sport}\n${gamesContext}\n${standingsContext}\n\nWhy should a fan watch today?`,
+        },
+      ],
+    });
+
+    const context = completion.choices[0]?.message?.content ?? "Exciting action ahead.";
+    res.json({ context });
+  } catch (err) {
+    console.error("AI why-watch error:", err);
+    res.json({ context: "Big moments are happening." });
   }
 });
 

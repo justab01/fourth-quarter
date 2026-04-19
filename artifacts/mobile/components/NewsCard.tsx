@@ -9,6 +9,7 @@ import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import type { NewsArticle } from "@/utils/api";
 
 const C = Colors.dark;
@@ -210,7 +211,7 @@ const listenS = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 5,
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 10, borderWidth: 1,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: C.glassLight,
   },
   label: { fontSize: 11, fontWeight: "700", letterSpacing: 0.2 },
 });
@@ -457,11 +458,11 @@ const heroS = StyleSheet.create({
   },
   hoverTitle: {
     color: "#fff", fontSize: 15, fontWeight: "800",
-    fontFamily: "Inter_700Bold", lineHeight: 20,
+    fontFamily: FONTS.bodyBold, lineHeight: 20,
   },
   hoverSummary: {
     color: "rgba(255,255,255,0.88)", fontSize: 13, lineHeight: 18,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   content: {
     position: "absolute", bottom: 0, left: 0, right: 0,
@@ -473,11 +474,11 @@ const heroS = StyleSheet.create({
   time: { color: C.textTertiary, fontSize: 12, fontWeight: "500" },
   title: {
     color: C.text, fontSize: 19, fontWeight: "800",
-    fontFamily: "Inter_700Bold", lineHeight: 25,
+    fontFamily: FONTS.bodyBold, lineHeight: 25,
   },
   summary: {
     color: C.textSecondary, fontSize: 13, lineHeight: 18,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 },
   source: { color: C.textTertiary, fontSize: 12, fontWeight: "500" },
@@ -499,20 +500,20 @@ const card = StyleSheet.create({
   time: { color: C.textTertiary, fontSize: 11, fontWeight: "500" },
   title: {
     color: C.text, fontSize: 15, fontWeight: "700",
-    fontFamily: "Inter_700Bold", lineHeight: 21,
+    fontFamily: FONTS.bodyBold, lineHeight: 21,
   },
   hoverSummary: {
     overflow: "hidden",
   },
   hoverSummaryText: {
     color: C.textSecondary, fontSize: 12, lineHeight: 17,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 },
   sourceRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   sourceAvatar: {
     width: 18, height: 18, borderRadius: 9,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: C.glassMedium,
     alignItems: "center", justifyContent: "center",
   },
   sourceAvatarLetter: { color: C.text, fontSize: 9, fontWeight: "700" },
@@ -533,7 +534,7 @@ const modal = StyleSheet.create({
     backgroundColor: "#1C1C1E",
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 20, paddingTop: 14,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1, borderColor: C.glassMedium,
     gap: 12,
   },
   handle: {
@@ -549,18 +550,18 @@ const modal = StyleSheet.create({
   tagText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6 },
   title: {
     color: C.text, fontSize: 18, fontWeight: "800",
-    fontFamily: "Inter_700Bold", lineHeight: 25,
+    fontFamily: FONTS.bodyBold, lineHeight: 25,
   },
   divider: {
-    height: 1, backgroundColor: "rgba(255,255,255,0.08)", marginVertical: 2,
+    height: 1, backgroundColor: C.glassMedium, marginVertical: 2,
   },
   summaryWrap: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
   summary: {
     flex: 1, color: C.textSecondary, fontSize: 14,
-    lineHeight: 22, fontFamily: "Inter_400Regular",
+    lineHeight: 22, fontFamily: FONTS.body,
   },
   meta: { flexDirection: "row", alignItems: "center", gap: 6 },
-  metaText: { color: C.textTertiary, fontSize: 12, fontFamily: "Inter_400Regular" },
+  metaText: { color: C.textTertiary, fontSize: 12, fontFamily: FONTS.body },
   metaDot: { color: C.textTertiary, fontSize: 12 },
   closeBtn: {
     alignItems: "center", paddingVertical: 13,
@@ -568,5 +569,5 @@ const modal = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
     marginTop: 4,
   },
-  closeBtnText: { fontSize: 15, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  closeBtnText: { fontSize: 15, fontWeight: "700", fontFamily: FONTS.bodySemiBold },
 });

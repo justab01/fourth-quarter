@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  Dimensions,
   StatusBar,
   Animated,
-  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { SPORT_CATEGORIES, type SportCategory } from "@/constants/sportCategories";
 import { useSearch } from "@/context/SearchContext";
 import { ProfileButton } from "@/components/ProfileButton";
@@ -22,6 +23,8 @@ import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 
 const C = Colors.dark;
+const { width: SCREEN_W } = Dimensions.get("window");
+const CARD_W = (SCREEN_W - 48) / 2;
 
 // ── Pulsing live dot animation ───────────────────────────────────────────────────
 function PulsingLiveDot() {
@@ -72,18 +75,16 @@ function SportCard({
   sport,
   liveCount,
   onPress,
-  cardWidth,
 }: {
   sport: SportCategory;
   liveCount: number;
   onPress: () => void;
-  cardWidth: number;
 }) {
   const seasonPhase = getSeasonPhase(sport.id);
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, { width: cardWidth, opacity: pressed ? 0.82 : 1 }]}
+      style={({ pressed }) => [styles.card, { opacity: pressed ? 0.82 : 1 }]}
     >
       <LinearGradient
         colors={sport.gradient}
@@ -129,8 +130,6 @@ const QUICK_LINKS = [
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function SportsScreen() {
-  const { width: screenW } = useWindowDimensions();
-  const CARD_W = (screenW - 48) / 2;
   const insets = useSafeAreaInsets();
   const { openSearch } = useSearch();
 
@@ -171,7 +170,7 @@ export default function SportsScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 72 }]}
+        contentContainerStyle={styles.scroll}
       >
         {/* ── Quick Links ──────────────────────────────────────────────── */}
         <ScrollView
@@ -210,7 +209,6 @@ export default function SportsScreen() {
               sport={sport}
               liveCount={getLiveCount(games, sport)}
               onPress={() => goToSport(sport.id)}
-              cardWidth={CARD_W}
             />
           ))}
         </View>
@@ -240,14 +238,14 @@ const styles = StyleSheet.create({
   },
   headerEyebrow: {
     fontSize: 10,
-    fontFamily: "DMMono_500Medium",
+    fontFamily: FONTS.bodyBold,
     color: C.accent,
     letterSpacing: 1.5,
     marginBottom: 2,
   },
   headerTitle: {
     fontSize: 26,
-    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
     letterSpacing: -0.5,
   },
@@ -282,7 +280,7 @@ const styles = StyleSheet.create({
   },
   quickChipText: {
     fontSize: 13,
-    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: C.text,
   },
 
@@ -297,12 +295,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontFamily: FONTS.bodyBold,
     color: C.text,
   },
   sectionSub: {
     fontSize: 13,
-    fontFamily: "PlusJakartaSans_400Regular",
+    fontFamily: FONTS.body,
     color: C.textSecondary,
   },
 
@@ -314,6 +312,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
+    width: CARD_W,
     borderRadius: 16,
     overflow: "hidden",
   },
@@ -339,11 +338,11 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: C.live,
+    backgroundColor: "#FF3B30",
   },
   liveBadgeText: {
     fontSize: 10,
-    fontFamily: "DMMono_500Medium",
+    fontFamily: FONTS.bodyBold,
     color: "#fff",
   },
   cardEmoji: {
@@ -355,7 +354,7 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 16,
-    fontFamily: "PlusJakartaSans_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "#fff",
     marginBottom: 3,
     textShadowColor: "rgba(0,0,0,0.5)",
@@ -364,7 +363,7 @@ const styles = StyleSheet.create({
   },
   cardTagline: {
     fontSize: 11,
-    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontFamily: FONTS.bodySemiBold,
     color: "#fff",
     opacity: 0.9,
     textShadowColor: "rgba(0,0,0,0.5)",
@@ -387,7 +386,7 @@ const styles = StyleSheet.create({
   },
   phaseBadgeText: {
     fontSize: 9,
-    fontFamily: "DMMono_500Medium",
+    fontFamily: FONTS.bodyBold,
     color: "#fff",
     letterSpacing: 0.3,
   },

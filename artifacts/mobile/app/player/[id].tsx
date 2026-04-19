@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { getPlayerById, type Player, type TeamData } from "@/constants/teamData";
 import { ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { getEspnGamelogUrl, getEspnHeadshotUrl, getEspnStatsUrl } from "@/constants/espnAthleteIds";
@@ -23,7 +24,6 @@ import {
 } from "@/constants/athleteProfiles";
 import { api, type AthleteProfile as LiveProfile, type AthleteGameLog, type GameLogEntry, type GameLogSection, type GameLogCategory, type GameLogSectionType } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
-import { goToTeam } from "@/utils/navHelpers";
 
 // ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
 const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|NCAAW|NCAABB|NCAAHM|NCAAHW|NCAASM|NCAASW|NCAALM|NCAALW|NCAAVW|NCAAWP|NCAAFH|EPL|UCL|LIGA|BUN|SERA|LIG1|NWSL|UEL|UECL|FWCM|EURO|COPA|ATP|WTA|UFC|BELLATOR|PFL|BOXING|PGA|LPGA|LIV|F1|NASCAR|IRL|OLYMPICS|XGAMES)-(\d+)$/i;
@@ -75,7 +75,7 @@ const card = StyleSheet.create({
     alignItems: "center", gap: 4, borderWidth: 1.5,
     minWidth: (width - 52) / 4,
   },
-  val: { fontSize: 22, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  val: { fontSize: 22, fontWeight: "900", fontFamily: FONTS.bodyBold },
   lbl: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
 });
 
@@ -106,7 +106,7 @@ function getRoleInfo(position: string, league: string, group: string): { label: 
     if (["CM", "CDM", "CAM", "AM", "MF"].includes(pos)) return { label: "Midfielder", color: "#4A90D9", icon: "swap-horizontal" };
     return { label: "Defender", color: "#48ADA9", icon: "shield-outline" };
   }
-  return { label: group || pos, color: "#888", icon: "person" };
+  return { label: group || pos, color: C.textSecondary, icon: "person" };
 }
 
 function RoleBadge({ position, league, group, color }: { position: string; league: string; group: string; color: string }) {
@@ -170,11 +170,11 @@ const ms = StyleSheet.create({
     borderWidth: 1, borderColor: C.cardBorder, gap: 8,
   },
   heading: { color: C.textTertiary, fontSize: 10, fontWeight: "900", letterSpacing: 1, textTransform: "uppercase" },
-  stat: { color: C.text, fontSize: 15, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  stat: { color: C.text, fontSize: 15, fontWeight: "700", fontFamily: FONTS.bodySemiBold },
   barBg: { height: 6, backgroundColor: C.cardBorder, borderRadius: 3, overflow: "hidden" },
   barFill: { height: "100%", borderRadius: 3 },
   row: { flexDirection: "row", justifyContent: "space-between" },
-  current: { color: C.textSecondary, fontSize: 12, fontFamily: "Inter_500Medium" },
+  current: { color: C.textSecondary, fontSize: 12, fontFamily: FONTS.bodyMedium },
   remaining: { color: C.textTertiary, fontSize: 11 },
   target: { color: C.textTertiary, fontSize: 12 },
 });
@@ -384,7 +384,7 @@ function CareerStatsTab({ liveProfile, league, teamColor }: {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
         <ActivityIndicator color={teamColor} size="large" />
-        <Text style={{ color: "#AEAEB2", fontSize: 13, textAlign: "center" }}>Loading career stats…</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 13, textAlign: "center" }}>Loading career stats…</Text>
       </View>
     );
   }
@@ -393,7 +393,7 @@ function CareerStatsTab({ liveProfile, league, teamColor }: {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
         <Ionicons name="stats-chart-outline" size={44} color={C.textTertiary} />
-        <Text style={{ color: "#AEAEB2", fontSize: 14, textAlign: "center" }}>No career stats available for this athlete</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 14, textAlign: "center" }}>No career stats available for this athlete</Text>
       </View>
     );
   }
@@ -637,7 +637,7 @@ function GameLogSkeleton() {
     <View style={{ padding: 16, gap: 20 }}>
       <View style={{ gap: 8 }}>
         <View style={{ width: 120, height: 16, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 4 }} />
-        <View style={{ width: "100%", height: 44, backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10 }} />
+        <View style={{ width: "100%", height: 44, backgroundColor: C.glassLight, borderRadius: 10 }} />
       </View>
       {[1, 2, 3].map(section => (
         <View key={section} style={{ gap: 10 }}>
@@ -657,7 +657,7 @@ function ResultBadge({ result, score }: { result: string; score: string }) {
   const isWin = result.toUpperCase() === "W";
   const isLoss = result.toUpperCase() === "L";
   const hasOT = score.toLowerCase().includes("ot");
-  const bg = isWin ? "rgba(76,175,80,0.15)" : isLoss ? "rgba(244,67,54,0.15)" : "rgba(255,255,255,0.08)";
+  const bg = isWin ? "rgba(76,175,80,0.15)" : isLoss ? "rgba(244,67,54,0.15)" : C.glassMedium;
   const color = isWin ? "#4CAF50" : isLoss ? "#F44336" : C.textSecondary;
   const displayScore = score.replace(/\s*ot/i, "").trim();
 
@@ -698,7 +698,7 @@ const GameRow = React.memo(function GameRow({ game, league, teamColor, quickStat
       }}
       style={({ pressed }) => [
         glS.gameRow,
-        pressed && { backgroundColor: "rgba(255,255,255,0.04)" },
+        pressed && { backgroundColor: C.glassLight },
       ]}
     >
       <View style={glS.gameRowTop}>
@@ -1039,7 +1039,7 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
       {(isError || filteredTotal === 0) ? (
         <View style={{ alignItems: "center", justifyContent: "center", padding: 48, gap: 12 }}>
           <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
-          <Text style={{ color: "#AEAEB2", fontSize: 15, fontWeight: "600", textAlign: "center" }}>
+          <Text style={{ color: C.textSecondary, fontSize: 15, fontWeight: "600", textAlign: "center" }}>
             {isError
               ? "Couldn't load game logs"
               : activeFilter !== "All"
@@ -1074,24 +1074,24 @@ function LiveGameLogTab({ league, athleteId, teamColor, draftYear, yearsExperien
 
 const glS = StyleSheet.create({
   introBlock: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  introTitle: { color: C.text, fontSize: 30, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  introSubtitle: { color: C.textTertiary, fontSize: 14, fontFamily: "Inter_500Medium", marginTop: 2 },
+  introTitle: { color: C.text, fontSize: 30, fontWeight: "700", fontFamily: FONTS.bodyBold },
+  introSubtitle: { color: C.textTertiary, fontSize: 14, fontFamily: FONTS.bodyMedium, marginTop: 2 },
   seasonDropdownWrap: { paddingHorizontal: 16, marginBottom: 10, zIndex: 10 },
   seasonDropdown: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: C.glassMedium,
     paddingHorizontal: 16, height: 46,
   },
-  seasonDropdownText: { color: C.text, fontSize: 15, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  seasonDropdownText: { color: C.text, fontSize: 15, fontWeight: "600", fontFamily: FONTS.bodySemiBold },
   seasonDropdownList: {
     backgroundColor: C.card, borderRadius: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
     marginTop: 4, overflow: "hidden",
   },
   seasonDropdownItem: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)",
+    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.glassLight,
   },
-  seasonDropdownItemText: { color: C.textSecondary, fontSize: 14, fontFamily: "Inter_500Medium" },
+  seasonDropdownItemText: { color: C.textSecondary, fontSize: 14, fontFamily: FONTS.bodyMedium },
   filterRow: { paddingHorizontal: 16, gap: 8, marginBottom: 12 },
   filterPill: {
     paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
@@ -1114,11 +1114,11 @@ const glS = StyleSheet.create({
   },
   sectionHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   sectionTitle: {
-    color: C.text, fontSize: 15, fontWeight: "700", fontFamily: "Inter_700Bold",
+    color: C.text, fontSize: 15, fontWeight: "700", fontFamily: FONTS.bodyBold,
     textTransform: "capitalize",
   },
   recordBadge: {
-    backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 8,
+    backgroundColor: C.glassMedium, borderRadius: 8,
     paddingHorizontal: 8, paddingVertical: 2,
   },
   recordText: { color: C.textSecondary, fontSize: 11, fontWeight: "700" },
@@ -1145,7 +1145,7 @@ const glS = StyleSheet.create({
   },
   monthDivider: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.06)" },
   monthAvgCard: {
-    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10,
+    backgroundColor: C.glassLight, borderRadius: 10,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
     padding: 12, marginBottom: 8,
   },
@@ -1156,10 +1156,10 @@ const glS = StyleSheet.create({
   monthAvgRow: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   monthAvgItem: { alignItems: "center", minWidth: 36 },
   monthAvgStatLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
-  monthAvgStatValue: { color: C.text, fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold", marginTop: 1 },
+  monthAvgStatValue: { color: C.text, fontSize: 14, fontWeight: "700", fontFamily: FONTS.bodyBold, marginTop: 1 },
   gameRow: {
     paddingVertical: 12, paddingHorizontal: 12,
-    borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.04)",
+    borderBottomWidth: 1, borderBottomColor: C.glassLight,
     borderRadius: 6,
   },
   gameRowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -1169,11 +1169,11 @@ const glS = StyleSheet.create({
   oppLogo: { width: 20, height: 20, borderRadius: 10 },
   oppLogoFallback: { backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" },
   oppLogoInitial: { color: C.textSecondary, fontSize: 10, fontWeight: "800" },
-  oppName: { color: C.text, fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold", marginLeft: 2 },
+  oppName: { color: C.text, fontSize: 14, fontWeight: "600", fontFamily: FONTS.bodySemiBold, marginLeft: 2 },
   gameRowRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   noResult: { color: C.textTertiary, fontSize: 13 },
   resultBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
-  resultBadgeText: { fontSize: 12, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  resultBadgeText: { fontSize: 12, fontWeight: "700", fontFamily: FONTS.bodySemiBold },
   otBadge: {
     backgroundColor: "rgba(255,165,0,0.15)", borderRadius: 6,
     paddingHorizontal: 4, paddingVertical: 1,
@@ -1192,7 +1192,7 @@ const glS = StyleSheet.create({
   expandedGrid: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
   expandedItem: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 6,
+    backgroundColor: C.glassLight, borderRadius: 6,
     paddingHorizontal: 8, paddingVertical: 4, marginBottom: 2,
   },
   expandedLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700" },
@@ -1330,7 +1330,7 @@ function GameLogTab({
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
         <Ionicons name="cloud-offline-outline" size={40} color={C.textTertiary} />
-        <Text style={{ color: C.textSecondary, fontSize: 15, fontFamily: "Inter_600SemiBold" }}>
+        <Text style={{ color: C.textSecondary, fontSize: 15, fontFamily: FONTS.bodySemiBold }}>
           No game log available
         </Text>
         <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>{error}</Text>
@@ -1342,7 +1342,7 @@ function GameLogTab({
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 }}>
         <Ionicons name="calendar-outline" size={40} color={C.textTertiary} />
-        <Text style={{ color: C.textSecondary, fontSize: 15, fontFamily: "Inter_600SemiBold" }}>No games yet</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 15, fontFamily: FONTS.bodySemiBold }}>No games yet</Text>
         <Text style={{ color: C.textTertiary, fontSize: 13, textAlign: "center" }}>
           No game log data for this season
         </Text>
@@ -1416,7 +1416,7 @@ function GameLogTab({
       {filteredEntries.length === 0 ? (
         <View style={{ alignItems: "center", justifyContent: "center", padding: 48, gap: 12 }}>
           <Ionicons name="calendar-outline" size={44} color={C.textTertiary} />
-          <Text style={{ color: "#AEAEB2", fontSize: 15, fontWeight: "600", textAlign: "center" }}>
+          <Text style={{ color: C.textSecondary, fontSize: 15, fontWeight: "600", textAlign: "center" }}>
             {activeFilter !== "All" ? `No games found for "${activeFilter}"` : "No games this season"}
           </Text>
         </View>
@@ -1542,7 +1542,7 @@ function TennisOverview({ player, team, fallbackPlayer }: {
 
       {/* Player details */}
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Nationality", `${flag} ${natl}`],
           ["Tour", tour === "WTA" ? "WTA Women's Tour" : "ATP Men's Tour"],
           profile?.plays && ["Plays", profile.plays],
@@ -1551,10 +1551,10 @@ function TennisOverview({ player, team, fallbackPlayer }: {
           profile?.careerEarnings && ["Career Earnings", profile.careerEarnings],
           profile && ["Career W-L", `${profile.careerWins}-${profile.careerLosses}`],
           profile?.height && ["Height", profile.height],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -1665,7 +1665,7 @@ function CombatOverview({ player, team, fallbackPlayer }: {
 
       {/* Physical stats */}
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Sport", sportName],
           profile?.weightClass && ["Weight Class", profile.weightClass],
           profile?.nationality && ["Nationality", `${flag} ${profile.nationality}`],
@@ -1674,10 +1674,10 @@ function CombatOverview({ player, team, fallbackPlayer }: {
           profile?.weight && ["Weight", profile.weight],
           profile?.reach && ["Reach", profile.reach],
           profile?.titleDefenses != null && ["Title Defenses", String(profile.titleDefenses)],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -1736,14 +1736,14 @@ function XGamesOverview({ player, team, fallbackPlayer }: {
       )}
 
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Nationality", `${flag} ${natl}`],
           ["Sport", "X Games"],
           profile?.born && ["Born", profile.born.slice(0, 4)],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -1817,14 +1817,14 @@ function OlympicsOverview({ player, team, fallbackPlayer }: {
       )}
 
       <View style={indS.infoCard}>
-        {[
+        {([
           ["Nationality", `${flag} ${natl}`],
           ["Discipline", profile?.discipline ?? fallbackPlayer?.position ?? "—"],
           profile?.born && ["Born", profile.born.slice(0, 4)],
-        ].filter((x): x is [string, string] => Array.isArray(x)).map(([label, value]) => (
-          <View key={label as string} style={indS.infoRow}>
-            <Text style={indS.infoLabel}>{label as string}</Text>
-            <Text style={indS.infoValue}>{value as string}</Text>
+        ] as ([string, string] | false)[]).filter((item): item is [string, string] => Boolean(item)).map(([label, value]) => (
+          <View key={label} style={indS.infoRow}>
+            <Text style={indS.infoLabel}>{label}</Text>
+            <Text style={indS.infoValue}>{value}</Text>
           </View>
         ))}
       </View>
@@ -1858,7 +1858,7 @@ const indS = StyleSheet.create({
     borderRadius: 12, borderWidth: 1.5, padding: 12,
     alignItems: "center", minWidth: 60,
   },
-  gsCount: { fontSize: 26, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  gsCount: { fontSize: 26, fontWeight: "900", fontFamily: FONTS.bodyBold },
   gsLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase", marginTop: 2 },
   // Surface boxes
   surfBox: {
@@ -1872,7 +1872,7 @@ const indS = StyleSheet.create({
     backgroundColor: C.card, borderRadius: 12, borderWidth: 1, padding: 12,
     alignItems: "center",
   },
-  methodCount: { fontSize: 26, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  methodCount: { fontSize: 26, fontWeight: "900", fontFamily: FONTS.bodyBold },
   methodLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 },
   // Fight rows
   fightRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
@@ -2027,7 +2027,7 @@ export default function PlayerScreen() {
     return (
       <View style={[styles.container, { paddingTop: topPad, alignItems: "center", justifyContent: "center" }]}>
         <ActivityIndicator color={C.accent} size="large" />
-        <Text style={{ color: "#AEAEB2", fontSize: 14, marginTop: 12 }}>Loading athlete…</Text>
+        <Text style={{ color: C.textSecondary, fontSize: 14, marginTop: 12 }}>Loading athlete…</Text>
       </View>
     );
   }
@@ -2039,7 +2039,7 @@ export default function PlayerScreen() {
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: "#AEAEB2", fontSize: 16 }}>Athlete not found</Text>
+          <Text style={{ color: C.textSecondary, fontSize: 16 }}>Athlete not found</Text>
           <Text style={{ color: C.textTertiary, fontSize: 12, marginTop: 6, textAlign: "center", paddingHorizontal: 32 }}>
             Search for them by name using the search icon at the top of the app.
           </Text>
@@ -2249,7 +2249,7 @@ export default function PlayerScreen() {
                 </View>
               ) : null}
               <Text style={styles.heroName} numberOfLines={2}>{player.name}</Text>
-              <Pressable onPress={() => goToTeam(team.name, team.league)}>
+              <Pressable onPress={() => router.push({ pathname: "/team/[id]", params: { id: team.id } } as any)}>
                 <Text style={styles.heroTeamLink}>{team.name} · {team.league}</Text>
               </Pressable>
               <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
@@ -2309,8 +2309,8 @@ const compactS = StyleSheet.create({
   },
   avatarInitial: { color: "#fff", fontSize: 18, fontWeight: "800" },
   textWrap: { flex: 1 },
-  name: { color: "#fff", fontSize: 16, fontWeight: "800", fontFamily: "Inter_700Bold" },
-  sub: { color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: "Inter_500Medium" },
+  name: { color: "#fff", fontSize: 16, fontWeight: "800", fontFamily: FONTS.bodyBold },
+  sub: { color: "rgba(255,255,255,0.6)", fontSize: 12, fontFamily: FONTS.bodyMedium },
 });
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -2328,7 +2328,7 @@ const styles = StyleSheet.create({
     top: "8%",
     fontSize: 180,
     fontWeight: "900",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
     color: "rgba(255,255,255,0.07)",
     letterSpacing: -8,
   },
@@ -2350,7 +2350,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  heroAvatarInitial: { color: "#fff", fontSize: 52, fontWeight: "900", fontFamily: "Inter_700Bold" },
+  heroAvatarInitial: { color: "#fff", fontSize: 52, fontWeight: "900", fontFamily: FONTS.bodyBold },
   topBar: {
     position: "absolute",
     left: 0, right: 0,
@@ -2359,7 +2359,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.35)" },
   followBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.40)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.28)" },
-  followText: { color: "#fff", fontSize: 13, fontWeight: "700", fontFamily: "Inter_600SemiBold" },
+  followText: { color: "#fff", fontSize: 13, fontWeight: "700", fontFamily: FONTS.bodySemiBold },
   heroInfo: {
     position: "absolute",
     bottom: 16,
@@ -2371,21 +2371,21 @@ const styles = StyleSheet.create({
     borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginBottom: 6,
   },
   jerseyNumText: { color: "rgba(255,255,255,0.95)", fontSize: 11, fontWeight: "900", letterSpacing: 0.5 },
-  heroName: { color: "#fff", fontSize: 26, fontWeight: "900", fontFamily: "Inter_700Bold", lineHeight: 30 },
-  heroTeamLink: { color: "rgba(255,255,255,0.72)", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 3 },
+  heroName: { color: "#fff", fontSize: 26, fontWeight: "900", fontFamily: FONTS.bodyBold, lineHeight: 30 },
+  heroTeamLink: { color: "rgba(255,255,255,0.72)", fontSize: 13, fontFamily: FONTS.bodyMedium, marginTop: 3 },
   infoPill: { backgroundColor: "rgba(0,0,0,0.38)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  infoPillText: { color: "rgba(255,255,255,0.82)", fontSize: 11, fontFamily: "Inter_500Medium" },
+  infoPillText: { color: "rgba(255,255,255,0.82)", fontSize: 11, fontFamily: FONTS.bodyMedium },
   tabBar: { borderBottomWidth: 1, borderBottomColor: C.separator, backgroundColor: C.backgroundSecondary },
   tabScroll: { paddingHorizontal: 8 },
   tabItem: { alignItems: "center", paddingHorizontal: 14, paddingVertical: 12 },
-  tabText: { color: C.textTertiary, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, fontFamily: "Inter_600SemiBold" },
+  tabText: { color: C.textTertiary, fontSize: 12, fontWeight: "700", letterSpacing: 0.8, fontFamily: FONTS.bodySemiBold },
   tabTextActive: { color: C.text },
   tabUnderline: { position: "absolute", bottom: 0, left: 8, right: 8, height: 2.5, borderRadius: 2 },
 });
 
 const bio = StyleSheet.create({
   card: { backgroundColor: C.card, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: C.cardBorder },
-  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: "Inter_400Regular" },
+  text: { color: C.textSecondary, fontSize: 14, lineHeight: 21, fontFamily: FONTS.body },
 });
 
 const table = StyleSheet.create({
@@ -2394,15 +2394,15 @@ const table = StyleSheet.create({
   header: { flexDirection: "row", paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.separator },
   headerCell: { color: C.textTertiary, fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
   row: { flexDirection: "row", paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: "rgba(80,77,71,0.12)" },
-  cell: { color: C.textSecondary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  cell: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.body },
 });
 
 const bioTab = StyleSheet.create({
-  name: { color: C.text, fontSize: 22, fontWeight: "900", fontFamily: "Inter_700Bold", marginBottom: 4 },
+  name: { color: C.text, fontSize: 22, fontWeight: "900", fontFamily: FONTS.bodyBold, marginBottom: 4 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.separator },
-  label: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_500Medium" },
-  value: { color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  bioText: { color: C.textSecondary, fontSize: 14, lineHeight: 22, fontFamily: "Inter_400Regular", marginTop: 12 },
-  noBioRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, padding: 12, backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 10 },
-  noBioText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+  label: { color: C.textTertiary, fontSize: 13, fontFamily: FONTS.bodyMedium },
+  value: { color: C.text, fontSize: 14, fontFamily: FONTS.bodySemiBold },
+  bioText: { color: C.textSecondary, fontSize: 14, lineHeight: 22, fontFamily: FONTS.body, marginTop: 12 },
+  noBioRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12, padding: 12, backgroundColor: C.glassLight, borderRadius: 10 },
+  noBioText: { color: C.textTertiary, fontSize: 13, fontFamily: FONTS.body, flex: 1 },
 });

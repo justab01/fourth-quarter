@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-nati
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
+import { FONTS, FONT_SIZES } from "@/constants/typography";
 import type { Game, RecapResponse } from "@/utils/api";
 import { api } from "@/utils/api";
 import { goToTeam, goToPlayer } from "@/utils/navHelpers";
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 14,
     fontWeight: "800",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   loserName: {
     color: C.textTertiary,
@@ -198,14 +199,14 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 18,
     fontWeight: "900",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   scoreDash: { color: C.textTertiary, fontSize: 14, fontWeight: "300" },
   scoreLoss: {
     color: C.textTertiary,
     fontSize: 18,
     fontWeight: "700",
-    fontFamily: "Inter_700Bold",
+    fontFamily: FONTS.bodyBold,
   },
   loadingRow: {
     flexDirection: "row",
@@ -213,13 +214,13 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 4,
   },
-  loadingText: { color: C.textTertiary, fontSize: 13, fontFamily: "Inter_400Regular" },
+  loadingText: { color: C.textTertiary, fontSize: 13, fontFamily: FONTS.body },
   recapBody: { gap: 10 },
   summary: {
     color: C.textSecondary,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Inter_400Regular",
+    fontFamily: FONTS.body,
   },
   keyPlayerCard: {
     flexDirection: "row",
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
   },
   keyLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
   keyLabel: { color: C.textTertiary, fontSize: 12, fontWeight: "600" },
-  keyName: { color: C.accentGold, fontSize: 13, fontWeight: "800", fontFamily: "Inter_700Bold" },
+  keyName: { color: C.accentGold, fontSize: 13, fontWeight: "800", fontFamily: FONTS.bodyBold },
   keyNameTappable: { textDecorationLine: "underline", textDecorationColor: `${C.accentGold}55` },
   meansRow: {
     flexDirection: "row",
@@ -249,6 +250,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "500",
-    fontFamily: "Inter_500Medium",
+    fontFamily: FONTS.bodyMedium,
   },
 });

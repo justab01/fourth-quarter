@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Card - Combined Tasteful</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0F0F0F; color: #fff; }
+
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden; }
+
+    .team-green { color: #48ADA9; }
+    .team-bg-green { background: #48ADA9; }
+    .team-red { color: #CE1141; }
+    .team-bg-red { background: #CE1141; }
+
+    .winner-header { background: linear-gradient(135deg, #48ADA9 0%, #3D9591 100%); }
+    .loser-header { background: linear-gradient(135deg, #374151 0%, #1F2937 100%); }
+
+    .quarter-bar { background: rgba(255,255,255,0.06); border-radius: 6px; }
+    .quarter-bar-winner { background: rgba(72,173,169,0.15); border: 1px solid rgba(72,173,169,0.3); }
+    .quarter-bar-loser { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+
+    .player-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+    .player-card-winner { background: rgba(72,173,169,0.1); border-color: rgba(72,173,169,0.3); }
+    .player-card-loser { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+
+    .stat-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; }
+
+    .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="max-w-lg mx-auto">
+    <h1 class="text-xl font-bold mb-1 text-center">Expanded Game Card</h1>
+    <p class="text-gray-500 text-sm mb-6 text-center">Quarter scoring + Player spotlight + Team comparison (tasteful, not overwhelming)</p>
+
+    <!-- WINNING TEAM'S GAME -->
+    <div class="card winner-header mb-8">
+      <!-- Header -->
+      <div class="px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🏀</span>
+          <span class="text-sm font-bold text-white/90">Final</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-1 rounded-full text-xs font-bold bg-white/20 text-white">W</span>
+          <span class="text-xs text-white/70">Jan 15, 2026</span>
+        </div>
+      </div>
+
+      <!-- Teams + Final Score -->
+      <div class="px-4 py-4 bg-gradient-to-b from-black/20 to-transparent">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center text-3xl border border-white/30">🚀</div>
+            <div>
+              <div class="font-bold text-lg">Rockets</div>
+              <div class="text-xs text-white/60">Away • 52-28</div>
+            </div>
+          </div>
+          <div class="text-center px-2">
+            <div class="flex items-center gap-2">
+              <span class="text-4xl font-black text-white">112</span>
+              <span class="text-xl text-white/40">-</span>
+              <span class="text-3xl font-semibold text-white/60">105</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <div class="font-bold text-lg">Lakers</div>
+              <div class="text-xs text-white/60">Home • 38-42</div>
+            </div>
+            <div class="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-3xl">💜</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quarter Scoring -->
+      <div class="px-4 py-3 bg-black/10">
+        <div class="grid grid-cols-6 gap-1.5 text-center text-xs">
+          <div></div>
+          <div class="text-white/50">Q1</div>
+          <div class="text-white/50">Q2</div>
+          <div class="text-white/50">Q3</div>
+          <div class="text-white/50">Q4</div>
+          <div class="font-bold text-white/70">F</div>
+
+          <!-- Rockets row -->
+          <div class="text-white/60 text-right pr-1">HOU</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold team-green">28</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold team-green">32</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold">26</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold">26</div>
+          <div class="py-1.5 rounded team-bg-green font-black text-white">112</div>
+
+          <!-- Lakers row -->
+          <div class="text-white/60 text-right pr-1">LAL</div>
+          <div class="quarter-bar py-1.5 rounded">24</div>
+          <div class="quarter-bar py-1.5 rounded">28</div>
+          <div class="quarter-bar py-1.5 rounded">27</div>
+          <div class="quarter-bar py-1.5 rounded">26</div>
+          <div class="quarter-bar py-1.5 rounded font-bold">105</div>
+        </div>
+      </div>
+
+      <!-- Player Spotlight -->
+      <div class="px-4 py-3">
+        <div class="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Top Performers</div>
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Rockets player (winner) -->
+          <div class="player-card-winner p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center text-lg border border-green-400/50">👤</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">J. Green</div>
+                <div class="text-xs team-green font-medium">⭐ Game MVP</div>
+              </div>
+            </div>
+            <div class="flex gap-2 text-center">
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-black team-green">28</div>
+                <div class="text-xs text-white/40">PTS</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">6</div>
+                <div class="text-xs text-white/40">REB</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">5</div>
+                <div class="text-xs text-white/40">AST</div>
+              </div>
+            </div>
+          </div>
+          <!-- Lakers player -->
+          <div class="player-card-loser p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-lg">👤</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">A. Davis</div>
+                <div class="text-xs text-purple-300 font-medium">Top Scorer</div>
+              </div>
+            </div>
+            <div class="flex gap-2 text-center">
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">32</div>
+                <div class="text-xs text-white/40">PTS</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">12</div>
+                <div class="text-xs text-white/40">REB</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">4</div>
+                <div class="text-xs text-white/40">BLK</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Comparison (subtle) -->
+      <div class="section-divider mx-4"></div>
+      <div class="px-4 py-3">
+        <div class="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">Team Stats</div>
+        <div class="space-y-2">
+          <!-- FG% -->
+          <div class="flex items-center gap-2">
+            <span class="w-8 text-xs text-white/50">FG%</span>
+            <div class="flex-1 flex items-center gap-1">
+              <span class="text-sm font-bold team-green w-10">48.2</span>
+              <div class="flex-1 stat-bar">
+                <div class="h-full team-bg-green rounded" style="width: 52%;"></div>
+              </div>
+              <div class="flex-1 stat-bar">
+                <div class="h-full bg-purple-500 rounded" style="width: 48%;"></div>
+              </div>
+              <span class="text-sm font-semibold text-white/60 w-10 text-right">44.6</span>
+            </div>
+          </div>
+          <!-- 3PT% -->
+          <div class="flex items-center gap-2">
+            <span class="w-8 text-xs text-white/50">3PT</span>
+            <div class="flex-1 flex items-center gap-1">
+              <span class="text-sm font-bold team-green w-10">42.5</span>
+              <div class="flex-1 stat-bar">
+                <div class="h-full team-bg-green rounded" style="width: 62%;"></div>
+              </div>
+              <div class="flex-1 stat-bar">
+                <div class="h-full bg-purple-500 rounded" style="width: 38%;"></div>
+              </div>
+              <span class="text-sm font-semibold text-white/60 w-10 text-right">34.2</span>
+            </div>
+          </div>
+          <!-- TOV -->
+          <div class="flex items-center gap-2">
+            <span class="w-8 text-xs text-white/50">TOV</span>
+            <div class="flex-1 flex items-center gap-1">
+              <span class="text-sm font-bold team-green w-10">11</span>
+              <div class="flex-1 stat-bar">
+                <div class="h-full team-bg-green rounded" style="width: 40%;"></div>
+              </div>
+              <div class="flex-1 stat-bar">
+                <div class="h-full bg-red-500 rounded" style="width: 60%;"></div>
+              </div>
+              <span class="text-sm font-bold text-red-400 w-10 text-right">16</span>
+            </div>
+            <span class="text-xs team-green">↓ better</span>
+          </div>
+        </div>
+        <div class="mt-2 text-center">
+          <span class="text-xs text-white/40">Rockets won <span class="team-green font-semibold">3/4</span> key categories</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOSING TEAM'S GAME (different sport to show versatility) -->
+    <div class="card loser-header">
+      <!-- Header -->
+      <div class="px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🏀</span>
+          <span class="text-sm font-bold text-white/70">Final</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-1 rounded-full text-xs font-bold bg-red-500/30 text-red-300">L</span>
+          <span class="text-xs text-white/50">Jan 12, 2026</span>
+        </div>
+      </div>
+
+      <!-- Teams + Final Score -->
+      <div class="px-4 py-4 bg-gradient-to-b from-black/10 to-transparent">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-3xl">🚀</div>
+            <div>
+              <div class="font-bold text-lg text-white/80">Rockets</div>
+              <div class="text-xs text-white/40">Away • 52-28</div>
+            </div>
+          </div>
+          <div class="text-center px-2">
+            <div class="flex items-center gap-2">
+              <span class="text-3xl font-bold text-white/60">98</span>
+              <span class="text-xl text-white/30">-</span>
+              <span class="text-4xl font-black text-white">115</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <div class="font-bold text-lg text-white/90">Celtics</div>
+              <div class="text-xs text-white/50">Home • 55-20</div>
+            </div>
+            <div class="w-14 h-14 rounded-xl bg-green-700/30 flex items-center justify-center text-3xl border border-green-500/30">☘️</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quarter Scoring -->
+      <div class="px-4 py-3 bg-black/20">
+        <div class="grid grid-cols-6 gap-1.5 text-center text-xs">
+          <div></div>
+          <div class="text-white/40">Q1</div>
+          <div class="text-white/40">Q2</div>
+          <div class="text-white/40">Q3</div>
+          <div class="text-white/40">Q4</div>
+          <div class="font-bold text-white/60">F</div>
+
+          <!-- Rockets row (loser) -->
+          <div class="text-white/40 text-right pr-1">HOU</div>
+          <div class="quarter-bar py-1.5 rounded">22</div>
+          <div class="quarter-bar py-1.5 rounded">24</div>
+          <div class="quarter-bar py-1.5 rounded">26</div>
+          <div class="quarter-bar py-1.5 rounded">26</div>
+          <div class="quarter-bar-loser py-1.5 rounded font-bold">98</div>
+
+          <!-- Celtics row (winner) -->
+          <div class="text-white/40 text-right pr-1">BOS</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold team-green">32</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold team-green">28</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold">29</div>
+          <div class="quarter-bar-winner py-1.5 rounded font-bold">26</div>
+          <div class="py-1.5 rounded team-bg-green font-black text-white">115</div>
+        </div>
+      </div>
+
+      <!-- Player Spotlight -->
+      <div class="px-4 py-3">
+        <div class="text-xs font-bold text-white/40 uppercase tracking-wider mb-2">Top Performers</div>
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Rockets player -->
+          <div class="player-card-loser p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-lg">👤</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate text-white/80">Sengun</div>
+                <div class="text-xs text-white/40">Team High</div>
+              </div>
+            </div>
+            <div class="flex gap-2 text-center">
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">22</div>
+                <div class="text-xs text-white/30">PTS</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">8</div>
+                <div class="text-xs text-white/30">REB</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">5</div>
+                <div class="text-xs text-white/30">AST</div>
+              </div>
+            </div>
+          </div>
+          <!-- Celtics player (winner) -->
+          <div class="player-card-winner p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center text-lg border border-green-400/50">👤</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm truncate">Tatum</div>
+                <div class="text-xs team-green font-medium">⭐ Game MVP</div>
+              </div>
+            </div>
+            <div class="flex gap-2 text-center">
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-black team-green">38</div>
+                <div class="text-xs text-white/40">PTS</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">11</div>
+                <div class="text-xs text-white/40">REB</div>
+              </div>
+              <div class="flex-1 bg-black/20 rounded-lg py-1.5">
+                <div class="text-lg font-bold">7</div>
+                <div class="text-xs text-white/40">AST</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Comparison (subtle) -->
+      <div class="section-divider mx-4"></div>
+      <div class="px-4 py-3">
+        <div class="text-xs font-bold text-white/40 uppercase tracking-wider mb-2">Team Stats</div>
+        <div class="space-y-2">
+          <!-- FG% -->
+          <div class="flex items-center gap-2">
+            <span class="w-8 text-xs text-white/30">FG%</span>
+            <div class="flex-1 flex items-center gap-1">
+              <span class="text-sm font-semibold text-white/50 w-10">42.1</span>
+              <div class="flex-1 stat-bar">
+                <div class="h-full bg-red-500/60 rounded" style="width: 45%;"></div>
+              </div>
+              <div class="flex-1 stat-bar">
+                <div class="h-full team-bg-green rounded" style="width: 55%;"></div>
+              </div>
+              <span class="text-sm font-bold team-green w-10 text-right">52.8</span>
+            </div>
+          </div>
+          <!-- TOV -->
+          <div class="flex items-center gap-2">
+            <span class="w-8 text-xs text-white/30">TOV</span>
+            <div class="flex-1 flex items-center gap-1">
+              <span class="text-sm font-bold text-red-400 w-10">15</span>
+              <div class="flex-1 stat-bar">
+                <div class="h-full bg-red-500 rounded" style="width: 55%;"></div>
+              </div>
+              <div class="flex-1 stat-bar">
+                <div class="h-full team-bg-green rounded" style="width: 45%;"></div>
+              </div>
+              <span class="text-sm font-semibold text-white/50 w-10 text-right">10</span>
+            </div>
+            <span class="text-xs text-white/30">↓ better</span>
+          </div>
+        </div>
+        <div class="mt-2 text-center">
+          <span class="text-xs text-white/30">Celtics won <span class="text-green-400/70 font-semibold">4/4</span> key categories</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="mt-6 p-4 card text-sm text-gray-400">
+      <div class="font-bold text-white mb-2">Key Elements:</div>
+      <ul class="space-y-1">
+        <li>✓ <span class="text-white">Winner/Loser header colors</span> — Green for W, muted for L</li>
+        <li>✓ <span class="text-white">Quarter scoring</span> — Compact grid, winner's scores highlighted</li>
+        <li>✓ <span class="text-white">Player spotlight</span> — Top performer from each team with 3 key stats</li>
+        <li>✓ <span class="text-white">Team comparison</span> — Subtle stat bars, only 3 key stats</li>
+        <li>✓ <span class="text-white">MVP badge</span> — Game MVP highlighted with ⭐</li>
+        <li>✓ <span class="text-white">Winner's bar</span> — Green highlight on winning quarter scores</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

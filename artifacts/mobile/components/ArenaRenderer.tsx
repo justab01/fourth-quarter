@@ -1,7 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Rect, Circle, Line, Path, G, Defs, ClipPath } from "react-native-svg";
+import Colors from "@/constants/colors";
 import type { ShotMarker } from "./LiveTrackerPanel";
+
+const C = Colors.dark;
 
 // ─── Arena Renderer ───────────────────────────────────────────────────────────
 // Sport-specific venue SVGs for the Gamecast tab.
@@ -616,7 +619,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   teamName: {
-    color: "#8A8A8E",
+    color: C.textSecondary,
     fontSize: 11,
     fontWeight: "600",
     flex: 1,

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hero Section Options - Team Landing Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0F0F0F; color: #fff; }
+
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+
+    /* Rockets colors */
+    .team-gradient {
+      background: linear-gradient(135deg, #CE1141 0%, #8B0000 50%, transparent 100%);
+    }
+    .team-gradient-full {
+      background: linear-gradient(135deg, #CE1141 0%, #9B0F3A 50%, #5C0825 100%);
+    }
+
+    .spotlight {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .pulse-bar {
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .stat-pill {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .badge {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .glow-text {
+      text-shadow: 0 0 20px rgba(206,17,65,0.5);
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-2xl md:text-3xl font-black mb-2">Hero Section Options</h1>
+    <p class="text-gray-400 mb-8">Three approaches for the team page header</p>
+
+    <!-- Option 1: Full-width Hero -->
+    <div class="mb-12">
+      <h2 class="text-lg font-bold mb-1">Option 1: Full-Width Hero</h2>
+      <p class="text-gray-500 text-sm mb-4">Logo large and centered, gradient backdrop, badges below</p>
+
+      <div class="card overflow-hidden" style="max-width: 400px;">
+        <!-- Hero -->
+        <div class="team-gradient-full relative overflow-hidden" style="padding: 48px 16px 32px;">
+          <!-- Spotlight effect -->
+          <div class="spotlight" style="top: -50px; right: -50px;"></div>
+
+          <!-- Top bar -->
+          <div class="flex justify-between items-center mb-6">
+            <div class="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center">
+              <svg width="20" height="20" fill="none" stroke="white" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </div>
+            <div class="flex gap-2">
+              <div class="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center">
+                <svg width="18" height="18" fill="none" stroke="white" stroke-width="2"><path d="M12 2l3.5 2.5L12 7M9 2L5.5 4.5 9 7"/></svg>
+              </div>
+              <div class="w-10 h-10 rounded-full bg-black/30 flex items-center justify-center">
+                <svg width="18" height="18" fill="none" stroke="white" stroke-width="2"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l2 2"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Logo centered -->
+          <div class="flex flex-col items-center">
+            <div class="w-24 h-24 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center mb-4 border border-white/20">
+              <span class="text-5xl">🚀</span>
+            </div>
+            <h1 class="text-2xl font-black glow-text">Houston Rockets</h1>
+            <p class="text-white/60 text-sm mt-1">NBA · Western Conference</p>
+
+            <!-- Badges -->
+            <div class="flex gap-2 mt-4 flex-wrap justify-center">
+              <div class="badge px-3 py-1 rounded-full text-xs font-semibold">
+                <span class="text-white/80">52-28</span>
+              </div>
+              <div class="badge px-3 py-1 rounded-full text-xs font-semibold" style="background: rgba(206,17,65,0.4); border-color: rgba(206,17,65,0.6);">
+                <span class="text-white">2nd West</span>
+              </div>
+              <div class="badge px-3 py-1 rounded-full text-xs font-semibold">
+                <span class="text-green-400">W4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pulse Bar -->
+        <div class="pulse-bar px-4 py-3 border-t border-white/10">
+          <div class="flex justify-between">
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black" style="color: #CE1141;">112.4</div>
+              <div class="text-xs text-gray-400">PPG</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">108.2</div>
+              <div class="text-xs text-gray-400">DEF RTG</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black text-green-400">W4-L1</div>
+              <div class="text-xs text-gray-400">Last 5</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">36.8%</div>
+              <div class="text-xs text-gray-400">3PT%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-gray-500 text-xs mt-3">✓ Bold, logo-focused • ✗ Takes more vertical space</p>
+    </div>
+
+    <!-- Option 2: Split Hero -->
+    <div class="mb-12">
+      <h2 class="text-lg font-bold mb-1">Option 2: Split Hero</h2>
+      <p class="text-gray-500 text-sm mb-4">Logo left, team info right, compact header</p>
+
+      <div class="card overflow-hidden" style="max-width: 400px;">
+        <!-- Hero -->
+        <div class="team-gradient relative overflow-hidden" style="padding: 48px 16px 20px;">
+          <div class="spotlight" style="top: -30px; right: -30px;"></div>
+
+          <!-- Top bar -->
+          <div class="absolute top-4 left-4 right-4 flex justify-between items-center">
+            <div class="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="white" stroke-width="2"><path d="M12 14l-4-4 4-4"/></svg>
+            </div>
+            <div class="flex gap-2">
+              <div class="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center">
+                <svg width="14" height="14" fill="white"><path d="M7 6.5l2.5-2 2.5 2-2.5 2-2.5-2z M4.5 9l2.5-2 2.5 2-2.5 2-2.5-2z"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Split layout -->
+          <div class="flex items-center gap-4 mt-4">
+            <div class="w-20 h-20 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/20 flex-shrink-0">
+              <span class="text-4xl">🚀</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-white/60 text-xs font-medium tracking-wider">HOUSTON</p>
+              <h1 class="text-xl font-black leading-tight">Rockets</h1>
+              <div class="flex gap-2 mt-2 flex-wrap">
+                <span class="badge px-2 py-0.5 rounded text-xs">NBA</span>
+                <span class="badge px-2 py-0.5 rounded text-xs font-semibold" style="background: rgba(206,17,65,0.4);">52-28</span>
+                <span class="badge px-2 py-0.5 rounded text-xs">2nd West</span>
+                <span class="badge px-2 py-0.5 rounded text-xs text-green-400">W4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pulse Bar -->
+        <div class="pulse-bar px-4 py-3 border-t border-white/10">
+          <div class="flex justify-between">
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black" style="color: #CE1141;">112.4</div>
+              <div class="text-xs text-gray-400">PPG</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">108.2</div>
+              <div class="text-xs text-gray-400">DEF RTG</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black text-green-400">W4-L1</div>
+              <div class="text-xs text-gray-400">Last 5</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">36.8%</div>
+              <div class="text-xs text-gray-400">3PT%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-gray-500 text-xs mt-3">✓ Compact, info-dense • ✗ Logo less prominent</p>
+    </div>
+
+    <!-- Option 3: Compact Hero + Spotlight -->
+    <div class="mb-12">
+      <h2 class="text-lg font-bold mb-1">Option 3: Compact Hero + Spotlight Section</h2>
+      <p class="text-gray-500 text-sm mb-4">Minimal hero, then a highlighted stats showcase before pulse bar</p>
+
+      <div class="card overflow-hidden" style="max-width: 400px;">
+        <!-- Hero (minimal) -->
+        <div class="team-gradient relative overflow-hidden" style="padding: 48px 16px 16px;">
+          <div class="spotlight" style="top: -20px; right: -20px;"></div>
+
+          <!-- Top bar -->
+          <div class="absolute top-4 left-4 right-4 flex justify-between items-center">
+            <div class="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center">
+              <svg width="16" height="16" fill="none" stroke="white" stroke-width="2"><path d="M12 14l-4-4 4-4"/></svg>
+            </div>
+            <div class="flex gap-2">
+              <div class="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center">
+                <svg width="14" height="14" fill="none" stroke="white" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 2"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compact hero -->
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center border border-white/20">
+              <span class="text-3xl">🚀</span>
+            </div>
+            <div>
+              <h1 class="text-lg font-black">Rockets</h1>
+              <div class="flex items-center gap-2 text-xs text-white/60">
+                <span>NBA</span>
+                <span>·</span>
+                <span>52-28</span>
+                <span>·</span>
+                <span class="text-white font-semibold">2nd West</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spotlight Section -->
+        <div class="px-4 py-4" style="background: linear-gradient(180deg, rgba(206,17,65,0.15) 0%, transparent 100%);">
+          <div class="text-center mb-3">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(206,17,65,0.3); border: 1px solid rgba(206,17,65,0.5);">
+              <span>🔥</span> FAST-PACED OFFENSE
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="text-center">
+              <div class="text-2xl font-black" style="color: #CE1141;">112.4</div>
+              <div class="text-xs text-gray-400">PPG</div>
+              <div class="text-xs font-semibold" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">3rd NBA</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-black">36.8%</div>
+              <div class="text-xs text-gray-400">3-Point %</div>
+              <div class="text-xs text-yellow-400 font-semibold">5th NBA</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-black text-green-400">W4</div>
+              <div class="text-xs text-gray-400">Streak</div>
+              <div class="text-xs text-green-400 font-semibold">Hot 🔥</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pulse Bar -->
+        <div class="pulse-bar px-4 py-3 border-t border-white/10">
+          <div class="flex justify-between">
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">108.2</div>
+              <div class="text-xs text-gray-400">DEF RTG</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">44.6</div>
+              <div class="text-xs text-gray-400">REB</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">13.2</div>
+              <div class="text-xs text-gray-400">TOV</div>
+            </div>
+            <div class="stat-pill px-3 py-2 rounded-lg text-center flex-1 mx-1">
+              <div class="text-lg font-black">56.2%</div>
+              <div class="text-xs text-gray-400">TS%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-gray-500 text-xs mt-3">✓ Highlights key stats with personality • ✗ More complex layout</p>
+    </div>
+
+    <!-- Comparison Summary -->
+    <div class="card p-6">
+      <h2 class="text-xl font-bold mb-4">Quick Comparison</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 rounded-xl" style="background: rgba(206,17,65,0.1); border: 1px solid rgba(206,17,65,0.3);">
+          <h3 class="font-bold mb-2" style="color: #CE1141;">Option 1: Full-Width</h3>
+          <ul class="text-sm text-gray-300 space-y-1">
+            <li>✓ Bold, dramatic entrance</li>
+            <li>✓ Logo is the star</li>
+            <li>✗ Takes more vertical space</li>
+          </ul>
+          <p class="text-xs text-gray-500 mt-2">Best for: Fans who want that "big team energy"</p>
+        </div>
+        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+          <h3 class="font-bold mb-2">Option 2: Split</h3>
+          <ul class="text-sm text-gray-300 space-y-1">
+            <li>✓ Compact, efficient</li>
+            <li>✓ Quick scan of info</li>
+            <li>✗ Less dramatic</li>
+          </ul>
+          <p class="text-xs text-gray-500 mt-2">Best for: Data-focused, quick access</p>
+        </div>
+        <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+          <h3 class="font-bold mb-2">Option 3: Spotlight</h3>
+          <ul class="text-sm text-gray-300 space-y-1">
+            <li>✓ Team personality shines</li>
+            <li>✓ Key stats highlighted</li>
+            <li>✗ More complex</li>
+          </ul>
+          <p class="text-xs text-gray-500 mt-2">Best for: Storytelling, team identity</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
