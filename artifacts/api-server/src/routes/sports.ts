@@ -765,7 +765,7 @@ function extractBoxscore(
   };
 
   // ─── Per-team data from boxscore.players ──────────────────────────────────
-  for (const playerEntry of bs.players ?? []) {
+  for (const playerEntry of bs?.players ?? []) {
     const isHome = isHomeTeam(playerEntry.team.id, playerEntry.team.displayName);
 
     if (isMLB) {
@@ -905,7 +905,7 @@ function extractBoxscore(
   }
 
   // ─── Team aggregate stats from boxscore.teams ─────────────────────────────
-  for (const teamEntry of bs.teams ?? []) {
+  for (const teamEntry of bs?.teams ?? []) {
     const isHome = isHomeTeam(teamEntry.team.id, teamEntry.team.displayName);
     let stats: Record<string, string | number> = {};
     if (isBasketball) stats = buildNBATeamStats(teamEntry);
@@ -1280,6 +1280,101 @@ function normalizeName(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
 
+type HeroStatEntry = { label: string; value: string; rank: string };
+
+function extractHeroStats(league: string, statsJson: any): HeroStatEntry[] {
+  try {
+    if (!statsJson) return [];
+    const categories: any[] = statsJson?.splits?.categories ?? statsJson?.statistics?.splits?.categories ?? [];
+    if (!categories.length) return [];
+
+    const statMap: Record<string, { raw: number; rank: number; display: string }> = {};
+    for (const cat of categories) {
+      for (const s of cat.stats ?? []) {
+        if (s.name && s.value != null) {
+          const key = s.name.toLowerCase();
+          statMap[key] = { raw: Number(s.value), rank: s.rank ?? 99, display: s.displayValue ?? String(s.value) };
+        }
+      }
+    }
+
+    const fmtRank = (r: number): string => {
+      const n = Math.round(r);
+      const sfx = n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
+      return `${n}${sfx}`;
+    };
+
+    const pick = (keys: string[], label: string, fmt?: (v: number) => string): HeroStatEntry | null => {
+      for (const k of keys) {
+        const s = statMap[k.toLowerCase()];
+        if (s) {
+          const value = fmt ? fmt(s.raw) : s.display;
+          return { label, value, rank: fmtRank(s.rank) };
+        }
+      }
+      return null;
+    };
+
+    const out: HeroStatEntry[] = [];
+
+    if (league === "NBA" || league === "WNBA" || league === "NCAAB" || league === "NCAAW") {
+      const ppg = pick(["avgpoints", "avgpointspergame", "pointspergame"], "PPG", v => v.toFixed(1));
+      const opp = pick(["avgpointsallowed", "oppavgpoints", "opponentpointspergame", "avgopponentpoints"], "OPP PPG", v => v.toFixed(1));
+      const thr = pick(["threepointfieldgoalpercentage", "avgthreepointpct", "threepointpct", "3ptpct"], "3P%", v => `${(v > 1 ? v : v * 100).toFixed(1)}%`);
+      const net = pick(["netrating", "netrtg", "nettingrating"], "NET RTG", v => (v > 0 ? `+${v.toFixed(1)}` : v.toFixed(1)));
+      if (ppg) out.push(ppg);
+      if (opp) out.push(opp);
+      if (net || thr) out.push(net ?? thr!);
+      if (net && thr) out.push(thr);
+      else if (!net && !thr) {
+        const ast = pick(["avgassists", "assistspergame"], "APG", v => v.toFixed(1));
+        if (ast) out.push(ast);
+      }
+    } else if (league === "NFL" || league === "NCAAF") {
+      const ppgOff = pick(["avgpoints", "avgpointspergame", "pointspergame"], "PPG OFF", v => v.toFixed(1));
+      const ppgDef = pick(["avgpointsallowed", "avgopponentpoints", "opponentpointspergame"], "PPG DEF", v => v.toFixed(1));
+      const passYds = pick(["avgpassingyards", "avgpassyards", "avgpassingydspergame", "passingyardspergame"], "PASS Y/G", v => v.toFixed(1));
+      const toDiff = pick(["turnoverdiff", "turnovermargin", "turnoverspercentage"], "TO DIFF", v => (v > 0 ? `+${Math.round(v)}` : `${Math.round(v)}`));
+      if (ppgOff) out.push(ppgOff);
+      if (ppgDef) out.push(ppgDef);
+      if (passYds) out.push(passYds);
+      if (toDiff) out.push(toDiff);
+    } else if (league === "MLB" || league === "NCAABB") {
+      const avg = pick(["avg", "batavg", "battingavg", "teamavg"], "TEAM AVG", v => v.toFixed(3));
+      const era = pick(["era", "earnedrunavg", "teamera"], "TEAM ERA", v => v.toFixed(2));
+      const hr = pick(["homeruns", "homerunspergame", "avghomeruns"], "HR", v => Math.round(v).toString());
+      const k9 = pick(["strikeoutspernine", "k9", "strikeoutspernine", "avgstrikeouts"], "K/9", v => v.toFixed(1));
+      if (avg) out.push(avg);
+      if (era) out.push(era);
+      if (hr) out.push(hr);
+      if (k9) out.push(k9);
+    } else if (league === "NHL") {
+      const gpg = pick(["goalspergame", "goalsperperiod", "avggoals"], "G/G", v => v.toFixed(2));
+      const gaa = pick(["goalsagainstavg", "goalsagainstpergame", "gaa", "avggoalsagainst"], "GAA", v => v.toFixed(2));
+      const svp = pick(["savepct", "savepctg", "goaltendingsavepct", "svpct"], "SV%", v => `${(v > 1 ? v : v * 100).toFixed(1)}%`);
+      const pp = pick(["powerplaypct", "powerplaypercentage", "pppct"], "PP%", v => v.toFixed(1) + "%");
+      if (gpg) out.push(gpg);
+      if (gaa) out.push(gaa);
+      if (svp) out.push(svp);
+      if (pp) out.push(pp);
+    } else {
+      // Soccer (EPL, MLS, UCL, LIGA, etc.) and other sports
+      const gf = pick(["goalsperperiod", "goalspergame", "goalsperformat", "avggoals", "goals"], "GF/G", v => v.toFixed(2));
+      const ga = pick(["goalsagainst", "goalsagainstperperiod", "goalsagainstpergame", "avggoalsagainst"], "GA/G", v => v.toFixed(2));
+      const poss = pick(["possessionpct", "possessionpercentage", "avgpossession"], "POSS%", v => `${(v > 1 ? v : v * 100).toFixed(0)}%`);
+      const xg = pick(["xg", "expectedgoals", "avgxg"], "xG", v => v.toFixed(2));
+      if (gf) out.push(gf);
+      if (ga) out.push(ga);
+      if (poss) out.push(poss);
+      if (xg) out.push(xg);
+    }
+
+    return out.filter(Boolean).slice(0, 4) as HeroStatEntry[];
+  } catch {
+    return [];
+  }
+}
+
 router.get("/sports/team", async (req, res) => {
   const { name, league } = req.query as { name?: string; league?: string };
   if (!name || !league) { res.status(400).json({ error: "name and league required" }); return; }
@@ -1354,6 +1449,16 @@ router.get("/sports/team", async (req, res) => {
       }
     }
 
+    // 5. Fetch season statistics for hero tiles
+    const statsUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/teams/${espnTeamId}/statistics`;
+    const statsJson = await espnFetch(statsUrl).catch(() => null) as any;
+    const heroStats = extractHeroStats(leagueKey, statsJson);
+
+    // 6. Extract record + standing from teams list
+    const recordEntry = (match.team as any).record?.items?.[0];
+    const recordStr = (recordEntry?.summary as string | undefined) ?? null;
+    const standingStr: string | null = null; // populated from standings separately
+
     const result = {
       espnTeamId,
       name: rosterJson?.team?.displayName ?? match.team.displayName,
@@ -1366,6 +1471,9 @@ router.get("/sports/team", async (req, res) => {
       coach,
       league: leagueKey,
       roster,
+      stats: heroStats,
+      record: recordStr,
+      standing: standingStr,
     };
 
     setCached(cacheKey, result, 3_600_000); // 1 hour cache — rosters don't change often
@@ -1416,7 +1524,7 @@ router.get("/sports/team-schedule", async (req, res) => {
     const match = teams.find((t) => {
       const dn = normalizeName(t.team.displayName);
       const loc = normalizeName(t.team.location);
-      const nm = normalizeName(t.team.name ?? "");
+      const nm = normalizeName((t.team as any).name ?? "");
       const ab = normalizeName(t.team.abbreviation ?? "");
       return dn === needle || nm === needle || ab === needle
         || dn.includes(needle) || needle.includes(loc) || loc === needle

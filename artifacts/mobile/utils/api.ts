@@ -416,6 +416,9 @@ export interface EspnTeamInfo {
   coach: string | null;
   league: string;
   roster: { name: string; jersey: string; position: string; athleteId: string }[];
+  stats?: { label: string; value: string; rank: string }[];
+  record?: string | null;
+  standing?: string | null;
 }
 
 export interface UserPreferencesPayload {

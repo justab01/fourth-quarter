@@ -180,15 +180,15 @@ function espnTeamToTeamData(info: EspnTeamInfo): TeamData {
     color: info.color,
     colorSecondary: info.altColor,
     logoUrl: info.logo ?? null,
-    record: "—",
-    standing: "—",
+    record: info.record ?? "—",
+    standing: info.standing ?? "—",
     coach: info.coach ?? "—",
     stadium: info.venue ?? "—",
     city: info.location,
     founded: 0,
     roster,
     recentGames: [],
-    stats: [],
+    stats: info.stats?.length ? info.stats : [],
   };
 }
 
@@ -266,6 +266,11 @@ export default function TeamScreen() {
           coach: espnConverted.coach !== "—" ? espnConverted.coach : staticTeam.coach,
           stadium: espnConverted.stadium !== "—" ? espnConverted.stadium : staticTeam.stadium,
           roster: mergedRoster,
+          // Prefer static curated stats; fall back to live ESPN stats for teams not in registry
+          stats: staticTeam.stats.length > 0 ? staticTeam.stats : espnConverted.stats,
+          // Fill in record/standing from ESPN when static data has placeholder
+          record: staticTeam.record !== "—" && staticTeam.record !== "2025-26" ? staticTeam.record : (espnConverted.record !== "—" ? espnConverted.record : staticTeam.record),
+          standing: staticTeam.standing !== "—" ? staticTeam.standing : (espnConverted.standing !== "—" ? espnConverted.standing : staticTeam.standing),
         };
       }
       return espnConverted;
