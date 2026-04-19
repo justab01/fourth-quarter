@@ -129,7 +129,29 @@ export const api = {
 
   getNextGame: (league: string) =>
     apiFetch<{ game: Game | null }>(`/sports/next-game/${encodeURIComponent(league)}`),
+
+  getTeamSchedule: (name: string, league: string, limit = 10) =>
+    apiFetch<{ recent: TeamScheduleGame[]; upcoming: TeamScheduleGame[] }>(
+      `/sports/team-schedule?name=${encodeURIComponent(name)}&league=${encodeURIComponent(league)}&limit=${limit}`
+    ),
 };
+
+export interface TeamScheduleGame {
+  id: string;
+  date: string;
+  shortDate: string;
+  opponent: string;
+  opponentShort: string;
+  opponentAbbr: string;
+  opponentLogo: string | null;
+  homeAway: "home" | "away";
+  status: "live" | "finished" | "upcoming";
+  result: "W" | "L" | "T" | "";
+  score: string;
+  teamScore: number | null;
+  oppScore: number | null;
+  quarterScores?: { home: number[]; away: number[] };
+}
 
 export interface SeasonalEvent {
   id: string;

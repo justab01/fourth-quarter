@@ -8,7 +8,7 @@ import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { getTeamById, teamColor, type TeamData } from "@/constants/teamData";
 import { ALL_TEAMS, ALL_PLAYERS, type SearchPlayer } from "@/constants/allPlayers";
 import { usePreferences } from "@/context/PreferencesContext";
-import { api, type EspnTeamInfo } from "@/utils/api";
+import { api, type EspnTeamInfo, type TeamScheduleGame } from "@/utils/api";
 import { HeroSection } from "@/components/team/HeroSection";
 import { TabBar, type Tab } from "@/components/team/TabBar";
 import { ScoresTab } from "@/components/team/ScoresTab";
@@ -217,6 +217,26 @@ export default function TeamScreen() {
     staleTime: 3_600_000,
   });
 
+  // Fetch real schedule (recent + upcoming games)
+  const { data: scheduleData } = useQuery({
+    queryKey: ["team-schedule", id],
+    queryFn: () => api.getTeamSchedule(parsedName, parsedLeague, 10),
+    enabled: !!parsedLeague && !!parsedName,
+    retry: 1,
+    staleTime: 600_000,
+  });
+
+  const realRecentGames = React.useMemo(() => {
+    if (!scheduleData?.recent?.length) return null;
+    return scheduleData.recent.map((g: TeamScheduleGame) => ({
+      date: g.shortDate,
+      opponent: `${g.homeAway === "home" ? "vs" : "@"} ${g.opponentShort}`,
+      result: g.result || "",
+      score: g.score || "—",
+      quarterScores: g.quarterScores,
+    }));
+  }, [scheduleData]);
+
   // Merge static + ESPN data
   const team: TeamData | null = (() => {
     if (!staticTeam && !espnData) return null;
@@ -249,6 +269,11 @@ export default function TeamScreen() {
     }
     return staticTeam;
   })();
+
+  // Inject real schedule into team if available
+  const teamWithRealGames: TeamData | null = team && realRecentGames
+    ? { ...team, recentGames: realRecentGames as any }
+    : team;
 
   const isFav = team ? preferences.favoriteTeams.includes(team.name) : false;
 
@@ -285,7 +310,7 @@ export default function TeamScreen() {
   // Render active tab
   const renderTab = () => {
     switch (activeTab) {
-      case "Scores": return <ScoresTab team={team} />;
+      case "Scores": return <ScoresTab team={teamWithRealGames ?? team} />;
       case "News": return <NewsTab team={team} />;
       case "Standings": return <StandingsTab team={team} />;
       case "Stats": return <StatsTab team={team} />;

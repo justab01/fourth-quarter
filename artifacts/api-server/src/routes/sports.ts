@@ -1376,6 +1376,161 @@ router.get("/sports/team", async (req, res) => {
   }
 });
 
+// ─── TEAM SCHEDULE — Real recent + upcoming games from ESPN ──────────────────
+
+interface TeamScheduleGame {
+  id: string;
+  date: string;            // ISO
+  shortDate: string;       // "Mar 18"
+  opponent: string;        // "Boston Bruins"
+  opponentShort: string;   // "Boston"
+  opponentAbbr: string;    // "BOS"
+  opponentLogo: string | null;
+  homeAway: "home" | "away";
+  status: "live" | "finished" | "upcoming";
+  result: "W" | "L" | "T" | "" ;
+  score: string;           // "4-2" or "" for upcoming
+  teamScore: number | null;
+  oppScore: number | null;
+  quarterScores?: { home: number[]; away: number[] };
+}
+
+router.get("/sports/team-schedule", async (req, res) => {
+  const { name, league, limit } = req.query as { name?: string; league?: string; limit?: string };
+  if (!name || !league) { res.status(400).json({ error: "name and league required" }); return; }
+  const leagueKey = league.toUpperCase();
+  const cfg = LEAGUE_CONFIG[leagueKey];
+  if (!cfg) { res.status(400).json({ error: `Unknown league: ${league}` }); return; }
+
+  const max = Math.max(1, Math.min(50, parseInt(limit ?? "10", 10) || 10));
+  const cacheKey = `team-schedule-${leagueKey}-${normalizeName(name)}-${max}`;
+  const cached = getCached<{ recent: TeamScheduleGame[]; upcoming: TeamScheduleGame[] }>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  try {
+    // 1. Find team id (reuse same fuzzy match as /sports/team)
+    const teamsUrl = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/teams?limit=1000`;
+    const teamsJson = (await espnFetch(teamsUrl)) as EspnTeamsResponse;
+    const teams = teamsJson.sports?.[0]?.leagues?.[0]?.teams ?? [];
+    const needle = normalizeName(name);
+    const match = teams.find((t) => {
+      const dn = normalizeName(t.team.displayName);
+      const loc = normalizeName(t.team.location);
+      const nm = normalizeName(t.team.name ?? "");
+      const ab = normalizeName(t.team.abbreviation ?? "");
+      return dn === needle || nm === needle || ab === needle
+        || dn.includes(needle) || needle.includes(loc) || loc === needle
+        || nm.includes(needle) || needle.includes(nm);
+    });
+    if (!match) { res.status(404).json({ error: `Team not found: ${name}` }); return; }
+    const espnTeamId = match.team.id;
+
+    // 2. Pull schedule. Some sports (NHL, soccer) need explicit season=startYear
+    //    (e.g. NHL 2025-26 → season=2025). Try default first, then fall back to
+    //    current year and previous year if empty.
+    const scheduleBase = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/teams/${espnTeamId}/schedule`;
+    const yr = new Date().getFullYear();
+    const seasonAttempts: string[] = ["", `?season=${yr}`, `?season=${yr - 1}`];
+    let events: any[] = [];
+    for (const q of seasonAttempts) {
+      try {
+        const j = (await espnFetch(`${scheduleBase}${q}`)) as { events?: any[] };
+        if (j.events && j.events.length > 0) { events = j.events; break; }
+      } catch { /* try next */ }
+    }
+
+    const fmtShort = (iso: string) => {
+      const d = new Date(iso);
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    };
+
+    const transform = (ev: any): TeamScheduleGame | null => {
+      const comp = ev.competitions?.[0];
+      if (!comp) return null;
+      const competitors = comp.competitors ?? [];
+      const us = competitors.find((c: any) => c.team?.id === espnTeamId);
+      const them = competitors.find((c: any) => c.team?.id !== espnTeamId);
+      if (!us || !them) return null;
+      const stateRaw = comp.status?.type?.state ?? ev.status?.type?.state ?? "pre";
+      const status = mapStatus(stateRaw);
+      const parseScore = (s: any): number | null => {
+        if (s == null) return null;
+        if (typeof s === "number") return s;
+        if (typeof s === "string") { const n = parseInt(s, 10); return isNaN(n) ? null : n; }
+        if (typeof s === "object") {
+          const v = s.value ?? s.displayValue;
+          if (v == null) return null;
+          const n = typeof v === "number" ? v : parseInt(String(v), 10);
+          return isNaN(n) ? null : n;
+        }
+        return null;
+      };
+      const teamScore = parseScore(us.score);
+      const oppScore = parseScore(them.score);
+      let result: "W" | "L" | "T" | "" = "";
+      if (status === "finished" && teamScore != null && oppScore != null) {
+        if (teamScore > oppScore) result = "W";
+        else if (teamScore < oppScore) result = "L";
+        else result = "T";
+      }
+      const score = (teamScore != null && oppScore != null && status !== "upcoming")
+        ? `${teamScore}-${oppScore}` : "";
+      const oppTeam = them.team ?? {};
+      const opponent = oppTeam.displayName ?? oppTeam.name ?? "TBD";
+      const opponentShort = oppTeam.shortDisplayName ?? oppTeam.location ?? opponent;
+      const opponentAbbr = oppTeam.abbreviation ?? "";
+      const opponentLogo = oppTeam.logos?.[0]?.href ?? oppTeam.logo ?? null;
+      const homeAway: "home" | "away" = us.homeAway === "home" ? "home" : "away";
+
+      // Linescore (per-period scoring)
+      let quarterScores: { home: number[]; away: number[] } | undefined;
+      const usLine = us.linescores;
+      const themLine = them.linescores;
+      if (Array.isArray(usLine) && Array.isArray(themLine) && usLine.length > 0) {
+        const usArr = usLine.map((l: any) => Number(l.value ?? l.displayValue ?? 0));
+        const themArr = themLine.map((l: any) => Number(l.value ?? l.displayValue ?? 0));
+        if (homeAway === "home") quarterScores = { home: usArr, away: themArr };
+        else quarterScores = { home: themArr, away: usArr };
+      }
+
+      return {
+        id: String(ev.id),
+        date: ev.date,
+        shortDate: fmtShort(ev.date),
+        opponent,
+        opponentShort,
+        opponentAbbr,
+        opponentLogo,
+        homeAway,
+        status,
+        result,
+        score,
+        teamScore,
+        oppScore,
+        quarterScores,
+      };
+    };
+
+    const all = events.map(transform).filter((g): g is TeamScheduleGame => g !== null);
+    const now = Date.now();
+    const recent = all
+      .filter((g) => g.status === "finished" || (new Date(g.date).getTime() < now && g.status !== "upcoming"))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, max);
+    const upcoming = all
+      .filter((g) => g.status === "upcoming" || g.status === "live")
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, max);
+
+    const payload = { recent, upcoming };
+    setCached(cacheKey, payload, 600_000); // 10 min
+    res.json(payload);
+  } catch (err) {
+    console.error("ESPN team-schedule error:", err);
+    res.status(500).json({ error: "Failed to fetch team schedule" });
+  }
+});
+
 // ─── STANDINGS — Live ESPN data ───────────────────────────────────────────────
 
 interface StandingEntry {
