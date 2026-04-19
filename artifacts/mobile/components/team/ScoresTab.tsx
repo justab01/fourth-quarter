@@ -7,6 +7,7 @@ import { GameCard } from "./GameCard";
 import type { TeamData } from "@/constants/teamData";
 import Colors from "@/constants/colors";
 import { FONTS, FONT_SIZES } from "@/constants/typography";
+import { TeamLogo } from "@/components/GameCard";
 
 const C = Colors.dark;
 
@@ -63,31 +64,38 @@ export function ScoresTab({ team }: ScoresTabProps) {
 
         <View style={[styles.playoffCard, { backgroundColor: team.color + "15", borderColor: team.color + "30", shadowColor: team.color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 8 }]}>
           <View style={styles.playoffHeader}>
-            <View style={[styles.teamLogoSmall, { backgroundColor: team.color + "25", borderColor: team.color + "40" }]}>
-              <Text style={styles.teamEmoji}>{team.league === "NBA" ? "🏀" : team.league === "NFL" ? "🏈" : team.league === "MLB" ? "⚾" : "⚽"}</Text>
-            </View>
+            <TeamLogo
+              uri={team.logoUrl ?? null}
+              name={team.name}
+              size={40}
+              borderColor={team.color + "40"}
+            />
             <View style={styles.playoffTeamInfo}>
               <Text style={[styles.playoffTeamName, { color: team.color }]}>{team.shortName}</Text>
               <Text style={styles.playoffRecord}>{team.record || "—"} • {team.standing}</Text>
             </View>
-            <View style={styles.playoffRank}>
-              <Text style={[styles.playoffRankNum, { color: team.color }]}>#{rankNum}</Text>
-              <Text style={styles.playoffRankLabel}>in {conference}</Text>
-            </View>
+            {rankNum > 0 && (
+              <View style={styles.playoffRank}>
+                <Text style={[styles.playoffRankNum, { color: team.color }]}>#{rankNum}</Text>
+                <Text style={styles.playoffRankLabel}>in {conference}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.playoffStats}>
             <View style={styles.playoffStatBox}>
-              <Text style={styles.playoffStatLabel}>GB</Text>
-              <Text style={styles.playoffStatValue}>—</Text>
+              <Text style={styles.playoffStatLabel}>DIVISION</Text>
+              <Text style={[styles.playoffStatValue, { color: team.color }]} numberOfLines={1}>
+                {team.division || "—"}
+              </Text>
             </View>
             <View style={styles.playoffStatBox}>
-              <Text style={styles.playoffStatLabel}>Magic #</Text>
-              <Text style={[styles.playoffStatValue, { color: C.accentGreen }]}>—</Text>
+              <Text style={styles.playoffStatLabel}>SEED</Text>
+              <Text style={styles.playoffStatValue}>{rankNum > 0 ? `#${rankNum}` : "—"}</Text>
             </View>
             <View style={styles.playoffStatBox}>
-              <Text style={styles.playoffStatLabel}>Div</Text>
-              <Text style={[styles.playoffStatValue, { color: team.color }]}>—</Text>
+              <Text style={styles.playoffStatLabel}>RECORD</Text>
+              <Text style={styles.playoffStatValue}>{team.record || "—"}</Text>
             </View>
           </View>
         </View>

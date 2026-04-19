@@ -5,8 +5,9 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
-import { FONTS, FONT_SIZES } from "@/constants/typography";
+import { FONTS } from "@/constants/typography";
 import type { TeamData } from "@/constants/teamData";
+import { TeamLogo } from "@/components/GameCard";
 
 const C = Colors.dark;
 
@@ -15,13 +16,19 @@ interface StandingsTabProps {
 }
 
 export function StandingsTab({ team }: StandingsTabProps) {
-  // Parse standing for playoff context
+  // Parse standing for playoff context (e.g. "2nd in East", "12th East")
   const standingMatch = team.standing.match(/(\d+)(?:st|nd|rd|th)?\s*(?:in\s+)?(.+)?/i);
-  const seed = standingMatch?.[1] ?? "?";
-  const conference = standingMatch?.[2] ?? team.division;
+  const seed = standingMatch?.[1] ?? null;
+  const conference = standingMatch?.[2]?.trim() || team.division;
+  const seedNum = seed ? parseInt(seed, 10) : null;
 
-  // Mock playoff data (would come from API in real implementation)
-  const isInPlayoffs = parseInt(seed) <= 6;
+  // Conservative playoff thresholds per league.
+  const playoffCutoff: Record<string, number> = {
+    NBA: 6, WNBA: 6, NHL: 8, MLB: 6, NFL: 7, MLS: 8, EPL: 4, UCL: 16,
+  };
+  const cutoff = playoffCutoff[team.league] ?? 6;
+  const isInPlayoffs = seedNum != null && seedNum <= cutoff;
+  const isInPlayIn = seedNum != null && seedNum > cutoff && seedNum <= cutoff + 4;
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
@@ -29,57 +36,66 @@ export function StandingsTab({ team }: StandingsTabProps) {
       <View style={[styles.playoffHero, { backgroundColor: `${team.color}15`, borderColor: `${team.color}30` }]}>
         <View style={styles.playoffHeader}>
           <View style={styles.playoffTeam}>
-            <Text style={styles.teamEmoji}>🚀</Text>
+            <TeamLogo
+              uri={team.logoUrl ?? null}
+              name={team.name}
+              size={44}
+              borderColor={`${team.color}50`}
+            />
             <View>
               <Text style={styles.teamName}>{team.shortName}</Text>
               <Text style={styles.teamRecord}>{team.record}</Text>
             </View>
           </View>
-          <View style={styles.playoffSeed}>
-            <Text style={[styles.seedNum, { color: team.color }]}>#{seed}</Text>
-            <Text style={styles.seedLabel}>in {conference}</Text>
-          </View>
+          {seed && (
+            <View style={styles.playoffSeed}>
+              <Text style={[styles.seedNum, { color: team.color }]}>#{seed}</Text>
+              <Text style={styles.seedLabel}>in {conference}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.playoffStats}>
           <View style={styles.playoffStat}>
-            <Text style={styles.statLabel}>GB</Text>
-            <Text style={styles.statValue}>10.0</Text>
+            <Text style={styles.statLabel}>DIVISION</Text>
+            <Text style={[styles.statValue, { color: team.color }]} numberOfLines={1}>
+              {team.division || "—"}
+            </Text>
           </View>
           <View style={styles.playoffStat}>
-            <Text style={styles.statLabel}>Magic #</Text>
-            <Text style={[styles.statValue, styles.magicNum]}>6</Text>
+            <Text style={styles.statLabel}>SEED</Text>
+            <Text style={styles.statValue}>{seed ? `#${seed}` : "—"}</Text>
           </View>
           <View style={styles.playoffStat}>
-            <Text style={styles.statLabel}>Div</Text>
-            <Text style={[styles.statValue, { color: team.color }]}>1st</Text>
+            <Text style={styles.statLabel}>RECORD</Text>
+            <Text style={styles.statValue}>{team.record || "—"}</Text>
           </View>
         </View>
 
         {isInPlayoffs && (
-          <View style={styles.playoffStatus}>
+          <View style={[styles.playoffStatus, { backgroundColor: `${C.accentTeal}15` }]}>
             <Ionicons name="checkmark-circle" size={16} color={C.accentTeal} />
-            <Text style={styles.playoffStatusText}>Playoff position secured</Text>
+            <Text style={[styles.playoffStatusText, { color: C.accentTeal }]}>
+              In playoff position
+            </Text>
           </View>
         )}
-      </View>
-
-      {/* Matchup Preview */}
-      <View style={styles.matchupCard}>
-        <Text style={styles.matchupTitle}>Current First Round Matchup</Text>
-        <View style={styles.matchupTeams}>
-          <View style={styles.matchupTeam}>
-            <Text style={styles.matchupEmoji}>🌙</Text>
-            <Text style={styles.matchupName}>Mavericks</Text>
-            <Text style={styles.matchupSeed}>#6 Seed</Text>
+        {!isInPlayoffs && isInPlayIn && (
+          <View style={[styles.playoffStatus, { backgroundColor: "rgba(255,193,7,0.12)" }]}>
+            <Ionicons name="alert-circle" size={16} color="#FFC107" />
+            <Text style={[styles.playoffStatusText, { color: "#FFC107" }]}>
+              On playoff bubble
+            </Text>
           </View>
-          <Text style={styles.matchupVs}>vs</Text>
-          <View style={styles.matchupTeam}>
-            <Text style={styles.matchupEmoji}>🚀</Text>
-            <Text style={[styles.matchupName, { color: team.color }]}>{team.shortName}</Text>
-            <Text style={[styles.matchupSeed, { color: team.color }]}>#{seed} Seed</Text>
+        )}
+        {seedNum != null && !isInPlayoffs && !isInPlayIn && (
+          <View style={[styles.playoffStatus, { backgroundColor: "rgba(224,96,96,0.12)" }]}>
+            <Ionicons name="close-circle" size={16} color="#E06060" />
+            <Text style={[styles.playoffStatusText, { color: "#E06060" }]}>
+              Out of playoff race
+            </Text>
           </View>
-        </View>
+        )}
       </View>
 
       {/* Full Standings Link */}
@@ -108,13 +124,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    flex: 1,
   },
-  teamEmoji: { fontSize: 36 },
-  teamName: { color: C.text, fontSize: 18, fontWeight: "800" },
-  teamRecord: { color: C.textSecondary, fontSize: 12, marginTop: 2 },
+  teamName: { color: C.text, fontSize: 18, fontWeight: "800", fontFamily: FONTS.bodyBold },
+  teamRecord: { color: C.textSecondary, fontSize: 12, marginTop: 2, fontFamily: FONTS.body },
   playoffSeed: { alignItems: "flex-end" },
-  seedNum: { fontSize: 28, fontWeight: "900" },
-  seedLabel: { color: C.textTertiary, fontSize: 11 },
+  seedNum: { fontSize: 28, fontWeight: "900", fontFamily: FONTS.bodyHeavy },
+  seedLabel: { color: C.textTertiary, fontSize: 11, fontFamily: FONTS.body },
   playoffStats: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -122,40 +138,31 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
   },
-  playoffStat: { alignItems: "center", gap: 4 },
-  statLabel: { color: C.textTertiary, fontSize: 10, fontWeight: "700" },
-  statValue: { color: C.text, fontSize: 18, fontWeight: "800" },
-  magicNum: { color: C.accentTeal },
+  playoffStat: { alignItems: "center", gap: 4, flex: 1 },
+  statLabel: {
+    color: C.textTertiary,
+    fontSize: 10,
+    fontWeight: "700",
+    fontFamily: FONTS.bodyBold,
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    color: C.text,
+    fontSize: 16,
+    fontWeight: "800",
+    fontFamily: FONTS.bodyBold,
+    paddingHorizontal: 6,
+    textAlign: "center",
+  },
   playoffStatus: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: `${C.accentTeal}15`,
     borderRadius: 8,
     paddingVertical: 8,
   },
-  playoffStatusText: { color: C.accentTeal, fontSize: 12, fontWeight: "700" },
-  matchupCard: {
-    backgroundColor: C.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-    padding: 16,
-    gap: 12,
-  },
-  matchupTitle: { color: C.textTertiary, fontSize: 11, fontWeight: "800", letterSpacing: 1, textAlign: "center" },
-  matchupTeams: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
-  },
-  matchupTeam: { alignItems: "center", gap: 4 },
-  matchupEmoji: { fontSize: 32 },
-  matchupName: { color: C.text, fontSize: 14, fontWeight: "700" },
-  matchupSeed: { color: C.textSecondary, fontSize: 11 },
-  matchupVs: { color: C.textTertiary, fontSize: 16, fontWeight: "700" },
+  playoffStatusText: { fontSize: 12, fontWeight: "700", fontFamily: FONTS.bodyBold },
   fullStandingsBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -167,5 +174,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: `${C.accent}30`,
   },
-  fullStandingsText: { color: C.accent, fontSize: 14, fontWeight: "700" },
+  fullStandingsText: { color: C.accent, fontSize: 14, fontWeight: "700", fontFamily: FONTS.bodyBold },
 });
