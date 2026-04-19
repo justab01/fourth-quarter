@@ -229,13 +229,15 @@ export default function TeamScreen() {
   const realRecentGames = React.useMemo(() => {
     if (!scheduleData?.recent?.length) return null;
     return scheduleData.recent.map((g: TeamScheduleGame) => ({
+      id: g.id,
+      league: parsedLeague,
       date: g.shortDate,
       opponent: `${g.homeAway === "home" ? "vs" : "@"} ${g.opponentShort}`,
       result: g.result || "",
       score: g.score || "—",
       quarterScores: g.quarterScores,
     }));
-  }, [scheduleData]);
+  }, [scheduleData, parsedLeague]);
 
   // Merge static + ESPN data
   const team: TeamData | null = (() => {

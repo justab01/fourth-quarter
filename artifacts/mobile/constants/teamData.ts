@@ -19,6 +19,8 @@ export type Player = {
 };
 
 export type GameData = {
+  id?: string;
+  league?: string;
   date: string;
   opponent: string;
   result: string;
