@@ -1,7 +1,7 @@
 // mobile/components/team/RosterTab.tsx
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Animated, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
@@ -86,15 +86,23 @@ function PlayerCard({ player, teamColor, isStarter, league }: { player: Player; 
 
 interface RosterTabProps {
   team: TeamData;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  contentInsetTop?: number;
 }
 
-export function RosterTab({ team }: RosterTabProps) {
+export function RosterTab({ team, onScroll, contentInsetTop = 0 }: RosterTabProps) {
   const groups = groupRoster(team.roster);
   const config = getSportStatsConfig(team.league);
   const startersPerGroup = Math.ceil(config.rosterStarters / Math.max(Object.keys(groups).length, 1));
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
+    <Animated.ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[styles.container, { paddingTop: contentInsetTop + 16 }]}
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      scrollIndicatorInsets={{ top: contentInsetTop }}
+    >
       {Object.entries(groups).map(([group, players]) => (
         <View key={group} style={styles.groupSection}>
           <View style={styles.groupHeader}>
@@ -113,7 +121,7 @@ export function RosterTab({ team }: RosterTabProps) {
           ))}
         </View>
       ))}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

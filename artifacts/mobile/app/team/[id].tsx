@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ActivityIndicator, Platform } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, StyleSheet, ActivityIndicator, Platform, Animated, LayoutChangeEvent } from "react-native";
+import { useCollapsibleHeader } from "@/utils/useCollapsibleHeader";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
@@ -309,39 +310,111 @@ export default function TeamScreen() {
     );
   }
 
-  // Render active tab
+  return (
+    <TeamPageInner
+      team={teamWithRealGames ?? team}
+      teamForNonScores={team}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      isFav={isFav}
+      toggleFav={toggleFav}
+      topPad={topPad}
+      botPad={botPad}
+    />
+  );
+}
+
+interface TeamPageInnerProps {
+  team: TeamData;
+  teamForNonScores: TeamData;
+  activeTab: Tab;
+  setActiveTab: (t: Tab) => void;
+  isFav: boolean;
+  toggleFav: () => void;
+  topPad: number;
+  botPad: number;
+}
+
+function TeamPageInner({ team, teamForNonScores, activeTab, setActiveTab, isFav, toggleFav, topPad, botPad }: TeamPageInnerProps) {
+  const [heroHeight, setHeroHeight] = useState(280);
+  const [tabBarHeight, setTabBarHeight] = useState(48);
+  const totalHeaderHeight = heroHeight + tabBarHeight;
+
+  const { headerTranslate, onScroll, reset } = useCollapsibleHeader(heroHeight);
+
+  const onHeroLayout = useCallback((e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    if (Math.abs(h - heroHeight) > 1) setHeroHeight(h);
+  }, [heroHeight]);
+
+  const onTabBarLayout = useCallback((e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    if (Math.abs(h - tabBarHeight) > 1) setTabBarHeight(h);
+  }, [tabBarHeight]);
+
+  const handleSetTab = useCallback((t: Tab) => {
+    reset();
+    setActiveTab(t);
+  }, [reset, setActiveTab]);
+
+  const tabProps = {
+    onScroll,
+    contentInsetTop: totalHeaderHeight,
+  };
+
   const renderTab = () => {
     switch (activeTab) {
-      case "Scores": return <ScoresTab team={teamWithRealGames ?? team} />;
-      case "News": return <NewsTab team={team} />;
-      case "Standings": return <StandingsTab team={team} />;
-      case "Stats": return <StatsTab team={team} />;
-      case "Roster": return <RosterTab team={team} />;
+      case "Scores": return <ScoresTab team={team} {...tabProps} />;
+      case "News": return <NewsTab team={teamForNonScores} {...tabProps} />;
+      case "Standings": return <StandingsTab team={teamForNonScores} {...tabProps} />;
+      case "Stats": return <StatsTab team={teamForNonScores} {...tabProps} />;
+      case "Roster": return <RosterTab team={teamForNonScores} {...tabProps} />;
     }
   };
 
   return (
     <View style={[styles.container, { paddingBottom: botPad }]}>
-      <HeroSection
-        team={team}
-        isFav={isFav}
-        onBack={() => router.back()}
-        onToggleFav={toggleFav}
-      />
-
-      <TabBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        teamColor={team.color}
-      />
-
+      {/* Scrollable tab content sits at the bottom of the stack */}
       <View style={{ flex: 1 }}>
         {renderTab()}
       </View>
+
+      {/* Collapsing header overlays the top — translates up on scroll-down */}
+      <Animated.View
+        pointerEvents="box-none"
+        style={[
+          styles.headerOverlay,
+          { paddingTop: topPad, transform: [{ translateY: headerTranslate }] },
+        ]}
+      >
+        <View onLayout={onHeroLayout}>
+          <HeroSection
+            team={teamForNonScores}
+            isFav={isFav}
+            onBack={() => router.back()}
+            onToggleFav={toggleFav}
+          />
+        </View>
+        <View onLayout={onTabBarLayout}>
+          <TabBar
+            activeTab={activeTab}
+            setActiveTab={handleSetTab}
+            teamColor={teamForNonScores.color}
+          />
+        </View>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: C.background,
+    zIndex: 10,
+  },
 });

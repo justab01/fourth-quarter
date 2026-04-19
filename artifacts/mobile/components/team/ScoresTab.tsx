@@ -1,7 +1,7 @@
 // mobile/components/team/ScoresTab.tsx
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { GameCard } from "./GameCard";
 import type { TeamData } from "@/constants/teamData";
@@ -13,9 +13,11 @@ const C = Colors.dark;
 
 interface ScoresTabProps {
   team: TeamData;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  contentInsetTop?: number;
 }
 
-export function ScoresTab({ team }: ScoresTabProps) {
+export function ScoresTab({ team, onScroll, contentInsetTop = 0 }: ScoresTabProps) {
   const wins = team.recentGames.filter(g => g.result === "W").length;
   const losses = team.recentGames.filter(g => g.result === "L").length;
 
@@ -28,7 +30,13 @@ export function ScoresTab({ team }: ScoresTabProps) {
   const conference = standingMatch?.[2] || "Conf";
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
+    <Animated.ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[styles.container, { paddingTop: contentInsetTop + 16 }]}
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      scrollIndicatorInsets={{ top: contentInsetTop }}
+    >
       {/* Recent Games */}
       <View style={styles.section}>
         <View style={styles.header}>
@@ -171,7 +179,7 @@ export function ScoresTab({ team }: ScoresTabProps) {
           </View>
         </View>
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

@@ -1,7 +1,7 @@
 // mobile/components/team/NewsTab.tsx
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import Colors from "@/constants/colors";
 import { FONTS, FONT_SIZES } from "@/constants/typography";
 import type { TeamData } from "@/constants/teamData";
@@ -10,9 +10,11 @@ const C = Colors.dark;
 
 interface NewsTabProps {
   team: TeamData;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  contentInsetTop?: number;
 }
 
-export function NewsTab({ team }: NewsTabProps) {
+export function NewsTab({ team, onScroll, contentInsetTop = 0 }: NewsTabProps) {
   // Mock news data (would come from API in real implementation)
   const newsItems = [
     { headline: `${team.shortName} extend win streak with dominant victory`, time: "2h ago", source: "ESPN" },
@@ -22,7 +24,13 @@ export function NewsTab({ team }: NewsTabProps) {
   ];
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
+    <Animated.ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[styles.container, { paddingTop: contentInsetTop + 16 }]}
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      scrollIndicatorInsets={{ top: contentInsetTop }}
+    >
       <Text style={styles.title}>LATEST NEWS</Text>
 
       {newsItems.map((item, i) => (
@@ -35,7 +43,7 @@ export function NewsTab({ team }: NewsTabProps) {
           </View>
         </Pressable>
       ))}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

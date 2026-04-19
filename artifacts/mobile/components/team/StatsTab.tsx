@@ -1,7 +1,7 @@
 // mobile/components/team/StatsTab.tsx
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Animated, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { SpiderChart } from "./SpiderChart";
 import { getSportStatsConfig, formatStatRank } from "@/constants/teamStatsConfig";
 import type { TeamData } from "@/constants/teamData";
@@ -31,9 +31,11 @@ function ProgressBar({ value, max, rank, teamColor }: { value: number; max: numb
 
 interface StatsTabProps {
   team: TeamData;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  contentInsetTop?: number;
 }
 
-export function StatsTab({ team }: StatsTabProps) {
+export function StatsTab({ team, onScroll, contentInsetTop = 0 }: StatsTabProps) {
   const config = getSportStatsConfig(team.league);
 
   // Map team stats to spider chart metrics
@@ -97,7 +99,13 @@ export function StatsTab({ team }: StatsTabProps) {
   });
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
+    <Animated.ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[styles.container, { paddingTop: contentInsetTop + 16 }]}
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      scrollIndicatorInsets={{ top: contentInsetTop }}
+    >
       {/* Spider Chart */}
       <View style={styles.chartSection}>
         <Text style={styles.sectionTitle}>TEAM PROFILE</Text>
@@ -123,7 +131,7 @@ export function StatsTab({ team }: StatsTabProps) {
           })}
         </View>
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 

@@ -1,7 +1,7 @@
 // mobile/components/team/StandingsTab.tsx
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
@@ -13,9 +13,11 @@ const C = Colors.dark;
 
 interface StandingsTabProps {
   team: TeamData;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  contentInsetTop?: number;
 }
 
-export function StandingsTab({ team }: StandingsTabProps) {
+export function StandingsTab({ team, onScroll, contentInsetTop = 0 }: StandingsTabProps) {
   // Parse standing for playoff context (e.g. "2nd in East", "12th East")
   const standingMatch = team.standing.match(/(\d+)(?:st|nd|rd|th)?\s*(?:in\s+)?(.+)?/i);
   const seed = standingMatch?.[1] ?? null;
@@ -31,7 +33,13 @@ export function StandingsTab({ team }: StandingsTabProps) {
   const isInPlayIn = seedNum != null && seedNum > cutoff && seedNum <= cutoff + 4;
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
+    <Animated.ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={[styles.container, { paddingTop: contentInsetTop + 16 }]}
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      scrollIndicatorInsets={{ top: contentInsetTop }}
+    >
       {/* Playoff Status Hero */}
       <View style={[styles.playoffHero, { backgroundColor: `${team.color}15`, borderColor: `${team.color}30` }]}>
         <View style={styles.playoffHeader}>
@@ -103,7 +111,7 @@ export function StandingsTab({ team }: StandingsTabProps) {
         <Text style={styles.fullStandingsText}>View Full Standings</Text>
         <Ionicons name="arrow-forward" size={16} color={C.accent} />
       </Pressable>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
