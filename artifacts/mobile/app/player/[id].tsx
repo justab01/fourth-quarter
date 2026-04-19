@@ -24,6 +24,7 @@ import {
 } from "@/constants/athleteProfiles";
 import { api, type AthleteProfile as LiveProfile, type AthleteGameLog, type GameLogEntry, type GameLogSection, type GameLogCategory, type GameLogSectionType } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
+import { goToTeam } from "@/utils/navHelpers";
 
 // ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
 const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|NCAAW|NCAABB|NCAAHM|NCAAHW|NCAASM|NCAASW|NCAALM|NCAALW|NCAAVW|NCAAWP|NCAAFH|EPL|UCL|LIGA|BUN|SERA|LIG1|NWSL|UEL|UECL|FWCM|EURO|COPA|ATP|WTA|UFC|BELLATOR|PFL|BOXING|PGA|LPGA|LIV|F1|NASCAR|IRL|OLYMPICS|XGAMES)-(\d+)$/i;
@@ -2249,7 +2250,7 @@ export default function PlayerScreen() {
                 </View>
               ) : null}
               <Text style={styles.heroName} numberOfLines={2}>{player.name}</Text>
-              <Pressable onPress={() => router.push({ pathname: "/team/[id]", params: { id: team.id } } as any)}>
+              <Pressable onPress={() => goToTeam(team.name, team.league)}>
                 <Text style={styles.heroTeamLink}>{team.name} · {team.league}</Text>
               </Pressable>
               <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
