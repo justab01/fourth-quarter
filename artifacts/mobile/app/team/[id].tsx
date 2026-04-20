@@ -390,7 +390,7 @@ function TeamPageInner({ team, teamForNonScores, activeTab, setActiveTab, isFav,
         pointerEvents="box-none"
         style={[
           styles.headerOverlay,
-          { paddingTop: topPad, transform: [{ translateY: headerTranslate }] },
+          { transform: [{ translateY: headerTranslate }] },
         ]}
       >
         <View onLayout={onHeroLayout}>
@@ -399,6 +399,7 @@ function TeamPageInner({ team, teamForNonScores, activeTab, setActiveTab, isFav,
             isFav={isFav}
             onBack={() => router.back()}
             onToggleFav={toggleFav}
+            topPad={topPad}
           />
         </View>
         <View onLayout={onTabBarLayout}>

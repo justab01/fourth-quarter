@@ -19,6 +19,7 @@ interface HeroSectionProps {
   isFav: boolean;
   onBack: () => void;
   onToggleFav: () => void;
+  topPad?: number;
 }
 
 function PersonalityBadgeComponent({ badge, teamColor }: { badge: PersonalityBadge; teamColor: string }) {
@@ -67,7 +68,7 @@ function getRankStyle(rank: string, teamColor: string): { bg: string; gradient?:
   return { bg: "rgba(255,255,255,0.1)", color: C.textSecondary };
 }
 
-export function HeroSection({ team, isFav, onBack, onToggleFav }: HeroSectionProps) {
+export function HeroSection({ team, isFav, onBack, onToggleFav, topPad = 0 }: HeroSectionProps) {
   // Generate personality badge from stats
   const statsMap: Record<string, { value: number; rank: number; total: number }> = {};
   team.stats.forEach(s => {
@@ -84,7 +85,7 @@ export function HeroSection({ team, isFav, onBack, onToggleFav }: HeroSectionPro
     <LinearGradient
       colors={[team.color, team.color + "99", team.color + "40", C.background]}
       locations={[0, 0.3, 0.6, 1]}
-      style={styles.container}
+      style={[styles.container, { paddingTop: topPad }]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
@@ -108,9 +109,9 @@ export function HeroSection({ team, isFav, onBack, onToggleFav }: HeroSectionPro
         <TeamLogo
           uri={team.logoUrl ?? null}
           name={team.abbr}
-          size={64}
+          size={54}
           borderColor={`${team.colorSecondary}70`}
-          fontSize={18}
+          fontSize={16}
         />
         <View style={{ flex: 1 }}>
           <View style={styles.nameRow}>
@@ -171,29 +172,29 @@ export function HeroSection({ team, isFav, onBack, onToggleFav }: HeroSectionPro
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 16, paddingBottom: 20 },
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  iconBtn: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "rgba(0,0,0,0.25)" },
-  teamIdentity: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 12 },
+  container: { paddingHorizontal: 16, paddingBottom: 12 },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  iconBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 9, backgroundColor: "rgba(0,0,0,0.25)" },
+  teamIdentity: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  teamName: { color: C.text, fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold },
-  streakBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1 },
-  streakText: { fontSize: 11, fontWeight: "800" },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
-  metaText: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
-  metaDot: { color: "rgba(255,255,255,0.4)", fontSize: 12 },
-  metaHighlight: { fontSize: 12, fontWeight: "700" },
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
-  statCardWrap: { flex: 1, minWidth: "45%", backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 12 },
+  teamName: { color: C.text, fontSize: 22, fontWeight: "900", fontFamily: FONTS.bodyBold },
+  streakBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 7, borderWidth: 1 },
+  streakText: { fontSize: 10, fontWeight: "800" },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
+  metaText: { color: "rgba(255,255,255,0.6)", fontSize: 11 },
+  metaDot: { color: "rgba(255,255,255,0.4)", fontSize: 11 },
+  metaHighlight: { fontSize: 11, fontWeight: "700" },
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  statCardWrap: { flex: 1, minWidth: "45%", backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", padding: 9 },
   statContentRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  statValue: { fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold, color: C.text },
-  statLabel: { fontSize: 11, color: C.textSecondary, marginTop: 2 },
-  rankBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  rankText: { fontSize: 11, fontWeight: "800" },
+  statValue: { fontSize: 20, fontWeight: "900", fontFamily: FONTS.bodyBold, color: C.text },
+  statLabel: { fontSize: 10, color: C.textSecondary, marginTop: 2 },
+  rankBadge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 5 },
+  rankText: { fontSize: 10, fontWeight: "800" },
 });
 
 const persBadge = StyleSheet.create({
-  container: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, marginBottom: 8 },
-  emoji: { fontSize: 14 },
-  label: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
+  container: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16, borderWidth: 1, marginBottom: 6 },
+  emoji: { fontSize: 12 },
+  label: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
 });
