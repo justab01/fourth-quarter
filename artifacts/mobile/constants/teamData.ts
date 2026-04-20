@@ -23,6 +23,7 @@ export type GameData = {
   league?: string;
   date: string;
   opponent: string;
+  opponentLogo?: string | null;
   result: string;
   score: string;
   quarterScores?: {

@@ -150,7 +150,7 @@ export function GameCard({ game, teamColor, isWin, teamName, league = "NBA" }: G
         <View style={styles.teamInfo}>
           <View style={[styles.opponentLogo, { backgroundColor: isWin ? "rgba(72,173,169,0.15)" : "rgba(255,255,255,0.06)" }]}>
             <TeamLogo
-              uri={resolveOpponentLogoUrl(oppName, league)}
+              uri={game.opponentLogo ?? resolveOpponentLogoUrl(oppName, league)}
               name={oppName}
               size={32}
             />

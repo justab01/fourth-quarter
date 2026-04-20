@@ -234,6 +234,7 @@ export default function TeamScreen() {
       league: parsedLeague,
       date: g.shortDate,
       opponent: `${g.homeAway === "home" ? "vs" : "@"} ${g.opponentShort}`,
+      opponentLogo: g.opponentLogo ?? null,
       result: g.result || "",
       score: g.score || "—",
       quarterScores: g.quarterScores,

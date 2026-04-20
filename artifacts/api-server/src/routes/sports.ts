@@ -1434,15 +1434,22 @@ router.get("/sports/team", async (req, res) => {
 
     // 2. Find the matching team by name (fuzzy)
     const needle = normalizeName(name);
-    const match = teams.find((t) => {
-      const dn = normalizeName(t.team.displayName);
-      const loc = normalizeName(t.team.location);
-      return dn === needle || dn.includes(needle) || needle.includes(loc) || loc === needle;
-    }) ?? teams.find((t) => {
-      // fallback: check if any word matches
-      const words = normalizeName(t.team.displayName).split("");
-      return needle.split("").every(c => words.includes(c)); // last resort substring
-    });
+    // Step 1: exact display name match
+    const match = teams.find((t) => normalizeName(t.team.displayName) === needle)
+      // Step 2: display name contains the full needle or vice-versa
+      ?? teams.find((t) => {
+        const dn = normalizeName(t.team.displayName);
+        return dn.includes(needle) || needle.includes(dn);
+      })
+      // Step 3: word-by-word match — needle's words all appear in the display name's words
+      ?? teams.find((t) => {
+        const dnWords = normalizeName(t.team.displayName).split(/(?=[A-Z])|(?<=[a-z])(?=[A-Z])/);
+        const needleWords = name.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+        const dn = normalizeName(t.team.displayName);
+        // Check if the team's mascot/last word matches a word in the needle
+        const mascot = t.team.nickname ? normalizeName(t.team.nickname) : dn.replace(normalizeName(t.team.location ?? ""), "");
+        return needleWords.some(w => w.length > 3 && dn.includes(w));
+      });
 
     if (!match) { res.status(404).json({ error: `Team not found: ${name}` }); return; }
     const espnTeamId = match.team.id;
@@ -1569,14 +1576,21 @@ router.get("/sports/team-schedule", async (req, res) => {
     const teams = teamsJson.sports?.[0]?.leagues?.[0]?.teams ?? [];
     const needle = normalizeName(name);
     const match = teams.find((t) => {
-      const dn = normalizeName(t.team.displayName);
-      const loc = normalizeName(t.team.location);
-      const nm = normalizeName((t.team as any).name ?? "");
-      const ab = normalizeName(t.team.abbreviation ?? "");
-      return dn === needle || nm === needle || ab === needle
-        || dn.includes(needle) || needle.includes(loc) || loc === needle
-        || nm.includes(needle) || needle.includes(nm);
-    });
+        const dn = normalizeName(t.team.displayName);
+        const nm = normalizeName((t.team as any).name ?? "");
+        const ab = normalizeName(t.team.abbreviation ?? "");
+        return dn === needle || nm === needle || ab === needle;
+      })
+      ?? teams.find((t) => {
+        const dn = normalizeName(t.team.displayName);
+        const nm = normalizeName((t.team as any).name ?? "");
+        return dn.includes(needle) || needle.includes(dn) || nm.includes(needle) || needle.includes(nm);
+      })
+      ?? teams.find((t) => {
+        const needleWords = name.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+        const dn = normalizeName(t.team.displayName);
+        return needleWords.some(w => w.length > 3 && dn.includes(w));
+      });
     if (!match) { res.status(404).json({ error: `Team not found: ${name}` }); return; }
     const espnTeamId = match.team.id;
 
