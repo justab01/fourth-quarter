@@ -262,6 +262,7 @@ export interface TournamentMatchup {
   score2: number | null;
   status: "upcoming" | "live" | "finished";
   winner: string | null;
+  seriesStatus?: string | null;
 }
 
 export interface TournamentRound {

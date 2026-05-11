@@ -274,6 +274,11 @@ function TournamentMatchupRow({ matchup: m, color }: { matchup: TournamentMatchu
           <Text style={trnS.finalLabel}>FINAL</Text>
         </View>
       )}
+      {m.seriesStatus && (
+        <View style={trnS.seriesStatusRow}>
+          <Text style={trnS.seriesStatusText}>{m.seriesStatus}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -323,6 +328,188 @@ const trnS = StyleSheet.create({
   liveLabel: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
   finalIndicator: { position: "absolute", top: 6, right: 8 },
   finalLabel: { fontSize: 8, fontWeight: "800", color: C.textTertiary, letterSpacing: 0.5 },
+  seriesStatusRow: { paddingHorizontal: 10, paddingBottom: 7, paddingTop: 0, alignItems: "center" },
+  seriesStatusText: { fontSize: 9, color: C.textTertiary, fontWeight: "700", letterSpacing: 0.3 },
+});
+
+// ─── NBA Playoff Bracket ──────────────────────────────────────────────────────
+function PlayoffSeriesCard({ matchup: m, color }: { matchup: TournamentMatchup; color: string }) {
+  const isLive = m.status === "live";
+  const isDone = m.status === "finished";
+  const hasScore = m.score1 != null;
+  const t1wins = isDone && m.winner === m.team1;
+  const t2wins = isDone && m.winner === m.team2;
+  return (
+    <View style={[plS.seriesCard, isLive && { borderColor: `${C.live}40`, backgroundColor: `${C.live}06` }]}>
+      {isLive && (
+        <View style={plS.seriesPill}>
+          <View style={plS.seriesLiveDot} />
+          <Text style={plS.seriesLiveText}>LIVE</Text>
+        </View>
+      )}
+      {isDone && (
+        <View style={[plS.seriesPill, plS.seriesFinalPill]}>
+          <Text style={plS.seriesFinalText}>FINAL</Text>
+        </View>
+      )}
+      <View style={[plS.seriesTeamRow, !t1wins && isDone && { opacity: 0.42 }]}>
+        {m.logo1
+          ? <Image source={{ uri: m.logo1 }} style={plS.seriesLogo} />
+          : <View style={[plS.seriesLogo, { backgroundColor: C.cardBorder }]} />}
+        <Text style={[plS.seriesTeamName, t1wins && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
+          {m.team1}
+        </Text>
+        {t1wins && <Ionicons name="checkmark-circle" size={13} color={color} />}
+        {hasScore && (
+          <Text style={[plS.seriesWins, t1wins && { color: C.text, fontWeight: "900" }]}>
+            {m.score1}
+          </Text>
+        )}
+      </View>
+      <View style={plS.seriesDivider} />
+      <View style={[plS.seriesTeamRow, !t2wins && isDone && { opacity: 0.42 }]}>
+        {m.logo2
+          ? <Image source={{ uri: m.logo2 }} style={plS.seriesLogo} />
+          : <View style={[plS.seriesLogo, { backgroundColor: C.cardBorder }]} />}
+        <Text style={[plS.seriesTeamName, t2wins && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
+          {m.team2}
+        </Text>
+        {t2wins && <Ionicons name="checkmark-circle" size={13} color={color} />}
+        {hasScore && (
+          <Text style={[plS.seriesWins, t2wins && { color: C.text, fontWeight: "900" }]}>
+            {m.score2}
+          </Text>
+        )}
+      </View>
+      <View style={plS.seriesFooter}>
+        {m.seriesStatus ? (
+          <>
+            {isLive && <View style={plS.seriesLiveDot} />}
+            <Text style={[plS.seriesStatusLabel, isDone && { color }]}>{m.seriesStatus}</Text>
+            {isDone && <Ionicons name="trophy" size={10} color={color} />}
+          </>
+        ) : (
+          <Text style={plS.seriesUpcoming}>Series upcoming</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function NBAPlayoffView({ rounds, color }: { rounds: TournamentRound[]; color: string }) {
+  const liveCount = rounds.reduce((n, r) => n + r.matchups.filter(m => m.status === "live").length, 0);
+  const currentRound = rounds.find(r => r.matchups.some(m => !m.winner))?.name ?? null;
+  return (
+    <View>
+      <View style={plS.header}>
+        <Ionicons name="trophy" size={15} color={color} />
+        <Text style={[plS.headerTitle, { color }]}>NBA PLAYOFFS · {new Date().getFullYear()}</Text>
+        {liveCount > 0 && (
+          <View style={plS.headerLiveBadge}>
+            <View style={plS.seriesLiveDot} />
+            <Text style={plS.seriesLiveText}>{liveCount} LIVE</Text>
+          </View>
+        )}
+      </View>
+      {rounds.map((round, ri) => {
+        const allDone = round.matchups.every(m => !!m.winner);
+        const hasLive = round.matchups.some(m => m.status === "live");
+        const isCurrent = round.name === currentRound;
+        return (
+          <View key={ri} style={[plS.roundSection, isCurrent && { marginBottom: 18 }]}>
+            <View style={plS.roundHeaderRow}>
+              <View style={[plS.roundDotPl, { backgroundColor: allDone ? C.textTertiary : color }]} />
+              <Text style={[plS.roundTitlePl, { color: allDone ? C.textTertiary : color }]}>
+                {round.name.toUpperCase()}
+              </Text>
+              <View style={[plS.roundLinePl, { backgroundColor: allDone ? `${C.separator}` : `${color}30` }]} />
+              {allDone && (
+                <View style={plS.doneBadge}>
+                  <Ionicons name="checkmark" size={9} color={C.textTertiary} />
+                  <Text style={plS.doneBadgeText}>DONE</Text>
+                </View>
+              )}
+              {hasLive && !allDone && (
+                <View style={plS.headerLiveBadge}>
+                  <View style={plS.seriesLiveDot} />
+                  <Text style={plS.seriesLiveText}>LIVE</Text>
+                </View>
+              )}
+            </View>
+            <View style={plS.seriesGrid}>
+              {round.matchups.map((m, mi) => (
+                <PlayoffSeriesCard key={mi} matchup={m} color={color} />
+              ))}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const plS = StyleSheet.create({
+  header: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingTop: 2, paddingBottom: 14,
+  },
+  headerTitle: { fontSize: 13, fontWeight: "900", letterSpacing: 0.6, flex: 1 },
+  headerLiveBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: `${C.live}18`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+  },
+  toggle: {
+    flexDirection: "row", backgroundColor: C.card,
+    borderRadius: 11, padding: 3, marginBottom: 14,
+    borderWidth: 1, borderColor: C.cardBorder,
+  },
+  toggleBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 5, paddingVertical: 9, borderRadius: 8,
+  },
+  toggleText: { fontSize: 11, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.4 },
+  roundSection: { marginBottom: 10 },
+  roundHeaderRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingVertical: 7,
+  },
+  roundDotPl: { width: 5, height: 5, borderRadius: 3 },
+  roundTitlePl: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
+  roundLinePl: { flex: 1, height: StyleSheet.hairlineWidth },
+  doneBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
+  doneBadgeText: { fontSize: 9, fontWeight: "700", color: C.textTertiary },
+  seriesGrid: { gap: 8 },
+  seriesCard: {
+    backgroundColor: C.card, borderRadius: 12,
+    borderWidth: 1, borderColor: C.cardBorder, overflow: "hidden",
+    paddingTop: 4, paddingBottom: 0,
+  },
+  seriesTeamRow: {
+    flexDirection: "row", alignItems: "center", gap: 9,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  seriesLogo: { width: 26, height: 26, borderRadius: 13 },
+  seriesTeamName: { flex: 1, fontSize: 13, color: C.textSecondary, fontWeight: "600" },
+  seriesWins: {
+    fontSize: 20, fontWeight: "700", color: C.textTertiary,
+    fontFamily: FONTS.monoBold, minWidth: 22, textAlign: "right",
+  },
+  seriesDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 12 },
+  seriesFooter: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
+    paddingHorizontal: 12, paddingTop: 6, paddingBottom: 9,
+  },
+  seriesStatusLabel: { fontSize: 11, fontWeight: "700", color: C.textTertiary, letterSpacing: 0.2 },
+  seriesUpcoming: { fontSize: 10, fontWeight: "600", color: C.textTertiary },
+  seriesPill: {
+    position: "absolute", top: 7, right: 9, zIndex: 1,
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: `${C.live}18`, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
+  },
+  seriesFinalPill: { backgroundColor: "rgba(255,255,255,0.07)" },
+  seriesLiveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  seriesLiveText: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
+  seriesFinalText: { fontSize: 8, fontWeight: "700", color: C.textTertiary, letterSpacing: 0.5 },
 });
 
 // ─── Top movers bar ───────────────────────────────────────────────────────────
@@ -378,6 +565,7 @@ export default function StandingsScreen() {
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [collapsedConfs, setCollapsedConfs] = useState<Set<string>>(new Set());
   const [showTournament, setShowTournament] = useState(true);
+  const [viewMode, setViewMode] = useState<"standings" | "playoffs">("playoffs");
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
@@ -490,7 +678,32 @@ export default function StandingsScreen() {
           </View>
         ) : (
           <>
-            {tournament.length > 0 && (
+            {/* NBA: STANDINGS | PLAYOFFS toggle */}
+            {activeLeague === "NBA" && tournament.length > 0 && (
+              <View style={plS.toggle}>
+                <Pressable
+                  style={[plS.toggleBtn, viewMode === "standings" && { backgroundColor: leagueMeta.color }]}
+                  onPress={() => setViewMode("standings")}
+                >
+                  <Text style={[plS.toggleText, viewMode === "standings" && { color: "#fff" }]}>STANDINGS</Text>
+                </Pressable>
+                <Pressable
+                  style={[plS.toggleBtn, viewMode === "playoffs" && { backgroundColor: leagueMeta.color }]}
+                  onPress={() => setViewMode("playoffs")}
+                >
+                  <Ionicons name="trophy" size={11} color={viewMode === "playoffs" ? "#fff" : C.textSecondary} />
+                  <Text style={[plS.toggleText, viewMode === "playoffs" && { color: "#fff" }]}>PLAYOFFS</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* NBA: full playoff bracket */}
+            {activeLeague === "NBA" && tournament.length > 0 && viewMode === "playoffs" && (
+              <NBAPlayoffView rounds={tournament} color={leagueMeta.color} />
+            )}
+
+            {/* Non-NBA: collapsible tournament bracket (NCAA) */}
+            {activeLeague !== "NBA" && tournament.length > 0 && (
               <TournamentBracket
                 rounds={tournament}
                 color={leagueMeta.color}
@@ -499,6 +712,7 @@ export default function StandingsScreen() {
               />
             )}
 
+            {(activeLeague !== "NBA" || tournament.length === 0 || viewMode === "standings") && <>
             {/* Top movers */}
             <TopMovers standings={standings} />
 
@@ -770,6 +984,7 @@ export default function StandingsScreen() {
                 {preferences.favoriteTeams.length > 0 ? " · ★ your teams highlighted" : ""}
               </Text>
             </View>
+            </>}
           </>
         )}
       </ScrollView>

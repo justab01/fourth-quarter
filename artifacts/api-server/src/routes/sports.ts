@@ -2104,6 +2104,7 @@ interface TournamentRound {
     score2: number | null;
     status: "upcoming" | "live" | "finished";
     winner: string | null;
+    seriesStatus?: string | null;
   }[];
 }
 
@@ -2174,6 +2175,122 @@ async function fetchNCAATournament(league: "NCAAB" | "NCAAW" = "NCAAB"): Promise
   }
 }
 
+async function fetchNBAPlayoffBracket(): Promise<TournamentRound[]> {
+  const cacheKey = "nba-playoff-bracket";
+  const cached = getCached<TournamentRound[]>(cacheKey);
+  if (cached) return cached;
+  try {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const future = new Date(now.getTime() + 21 * 86400_000);
+    const endDate = `${future.getFullYear()}${pad(future.getMonth() + 1)}${pad(future.getDate())}`;
+    const json = await espnFetch(
+      `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20260415-${endDate}&seasontype=3&limit=200`
+    ) as any;
+    const events: any[] = json.events ?? [];
+    if (events.length === 0) { setCached(cacheKey, [], 300_000); return []; }
+
+    const ROUND_META: Record<string, { order: number; short: string }> = {
+      "RD16":  { order: 1, short: "First Round" },
+      "QTR":   { order: 2, short: "Conference Semifinals" },
+      "SEMI":  { order: 3, short: "Conference Finals" },
+      "FINAL": { order: 4, short: "NBA Finals" },
+    };
+
+    interface SeriesState {
+      roundAbbr: string; roundOrder: number; roundName: string;
+      team1: string; logo1: string | null;
+      team2: string; logo2: string | null;
+      wins1: number; wins2: number;
+      hasLive: boolean; winner: string | null;
+    }
+
+    const seriesMap = new Map<string, SeriesState>();
+
+    for (const ev of events) {
+      const comp = ev.competitions?.[0];
+      if (!comp) continue;
+      const note: string = comp.notes?.[0]?.headline ?? "";
+      const roundAbbr: string = comp.type?.abbreviation ?? "";
+      const meta = ROUND_META[roundAbbr];
+      if (!meta) continue;
+      const conf = note.startsWith("East") ? "East" : note.startsWith("West") ? "West" : "";
+      const roundName = roundAbbr === "FINAL" ? "NBA Finals" : `${conf} ${meta.short}`.trim();
+      const teams: any[] = comp.competitors ?? [];
+      const home = teams.find((t: any) => t.homeAway === "home");
+      const away = teams.find((t: any) => t.homeAway === "away");
+      if (!home || !away) continue;
+      const homeTeam: string = home.team?.displayName ?? "TBD";
+      const awayTeam: string = away.team?.displayName ?? "TBD";
+      const [ta, tb] = [homeTeam, awayTeam].sort();
+      const key = `${conf}-${roundAbbr}-${ta}|${tb}`;
+      if (!seriesMap.has(key)) {
+        seriesMap.set(key, {
+          roundAbbr, roundOrder: meta.order, roundName,
+          team1: homeTeam, logo1: home.team?.logo ?? null,
+          team2: awayTeam, logo2: away.team?.logo ?? null,
+          wins1: 0, wins2: 0, hasLive: false, winner: null,
+        });
+      }
+      const s = seriesMap.get(key)!;
+      if (!s.logo1 && homeTeam === s.team1) s.logo1 = home.team?.logo ?? null;
+      if (!s.logo2 && awayTeam === s.team2) s.logo2 = away.team?.logo ?? null;
+      const st: string = comp.status?.type?.name ?? "";
+      if (st === "STATUS_IN_PROGRESS" || st === "STATUS_HALFTIME") s.hasLive = true;
+      if (st === "STATUS_FINAL") {
+        const hw = Number(home.score ?? 0) > Number(away.score ?? 0);
+        const gw = hw ? homeTeam : awayTeam;
+        if (gw === s.team1) s.wins1++; else s.wins2++;
+      }
+    }
+
+    const ROUND_SORT = [
+      "East First Round", "West First Round",
+      "East Conference Semifinals", "West Conference Semifinals",
+      "East Conference Finals", "West Conference Finals",
+      "NBA Finals",
+    ];
+
+    const roundMap = new Map<string, TournamentRound>();
+    for (const s of seriesMap.values()) {
+      if (s.wins1 >= 4) s.winner = s.team1;
+      else if (s.wins2 >= 4) s.winner = s.team2;
+      const hasGames = s.wins1 > 0 || s.wins2 > 0;
+      let seriesStatus: string | null = null;
+      if (hasGames) {
+        const w1 = s.wins1, w2 = s.wins2;
+        const n1 = s.team1.split(" ").pop()!;
+        const n2 = s.team2.split(" ").pop()!;
+        if (s.winner === s.team1)      seriesStatus = `${n1} win 4-${w2}`;
+        else if (s.winner === s.team2) seriesStatus = `${n2} win 4-${w1}`;
+        else if (w1 > w2)              seriesStatus = `${n1} lead ${w1}-${w2}`;
+        else if (w2 > w1)              seriesStatus = `${n2} lead ${w2}-${w1}`;
+        else                           seriesStatus = `Tied ${w1}-${w2}`;
+      }
+      const status: "upcoming" | "live" | "finished" =
+        s.winner ? "finished" : s.hasLive ? "live" : "upcoming";
+      if (!roundMap.has(s.roundName)) roundMap.set(s.roundName, { name: s.roundName, matchups: [] });
+      roundMap.get(s.roundName)!.matchups.push({
+        seed1: null, team1: s.team1, logo1: s.logo1,
+        score1: hasGames ? s.wins1 : null,
+        seed2: null, team2: s.team2, logo2: s.logo2,
+        score2: hasGames ? s.wins2 : null,
+        status, winner: s.winner, seriesStatus,
+      });
+    }
+
+    const rounds = [...roundMap.values()].sort((a, b) => {
+      const ai = ROUND_SORT.indexOf(a.name), bi = ROUND_SORT.indexOf(b.name);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+    setCached(cacheKey, rounds, 120_000);
+    return rounds;
+  } catch (err) {
+    console.error("NBA playoff bracket error:", err);
+    return [];
+  }
+}
+
 router.get("/sports/next-game/:league", async (req, res) => {
   const league = (req.params.league ?? "").toUpperCase();
   if (!(league in LEAGUE_CONFIG)) {
@@ -2220,6 +2337,8 @@ router.get("/sports/standings", async (req, res) => {
   const standings = await fetchLeagueStandings(league);
   const tournament = (league === "NCAAB" || league === "NCAAW")
     ? await fetchNCAATournament(league as "NCAAB" | "NCAAW")
+    : league === "NBA"
+    ? await fetchNBAPlayoffBracket()
     : [];
   res.json({ standings, tournament });
 });
