@@ -333,114 +333,162 @@ const trnS = StyleSheet.create({
 });
 
 // ─── NBA Playoff Bracket ──────────────────────────────────────────────────────
-function PlayoffSeriesCard({ matchup: m, color }: { matchup: TournamentMatchup; color: string }) {
+function FaceOffCard({
+  matchup: m, color, size = "regular",
+}: {
+  matchup: TournamentMatchup; color: string; size?: "compact" | "regular" | "featured";
+}) {
   const isLive = m.status === "live";
   const isDone = m.status === "finished";
-  const hasScore = m.score1 != null;
   const t1wins = isDone && m.winner === m.team1;
   const t2wins = isDone && m.winner === m.team2;
+  const hasScore = m.score1 != null;
+  const lz = size === "compact" ? 28 : size === "featured" ? 52 : 40;
+  const t1Nick = m.team1.split(" ").slice(-1)[0];
+  const t2Nick = m.team2.split(" ").slice(-1)[0];
+
   return (
-    <View style={[plS.seriesCard, isLive && { borderColor: `${C.live}40`, backgroundColor: `${C.live}06` }]}>
+    <View style={[
+      plS.faceCard,
+      size === "compact" && plS.faceCardCompact,
+      size === "featured" && plS.faceCardFeatured,
+      isLive && { borderColor: `${C.live}55`, backgroundColor: `${C.live}07` },
+    ]}>
+      {/* Live pill */}
       {isLive && (
-        <View style={plS.seriesPill}>
-          <View style={plS.seriesLiveDot} />
-          <Text style={plS.seriesLiveText}>LIVE</Text>
+        <View style={plS.faceCornerPill}>
+          <View style={plS.faceLiveDot} />
+          <Text style={plS.faceLiveText}>LIVE</Text>
         </View>
       )}
-      {isDone && (
-        <View style={[plS.seriesPill, plS.seriesFinalPill]}>
-          <Text style={plS.seriesFinalText}>FINAL</Text>
+
+      {/* Team 1 */}
+      <View style={[plS.faceSide, !t1wins && isDone && plS.faceFaded]}>
+        <View style={[plS.faceLogoRing, t1wins && { borderColor: `${color}70`, borderWidth: 2 }]}>
+          {m.logo1
+            ? <Image source={{ uri: m.logo1 }} style={{ width: lz, height: lz, borderRadius: lz / 2 }} />
+            : <View style={{ width: lz, height: lz, borderRadius: lz / 2, backgroundColor: C.cardBorder }} />}
         </View>
-      )}
-      <View style={[plS.seriesTeamRow, !t1wins && isDone && { opacity: 0.42 }]}>
-        {m.logo1
-          ? <Image source={{ uri: m.logo1 }} style={plS.seriesLogo} />
-          : <View style={[plS.seriesLogo, { backgroundColor: C.cardBorder }]} />}
-        <Text style={[plS.seriesTeamName, t1wins && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
-          {m.team1}
-        </Text>
-        {t1wins && <Ionicons name="checkmark-circle" size={13} color={color} />}
-        {hasScore && (
-          <Text style={[plS.seriesWins, t1wins && { color: C.text, fontWeight: "900" }]}>
-            {m.score1}
-          </Text>
+        <Text style={[plS.faceNick, size === "compact" && { fontSize: 10 }, size === "featured" && { fontSize: 14 }, t1wins && { color: C.text, fontWeight: "800" }]} numberOfLines={1}>{t1Nick}</Text>
+        {t1wins && (
+          <View style={[plS.faceWonBadge, { borderColor: `${color}50` }]}>
+            <Ionicons name="trophy" size={8} color={color} />
+            <Text style={[plS.faceWonText, { color }]}>WON</Text>
+          </View>
         )}
       </View>
-      <View style={plS.seriesDivider} />
-      <View style={[plS.seriesTeamRow, !t2wins && isDone && { opacity: 0.42 }]}>
-        {m.logo2
-          ? <Image source={{ uri: m.logo2 }} style={plS.seriesLogo} />
-          : <View style={[plS.seriesLogo, { backgroundColor: C.cardBorder }]} />}
-        <Text style={[plS.seriesTeamName, t2wins && { color: C.text, fontWeight: "700" }]} numberOfLines={1}>
-          {m.team2}
-        </Text>
-        {t2wins && <Ionicons name="checkmark-circle" size={13} color={color} />}
-        {hasScore && (
-          <Text style={[plS.seriesWins, t2wins && { color: C.text, fontWeight: "900" }]}>
-            {m.score2}
-          </Text>
-        )}
-      </View>
-      <View style={plS.seriesFooter}>
-        {m.seriesStatus ? (
+
+      {/* Center score */}
+      <View style={plS.faceCenter}>
+        {hasScore ? (
           <>
-            {isLive && <View style={plS.seriesLiveDot} />}
-            <Text style={[plS.seriesStatusLabel, isDone && { color }]}>{m.seriesStatus}</Text>
-            {isDone && <Ionicons name="trophy" size={10} color={color} />}
+            <View style={plS.faceScoreRow}>
+              <Text style={[
+                plS.faceScoreNum,
+                size === "compact" && { fontSize: 22 },
+                size === "featured" && { fontSize: 38 },
+                t1wins && { color: C.text },
+              ]}>{m.score1}</Text>
+              <Text style={[plS.faceDash, size === "featured" && { fontSize: 22 }]}>–</Text>
+              <Text style={[
+                plS.faceScoreNum,
+                size === "compact" && { fontSize: 22 },
+                size === "featured" && { fontSize: 38 },
+                t2wins && { color: C.text },
+              ]}>{m.score2}</Text>
+            </View>
+            {m.seriesStatus && size !== "compact" && (
+              <Text style={[plS.faceStatus, isDone && { color, opacity: 0.9 }]} numberOfLines={1}>
+                {m.seriesStatus}
+              </Text>
+            )}
+            {m.seriesStatus && size === "compact" && isDone && (
+              <Ionicons name="checkmark-circle" size={13} color={color} style={{ marginTop: 2 }} />
+            )}
           </>
         ) : (
-          <Text style={plS.seriesUpcoming}>Series upcoming</Text>
+          <Text style={plS.faceVs}>VS</Text>
+        )}
+      </View>
+
+      {/* Team 2 */}
+      <View style={[plS.faceSide, !t2wins && isDone && plS.faceFaded]}>
+        <View style={[plS.faceLogoRing, t2wins && { borderColor: `${color}70`, borderWidth: 2 }]}>
+          {m.logo2
+            ? <Image source={{ uri: m.logo2 }} style={{ width: lz, height: lz, borderRadius: lz / 2 }} />
+            : <View style={{ width: lz, height: lz, borderRadius: lz / 2, backgroundColor: C.cardBorder }} />}
+        </View>
+        <Text style={[plS.faceNick, size === "compact" && { fontSize: 10 }, size === "featured" && { fontSize: 14 }, t2wins && { color: C.text, fontWeight: "800" }]} numberOfLines={1}>{t2Nick}</Text>
+        {t2wins && (
+          <View style={[plS.faceWonBadge, { borderColor: `${color}50` }]}>
+            <Ionicons name="trophy" size={8} color={color} />
+            <Text style={[plS.faceWonText, { color }]}>WON</Text>
+          </View>
         )}
       </View>
     </View>
   );
 }
 
-function NBAPlayoffView({ rounds, color }: { rounds: TournamentRound[]; color: string }) {
-  const liveCount = rounds.reduce((n, r) => n + r.matchups.filter(m => m.status === "live").length, 0);
-  const currentRound = rounds.find(r => r.matchups.some(m => !m.winner))?.name ?? null;
+function ConferenceSection({ rounds, confLabel, accentColor, color }: {
+  rounds: TournamentRound[]; confLabel: string; accentColor: string; color: string;
+}) {
+  if (rounds.length === 0) return null;
+  const ROUND_LABEL: Record<string, string> = {
+    "First Round": "FIRST ROUND",
+    "Conference Semifinals": "SEMIFINALS",
+    "Conference Finals": "CONF. FINALS",
+  };
+  const roundOrder = ["First Round", "Conference Semifinals", "Conference Finals"];
+  const sorted = [...rounds].sort((a, b) => {
+    const ai = roundOrder.findIndex(k => a.name.includes(k));
+    const bi = roundOrder.findIndex(k => b.name.includes(k));
+    return ai - bi;
+  });
   return (
-    <View>
-      <View style={plS.header}>
-        <Ionicons name="trophy" size={15} color={color} />
-        <Text style={[plS.headerTitle, { color }]}>NBA PLAYOFFS · {new Date().getFullYear()}</Text>
-        {liveCount > 0 && (
-          <View style={plS.headerLiveBadge}>
-            <View style={plS.seriesLiveDot} />
-            <Text style={plS.seriesLiveText}>{liveCount} LIVE</Text>
-          </View>
-        )}
+    <View style={plS.confSection}>
+      <View style={[plS.confBanner, { borderLeftColor: accentColor }]}>
+        <Text style={[plS.confLabel, { color: accentColor }]}>{confLabel}</Text>
+        <View style={[plS.confBannerLine, { backgroundColor: `${accentColor}22` }]} />
       </View>
-      {rounds.map((round, ri) => {
+      {sorted.map((round, ri) => {
+        const key = roundOrder.find(k => round.name.includes(k)) ?? "";
+        const label = ROUND_LABEL[key] ?? round.name.toUpperCase();
         const allDone = round.matchups.every(m => !!m.winner);
         const hasLive = round.matchups.some(m => m.status === "live");
-        const isCurrent = round.name === currentRound;
+        const isR1 = key === "First Round";
         return (
-          <View key={ri} style={[plS.roundSection, isCurrent && { marginBottom: 18 }]}>
-            <View style={plS.roundHeaderRow}>
-              <View style={[plS.roundDotPl, { backgroundColor: allDone ? C.textTertiary : color }]} />
-              <Text style={[plS.roundTitlePl, { color: allDone ? C.textTertiary : color }]}>
-                {round.name.toUpperCase()}
-              </Text>
-              <View style={[plS.roundLinePl, { backgroundColor: allDone ? `${C.separator}` : `${color}30` }]} />
+          <View key={ri} style={[plS.roundGroup, ri < sorted.length - 1 && plS.roundGroupBorder]}>
+            <View style={plS.roundLabelRow}>
+              <Text style={[plS.roundLabelTxt, allDone && { color: C.textTertiary }]}>{label}</Text>
               {allDone && (
-                <View style={plS.doneBadge}>
-                  <Ionicons name="checkmark" size={9} color={C.textTertiary} />
-                  <Text style={plS.doneBadgeText}>DONE</Text>
+                <View style={plS.roundDoneTag}>
+                  <Ionicons name="checkmark" size={8} color={C.textTertiary} />
+                  <Text style={plS.roundDoneText}>DONE</Text>
                 </View>
               )}
-              {hasLive && !allDone && (
-                <View style={plS.headerLiveBadge}>
-                  <View style={plS.seriesLiveDot} />
-                  <Text style={plS.seriesLiveText}>LIVE</Text>
+              {hasLive && (
+                <View style={plS.roundLiveTag}>
+                  <View style={plS.faceLiveDot} />
+                  <Text style={plS.faceLiveText}>LIVE</Text>
                 </View>
               )}
             </View>
-            <View style={plS.seriesGrid}>
-              {round.matchups.map((m, mi) => (
-                <PlayoffSeriesCard key={mi} matchup={m} color={color} />
-              ))}
-            </View>
+            {isR1 ? (
+              <View style={plS.r1Grid}>
+                {round.matchups.map((m, mi) => (
+                  <View key={mi} style={plS.r1Cell}>
+                    <FaceOffCard matchup={m} color={color} size="compact" />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={{ gap: 8 }}>
+                {round.matchups.map((m, mi) => (
+                  <FaceOffCard key={mi} matchup={m} color={color} size="regular" />
+                ))}
+              </View>
+            )}
           </View>
         );
       })}
@@ -448,16 +496,56 @@ function NBAPlayoffView({ rounds, color }: { rounds: TournamentRound[]; color: s
   );
 }
 
+function NBAPlayoffView({ rounds, color }: { rounds: TournamentRound[]; color: string }) {
+  const eastRounds = rounds.filter(r => r.name.startsWith("East"));
+  const westRounds = rounds.filter(r => r.name.startsWith("West"));
+  const finals = rounds.find(r => r.name === "NBA Finals");
+  const liveCount = rounds.reduce((n, r) => n + r.matchups.filter(m => m.status === "live").length, 0);
+  const totalActive = rounds.reduce((n, r) => n + r.matchups.filter(m => !m.winner).length, 0);
+  return (
+    <View>
+      <View style={plS.bracketHeader}>
+        <View style={plS.bracketTitleBlock}>
+          <Ionicons name="trophy" size={20} color={color} />
+          <View>
+            <Text style={[plS.bracketTitle, { color }]}>NBA PLAYOFFS</Text>
+            <Text style={plS.bracketSeason}>2025–26 Season</Text>
+          </View>
+        </View>
+        <View style={{ gap: 5, alignItems: "flex-end" }}>
+          {liveCount > 0 && (
+            <View style={plS.bracketLiveChip}>
+              <View style={plS.faceLiveDot} />
+              <Text style={plS.faceLiveText}>{liveCount} LIVE</Text>
+            </View>
+          )}
+          {totalActive > 0 && (
+            <Text style={plS.bracketActiveText}>{totalActive} series active</Text>
+          )}
+        </View>
+      </View>
+
+      <ConferenceSection rounds={eastRounds} confLabel="EASTERN CONFERENCE" accentColor="#1D70B8" color={color} />
+      <ConferenceSection rounds={westRounds} confLabel="WESTERN CONFERENCE" accentColor="#C8102E" color={color} />
+
+      {finals && finals.matchups.length > 0 && (
+        <View style={plS.finalsSection}>
+          <View style={[plS.confBanner, { borderLeftColor: C.accentGold }]}>
+            <Ionicons name="trophy" size={12} color={C.accentGold} />
+            <Text style={[plS.confLabel, { color: C.accentGold }]}>NBA FINALS</Text>
+            <View style={[plS.confBannerLine, { backgroundColor: `${C.accentGold}22` }]} />
+          </View>
+          {finals.matchups.map((m, i) => (
+            <FaceOffCard key={i} matchup={m} color={C.accentGold} size="featured" />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 const plS = StyleSheet.create({
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingTop: 2, paddingBottom: 14,
-  },
-  headerTitle: { fontSize: 13, fontWeight: "900", letterSpacing: 0.6, flex: 1 },
-  headerLiveBadge: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: `${C.live}18`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
-  },
+  // Toggle
   toggle: {
     flexDirection: "row", backgroundColor: C.card,
     borderRadius: 11, padding: 3, marginBottom: 14,
@@ -468,48 +556,96 @@ const plS = StyleSheet.create({
     gap: 5, paddingVertical: 9, borderRadius: 8,
   },
   toggleText: { fontSize: 11, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.4 },
-  roundSection: { marginBottom: 10 },
-  roundHeaderRow: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingVertical: 7,
+
+  // Bracket header
+  bracketHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginBottom: 18, paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
   },
-  roundDotPl: { width: 5, height: 5, borderRadius: 3 },
-  roundTitlePl: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
-  roundLinePl: { flex: 1, height: StyleSheet.hairlineWidth },
-  doneBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
-  doneBadgeText: { fontSize: 9, fontWeight: "700", color: C.textTertiary },
-  seriesGrid: { gap: 8 },
-  seriesCard: {
-    backgroundColor: C.card, borderRadius: 12,
-    borderWidth: 1, borderColor: C.cardBorder, overflow: "hidden",
-    paddingTop: 4, paddingBottom: 0,
+  bracketTitleBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
+  bracketTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.4 },
+  bracketSeason: { fontSize: 11, color: C.textTertiary, fontWeight: "600", marginTop: 1 },
+  bracketLiveChip: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: `${C.live}18`, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
   },
-  seriesTeamRow: {
-    flexDirection: "row", alignItems: "center", gap: 9,
-    paddingHorizontal: 12, paddingVertical: 10,
+  bracketActiveText: { fontSize: 10, color: C.textTertiary, fontWeight: "600" },
+
+  // Conference section
+  confSection: { marginBottom: 16 },
+  confBanner: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    borderLeftWidth: 3, paddingLeft: 10,
+    marginBottom: 12,
   },
-  seriesLogo: { width: 26, height: 26, borderRadius: 13 },
-  seriesTeamName: { flex: 1, fontSize: 13, color: C.textSecondary, fontWeight: "600" },
-  seriesWins: {
-    fontSize: 20, fontWeight: "700", color: C.textTertiary,
-    fontFamily: FONTS.monoBold, minWidth: 22, textAlign: "right",
-  },
-  seriesDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 12 },
-  seriesFooter: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
-    paddingHorizontal: 12, paddingTop: 6, paddingBottom: 9,
-  },
-  seriesStatusLabel: { fontSize: 11, fontWeight: "700", color: C.textTertiary, letterSpacing: 0.2 },
-  seriesUpcoming: { fontSize: 10, fontWeight: "600", color: C.textTertiary },
-  seriesPill: {
-    position: "absolute", top: 7, right: 9, zIndex: 1,
+  confLabel: { fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
+  confBannerLine: { flex: 1, height: 1 },
+
+  // Round group
+  roundGroup: { marginBottom: 12 },
+  roundGroupBorder: { paddingBottom: 12 },
+  roundLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  roundLabelTxt: { fontSize: 10, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.5 },
+  roundDoneTag: {
     flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: "rgba(255,255,255,0.06)", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
+  },
+  roundDoneText: { fontSize: 8, fontWeight: "700", color: C.textTertiary },
+  roundLiveTag: {
+    flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: `${C.live}18`, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
   },
-  seriesFinalPill: { backgroundColor: "rgba(255,255,255,0.07)" },
-  seriesLiveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
-  seriesLiveText: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
-  seriesFinalText: { fontSize: 8, fontWeight: "700", color: C.textTertiary, letterSpacing: 0.5 },
+
+  // R1 2-column grid
+  r1Grid: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  r1Cell: { width: "48.5%" },
+
+  // Face-off card
+  faceCard: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: C.card, borderRadius: 14,
+    borderWidth: 1, borderColor: C.cardBorder,
+    paddingHorizontal: 10, paddingVertical: 14,
+  },
+  faceCardCompact: { paddingHorizontal: 6, paddingVertical: 10, borderRadius: 11 },
+  faceCardFeatured: {
+    paddingHorizontal: 14, paddingVertical: 20, borderRadius: 16,
+    borderWidth: 1.5,
+  },
+  faceFaded: { opacity: 0.38 },
+  faceCornerPill: {
+    position: "absolute", top: 7, right: 8, zIndex: 2,
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: `${C.live}20`, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
+  },
+  faceLiveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  faceLiveText: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
+
+  // Team side
+  faceSide: { flex: 1, alignItems: "center", gap: 6 },
+  faceLogoRing: { borderRadius: 99, borderWidth: 0, borderColor: "transparent", padding: 2 },
+  faceNick: { fontSize: 12, fontWeight: "700", color: C.textSecondary, textAlign: "center" },
+  faceWonBadge: {
+    flexDirection: "row", alignItems: "center", gap: 3,
+    borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  faceWonText: { fontSize: 8, fontWeight: "900", letterSpacing: 0.4 },
+
+  // Center score
+  faceCenter: { alignItems: "center", paddingHorizontal: 6, minWidth: 70 },
+  faceScoreRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  faceScoreNum: {
+    fontSize: 30, fontWeight: "900", color: C.textTertiary,
+    fontFamily: FONTS.monoBold, minWidth: 24, textAlign: "center",
+  },
+  faceDash: { fontSize: 16, color: C.textTertiary, fontWeight: "300" },
+  faceStatus: { fontSize: 10, color: C.textTertiary, fontWeight: "700", letterSpacing: 0.2, marginTop: 4, textAlign: "center" },
+  faceVs: { fontSize: 14, fontWeight: "900", color: C.textTertiary, letterSpacing: 1 },
+
+  // Finals section
+  finalsSection: { marginBottom: 8 },
 });
 
 // ─── Top movers bar ───────────────────────────────────────────────────────────
