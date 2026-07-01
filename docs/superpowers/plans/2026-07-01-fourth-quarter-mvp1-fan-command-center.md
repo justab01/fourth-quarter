@@ -70,12 +70,12 @@
 - Use existing `artifacts/mobile/constants/colors.ts`
 - Use existing `artifacts/mobile/constants/typography.ts`
 
-- [ ] `SectionHeader`: title, subtitle, optional action.
-- [ ] `InsightCard`: why it matters, trend, or impact card.
-- [ ] `CreatorTakeCard`: curated creator-style take with source disclosure.
-- [ ] `FanPulseCard`: poll/conversation preview that works locally or clearly stays preview-only.
-- [ ] `EmptyStateCard`: useful no-data/offseason state.
-- [ ] Optional `PageHeader` if it removes meaningful duplication.
+- [x] `SectionHeader`: title, subtitle, optional action.
+- [x] `InsightCard`: why it matters, trend, or impact card.
+- [x] `CreatorTakeCard`: curated creator-style take with source disclosure.
+- [x] `FanPulseCard`: poll/conversation preview that works locally or clearly stays preview-only.
+- [x] `EmptyStateCard`: useful no-data/offseason state.
+- [x] `PageHeader` intentionally skipped for now; no immediate duplication required it in this slice.
 
 **Acceptance:**
 - Shared cards are small, typed, and reusable.
