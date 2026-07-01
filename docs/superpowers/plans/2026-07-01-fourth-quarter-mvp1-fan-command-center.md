@@ -51,11 +51,11 @@
 **Files:**
 - Create `artifacts/mobile/constants/communityPreview.ts`
 
-- [ ] Define `CreatorPreview`, `FanPulsePrompt`, `CommunityPreview`, and `PollPreview` types.
-- [ ] Add neutral, invented/curated sample creator entries without using real creator identities.
-- [ ] Add team/sport/game/news prompt examples.
-- [ ] Add helper selectors for home/game/team/news contexts.
-- [ ] Keep labels honest: preview, pulse, prompt, discussion theme.
+- [x] Define `CreatorPreview`, `FanPulsePrompt`, `CommunityPreview`, and `PollPreview` types.
+- [x] Add neutral, invented/curated sample creator entries without using real creator identities.
+- [x] Add team/sport/game/news prompt examples.
+- [x] Add helper selectors for home/game/team/news contexts.
+- [x] Keep labels honest: preview, pulse, prompt, discussion theme.
 
 **Acceptance:**
 - Preview modules can use consistent local data.
