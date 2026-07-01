@@ -92,8 +92,8 @@
 - `artifacts/mobile/constants/sharedStyles.ts`
 - touched page/component files
 
-- [ ] Add/refine brighter surfaces while preserving warm sports-night identity.
-- [ ] Add semantic tokens for success/loss/warning/preview/editorial surfaces if missing.
+- [x] Add/refine brighter surfaces while preserving warm sports-night identity.
+- [x] Add semantic tokens for success/loss/warning/preview/editorial surfaces if missing.
 - [ ] Reduce stacked near-black card-on-card areas as pages are touched.
 - [ ] Keep live green and team/league colors as meaningful signals.
 - [ ] Avoid decorative gradient blobs/orbs.
@@ -112,11 +112,11 @@
 - Shared cards from Task 3
 - `artifacts/mobile/constants/communityPreview.ts`
 
-- [ ] Reframe Home around `What Matters Now`.
+- [x] Reframe Home around `What Matters Now`.
 - [ ] Keep and strengthen In One Breath.
 - [ ] Add My Teams Today / Must Watch structure.
-- [ ] Add curated Creator Pulse preview.
-- [ ] Add Fan Conversation preview.
+- [x] Add curated Creator Pulse preview.
+- [x] Add Fan Conversation preview.
 - [ ] Convert Headlines into meaning-first story cards with Why It Matters.
 - [ ] Move personalization prompt lower unless onboarding is incomplete.
 - [ ] Check mobile top fold and bottom nav overlap.

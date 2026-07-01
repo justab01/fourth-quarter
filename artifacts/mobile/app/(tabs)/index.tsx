@@ -22,6 +22,8 @@ import { ProfileButton } from "@/components/ProfileButton";
 import { goToTeam } from "@/utils/navHelpers";
 import { ALL_TEAMS } from "@/constants/allPlayers";
 import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
+import { CreatorTakeCard, FanPulseCard, InsightCard, SectionHeader } from "@/components/shared";
+import { getCreatorPreviews, getFanPulsePrompts } from "@/constants/communityPreview";
 
 const C = Colors.dark;
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -369,6 +371,133 @@ const personS = StyleSheet.create({
     borderRadius: 10, borderWidth: 1, borderColor: `${C.accent}40`, flexShrink: 0,
   },
   badgeText: { color: C.accent, fontSize: 12, fontWeight: "700", fontFamily: FONTS.bodySemiBold },
+});
+
+function getScoreLine(game: Game) {
+  if (game.status === "upcoming") {
+    const startsAt = new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return `Starts ${startsAt}${game.venue ? ` at ${game.venue}` : ""}.`;
+  }
+
+  if (game.homeScore != null && game.awayScore != null) {
+    const clock = game.status === "live" && (game.quarter || game.timeRemaining)
+      ? `, ${[game.quarter, game.timeRemaining].filter(Boolean).join(" ")}`
+      : "";
+    return `${game.awayTeam} ${game.awayScore}, ${game.homeTeam} ${game.homeScore}${clock}.`;
+  }
+
+  return game.status === "live" ? "Live now with momentum still moving." : "Final result is ready to review.";
+}
+
+function WhatMattersNow({
+  game,
+  article,
+  myTeams,
+}: {
+  game?: Game;
+  article?: NewsArticle;
+  myTeams: string[];
+}) {
+  if (game) {
+    const followsGame = myTeams.includes(game.homeTeam) || myTeams.includes(game.awayTeam);
+    const context = getGameContext(game, myTeams);
+    const title = game.eventTitle || `${game.awayTeam} at ${game.homeTeam}`;
+    const body = [
+      getScoreLine(game),
+      context || (followsGame ? "Your team is in the center of today's board." : "This is the best current entry point into the slate."),
+    ].join(" ");
+
+    return (
+      <InsightCard
+        eyebrow="What matters now"
+        title={title}
+        body={body}
+        tone={game.status === "live" ? "live" : followsGame ? "positive" : "default"}
+        icon={game.status === "live" ? "radio-outline" : "analytics-outline"}
+        style={pulseStyles.heroInsight}
+      />
+    );
+  }
+
+  if (article) {
+    return (
+      <InsightCard
+        eyebrow="What matters now"
+        title={article.title}
+        body={article.summary}
+        tone="warning"
+        icon="newspaper-outline"
+        style={pulseStyles.heroInsight}
+      />
+    );
+  }
+
+  return (
+    <InsightCard
+      eyebrow="What matters now"
+      title="Build your sports command center"
+      body="Follow teams, scan the pulse, and turn the raw scoreboard into the stories fans are actually talking about."
+      tone="default"
+      icon="compass-outline"
+      style={pulseStyles.heroInsight}
+    />
+  );
+}
+
+function HomePulsePreviews() {
+  const pulse = getFanPulsePrompts("home", { limit: 1 })[0];
+  const creators = getCreatorPreviews("home", { limit: 2 });
+
+  if (!pulse && creators.length === 0) return null;
+
+  return (
+    <View style={pulseStyles.wrap}>
+      <SectionHeader
+        title="Creator + Fan Pulse"
+        subtitle="The social layer: prompts, debate angles, and future creator lanes."
+        accentColor={C.accentTeal}
+      />
+
+      {pulse ? <FanPulseCard pulse={pulse} accentColor={C.accentTeal} style={pulseStyles.pulseCard} /> : null}
+
+      {creators.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={pulseStyles.creatorTrack}
+        >
+          {creators.map((creator) => (
+            <CreatorTakeCard
+              key={creator.id}
+              creator={creator}
+              accentColor={C.accentGold}
+              style={pulseStyles.creatorCard}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+}
+
+const pulseStyles = StyleSheet.create({
+  heroInsight: {
+    backgroundColor: C.editorialSurface,
+  },
+  wrap: {
+    gap: 12,
+  },
+  pulseCard: {
+    backgroundColor: C.previewSurface,
+  },
+  creatorTrack: {
+    gap: 12,
+    paddingRight: 4,
+  },
+  creatorCard: {
+    width: Math.min(300, SCREEN_W - 56),
+    backgroundColor: C.cardWarm,
+  },
 });
 
 function MyTeamsStrip({ myTeams, allGames }: { myTeams: string[]; allGames: Game[] }) {
@@ -858,6 +987,11 @@ export default function HubScreen() {
           </View>
         </View>
 
+        {/* ── WHAT MATTERS NOW ── */}
+        <View style={styles.section}>
+          <WhatMattersNow game={heroGames[0]} article={articles[0]} myTeams={myTeams} />
+        </View>
+
         {/* ── IN ONE BREATH (collapsed by default) ── */}
         <View style={styles.section}>
           <InOneBreath />
@@ -914,6 +1048,11 @@ export default function HubScreen() {
             <PersonalizeCard />
           </View>
         )}
+
+        {/* ── CREATOR + FAN PULSE PREVIEW ── */}
+        <View style={styles.section}>
+          <HomePulsePreviews />
+        </View>
 
         {/* ── TODAY'S GAMES (with sport tabs, includes all games — no separate Watchlist/LeaguePulse) ── */}
         <View style={styles.section}>

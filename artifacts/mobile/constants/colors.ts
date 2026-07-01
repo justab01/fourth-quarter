@@ -24,6 +24,9 @@ export default {
     // Cards — warm charcoal surfaces
     card:              "#16130D",
     cardElevated:      "#1C1812",
+    cardWarm:          "#211B13",
+    editorialSurface:  "#221D16",
+    previewSurface:    "#17201D",
     cardBorder:        "rgba(255,200,100,0.07)",
     cardBorderActive:  "rgba(255,200,100,0.22)",
 
@@ -44,6 +47,8 @@ export default {
 
     // Error/Loss
     error: "#EF4444",
+    warning: "#F59E0B",
+    success: green,
 
     // Tab bar / floating nav
     tabBarBg:         "rgba(14,12,9,0.94)",
