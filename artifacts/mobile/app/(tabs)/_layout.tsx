@@ -20,11 +20,11 @@ function useTodayDateStr() {
 }
 
 const TAB_ITEMS = [
-  { name: "index",     label: "Home",   iconOn: "home",           iconOff: "home-outline" },
-  { name: "live",      label: "Scores", iconOn: "stats-chart",    iconOff: "stats-chart-outline" },
-  { name: "sports",    label: "Sports", iconOn: "grid",           iconOff: "grid-outline" },
-  { name: "standings", label: "Stands", iconOn: "podium",         iconOff: "podium-outline" },
-  { name: "news",      label: "News",   iconOn: "newspaper",      iconOff: "newspaper-outline" },
+  { name: "index",     label: "Home",      accessibilityLabel: "Home",      iconOn: "home",           iconOff: "home-outline" },
+  { name: "live",      label: "Scores",    accessibilityLabel: "Scores",    iconOn: "stats-chart",    iconOff: "stats-chart-outline" },
+  { name: "sports",    label: "Sports",    accessibilityLabel: "Sports",    iconOn: "grid",           iconOff: "grid-outline" },
+  { name: "standings", label: "Standings", accessibilityLabel: "Standings", iconOn: "podium",         iconOff: "podium-outline" },
+  { name: "news",      label: "News",      accessibilityLabel: "News",      iconOn: "newspaper",      iconOff: "newspaper-outline" },
 ] as const;
 
 function FloatingNav({ state, navigation }: BottomTabBarProps) {
@@ -70,6 +70,9 @@ function FloatingNav({ state, navigation }: BottomTabBarProps) {
               style={[navStyles.item, focused && navStyles.itemActive]}
               onPress={() => navigation.navigate(route.name)}
               hitSlop={4}
+              accessibilityRole="tab"
+              accessibilityLabel={tabDef.accessibilityLabel}
+              accessibilityState={{ selected: focused }}
             >
               <View style={navStyles.itemInner}>
                 <View style={{ position: "relative" }}>

@@ -31,13 +31,13 @@
 - `artifacts/mobile/app/(tabs)/_layout.tsx`
 - Search entry points as needed
 
-- [ ] Fix API typecheck error at `sports.ts:1450` by replacing unsafe `team.nickname` usage with a typed fallback.
-- [ ] Fix Search result navigation so selecting a result from `/search` closes the modal and leaves the destination visible.
-- [ ] Improve Home search activation/accessibility if needed.
-- [ ] Change bottom nav label from `Stands` to `Standings` if it fits; otherwise keep visual label compact and add a clear accessibility label.
-- [ ] Run mobile typecheck.
-- [ ] Run API typecheck.
-- [ ] Browser check: search opens, query works, result opens, modal closes.
+- [x] Fix API typecheck error at `sports.ts:1450` by replacing unsafe `team.nickname` usage with a typed fallback.
+- [x] Fix Search result navigation so selecting a result from `/search` closes the modal and leaves the destination visible.
+- [x] Improve Home search activation/accessibility if needed.
+- [x] Change bottom nav label from `Stands` to `Standings` if it fits; otherwise keep visual label compact and add a clear accessibility label.
+- [x] Run mobile typecheck.
+- [x] Run API typecheck.
+- [x] Browser check: search opens, query works, result opens, modal closes.
 
 **Acceptance:**
 - Typechecks pass or any remaining blocker is documented.

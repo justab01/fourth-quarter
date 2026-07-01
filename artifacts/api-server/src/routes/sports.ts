@@ -1443,11 +1443,8 @@ router.get("/sports/team", async (req, res) => {
       })
       // Step 3: word-by-word match — needle's words all appear in the display name's words
       ?? teams.find((t) => {
-        const dnWords = normalizeName(t.team.displayName).split(/(?=[A-Z])|(?<=[a-z])(?=[A-Z])/);
         const needleWords = name.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
         const dn = normalizeName(t.team.displayName);
-        // Check if the team's mascot/last word matches a word in the needle
-        const mascot = t.team.nickname ? normalizeName(t.team.nickname) : dn.replace(normalizeName(t.team.location ?? ""), "");
         return needleWords.some(w => w.length > 3 && dn.includes(w));
       });
 
