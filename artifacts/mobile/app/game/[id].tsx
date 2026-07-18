@@ -22,6 +22,7 @@ import { MomentumGraph } from "@/components/MomentumGraph";
 import { useGameSocket } from "@/hooks/useGameSocket";
 import { LiveTrackerPanel, computeTrackerState, type TrackerState } from "@/components/LiveTrackerPanel";
 import { BaseballGamecast } from "@/components/BaseballGamecast";
+import type { BaseballHubSection } from "@/components/gamecast/BaseballGameHub";
 
 const C = Colors.dark;
 
@@ -41,6 +42,21 @@ const GAME_TAB_KEYS = new Set<GameTab>(TABS.map((tab) => tab.key));
 function normalizeGameTab(tab?: string | string[] | null): GameTab {
   const value = Array.isArray(tab) ? tab[0] : tab;
   return value && GAME_TAB_KEYS.has(value as GameTab) ? value as GameTab : "gamecast";
+}
+
+const BASEBALL_HUB_SECTIONS = new Set<BaseballHubSection>([
+  "overview",
+  "plays",
+  "box",
+  "stats",
+  "lineups",
+]);
+
+function normalizeBaseballSection(section?: string | string[] | null): BaseballHubSection {
+  const value = Array.isArray(section) ? section[0] : section;
+  return value && BASEBALL_HUB_SECTIONS.has(value as BaseballHubSection)
+    ? value as BaseballHubSection
+    : "overview";
 }
 
 const PLAYER_STAT_COLS: Record<string, string[]> = {
@@ -199,13 +215,26 @@ function playBadge(type: PlayType, desc: string): string | null {
 }
 
 export default function GameDetailScreen() {
-  const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
+  const {
+    id,
+    tab: tabParam,
+    section: sectionParam,
+    expanded: expandedParam,
+    event: eventParam,
+  } = useLocalSearchParams<{
+    id: string;
+    tab?: string;
+    section?: string;
+    expanded?: string;
+    event?: string;
+  }>();
   const insets = useSafeAreaInsets();
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const queryClient = useQueryClient();
   const gameScrollRef = useRef<ScrollView>(null);
   const [activeTab, setActiveTab] = useState<GameTab>(normalizeGameTab(tabParam));
-  const [isGameHubExpanded, setIsGameHubExpanded] = useState(false);
+  const [isGameHubExpanded, setIsGameHubExpanded] = useState(expandedParam === "1");
+  const baseballSection = normalizeBaseballSection(sectionParam);
   const topPad = Platform.OS === "web"
     ? (viewportWidth >= 620 ? 52 : 14)
     : insets.top;
@@ -243,6 +272,10 @@ export default function GameDetailScreen() {
     const nextTab = normalizeGameTab(tabParam);
     setActiveTab((current) => current === nextTab ? current : nextTab);
   }, [tabParam]);
+
+  useEffect(() => {
+    setIsGameHubExpanded(expandedParam === "1");
+  }, [expandedParam]);
 
   useEffect(() => {
     if (activeTab !== "gamecast") setIsGameHubExpanded(false);
@@ -293,6 +326,7 @@ export default function GameDetailScreen() {
   const handleBack = useCallback(() => {
     if (isGameHubExpanded) {
       setIsGameHubExpanded(false);
+      router.setParams({ expanded: undefined });
       return;
     }
     const canGoBack = typeof (router as any).canGoBack === "function" && (router as any).canGoBack();
@@ -303,6 +337,19 @@ export default function GameDetailScreen() {
   const selectTab = useCallback((tab: GameTab) => {
     setActiveTab(tab);
     router.setParams({ tab });
+  }, []);
+
+  const setGameHubExpanded = useCallback((expanded: boolean) => {
+    setIsGameHubExpanded(expanded);
+    router.setParams({ expanded: expanded ? "1" : undefined });
+  }, []);
+
+  const setBaseballSection = useCallback((section: BaseballHubSection) => {
+    router.setParams({ section });
+  }, []);
+
+  const setBaseballEvent = useCallback((playId: string | null) => {
+    router.setParams({ event: playId ?? undefined });
   }, []);
 
   return (
@@ -484,7 +531,11 @@ export default function GameDetailScreen() {
                 gamecastHeight={gamecastHeight}
                 contentWidth={gameContentWidth}
                 isGameHubExpanded={isGameHubExpanded}
-                onGameHubExpandedChange={setIsGameHubExpanded}
+                onGameHubExpandedChange={setGameHubExpanded}
+                baseballSection={baseballSection}
+                onBaseballSectionChange={setBaseballSection}
+                baseballEventId={eventParam}
+                onBaseballEventChange={setBaseballEvent}
               />
             )}
 
@@ -701,6 +752,10 @@ function GamecastTab({
   contentWidth,
   isGameHubExpanded,
   onGameHubExpandedChange,
+  baseballSection,
+  onBaseballSectionChange,
+  baseballEventId,
+  onBaseballEventChange,
 }: {
   data: any;
   game: any;
@@ -710,6 +765,10 @@ function GamecastTab({
   contentWidth: number;
   isGameHubExpanded: boolean;
   onGameHubExpandedChange: (expanded: boolean) => void;
+  baseballSection: BaseballHubSection;
+  onBaseballSectionChange: (section: BaseballHubSection) => void;
+  baseballEventId?: string;
+  onBaseballEventChange: (playId: string | null) => void;
 }) {
   const isLive = game.status === "live";
   const isFinished = game.status === "finished";
@@ -723,6 +782,10 @@ function GamecastTab({
         height={gamecastHeight}
         expanded={isGameHubExpanded}
         onExpandedChange={onGameHubExpandedChange}
+        initialSection={baseballSection}
+        onSectionChange={onBaseballSectionChange}
+        initialSelectedPlayId={baseballEventId}
+        onSelectedPlayChange={onBaseballEventChange}
       />
     );
   }
