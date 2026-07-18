@@ -7,8 +7,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import Colors from "@/constants/colors";
-import { FONTS, FONT_SIZES } from "@/constants/typography";
+import { FONTS } from "@/constants/typography";
 import { api, StandingEntry, TournamentRound, TournamentMatchup } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
@@ -30,6 +31,75 @@ const LEAGUE_META: Record<string, { color: string; label: string }> = {
   UCL:   { color: C.ucl,       label: "UCL" },
   LIGA:  { color: C.liga,      label: "La Liga" },
 };
+
+const STANDING_SPORT_TABS = [
+  { league: "NBA", label: "NBA", views: ["East", "West", "Playoff Picture"] },
+  { league: "MLB", label: "MLB", views: ["AL", "NL", "Divisions", "Wild Card"] },
+  { league: "NFL", label: "NFL", views: ["AFC", "NFC", "Divisions", "Wild Card"] },
+  { league: "WNBA", label: "WNBA", views: ["Overall", "Playoff Picture"] },
+  { league: "NHL", label: "NHL", views: ["East", "West", "Divisions", "Wild Card"] },
+  { league: "EPL", label: "Soccer", views: ["Table", "Top 4", "Relegation", "My Club"] },
+];
+
+function getStandingSportTab(league: string) {
+  return STANDING_SPORT_TABS.find((tab) => tab.league === league) ?? STANDING_SPORT_TABS[0];
+}
+
+function getStructureTabs(league: string) {
+  return getStandingSportTab(league).views;
+}
+
+function conferenceMatches(conference: string | null, view: string) {
+  const text = (conference ?? "").toLowerCase();
+  const target = view.toLowerCase();
+  if (target === "east") return text.includes("east");
+  if (target === "west") return text.includes("west");
+  if (target === "afc") return text.includes("afc") || text.includes("american");
+  if (target === "nfc") return text.includes("nfc") || text.includes("national");
+  if (target === "al") return text.includes("american") || text === "al";
+  if (target === "nl") return text.includes("national") || text === "nl";
+  return false;
+}
+
+function getDisplayConferences(league: string, view: string, conferences: (string | null)[]) {
+  if (["East", "West", "AFC", "NFC", "AL", "NL"].includes(view)) {
+    const match = conferences.find((conf) => conferenceMatches(conf, view));
+    return match ? [match] : conferences;
+  }
+  if (league === "WNBA" || ["Table", "Top 4", "Relegation", "My Club", "Wild Card"].includes(view)) return [null];
+  return conferences;
+}
+
+function applyStructureFilter(rows: StandingEntry[], view: string, favoriteTeams: string[]) {
+  const ranked = [...rows].sort((a, b) => (a.playoffSeed ?? a.rank) - (b.playoffSeed ?? b.rank));
+  if (view === "Top 4") return ranked.slice(0, 4);
+  if (view === "Relegation") return ranked.slice(-5);
+  if (view === "Wild Card") return ranked.slice(3, 10);
+  if (view === "Playoff Picture") return ranked.slice(0, 10);
+  if (view === "My Club") {
+    const favorites = ranked.filter((entry) => favoriteTeams.includes(entry.teamName));
+    if (favorites.length === 0) return ranked.slice(0, 4);
+    const wanted = new Set<string>();
+    favorites.forEach((favorite) => {
+      [favorite.rank - 1, favorite.rank, favorite.rank + 1].forEach((rank) => {
+        const row = ranked.find((entry) => entry.rank === rank);
+        if (row) wanted.add(row.teamName);
+      });
+    });
+    return ranked.filter((entry) => wanted.has(entry.teamName));
+  }
+  return rows;
+}
+
+function formatStandingPosition(entry: StandingEntry) {
+  const rank = entry.playoffSeed ?? entry.rank;
+  const suffix = rank % 10 === 1 && rank % 100 !== 11 ? "st"
+    : rank % 10 === 2 && rank % 100 !== 12 ? "nd"
+      : rank % 10 === 3 && rank % 100 !== 13 ? "rd"
+        : "th";
+  const area = entry.division || entry.conference;
+  return `${rank}${suffix}${area ? ` ${area.replace(/conference|division/gi, "").trim()}` : ""}`;
+}
 
 // ─── Playoff zone definitions ─────────────────────────────────────────────────
 interface Zone {
@@ -121,7 +191,7 @@ const zoneSep = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 2, borderRadius: 5,
     marginHorizontal: 8, borderWidth: 1,
   },
-  labelText: { fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
+  labelText: { fontSize: 9, fontWeight: "900", letterSpacing: 0.8, fontFamily: FONTS.bodyHeavy },
 });
 
 // ─── Zone indicator bar ───────────────────────────────────────────────────────
@@ -157,7 +227,7 @@ function StreakBadge({ streak }: { streak: string | null }) {
 
 const streakS = StyleSheet.create({
   pill: { flexDirection: "row", alignItems: "center", gap: 2, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5 },
-  text: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3 },
+  text: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3, fontFamily: FONTS.bodyBold },
   hot: { backgroundColor: `${C.accentGold}25`, borderWidth: 1, borderColor: `${C.accentGold}40` },
   cold: { backgroundColor: `${C.live}18`, borderWidth: 1, borderColor: `${C.live}30` },
 });
@@ -187,7 +257,13 @@ function TournamentBracket({ rounds, color, show, onToggle }: {
 
   return (
     <View style={trnS.container}>
-      <Pressable onPress={onToggle} style={trnS.header}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={show ? "Collapse tournament bracket" : "Expand tournament bracket"}
+        accessibilityState={{ expanded: show }}
+        onPress={onToggle}
+        style={trnS.header}
+      >
         <Ionicons name="trophy" size={16} color={color} />
         <Text style={[trnS.headerTitle, { color }]}>Tournament</Text>
         {liveGames > 0 && (
@@ -293,20 +369,20 @@ const trnS = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
   },
-  headerTitle: { fontSize: 15, fontWeight: "900", letterSpacing: 0.3 },
-  gameCount: { fontSize: 10, color: C.textTertiary, fontWeight: "600" },
+  headerTitle: { fontSize: 15, fontWeight: "900", letterSpacing: 0.3, fontFamily: FONTS.bodyHeavy },
+  gameCount: { fontSize: 10, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.bodyMedium },
   liveBadge: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: `${C.live}18`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
   },
   liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
-  liveText: { fontSize: 9, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
+  liveText: { fontSize: 9, fontWeight: "900", color: C.live, letterSpacing: 0.5, fontFamily: FONTS.bodyHeavy },
   roundHeader: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 14, paddingVertical: 8, backgroundColor: "rgba(255,255,255,0.02)",
   },
   roundDot: { width: 5, height: 5, borderRadius: 3 },
-  roundName: { fontSize: 11, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.3 },
+  roundName: { fontSize: 11, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.3, fontFamily: FONTS.bodyBold },
   roundLine: { flex: 1, height: 1 },
   matchup: {
     marginHorizontal: 10, marginVertical: 4, borderRadius: 10,
@@ -318,18 +394,18 @@ const trnS = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 7,
   },
   matchupLogo: { width: 20, height: 20, borderRadius: 10 },
-  seed: { fontSize: 10, color: C.textTertiary, fontWeight: "700" },
-  teamName: { fontSize: 12, color: C.textSecondary, fontFamily: FONTS.body, flex: 1 },
+  seed: { fontSize: 10, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.bodyBold },
+  teamName: { fontSize: 12, color: C.textSecondary, fontFamily: FONTS.bodyMedium, flex: 1 },
   score: { fontSize: 14, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.monoBold, minWidth: 24, textAlign: "right" },
   matchupDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginHorizontal: 10 },
   liveIndicator: {
     position: "absolute", top: 4, right: 6, flexDirection: "row", alignItems: "center", gap: 3,
   },
-  liveLabel: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
+  liveLabel: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5, fontFamily: FONTS.bodyHeavy },
   finalIndicator: { position: "absolute", top: 6, right: 8 },
-  finalLabel: { fontSize: 8, fontWeight: "800", color: C.textTertiary, letterSpacing: 0.5 },
+  finalLabel: { fontSize: 8, fontWeight: "800", color: C.textTertiary, letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
   seriesStatusRow: { paddingHorizontal: 10, paddingBottom: 7, paddingTop: 0, alignItems: "center" },
-  seriesStatusText: { fontSize: 9, color: C.textTertiary, fontWeight: "700", letterSpacing: 0.3 },
+  seriesStatusText: { fontSize: 9, color: C.textTertiary, fontWeight: "700", letterSpacing: 0.3, fontFamily: FONTS.bodyMedium },
 });
 
 // ─── NBA Playoff Bracket ──────────────────────────────────────────────────────
@@ -555,7 +631,7 @@ const plS = StyleSheet.create({
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 5, paddingVertical: 9, borderRadius: 8,
   },
-  toggleText: { fontSize: 11, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.4 },
+  toggleText: { fontSize: 11, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.4, fontFamily: FONTS.bodyBold },
 
   // Bracket header
   bracketHeader: {
@@ -564,13 +640,13 @@ const plS = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator,
   },
   bracketTitleBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
-  bracketTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.4 },
-  bracketSeason: { fontSize: 11, color: C.textTertiary, fontWeight: "600", marginTop: 1 },
+  bracketTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.4, fontFamily: FONTS.bodyHeavy },
+  bracketSeason: { fontSize: 11, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.bodyMedium, marginTop: 1 },
   bracketLiveChip: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: `${C.live}18`, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
   },
-  bracketActiveText: { fontSize: 10, color: C.textTertiary, fontWeight: "600" },
+  bracketActiveText: { fontSize: 10, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.bodyMedium },
 
   // Conference section
   confSection: { marginBottom: 16 },
@@ -579,19 +655,19 @@ const plS = StyleSheet.create({
     borderLeftWidth: 3, paddingLeft: 10,
     marginBottom: 12,
   },
-  confLabel: { fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
+  confLabel: { fontSize: 11, fontWeight: "900", letterSpacing: 0.6, fontFamily: FONTS.bodyHeavy },
   confBannerLine: { flex: 1, height: 1 },
 
   // Round group
   roundGroup: { marginBottom: 12 },
   roundGroupBorder: { paddingBottom: 12 },
   roundLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
-  roundLabelTxt: { fontSize: 10, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.5 },
+  roundLabelTxt: { fontSize: 10, fontWeight: "800", color: C.textSecondary, letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
   roundDoneTag: {
     flexDirection: "row", alignItems: "center", gap: 3,
     backgroundColor: "rgba(255,255,255,0.06)", paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
   },
-  roundDoneText: { fontSize: 8, fontWeight: "700", color: C.textTertiary },
+  roundDoneText: { fontSize: 8, fontWeight: "700", color: C.textTertiary, fontFamily: FONTS.bodyBold },
   roundLiveTag: {
     flexDirection: "row", alignItems: "center", gap: 4,
     backgroundColor: `${C.live}18`, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
@@ -620,18 +696,18 @@ const plS = StyleSheet.create({
     backgroundColor: `${C.live}20`, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
   },
   faceLiveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
-  faceLiveText: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5 },
+  faceLiveText: { fontSize: 8, fontWeight: "900", color: C.live, letterSpacing: 0.5, fontFamily: FONTS.bodyHeavy },
 
   // Team side
   faceSide: { flex: 1, alignItems: "center", gap: 6 },
   faceLogoRing: { borderRadius: 99, borderWidth: 0, borderColor: "transparent", padding: 2 },
-  faceNick: { fontSize: 12, fontWeight: "700", color: C.textSecondary, textAlign: "center" },
+  faceNick: { fontSize: 12, fontWeight: "700", color: C.textSecondary, textAlign: "center", fontFamily: FONTS.bodyBold },
   faceWonBadge: {
     flexDirection: "row", alignItems: "center", gap: 3,
     borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
     backgroundColor: "rgba(255,255,255,0.04)",
   },
-  faceWonText: { fontSize: 8, fontWeight: "900", letterSpacing: 0.4 },
+  faceWonText: { fontSize: 8, fontWeight: "900", letterSpacing: 0.4, fontFamily: FONTS.bodyHeavy },
 
   // Center score
   faceCenter: { alignItems: "center", paddingHorizontal: 6, minWidth: 70 },
@@ -641,8 +717,8 @@ const plS = StyleSheet.create({
     fontFamily: FONTS.monoBold, minWidth: 24, textAlign: "center",
   },
   faceDash: { fontSize: 16, color: C.textTertiary, fontWeight: "300" },
-  faceStatus: { fontSize: 10, color: C.textTertiary, fontWeight: "700", letterSpacing: 0.2, marginTop: 4, textAlign: "center" },
-  faceVs: { fontSize: 14, fontWeight: "900", color: C.textTertiary, letterSpacing: 1 },
+  faceStatus: { fontSize: 10, color: C.textTertiary, fontWeight: "700", letterSpacing: 0.2, marginTop: 4, textAlign: "center", fontFamily: FONTS.bodyMedium },
+  faceVs: { fontSize: 14, fontWeight: "900", color: C.textTertiary, letterSpacing: 1, fontFamily: FONTS.bodyHeavy },
 
   // Finals section
   finalsSection: { marginBottom: 8 },
@@ -686,22 +762,100 @@ const moverS = StyleSheet.create({
     backgroundColor: `${C.accentGold}12`, borderWidth: 1, borderColor: `${C.accentGold}40`,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
   },
-  chipText: { color: C.accentGold, fontSize: 12, fontWeight: "700" },
+  chipText: { color: C.accentGold, fontSize: 12, fontWeight: "700", fontFamily: FONTS.bodyBold },
+});
+
+function MyTeamsStandingsStrip({
+  standings,
+  favoriteTeams,
+  league,
+  color,
+}: {
+  standings: StandingEntry[];
+  favoriteTeams: string[];
+  league: string;
+  color: string;
+}) {
+  if (favoriteTeams.length === 0) return null;
+  const rows = standings.filter((entry) => favoriteTeams.includes(entry.teamName)).slice(0, 3);
+  return (
+    <View style={myTeamS.card}>
+      <View style={myTeamS.header}>
+        <Ionicons name="heart" size={14} color={color} />
+        <Text style={myTeamS.title}>MY TEAMS</Text>
+      </View>
+      {rows.length > 0 ? (
+        <View style={myTeamS.row}>
+          {rows.map((entry) => (
+            <Pressable
+              key={entry.teamName}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${entry.teamName}`}
+              onPress={() => goToTeam(entry.teamName, league)}
+              style={({ pressed }) => [myTeamS.pill, pressed && { opacity: 0.78 }]}
+            >
+              <TeamLogo uri={entry.logoUrl} name={entry.teamName} size={24} borderColor={`${color}55`} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={myTeamS.team} numberOfLines={1}>{entry.teamName}</Text>
+                <Text style={[myTeamS.meta, { color }]} numberOfLines={1}>{formatStandingPosition(entry)}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ) : (
+        <Text style={myTeamS.empty}>None of your saved teams are in this standings board.</Text>
+      )}
+    </View>
+  );
+}
+
+const myTeamS = StyleSheet.create({
+  card: {
+    gap: 8,
+    padding: 11,
+    marginBottom: 10,
+    borderRadius: 16,
+    backgroundColor: C.cardElevated,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  header: { flexDirection: "row", alignItems: "center", gap: 7 },
+  title: { color: C.text, fontSize: 12, fontWeight: "900", fontFamily: FONTS.bodyHeavy },
+  row: { gap: 7 },
+  pill: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 12,
+    backgroundColor: C.glassLight,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  team: { color: C.text, fontSize: 12, fontWeight: "900", fontFamily: FONTS.bodyHeavy },
+  meta: { fontSize: 11, fontWeight: "900", fontFamily: FONTS.bodyBold },
+  empty: { color: C.textSecondary, fontSize: 12, fontFamily: FONTS.bodyMedium },
 });
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function StandingsScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
+  const params = useLocalSearchParams<{ league?: string }>();
 
-  const supportedLeagues = ["NBA", "NHL", "NFL", "MLB", "NCAAB", "MLS", "WNBA", "EPL", "UCL", "LIGA"];
+  const supportedLeagues = STANDING_SPORT_TABS.map((tab) => tab.league);
   const myLeagues = preferences.favoriteLeagues.filter(l => supportedLeagues.includes(l));
-  const defaultLeague = myLeagues[0] ?? "NBA";
+  const requestedLeague = typeof params.league === "string" && supportedLeagues.includes(params.league.toUpperCase())
+    ? params.league.toUpperCase()
+    : null;
+  const defaultLeague = requestedLeague ?? myLeagues[0] ?? "NBA";
   const [activeLeague, setActiveLeague] = useState(defaultLeague);
+  const [activeStructure, setActiveStructure] = useState<string | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [collapsedConfs, setCollapsedConfs] = useState<Set<string>>(new Set());
   const [showTournament, setShowTournament] = useState(true);
-  const [viewMode, setViewMode] = useState<"standings" | "playoffs">("playoffs");
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
@@ -715,6 +869,11 @@ export default function StandingsScreen() {
   const standings = data?.standings ?? [];
   const tournament = data?.tournament ?? [];
   const leagueMeta = LEAGUE_META[activeLeague] ?? { color: C.accent, label: activeLeague };
+  const sportTab = getStandingSportTab(activeLeague);
+  const structureTabs = getStructureTabs(activeLeague);
+  const selectedStructure = activeStructure && structureTabs.includes(activeStructure)
+    ? activeStructure
+    : structureTabs[0];
   const hasGamesBack = standings.some(e => e.gamesBack !== null);
   const hasZones = !!ZONE_CONFIGS[activeLeague];
   const isSoccer = ["EPL", "UCL", "LIGA", "MLS"].includes(activeLeague);
@@ -729,6 +888,7 @@ export default function StandingsScreen() {
   const conferences = hasConferences
     ? [...new Set(standings.map(e => e.conference).filter(Boolean))] as string[]
     : [null];
+  const displayConferences = getDisplayConferences(activeLeague, selectedStructure, conferences);
 
   function getWhyItMatters(entry: typeof standings[number], idx: number, confEntries?: typeof standings): string | null {
     const relevantStandings = confEntries ?? standings;
@@ -776,7 +936,7 @@ export default function StandingsScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Standings</Text>
-            <Text style={styles.subtitle}>{leagueMeta.label} · {new Date().getFullYear()}</Text>
+            <Text style={styles.subtitle}>{sportTab.label} · {selectedStructure} · {new Date().getFullYear()}</Text>
           </View>
           <SearchButton />
           <ProfileButton />
@@ -787,14 +947,53 @@ export default function StandingsScreen() {
           horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.leagueRow} style={styles.leagueScroll}
         >
-          {supportedLeagues.map(l => {
-            const active = activeLeague === l;
-            const meta   = LEAGUE_META[l] ?? { color: C.accent };
+          {STANDING_SPORT_TABS.map(tab => {
+            const active = activeLeague === tab.league;
+            const meta = LEAGUE_META[tab.league] ?? { color: C.accent };
             return (
-              <Pressable key={l} onPress={() => setActiveLeague(l)}>
+              <Pressable
+                key={tab.league}
+                accessibilityRole="button"
+                accessibilityLabel={`Show ${tab.label} standings`}
+                accessibilityState={{ selected: active }}
+                onPress={() => {
+                  setActiveLeague(tab.league);
+                  setActiveStructure(null);
+                  setExpandedTeam(null);
+                }}
+              >
                 <View style={[styles.chip, active && { borderColor: meta.color, backgroundColor: `${meta.color}18` }]}>
-                  <Text style={[styles.chipText, active && { color: meta.color }]}>{l}</Text>
+                  <Text style={[styles.chipText, active && { color: meta.color }]}>{tab.label}</Text>
                 </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.structureRow}
+          style={styles.structureScroll}
+        >
+          {structureTabs.map((view) => {
+            const active = selectedStructure === view;
+            return (
+              <Pressable
+                key={`${activeLeague}-${view}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Show ${view}`}
+                accessibilityState={{ selected: active }}
+                onPress={() => {
+                  setActiveStructure(view);
+                  setExpandedTeam(null);
+                }}
+                style={[
+                  styles.structureChip,
+                  active && { backgroundColor: `${leagueMeta.color}18`, borderColor: `${leagueMeta.color}44` },
+                ]}
+              >
+                <Text style={[styles.structureText, active && { color: leagueMeta.color }]}>{view}</Text>
               </Pressable>
             );
           })}
@@ -814,27 +1013,15 @@ export default function StandingsScreen() {
           </View>
         ) : (
           <>
-            {/* NBA: STANDINGS | PLAYOFFS toggle */}
-            {activeLeague === "NBA" && tournament.length > 0 && (
-              <View style={plS.toggle}>
-                <Pressable
-                  style={[plS.toggleBtn, viewMode === "standings" && { backgroundColor: leagueMeta.color }]}
-                  onPress={() => setViewMode("standings")}
-                >
-                  <Text style={[plS.toggleText, viewMode === "standings" && { color: "#fff" }]}>STANDINGS</Text>
-                </Pressable>
-                <Pressable
-                  style={[plS.toggleBtn, viewMode === "playoffs" && { backgroundColor: leagueMeta.color }]}
-                  onPress={() => setViewMode("playoffs")}
-                >
-                  <Ionicons name="trophy" size={11} color={viewMode === "playoffs" ? "#fff" : C.textSecondary} />
-                  <Text style={[plS.toggleText, viewMode === "playoffs" && { color: "#fff" }]}>PLAYOFFS</Text>
-                </Pressable>
-              </View>
-            )}
+            <MyTeamsStandingsStrip
+              standings={standings}
+              favoriteTeams={preferences.favoriteTeams}
+              league={activeLeague}
+              color={leagueMeta.color}
+            />
 
             {/* NBA: full playoff bracket */}
-            {activeLeague === "NBA" && tournament.length > 0 && viewMode === "playoffs" && (
+            {activeLeague === "NBA" && tournament.length > 0 && selectedStructure === "Playoff Picture" && (
               <NBAPlayoffView rounds={tournament} color={leagueMeta.color} />
             )}
 
@@ -848,7 +1035,7 @@ export default function StandingsScreen() {
               />
             )}
 
-            {(activeLeague !== "NBA" || tournament.length === 0 || viewMode === "standings") && <>
+            {(activeLeague !== "NBA" || tournament.length === 0 || selectedStructure !== "Playoff Picture") && <>
             {/* Top movers */}
             <TopMovers standings={standings} />
 
@@ -864,14 +1051,15 @@ export default function StandingsScreen() {
               </ScrollView>
             )}
 
-            {conferences.map(conf => {
+            {displayConferences.map(conf => {
               const filtered = conf ? standings.filter(e => e.conference === conf) : standings;
-              const confStandings = [...filtered].sort((a, b) => {
+              const sortedStandings = [...filtered].sort((a, b) => {
                 if (hasDivisions && a.division && b.division) {
                   if (a.division !== b.division) return a.division.localeCompare(b.division);
                 }
                 return (a.playoffSeed ?? a.rank) - (b.playoffSeed ?? b.rank);
               });
+              const confStandings = applyStructureFilter(sortedStandings, selectedStructure, preferences.favoriteTeams);
               if (confStandings.length === 0) return null;
               const isCollapsed = conf ? collapsedConfs.has(conf) : false;
               const toggleConf = () => {
@@ -887,7 +1075,13 @@ export default function StandingsScreen() {
               return (
                 <View key={conf ?? "all"}>
                   {conf && (
-                    <Pressable onPress={toggleConf} style={styles.confHeader}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${isCollapsed ? "Expand" : "Collapse"} ${conf} standings`}
+                      accessibilityState={{ expanded: !isCollapsed }}
+                      onPress={toggleConf}
+                      style={styles.confHeader}
+                    >
                       <View style={[styles.confDot, { backgroundColor: leagueMeta.color }]} />
                       <Text style={[styles.confTitle, { color: leagueMeta.color }]}>{conf}</Text>
                       <Text style={styles.confCount}>{confTeamCount} teams</Text>
@@ -941,6 +1135,10 @@ export default function StandingsScreen() {
                     )}
 
                     <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${isExpanded ? "Collapse" : "Expand"} ${entry.teamName} standings details`}
+                      accessibilityHint="Long press to open the team page"
+                      accessibilityState={{ expanded: isExpanded }}
                       onPress={() => {
                         if (isExpanded) { setExpandedTeam(null); }
                         else { setExpandedTeam(entry.teamName); }
@@ -1086,8 +1284,12 @@ export default function StandingsScreen() {
                               </View>
                             </View>
                           )}
-                          <Pressable style={[styles.expandedBtn, { borderColor: leagueMeta.color }]}
-                            onPress={() => goToTeam(entry.teamName, activeLeague)}>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Open ${entry.teamName} team page`}
+                            style={[styles.expandedBtn, { borderColor: leagueMeta.color }]}
+                            onPress={() => goToTeam(entry.teamName, activeLeague)}
+                          >
                             <Text style={[styles.expandedBtnText, { color: leagueMeta.color }]}>Team Page</Text>
                             <Ionicons name="chevron-forward" size={12} color={leagueMeta.color} />
                           </Pressable>
@@ -1135,7 +1337,7 @@ const legendS = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1,
   },
   dot: { width: 6, height: 6, borderRadius: 3 },
-  label: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5 },
+  label: { fontSize: 10, fontWeight: "800", letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
 });
 
 const styles = StyleSheet.create({
@@ -1146,8 +1348,8 @@ const styles = StyleSheet.create({
     paddingTop: 16, paddingBottom: 8,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
-  title: { fontSize: 32, fontWeight: "900", color: C.text, fontFamily: FONTS.bodyHeavy, letterSpacing: -0.5 },
-  subtitle: { fontSize: 12, color: C.textTertiary, fontFamily: FONTS.body, marginTop: 2 },
+  title: { fontSize: 30, fontWeight: "900", color: C.text, fontFamily: FONTS.bodyHeavy, letterSpacing: 0 },
+  subtitle: { fontSize: 12, color: C.textTertiary, fontFamily: FONTS.bodyMedium, marginTop: 2 },
   leagueDot: { width: 10, height: 10, borderRadius: 5 },
 
   leagueScroll: { marginBottom: 12 },
@@ -1156,7 +1358,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 22,
     backgroundColor: C.card, borderWidth: 1.5, borderColor: C.cardBorder,
   },
-  chipText: { color: C.textSecondary, fontSize: 13, fontWeight: "800", letterSpacing: 0.4 },
+  chipText: { color: C.textSecondary, fontSize: 13, fontWeight: "800", letterSpacing: 0.4, fontFamily: FONTS.bodyBold },
+  structureScroll: { marginBottom: 10 },
+  structureRow: { gap: 7, paddingRight: 20 },
+  structureChip: {
+    minHeight: 32,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: C.glassLight,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  structureText: { color: C.textSecondary, fontSize: 12, fontWeight: "900", fontFamily: FONTS.bodyBold },
 
   loading: { paddingVertical: 24, gap: 2 },
   skeletonRow: {
@@ -1179,10 +1393,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1.5,
     backgroundColor: "rgba(255,255,255,0.025)",
   },
-  thRank: { width: 30, color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2, paddingLeft: 4 },
-  thTeam: { flex: 1, color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
-  thStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
-  thStreak: { width: 40, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2 },
+  thRank: { width: 30, color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2, paddingLeft: 4, fontFamily: FONTS.bodyHeavy },
+  thTeam: { flex: 1, color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2, fontFamily: FONTS.bodyHeavy },
+  thStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2, fontFamily: FONTS.bodyHeavy },
+  thStreak: { width: 40, textAlign: "center", color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1.2, fontFamily: FONTS.bodyHeavy },
 
   tableRow: {
     flexDirection: "row", alignItems: "center",
@@ -1194,11 +1408,11 @@ const styles = StyleSheet.create({
   myTeamBar: { position: "absolute", left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2 },
 
   tdRank: { width: 30, flexDirection: "row", alignItems: "center", gap: 2, paddingLeft: 2 },
-  rankNum: { color: C.textSecondary, fontSize: 13, fontWeight: "600", fontFamily: FONTS.monoBold, minWidth: 16 },
+  rankNum: { color: C.textSecondary, fontSize: 13, fontWeight: "800", fontFamily: FONTS.monoBold, minWidth: 16 },
 
   tdTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 7 },
   teamText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.bodySemiBold, flex: 1 },
-  conferenceText: { color: C.textTertiary, fontSize: 10 },
+  conferenceText: { color: C.textTertiary, fontSize: 10, fontFamily: FONTS.bodyMedium },
 
   tdStat: { width: 32, textAlign: "center", color: C.textTertiary, fontSize: 12, fontFamily: FONTS.mono },
   tdStreak: { width: 40, alignItems: "center" },
@@ -1208,7 +1422,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 6,
     backgroundColor: `${Colors.dark.accent}08`,
   },
-  wimText: { color: Colors.dark.accent, fontSize: 11, fontFamily: FONTS.body, fontStyle: "italic" },
+  wimText: { color: Colors.dark.accent, fontSize: 11, fontFamily: FONTS.bodyMedium, fontStyle: "italic" },
 
   confHeader: {
     flexDirection: "row", alignItems: "center", gap: 8,
@@ -1217,7 +1431,7 @@ const styles = StyleSheet.create({
   confDot: { width: 8, height: 8, borderRadius: 4 },
   confTitle: { fontSize: 14, fontWeight: "900", fontFamily: FONTS.bodyHeavy, letterSpacing: 0.5 },
   confLine: { flex: 1, height: 1, backgroundColor: C.separator },
-  confCount: { fontSize: 10, color: C.textTertiary, fontWeight: "600", marginLeft: 4 },
+  confCount: { fontSize: 10, color: C.textTertiary, fontWeight: "700", fontFamily: FONTS.bodyMedium, marginLeft: 4 },
 
   divisionHeader: {
     flexDirection: "row", alignItems: "center", gap: 8,
@@ -1231,15 +1445,15 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderRadius: 4,
     paddingHorizontal: 3, paddingVertical: 0.5,
   },
-  clinchText: { fontSize: 8, fontWeight: "900" },
+  clinchText: { fontSize: 8, fontWeight: "900", fontFamily: FONTS.bodyHeavy },
 
   clinchLegend: {
     marginHorizontal: 16, marginTop: 12, padding: 12,
     backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator,
   },
-  clinchLegendTitle: { fontSize: 10, fontWeight: "900", color: C.textSecondary, letterSpacing: 1, marginBottom: 6 },
-  clinchLegendItem: { fontSize: 11, color: C.textTertiary, marginBottom: 2 },
+  clinchLegendTitle: { fontSize: 10, fontWeight: "900", color: C.textSecondary, letterSpacing: 1, marginBottom: 6, fontFamily: FONTS.bodyHeavy },
+  clinchLegendItem: { fontSize: 11, color: C.textTertiary, marginBottom: 2, fontFamily: FONTS.bodyMedium },
 
   expandedRow: {
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator,
@@ -1250,15 +1464,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10, gap: 12,
   },
   expandedStat: { alignItems: "center", gap: 4 },
-  expandedStatLabel: { color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1 },
+  expandedStatLabel: { color: C.textTertiary, fontSize: 9, fontWeight: "900", letterSpacing: 1, fontFamily: FONTS.bodyHeavy },
   expandedStatVal: { fontSize: 15, fontWeight: "800", fontFamily: FONTS.monoBold },
   expandedBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
     borderWidth: 1, marginLeft: "auto",
   },
-  expandedBtnText: { fontSize: 12, fontWeight: "700" },
+  expandedBtnText: { fontSize: 12, fontWeight: "800", fontFamily: FONTS.bodyBold },
 
   legend: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 12 },
-  legendText: { color: C.textTertiary, fontSize: 11, fontFamily: FONTS.body, flex: 1 },
+  legendText: { color: C.textTertiary, fontSize: 11, fontFamily: FONTS.bodyMedium, flex: 1 },
 });

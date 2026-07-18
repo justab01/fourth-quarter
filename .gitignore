@@ -7,6 +7,10 @@ out-tsc
 *.tsbuildinfo
 .expo
 .expo-shared
+artifacts/mobile/static-web/
+
+# local design/runtime workspaces
+.superpowers/
 
 # dependencies
 node_modules

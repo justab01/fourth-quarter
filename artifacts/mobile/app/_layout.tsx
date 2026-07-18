@@ -22,10 +22,9 @@ import {
 } from "@expo-google-fonts/dm-mono";
 import { useFonts } from "expo-font";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -35,6 +34,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PreferencesProvider, usePreferences } from "@/context/PreferencesContext";
 import { SearchProvider } from "@/context/SearchContext";
 import { SearchModal } from "@/components/SearchModal";
+import { AppViewportFrame } from "@/components/AppViewportFrame";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,27 +43,9 @@ const queryClient = new QueryClient();
 const BG = "#0A0805";
 
 function RootLayoutNav() {
-  const { preferences, isLoaded, savePreferences } = usePreferences();
+  const { isLoaded } = usePreferences();
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (Platform.OS === "web" && typeof window !== "undefined" && !preferences.onboardingComplete) {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("dev_skip_onboarding") === "1") {
-        savePreferences({
-          ...preferences,
-          name: preferences.name || "Fan",
-          favoriteLeagues: preferences.favoriteLeagues?.length ? preferences.favoriteLeagues : ["NBA"],
-          appMode: preferences.appMode || "fan",
-          onboardingComplete: true,
-        });
-        return;
-      }
-    }
-    if (!preferences.onboardingComplete) {
-      router.replace("/onboarding" as any);
-    }
-  }, [isLoaded, preferences.onboardingComplete]);
+  if (!isLoaded) return null;
 
   return (
     <>
@@ -117,7 +99,9 @@ export default function RootLayout() {
               <GestureHandlerRootView style={{ flex: 1, backgroundColor: BG }}>
                 <KeyboardProvider>
                   <StatusBar style="light" />
-                  <RootLayoutNav />
+                  <AppViewportFrame>
+                    <RootLayoutNav />
+                  </AppViewportFrame>
                 </KeyboardProvider>
               </GestureHandlerRootView>
             </SearchProvider>

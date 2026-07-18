@@ -395,7 +395,7 @@ export function SearchModal() {
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.72)",
+    backgroundColor: "rgba(13,19,26,0.68)",
   },
   sheet: {
     position: "absolute",

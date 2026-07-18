@@ -113,16 +113,17 @@ const navStyles = StyleSheet.create({
   },
   pill: {
     flexDirection: "row",
-    width: Platform.OS === "web" ? 356 : "auto",
+    width: Platform.OS === "web" ? "100%" : "auto",
+    maxWidth: 356,
     alignSelf: "center",
     marginHorizontal: 14,
-    backgroundColor: "rgba(14,12,9,0.96)",
+    backgroundColor: C.tabBarBg,
     borderRadius: 32,
     borderWidth: 1,
-    borderColor: "rgba(255,200,100,0.1)",
+    borderColor: C.cardBorderActive,
     paddingHorizontal: 8,
     paddingVertical: 6,
-    shadowColor: "#000",
+    shadowColor: "#0D131A",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.8,
     shadowRadius: 24,
@@ -137,14 +138,14 @@ const navStyles = StyleSheet.create({
     paddingVertical: 7,
   },
   itemActive: {
-    backgroundColor: "rgba(232,130,12,0.12)",
+    backgroundColor: `${C.accent}18`,
   },
   itemInner: {
     alignItems: "center",
     gap: 2,
   },
   iconGlow: {
-    textShadowColor: "rgba(232,130,12,0.5)",
+    textShadowColor: `${C.accent}80`,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
@@ -171,7 +172,7 @@ const navStyles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 3,
     borderWidth: 1.5,
-    borderColor: "rgba(14,12,9,0.96)",
+    borderColor: C.tabBarBg,
   },
   badgeText: {
     color: "#000",
@@ -187,7 +188,7 @@ const navStyles = StyleSheet.create({
     height: 7,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: "rgba(14,12,9,0.96)",
+    borderColor: C.tabBarBg,
   },
 });
 

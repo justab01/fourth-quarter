@@ -327,7 +327,7 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
                   <Image source={{ uri: article.imageUrl! }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                 ) : (
                   <LinearGradient
-                    colors={[`${accentColor}40`, `${accentColor}18`, "#0F0F0F00"]}
+                    colors={[`${accentColor}40`, `${accentColor}18`, "rgba(23,32,42,0)"]}
                     style={StyleSheet.absoluteFill}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   />
@@ -337,7 +337,7 @@ export function NewsCard({ article, onPress, hero = false }: NewsCardProps) {
 
               {/* dark gradient overlay */}
               <LinearGradient
-                colors={["transparent", "rgba(15,15,15,0.94)", "#0F0F0F"]}
+                colors={["transparent", "rgba(23,32,42,0.88)", "#17202A"]}
                 style={heroS.overlay}
                 start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
               />
@@ -527,14 +527,14 @@ const card = StyleSheet.create({
 
 const modal = StyleSheet.create({
   backdrop: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.65)",
+    flex: 1, backgroundColor: "rgba(13,19,26,0.68)",
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: C.cardElevated,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 20, paddingTop: 14,
-    borderWidth: 1, borderColor: C.glassMedium,
+    borderWidth: 1, borderColor: C.glassBorder,
     gap: 12,
   },
   handle: {

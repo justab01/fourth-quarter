@@ -195,7 +195,7 @@ function computeWhyItMatters(
 
   if (!isLive) return null;
 
-  const isOT = period.includes("ot") || period.includes("overtime");
+  const isOT = /\b(?:ot|overtime)\b/i.test(period);
   const isLateQ = period.includes("q4") || period.includes("4th") || period.includes("9th") ||
     period.includes("3rd") || period.includes("2nd half") || period.includes("4");
 

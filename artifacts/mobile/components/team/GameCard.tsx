@@ -12,6 +12,7 @@ import { TeamLogo } from "@/components/GameCard";
 import type { TeamData } from "@/constants/teamData";
 import { resolveOpponentLogoUrl } from "@/utils/teamLogos";
 import { api, type PlayerStatLine } from "@/utils/api";
+import { gameDetailId, goToGame } from "@/utils/navHelpers";
 
 // Per-league stat key for picking the "top performer" (case-insensitive match).
 const TOP_STAT_KEYS: Record<string, string[]> = {
@@ -107,7 +108,7 @@ export function GameCard({ game, teamColor, isWin, teamName, league = "NBA" }: G
 
   // Fetch full game detail (top performers, full linescore) only after expand.
   const detailLeague = (game.league ?? league).toUpperCase();
-  const detailId = game.id ? `${detailLeague.toLowerCase()}-${game.id}` : null;
+  const detailId = game.id ? gameDetailId(game.id, detailLeague) : null;
   const { data: detail } = useQuery({
     queryKey: ["game-detail", detailId],
     queryFn: () => api.getGameDetail(detailId!),
@@ -253,6 +254,18 @@ export function GameCard({ game, teamColor, isWin, teamName, league = "NBA" }: G
                 </View>
               )}
             </View>
+          )}
+          {detailId && (
+            <Pressable
+              style={[styles.gamecastButton, { borderColor: `${teamColor}55`, backgroundColor: `${teamColor}18` }]}
+              onPress={() => goToGame(detailId, detailLeague, "gamecast")}
+              accessibilityRole="button"
+              accessibilityLabel="Open full GameCast"
+            >
+              <Ionicons name="tv-outline" size={14} color={teamColor} />
+              <Text style={[styles.gamecastButtonText, { color: teamColor }]}>Open GameCast</Text>
+              <Ionicons name="chevron-forward" size={13} color={teamColor} />
+            </Pressable>
           )}
         </View>
       )}
@@ -457,5 +470,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     textAlign: "center",
     paddingVertical: 6,
+  },
+  gamecastButton: {
+    minHeight: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    marginTop: 2,
+  },
+  gamecastButtonText: {
+    fontSize: 12,
+    fontFamily: FONTS.bodyHeavy,
   },
 });

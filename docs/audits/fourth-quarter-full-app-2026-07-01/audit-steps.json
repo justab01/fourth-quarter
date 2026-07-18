@@ -1,0 +1,551 @@
+[
+  {
+    "step": 1,
+    "name": "onboarding-welcome",
+    "file": "screenshots/01-onboarding-welcome.png",
+    "note": "First-run gate and brand promise. Tests whether the product can explain itself before data/personalization.",
+    "state": {
+      "buttons": [],
+      "path": "/onboarding",
+      "text": "You need to enable JavaScript to run this app. FOURTHQUARTERYour sports. Your way. One app.Live scores & updatesAI-powered game recapsPersonalized news feedGet Started",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/onboarding"
+    }
+  },
+  {
+    "step": 2,
+    "name": "home-top",
+    "file": "screenshots/02-home-top.png",
+    "note": "Default Home tab with real API data after bypassing onboarding. Tests primary fan dashboard.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": 103
+        }
+      ],
+      "path": "/?dev_skip_onboarding=1",
+      "text": "You need to enable JavaScript to run this app. Good morning,Sports FanSearchSIN ONE BREATHAI1 games live across MLB. 1 nail-biters going down to the wire.MLBLIVETop 1stTIGHTChicago White SoxAway1–0Oriole Park at Camden YardsBaltimore OriolesHomeOpen Gamecast›Tight game — Sox leads by 1FWCMLIVE38'TIGHTCongo DRAway1–0Mercedes-Benz StadiumEnglandHomeOpen Gamecast›Tight game — DR leads by 12 nail-biters15 upcomingMake it yoursFollow teams to get personalized scores, alerts, and AI recapsSet UpToday's GamesSee allNBAMLB1 LIVEMLSNFLPICKLIVE · Top 1stChicago White Sox1Baltimore Orioles012:10 PMTexas RangersCleveland Guardians12:35 PMDetroit TigersNew York Yankees12:35 PMWashington NationalsBoston Red Sox1:20 PMSan Diego PadresChicago Cubs2:07 PMNew York MetsToronto Blue JaysDraft CenterNFLNBANHLMLBHeadlinesSee allNBA trade tracker: Updates for every deal of the 2026 offseasonWe have the updates, including players and draft picks, for every NBA trade made this summer.NBA3m agoNBA trade tracker: Updates for every deal of the 2026 offseasonWe have the updates, including players and draft picks, for every NBA trade made this summer.ESPNListen🏀NBA7Shams: Lakers sign Quentin Grimes, Collin SextonSources: Mitchell Robinson, Celtics agree to 3-year, $47.4M dealHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/?dev_skip_onboarding=1"
+    }
+  },
+  {
+    "step": 3,
+    "name": "home-lower",
+    "file": "screenshots/03-home-lower.png",
+    "note": "Lower Home content after scrolling: draft center, headlines, recaps/secondary modules.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": -417
+        }
+      ],
+      "path": "/?dev_skip_onboarding=1",
+      "text": "You need to enable JavaScript to run this app. Good morning,Sports FanSearchSIN ONE BREATHAI1 games live across MLB. 1 nail-biters going down to the wire.MLBLIVETop 1stTIGHTChicago White SoxAway1–0Oriole Park at Camden YardsBaltimore OriolesHomeOpen Gamecast›Tight game — Sox leads by 1FWCMLIVE38'TIGHTCongo DRAway1–0Mercedes-Benz StadiumEnglandHomeOpen Gamecast›Tight game — DR leads by 12 nail-biters15 upcomingMake it yoursFollow teams to get personalized scores, alerts, and AI recapsSet UpToday's GamesSee allNBAMLB1 LIVEMLSNFLPICKLIVE · Top 1stChicago White Sox1Baltimore Orioles012:10 PMTexas RangersCleveland Guardians12:35 PMDetroit TigersNew York Yankees12:35 PMWashington NationalsBoston Red Sox1:20 PMSan Diego PadresChicago Cubs2:07 PMNew York MetsToronto Blue JaysDraft CenterNFLNBANHLMLBHeadlinesSee allNBA trade tracker: Updates for every deal of the 2026 offseasonWe have the updates, including players and draft picks, for every NBA trade made this summer.NBA3m agoNBA trade tracker: Updates for every deal of the 2026 offseasonWe have the updates, including players and draft picks, for every NBA trade made this summer.ESPNListen🏀NBA7Shams: Lakers sign Quentin Grimes, Collin SextonSources: Mitchell Robinson, Celtics agree to 3-year, $47.4M dealHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/?dev_skip_onboarding=1"
+    }
+  },
+  {
+    "step": 4,
+    "name": "scores-live",
+    "file": "screenshots/04-scores-live.png",
+    "note": "Scores tab / live page. Tests scoreboard browsing and urgency framing.",
+    "state": {
+      "buttons": [
+        {
+          "h": 36,
+          "text": "",
+          "w": 36,
+          "x": 499,
+          "y": 85
+        },
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 545,
+          "y": 86
+        }
+      ],
+      "path": "/live",
+      "text": "You need to enable JavaScript to run this app. Scores2 live · 17 eventsFullSWe17Th18Fr19Sa20Su21Mo22Tu23We24Th25Fr26Sa27Su28Mo29Tu30Jul1Th2Fr3Sa4Su5Mo6Tu7We8Th9Fr10Sa11Su12Mo13Tu14We15FilterAll2⚾MLB1⚾MLB1 live14 gamesMUST WATCHLIVETop 1stChicago White Sox1Baltimore Orioles012:10 PMTexas RangersCleveland Guardians12:35 PMDetroit TigersNew York Yankees12:35 PMWashington NationalsBoston Red Sox1:20 PMSan Diego PadresChicago Cubs2:07 PMNew York MetsToronto Blue Jays5:40 PMPittsburgh PiratesPhiladelphia Phillies6:15 PMSt. Louis CardinalsAtlanta Braves6:40 PMTampa Bay RaysKansas City Royals7:00 PMCincinnati RedsMilwaukee Brewers7:10 PMMinnesota TwinsHouston Astros7:40 PMMiami MarlinsColorado Rockies8:40 PMLos Angeles DodgersAthletics8:40 PMSan Francisco GiantsArizona DiamondbacksHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/live"
+    }
+  },
+  {
+    "step": 5,
+    "name": "scores-scrolled",
+    "file": "screenshots/05-scores-scrolled.png",
+    "note": "Lower scores list after scrolling. Tests card density, repetition, and bottom-nav overlap.",
+    "state": {
+      "buttons": [
+        {
+          "h": 36,
+          "text": "",
+          "w": 36,
+          "x": 499,
+          "y": -435
+        },
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 545,
+          "y": -434
+        }
+      ],
+      "path": "/live",
+      "text": "You need to enable JavaScript to run this app. Scores2 live · 17 eventsFullSWe17Th18Fr19Sa20Su21Mo22Tu23We24Th25Fr26Sa27Su28Mo29Tu30Jul1Th2Fr3Sa4Su5Mo6Tu7We8Th9Fr10Sa11Su12Mo13Tu14We15FilterAll2⚾MLB1⚾MLB1 live14 gamesMUST WATCHLIVETop 1stChicago White Sox1Baltimore Orioles012:10 PMTexas RangersCleveland Guardians12:35 PMDetroit TigersNew York Yankees12:35 PMWashington NationalsBoston Red Sox1:20 PMSan Diego PadresChicago Cubs2:07 PMNew York MetsToronto Blue Jays5:40 PMPittsburgh PiratesPhiladelphia Phillies6:15 PMSt. Louis CardinalsAtlanta Braves6:40 PMTampa Bay RaysKansas City Royals7:00 PMCincinnati RedsMilwaukee Brewers7:10 PMMinnesota TwinsHouston Astros7:40 PMMiami MarlinsColorado Rockies8:40 PMLos Angeles DodgersAthletics8:40 PMSan Francisco GiantsArizona DiamondbacksHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/live"
+    }
+  },
+  {
+    "step": 6,
+    "name": "sports-index",
+    "file": "screenshots/06-sports-index.png",
+    "note": "Sports directory. Tests whether users can choose leagues/sports without knowing exact acronyms.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 545,
+          "y": 20
+        }
+      ],
+      "path": "/sports",
+      "text": "You need to enable JavaScript to run this app. FOURTH QUARTERSportsS🏀 NBA⚽ EPL🎾 Tennis🥊 UFC⛳ Golf🏒 NHL🏈 NFL🏎️ F1Browse Sports10 sports🏀BasketballNBA · WNBA · NCAA🏈FootballNFL · NCAA Football1 Live⚾BaseballMLB · NCAA Baseball🏒HockeyNHL · NCAA Hockey1 Live⚽SoccerEPL · La Liga · UCL · MLS · NWSL⛳GolfPGA · LPGA · LIV · MajorsWimbledon🎾TennisATP · WTA · Grand SlamsInternational Fight Week🥊CombatUFC · Bellator · PFL · Boxing🏎️MotorsportsF1 · NASCAR · IndyCar📍MoreEsports · Olympics · X Games · TrackHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/sports"
+    }
+  },
+  {
+    "step": 7,
+    "name": "sport-basketball",
+    "file": "screenshots/07-sport-basketball.png",
+    "note": "Basketball sport landing page. Tests sport-specific hub depth and sub-navigation.",
+    "state": {
+      "buttons": [
+        {
+          "h": 36,
+          "text": "",
+          "w": 36,
+          "x": 547,
+          "y": 12
+        }
+      ],
+      "path": "/sport/basketball",
+      "text": "You need to enable JavaScript to run this app. 🏀BasketballAllNBAWNBANCAA Men'sNCAA Women'sTODAYNo basketball games today across any league.🔥 PLAYERS TO WATCHNo player data available.🏆 2026 NBA PLAYOFFSEAST FIRST ROUNDWEST FIRST ROUNDEAST CONFERENCE SEMIFINALSWEST CONFERENCE SEMIFINALSEAST FIRST ROUND · FINALCleveland Cavaliers4Toronto Raptors3EAST FIRST ROUND · FINALNew York Knicks4Atlanta Hawks2EAST FIRST ROUND · FINALBoston Celtics3Philadelphia 76ers4EAST FIRST ROUND · FINALDetroit Pistons4Orlando Magic3STANDINGSEASTERN CONFERENCE#TEAMWLPCTGB1zDetroit PistonsW36022.732—2yBoston CelticsW25626.68343xNew York KnicksL15329.64674xCleveland CavaliersW15230.63485xToronto RaptorsW14636.561146yAtlanta HawksL14636.56114PLAY-IN TOURNAMENT7xpPhiladelphia 76ersW24537.549158xpOrlando MagicL14537.549159pbCharlotte HornetsW14438.5371610pbMiami HeatW24339.52417WESTERN CONFERENCE#TEAMWLPCTGB1*Oklahoma City ThunderL26418.780—2ySan Antonio SpursL16220.75623xDenver NuggetsW125428.659104yLos Angeles LakersW35329.646115xHouston RocketsW15230.634126xMinnesota TimberwolvesW24933.59815PLAY-IN TOURNAMENT7xpPortland Trail BlazersW24240.512228xpPhoenix SunsW14537.549199pbLA ClippersW14240.5122210pbGolden State WarriorsL33745.45127",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/sport/basketball"
+    }
+  },
+  {
+    "step": 8,
+    "name": "standings",
+    "file": "screenshots/08-standings.png",
+    "note": "Standings tab. Tests league switcher, playoff context, and scanability.",
+    "state": {
+      "buttons": [
+        {
+          "h": 36,
+          "text": "",
+          "w": 36,
+          "x": 513,
+          "y": 93
+        },
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": 94
+        }
+      ],
+      "path": "/standings",
+      "text": "You need to enable JavaScript to run this app. StandingsNBA · 2026SNBANHLNFLMLBNCAABMLSWNBAEPLUCLLIGASTANDINGSPLAYOFFSNBA PLAYOFFS2025–26 SeasonEASTERN CONFERENCEFIRST ROUNDDONECavaliersWON4–3RaptorsKnicksWON4–2HawksCeltics3–476ersWONPistonsWON4–3MagicSEMIFINALSDONEKnicksWON4–0Knicks win 4-076ersPistons3–4Cavaliers win 4-3CavaliersWONCONF. FINALSDONEKnicksWON4–0Knicks win 4-0CavaliersWESTERN CONFERENCEFIRST ROUNDDONENuggets2–4TimberwolvesWONLakersWON4–2RocketsThunderWON4–0SunsSpursWON4–1BlazersSEMIFINALSDONESpursWON4–2Spurs win 4-2TimberwolvesThunderWON4–0Thunder win 4-0LakersCONF. FINALSDONEThunder3–4Spurs win 4-3SpursWONNBA FINALSSpurs1–4Knicks win 4-1KnicksWONHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/standings"
+    }
+  },
+  {
+    "step": 9,
+    "name": "news",
+    "file": "screenshots/09-news.png",
+    "note": "News tab. Tests editorial surface and story grouping.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": 85
+        }
+      ],
+      "path": "/news",
+      "text": "You need to enable JavaScript to run this app. NewsSAllMy TeamsNBANFLMLBMLSNHLUCLEPLLIGANCAABWNBA🏆Playoff RaceFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.NHL8m agoFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.ESPNListenF11d agoHow do F1 sprint races work? Format, qualifying and moreF1 sprints are in-season events that can earn extra points in the standings. Check out more information on how they work now.EESPNListennews2d agoHovland rings up 1st win of year, beating Scheffler in Travelers playoffViktor Hovland made birdie on the par-4 18th hole Monday morning to win the Travelers Championship in a playoff over world No. 1 Scottie Scheffler.EESPNListenScottie Scheffler2d agoScheffler forces Monday playoff with Hovland at TravelersScottie Scheffler made an 8-foot par putt on the 18th hole Sunday, forcing a sudden-death playoff against Viktor Hovland on Monday at the rain-delayed Travelers.EESPNListenGeorge Russell2d agoGeorge Russell's breakthrough, Ferrari's setback as F1 title race shifts again at Austrian GPESPN's Laurence Edmondson breaks down George Russell's breakthrough, Ferrari's setback and what Austria means for Formula 1's evolving title race.EESPNListen🏥Injury ReportNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.NHL18m agoNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.ESPNListennews - uk tennis25m agoWimbledon 2026 today: Live updates, news as Serena Williams sustains knee injury, Nick Kyrgios returns - July 1ESPN has live updates from Day 3 of Wimbledon with Jannik Sinner, Aryna Sabalenka and Novak Djokovic all on Centre Court.EESPNListennews2h agoPremier League 2026 summer transfers: All confirmed ins, outs for every clubHere's every Premier League in and out before the 2026-27 season begins.EESPNListenRylie Mills6h agoSeahawks DT Rylie Mills is ready for breakout Year 2Now fully healthy, Rylie Mills looks to break out on Seattle's defensive line in 2026.EESPNListennews19h agoSergio Garcia misses out on British Open; 3 Americans qualifySergio García will miss the British Open for the third time in four years after he failed to secure among the 20 qualifying spots handed out Tuesday. A trio of Americans -- Peter Uihlein, Caleb Surratt and James Nicholas -- qualified.EESPNListennews - fantasy20h agoNHL free agency 2026: Which players improved their fantasy hockey potential?What are the fantasy hockey implications of every big move in the NHL this offseason? Find out here.EESPNListenBen Shelton22h agoBen Shelton stunned at Wimbledon with 1st-round loss to Finnish qualifierFourth-seeded Ben Shelton is out after the 1st-round at Wimbledon, falling to Finland's Otto Virtanen 6-4, 6-7 (8), 6-2, 7-6 (9).EESPNListenlist1d ago2026 NFL offseason grades: Draft, trades, more",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/news"
+    }
+  },
+  {
+    "step": 10,
+    "name": "news-scrolled",
+    "file": "screenshots/10-news-scrolled.png",
+    "note": "Lower news feed after scrolling. Tests article-card repetition and content hierarchy.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": -395
+        }
+      ],
+      "path": "/news",
+      "text": "You need to enable JavaScript to run this app. NewsSAllMy TeamsNBANFLMLBMLSNHLUCLEPLLIGANCAABWNBA🏆Playoff RaceFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.NHL8m agoFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.ESPNListenF11d agoHow do F1 sprint races work? Format, qualifying and moreF1 sprints are in-season events that can earn extra points in the standings. Check out more information on how they work now.EESPNListennews2d agoHovland rings up 1st win of year, beating Scheffler in Travelers playoffViktor Hovland made birdie on the par-4 18th hole Monday morning to win the Travelers Championship in a playoff over world No. 1 Scottie Scheffler.EESPNListenScottie Scheffler2d agoScheffler forces Monday playoff with Hovland at TravelersScottie Scheffler made an 8-foot par putt on the 18th hole Sunday, forcing a sudden-death playoff against Viktor Hovland on Monday at the rain-delayed Travelers.EESPNListenGeorge Russell2d agoGeorge Russell's breakthrough, Ferrari's setback as F1 title race shifts again at Austrian GPESPN's Laurence Edmondson breaks down George Russell's breakthrough, Ferrari's setback and what Austria means for Formula 1's evolving title race.EESPNListen🏥Injury ReportNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.NHL18m agoNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.ESPNListennews - uk tennis25m agoWimbledon 2026 today: Live updates, news as Serena Williams sustains knee injury, Nick Kyrgios returns - July 1ESPN has live updates from Day 3 of Wimbledon with Jannik Sinner, Aryna Sabalenka and Novak Djokovic all on Centre Court.EESPNListennews2h agoPremier League 2026 summer transfers: All confirmed ins, outs for every clubHere's every Premier League in and out before the 2026-27 season begins.EESPNListenRylie Mills6h agoSeahawks DT Rylie Mills is ready for breakout Year 2Now fully healthy, Rylie Mills looks to break out on Seattle's defensive line in 2026.EESPNListennews19h agoSergio Garcia misses out on British Open; 3 Americans qualifySergio García will miss the British Open for the third time in four years after he failed to secure among the 20 qualifying spots handed out Tuesday. A trio of Americans -- Peter Uihlein, Caleb Surratt and James Nicholas -- qualified.EESPNListennews - fantasy20h agoNHL free agency 2026: Which players improved their fantasy hockey potential?What are the fantasy hockey implications of every big move in the NHL this offseason? Find out here.EESPNListenBen Shelton22h agoBen Shelton stunned at Wimbledon with 1st-round loss to Finnish qualifierFourth-seeded Ben Shelton is out after the 1st-round at Wimbledon, falling to Finland's Otto Virtanen 6-4, 6-7 (8), 6-2, 7-6 (9).EESPNListenlist1d ago2026 NFL offseason grades: Draft, trades, more",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/news"
+    }
+  },
+  {
+    "step": 11,
+    "name": "game-detail-gamecast",
+    "file": "screenshots/11-game-detail-gamecast.png",
+    "note": "Representative live game detail. Tests whether tapping a game gives a useful fan command center.",
+    "state": {
+      "buttons": [],
+      "path": "/game/mlb-401815979",
+      "text": "You need to enable JavaScript to run this app. Chicago White Sox @ Baltimore OriolesMLBLIVE·Top 1stChicago White SoxAWAY1:0Oriole Park at Camden YardsBaltimore OriolesHOMEWatch LiveGamecastBox ScorePlaysStatsLineupsSox1–0Orioles0 outs · 0-0BUILDINGOUTSCOUNT0-053%SOXWIN PROBABILITY47%ORIOLESToss-up gameMomentum builds as the game progressesKey MomentsLIVE1st InningAntonacci homered to right center (388 feet).Team Stats1H03AB01R01RBI01HR0",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/game/mlb-401815979"
+    }
+  },
+  {
+    "step": 12,
+    "name": "game-detail-boxscore",
+    "file": "screenshots/12-game-detail-boxscore.png",
+    "note": "Game detail Box Score tab. Tests whether detail tabs are discoverable and populated.",
+    "state": {
+      "buttons": [],
+      "path": "/game/mlb-401815979",
+      "text": "You need to enable JavaScript to run this app. Chicago White Sox @ Baltimore OriolesMLBLIVE·Top 1stChicago White SoxAWAY1:0Oriole Park at Camden YardsBaltimore OriolesHOMEWatch LiveGamecastBox ScorePlaysStatsLineupsChicago White SoxPLAYERH-ABRRBIHRBBKSam Antonacci1-111100Miguel Vargas0-100000Andrew Benintendi0-100001Braden Montgomery0-000000Jacob Gonzalez0-000000Chase Meidroth0-000000Tristan Peters0-000000Luisangel Acuna0-000000Drew Romo0-000000Noah Schultz—0——00● StarterBaltimore OriolesPLAYERH-ABRRBIHRBBKGunnar Henderson0-000000Adley Rutschman0-000000Taylor Ward0-000000Pete Alonso0-000000Coby Mayo0-000000Tyler O'Neill0-000000Leody Taveras0-000000Jackson Holliday0-000000Blaze Alexander0-000000Dean Kremer—1——01● Starter",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/game/mlb-401815979"
+    }
+  },
+  {
+    "step": 13,
+    "name": "game-detail-plays",
+    "file": "screenshots/13-game-detail-plays.png",
+    "note": "Game detail Plays tab. Tests timeline/navigation purpose.",
+    "state": {
+      "buttons": [],
+      "path": "/game/mlb-401815979",
+      "text": "You need to enable JavaScript to run this app. Chicago White Sox @ Baltimore OriolesMLBLIVE·Top 1stChicago White SoxAWAY1:0Oriole Park at Camden YardsBaltimore OriolesHOMEWatch LiveGamecastBox ScorePlaysStatsLineups1st InningSoxAntonacci homered to right center (388 feet).",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/game/mlb-401815979"
+    }
+  },
+  {
+    "step": 14,
+    "name": "draft-nfl",
+    "file": "screenshots/14-draft-nfl.png",
+    "note": "Draft center. Tests whether future-looking fan content is coherent and actionable.",
+    "state": {
+      "buttons": [],
+      "path": "/draft/NFL",
+      "text": "You need to enable JavaScript to run this app. 🏈2026 National Football League DraftCOMPLETE257 picks · 7 roundsPick TrackerProspectsTeam NeedsRd 1Rd 2Rd 3Rd 4Rd 5Rd 6Rd 71Fernando MendozaQB · Indiana922David BaileyEDGE · Texas Tech923Jeremiyah LoveRB · Notre Dame914Carnell TateWR · Ohio State895Arvell ReeseLB · Ohio State926TRADEMansoor DelaneCB · LSU897Sonny StylesLB · Ohio State918Jordyn TysonWR · Arizona State899TRADESpencer FanoOT · Utah8810TRADEFrancis MauigoaOT · Miami9111TRADECaleb DownsS · Ohio State9112TRADEKadyn ProctorOT · Alabama8813TRADETy SimpsonQB · Alabama8514Olaivavega IoaneOG · Penn State8815Rueben Bain Jr.EDGE · Miami8916TRADEKenyon SadiqTE · Oregon8917Blake MillerOT · Clemson8218Caleb BanksDT · Florida8619Monroe FreelingOT · Georgia8820TRADEMakai LemonWR · USC8921Max IheanachorOT · Arizona State8422Akheem MesidorEDGE · Miami8823TRADEMalachi LawrenceEDGE · UCF8224TRADEKC ConcepcionWR · Texas A&M8625Dillon ThienemanS · Oregon8826TRADEKeylan RutledgeOG · Georgia Tech8127TRADEChris JohnsonCB · San Diego State8528TRADECaleb LomuOT · Utah8729TRADEPeter WoodsDT · Clemson8730TRADEOmar Cooper Jr.WR · Indiana8731TRADEKeldric FaulkEDGE · Auburn8732Jadarian PriceRB · Notre Dame83",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/draft/NFL"
+    }
+  },
+  {
+    "step": 15,
+    "name": "profile",
+    "file": "screenshots/15-profile.png",
+    "note": "Profile/preferences surface. Tests personalization controls and settings purpose.",
+    "state": {
+      "buttons": [
+        {
+          "h": 36,
+          "text": "",
+          "w": 36,
+          "x": 543,
+          "y": 86
+        }
+      ],
+      "path": "/profile",
+      "text": "You need to enable JavaScript to run this app. ProfileSFSports FanNBA0Teams1Leagues100%ReadyMy Fandom0Teams1SportsSet upProfileYour go-to league: 🏀 NBAMy LeaguesNBANHLNFLMLBNCAA BasketballMLSPremier LeagueChampions LgeLa LigaWNBAUFC / MMABoxingATP TennisWTA TennisOlympicsX GamesMy TeamsHRHouston RocketsLALos Angeles LakersBCBoston CelticsOCOklahoma City ThunderSASan Antonio SpursDPDetroit PistonsCCCleveland CavaliersMTMinnesota TimberwolvesDNDenver NuggetsNYNew York KnicksGSGolden State WarriorsMHMiami HeatDMDallas MavericksPSPhoenix SunsExperience ModeFan ModeClean scores, key highlights, simple statsNerd ModeAdvanced stats, deeper analysis, full dataSettingsNotificationsDark ModeAlways onRedo SetupFOURTH QUARTERSports. Your way. 2026.Home2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/profile"
+    }
+  },
+  {
+    "step": 16,
+    "name": "team-lakers-scores",
+    "file": "screenshots/16-team-lakers-scores.png",
+    "note": "Team page default Scores tab. Tests fan-home for a specific team.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. RECENT GAMES4-6 last 10Lvs Thunder110-115May 11Lvs Thunder108-131May 9L@ Thunder107-125May 7L@ Thunder90-108May 5W@ Rockets98-78May 1Lvs Rockets93-99Apr 29L@ Rockets96-115Apr 26W@ Rockets112-108Apr 24Wvs Rockets101-94Apr 21Wvs Rockets107-98Apr 18Tap a game for quarter scores, player stats, and team comparisonPLAYOFF RACEView Full →Lakers39-29 • 3rd in West#3in inDIVISIONPacific DivisionSEED#3RECORD39-29ROSTERView All →👤⭐Deandre Ayton#5 • C— PPG— REB👤Cameron Carr#— • G— PPG— REB+ 18 more playersLATEST NEWSView All →Lakers NewsLatest updates and game recaps for Los Angeles LakersESPN•RecentLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 17,
+    "name": "team-lakers-standings blocker",
+    "file": null,
+    "note": "Could not click text 'Standings' uniquely; matched 0.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. RECENT GAMES4-6 last 10Lvs Thunder110-115May 11Lvs Thunder108-131May 9L@ Thunder107-125May 7L@ Thunder90-108May 5W@ Rockets98-78May 1Lvs Rockets93-99Apr 29L@ Rockets96-115Apr 26W@ Rockets112-108Apr 24Wvs Rockets101-94Apr 21Wvs Rockets107-98Apr 18Tap a game for quarter scores, player stats, and team comparisonPLAYOFF RACEView Full →Lakers39-29 • 3rd in West#3in inDIVISIONPacific DivisionSEED#3RECORD39-29ROSTERView All →👤⭐Deandre Ayton#5 • C— PPG— REB👤Cameron Carr#— • G— PPG— REB+ 18 more playersLATEST NEWSView All →Lakers NewsLatest updates and game recaps for Los Angeles LakersESPN•RecentLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 18,
+    "name": "team-lakers-stats blocker",
+    "file": null,
+    "note": "Could not click text 'Stats' uniquely; matched 0.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. RECENT GAMES4-6 last 10Lvs Thunder110-115May 11Lvs Thunder108-131May 9L@ Thunder107-125May 7L@ Thunder90-108May 5W@ Rockets98-78May 1Lvs Rockets93-99Apr 29L@ Rockets96-115Apr 26W@ Rockets112-108Apr 24Wvs Rockets101-94Apr 21Wvs Rockets107-98Apr 18Tap a game for quarter scores, player stats, and team comparisonPLAYOFF RACEView Full →Lakers39-29 • 3rd in West#3in inDIVISIONPacific DivisionSEED#3RECORD39-29ROSTERView All →👤⭐Deandre Ayton#5 • C— PPG— REB👤Cameron Carr#— • G— PPG— REB+ 18 more playersLATEST NEWSView All →Lakers NewsLatest updates and game recaps for Los Angeles LakersESPN•RecentLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 19,
+    "name": "team-lakers-roster blocker",
+    "file": null,
+    "note": "Could not click text 'Roster' uniquely; matched 0.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. RECENT GAMES4-6 last 10Lvs Thunder110-115May 11Lvs Thunder108-131May 9L@ Thunder107-125May 7L@ Thunder90-108May 5W@ Rockets98-78May 1Lvs Rockets93-99Apr 29L@ Rockets96-115Apr 26W@ Rockets112-108Apr 24Wvs Rockets101-94Apr 21Wvs Rockets107-98Apr 18Tap a game for quarter scores, player stats, and team comparisonPLAYOFF RACEView Full →Lakers39-29 • 3rd in West#3in inDIVISIONPacific DivisionSEED#3RECORD39-29ROSTERView All →👤⭐Deandre Ayton#5 • C— PPG— REB👤Cameron Carr#— • G— PPG— REB+ 18 more playersLATEST NEWSView All →Lakers NewsLatest updates and game recaps for Los Angeles LakersESPN•RecentLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 20,
+    "name": "team-lakers-standings-visual-click",
+    "file": "screenshots/20-team-lakers-standings-visual-click.png",
+    "note": "Team Standings tab opened by visible tab click. Verifies the tab is usable even though DOM text targeting was weak.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. Lakers39-29#3in WestDIVISIONPacific DivisionSEED#3RECORD39-29In playoff positionView Full StandingsLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 21,
+    "name": "team-lakers-stats-visual-click",
+    "file": "screenshots/21-team-lakers-stats-visual-click.png",
+    "note": "Team Stats tab opened by visible tab click. Tests whether analytics are useful and readable.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. TEAM PROFILEOFF RTGDEF RTGPACEREB%AST%TOV%KEY METRICSPPG116.899thOPP PPG113.41212thNET RTG2.499th3P%35.81919thLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 22,
+    "name": "team-lakers-roster-visual-click",
+    "file": "screenshots/22-team-lakers-roster-visual-click.png",
+    "note": "Team Roster tab opened by visible tab click. Tests roster navigation and player-card purpose.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. GUARDS17 players⭐Cameron Carr#— • G⭐Luka Doncic#77 • G⭐Quentin Grimes#— • GRui Hachimura#28 • F13.9PPGBronny James#9 • GMaxi Kleber#14 • FDalton Knecht#4 • FJake LaRavia#12 • FSandro Mamukelashvili#— • FChris Manon#30 • G—AK Okereke#— • FAustin Reaves#15 • G18.4PPGCollin Sexton#— • GNick Smith Jr.#20 • GAdou Thiero#1 • FDrew Timme#17 • FJarred Vanderbilt#2 • FBIGS3 players⭐Deandre Ayton#5 • C⭐Jaxson Hayes#11 • C⭐Walker Kessler#— • CLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 23,
+    "name": "search-modal-empty",
+    "file": "screenshots/23-search-modal-empty.png",
+    "note": "Search opened from Home. Tests whether search is obvious, focused, and instructive before input.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": 103
+        }
+      ],
+      "path": "/?dev_skip_onboarding=1",
+      "text": "You need to enable JavaScript to run this app. Good morning,Sports FanSearchSIN ONE BREATHAI1 games live across MLB. 1 nail-biters going down to the wire.MLBLIVETop 1stTIGHTChicago White SoxAway1–0Oriole Park at Camden YardsBaltimore OriolesHomeOpen Gamecast›Tight game — Sox leads by 1FWCMLIVE38'TIGHTCongo DRAway1–0Mercedes-Benz StadiumEnglandHomeOpen Gamecast›Tight game — DR leads by 12 nail-biters15 upcomingMake it yoursFollow teams to get personalized scores, alerts, and AI recapsSet UpToday's GamesSee allNBAMLB1 LIVEMLSNFLPICKLIVE · Top 1stChicago White Sox1Baltimore Orioles012:10 PMTexas RangersCleveland Guardians12:35 PMDetroit TigersNew York Yankees12:35 PMWashington NationalsBoston Red Sox1:20 PMSan Diego PadresChicago Cubs2:07 PMNew York MetsToronto Blue JaysDraft CenterNFLNBANHLMLBHeadlinesSee allLakers trade for Jazz C Walker Kessler, sign trio, sources sayThe Lakers are acquiring Walker Kessler from the Jazz for unprotected first-round picks in 2031 and 2033 and first-round swaps in 2028 and 2030 and signing Sandro Mamukelashvili, Quentin Grimes and Collin Sexton, sources told ESPN.NBA3m agoLakers trade for Jazz C Walker Kessler, sign trio, sources sayThe Lakers are acquiring Walker Kessler from the Jazz for unprotected first-round picks in 2031 and 2033 and first-round swaps in 2028 and 2030 and signing Sandro Mamukelashvili, Quentin Grimes and Collin Sexton, sources told ESPN.ESPNListen🏀NBA7NBA trade tracker: Updates for every deal of the 2026 offseasonShams: Lakers sign Quentin Grimes, Collin SextonHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/?dev_skip_onboarding=1"
+    }
+  },
+  {
+    "step": 24,
+    "name": "search-modal-results-lakers",
+    "file": "screenshots/24-search-modal-results-lakers.png",
+    "note": "Search results for Lakers. Tests result quality, grouping, and tap purpose.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": 103
+        }
+      ],
+      "path": "/?dev_skip_onboarding=1",
+      "text": "You need to enable JavaScript to run this app. Good morning,Sports FanSearchSIN ONE BREATHAI1 games live across MLB. 1 nail-biters going down to the wire.MLBLIVETop 1stTIGHTChicago White SoxAway1–0Oriole Park at Camden YardsBaltimore OriolesHomeOpen Gamecast›Tight game — Sox leads by 1FWCMLIVE38'TIGHTCongo DRAway1–0Mercedes-Benz StadiumEnglandHomeOpen Gamecast›Tight game — DR leads by 12 nail-biters15 upcomingMake it yoursFollow teams to get personalized scores, alerts, and AI recapsSet UpToday's GamesSee allNBAMLB1 LIVEMLSNFLPICKLIVE · Top 1stChicago White Sox1Baltimore Orioles012:10 PMTexas RangersCleveland Guardians12:35 PMDetroit TigersNew York Yankees12:35 PMWashington NationalsBoston Red Sox1:20 PMSan Diego PadresChicago Cubs2:07 PMNew York MetsToronto Blue JaysDraft CenterNFLNBANHLMLBHeadlinesSee allLakers trade for Jazz C Walker Kessler, sign trio, sources sayThe Lakers are acquiring Walker Kessler from the Jazz for unprotected first-round picks in 2031 and 2033 and first-round swaps in 2028 and 2030 and signing Sandro Mamukelashvili, Quentin Grimes and Collin Sexton, sources told ESPN.NBA3m agoLakers trade for Jazz C Walker Kessler, sign trio, sources sayThe Lakers are acquiring Walker Kessler from the Jazz for unprotected first-round picks in 2031 and 2033 and first-round swaps in 2028 and 2030 and signing Sandro Mamukelashvili, Quentin Grimes and Collin Sexton, sources told ESPN.ESPNListen🏀NBA7NBA trade tracker: Updates for every deal of the 2026 offseasonShams: Lakers sign Quentin Grimes, Collin SextonHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/?dev_skip_onboarding=1"
+    }
+  },
+  {
+    "step": 25,
+    "name": "search-modal-route",
+    "file": "screenshots/25-search-modal-route.png",
+    "note": "Bottom-nav Search opens global modal route.",
+    "state": {
+      "buttons": [],
+      "path": "/search",
+      "text": "You need to enable JavaScript to run this app. Opening search…Home2ScoresSportsStandsNews CancelQuick SearchRocketsLakersNBA StandingsNFL Free AgencyMLB Spring TrainingJordan ClarksonVictor WembanyamaPatrick Mahomes",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/search"
+    }
+  },
+  {
+    "step": 26,
+    "name": "search-results-lakers-valid",
+    "file": "screenshots/26-search-results-lakers-valid.png",
+    "note": "Search route query for Lakers shows teams, athletes/players, games, and news if matching.",
+    "state": {
+      "buttons": [],
+      "path": "/search",
+      "text": "You need to enable JavaScript to run this app. Opening search…Home2ScoresSportsStandsNews CancelTeams (1)Los Angeles LakersNBA · 3rd WestLALGamesMercyhurst Lakers @ New Mexico State AggiesUpcoming · NCAAFNCAAFNewsLakers trade for Jazz C Walker Kessler, sign trio, sources sayESPNNBAShams: Lakers sign Quentin Grimes, Collin SextonESPNNBAWindy: Lakers paid a very big price to get Walker KesslerESPNNBA",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/search"
+    }
+  },
+  {
+    "step": 27,
+    "name": "search-result-lakers-opens-team",
+    "file": "screenshots/27-search-result-lakers-opens-team.png",
+    "note": "Selecting Lakers result routes to the team page.",
+    "state": {
+      "buttons": [],
+      "path": "/team/nba-los-angeles-lakers",
+      "text": "You need to enable JavaScript to run this app. Opening search…Home2ScoresSportsStandsNewsRECENT GAMES4-6 last 10Lvs Thunder110-115May 11Lvs Thunder108-131May 9L@ Thunder107-125May 7L@ Thunder90-108May 5W@ Rockets98-78May 1Lvs Rockets93-99Apr 29L@ Rockets96-115Apr 26W@ Rockets112-108Apr 24Wvs Rockets101-94Apr 21Wvs Rockets107-98Apr 18Tap a game for quarter scores, player stats, and team comparisonPLAYOFF RACEView Full →Lakers39-29 • 3rd in West#3in inDIVISIONPacific DivisionSEED#3RECORD39-29ROSTERView All →👤⭐Deandre Ayton#5 • C— PPG— REB👤Cameron Carr#— • G— PPG— REB+ 18 more playersLATEST NEWSView All →Lakers NewsLatest updates and game recaps for Los Angeles LakersESPN•RecentLakers🔥 W3NBA·3rd in West·39-29116.8PPG9th113.4OPP PPG12th+2.4NET RTG9th35.8%3P%19thSCORESNEWSSTANDINGSSTATSROSTER CancelQuick SearchRocketsLakersNBA StandingsNFL Free AgencyMLB Spring TrainingJordan ClarksonVictor WembanyamaPatrick Mahomes",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/team/nba-los-angeles-lakers"
+    }
+  },
+  {
+    "step": 28,
+    "name": "news-return-before-article",
+    "file": "screenshots/28-news-return-before-article.png",
+    "note": "Returned to news for article detail interaction check.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": 85
+        }
+      ],
+      "path": "/news",
+      "text": "You need to enable JavaScript to run this app. NewsSAllMy TeamsNBANFLMLBMLSNHLUCLEPLLIGANCAABWNBA🏆Playoff RaceFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.NHL14m agoFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.ESPNListenF11d agoHow do F1 sprint races work? Format, qualifying and moreF1 sprints are in-season events that can earn extra points in the standings. Check out more information on how they work now.EESPNListennews2d agoHovland rings up 1st win of year, beating Scheffler in Travelers playoffViktor Hovland made birdie on the par-4 18th hole Monday morning to win the Travelers Championship in a playoff over world No. 1 Scottie Scheffler.EESPNListenScottie Scheffler2d agoScheffler forces Monday playoff with Hovland at TravelersScottie Scheffler made an 8-foot par putt on the 18th hole Sunday, forcing a sudden-death playoff against Viktor Hovland on Monday at the rain-delayed Travelers.EESPNListenGeorge Russell2d agoGeorge Russell's breakthrough, Ferrari's setback as F1 title race shifts again at Austrian GPESPN's Laurence Edmondson breaks down George Russell's breakthrough, Ferrari's setback and what Austria means for Formula 1's evolving title race.EESPNListen🏥Injury ReportNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.NHL24m agoNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.ESPNListennews - uk tennis32m agoWimbledon 2026 today: Live updates, news as Serena Williams sustains knee injury, Nick Kyrgios returns - July 1ESPN has live updates from Day 3 of Wimbledon with Jannik Sinner, Aryna Sabalenka and Novak Djokovic all on Centre Court.EESPNListennews3h agoPremier League 2026 summer transfers: All confirmed ins, outs for every clubHere's every Premier League in and out before the 2026-27 season begins.EESPNListenRylie Mills6h agoSeahawks DT Rylie Mills is ready for breakout Year 2Now fully healthy, Rylie Mills looks to break out on Seattle's defensive line in 2026.EESPNListennews19h agoSergio Garcia misses out on British Open; 3 Americans qualifySergio García will miss the British Open for the third time in four years after he failed to secure among the 20 qualifying spots handed out Tuesday. A trio of Americans -- Peter Uihlein, Caleb Surratt and James Nicholas -- qualified.EESPNListennews - fantasy20h agoNHL free agency 2026: Which players improved their fantasy hockey potential?What are the fantasy hockey implications of every big move in the NHL this offseason? Find out here.EESPNListenBen Shelton22h agoBen Shelton stunned at Wimbledon with 1st-round loss to Finnish qualifierFourth-seeded Ben Shelton is out after the 1st-round at Wimbledon, falling to Finland's Otto Virtanen 6-4, 6-7 (8), 6-2, 7-6 (9).EESPNListenlist1d ago2026 NFL offseason grades: Draft, trades, mor",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/news"
+    }
+  },
+  {
+    "step": 29,
+    "name": "article-detail-first-news",
+    "file": "screenshots/29-article-detail-first-news.png",
+    "note": "Opening the lead news card routes to article detail.",
+    "state": {
+      "buttons": [],
+      "path": "/article/espn-49237892?article=%7B%22id%22%3A%22espn-49237892%22%2C%22title%22%3A%22Flyers%20extend%20goaltender%20Dan%20Vladar%2C%2028%2C%20with%20five-year%20deal%22%2C%22summary%22%3A%22Goaltender%20Dan%20Vladar%2C%20who%20led%20the%20Flyers%20to%20the%20Stanley%20Cup%20playoffs%20last%20season%2C%20when%20they%20advanced%20to%20Round%202%20after%20defeating%20Pittsburgh%2C%20landed%20a%20contract%20extension%20from%20Philadelphia%20Wednesday%2C%20agreeing%20to%20a%20five-year%20deal%20worth%20%245.5%20million%20annually.%22%2C%22content%22%3A%22Dan%20Vladar%20has%20signed%20a%20five-year%20contract%20extension%20with%20the%20Philadelphia%20Flyers%20worth%20%245.5%20million%20annually%2C%20the%20team%20announced%20on%20Wednesday.%20The%2028-year-old%20Vladar%2C%20who%20was%20heading%20into%20the%20final%20year%20of%20his%20contract%2C%20had%20a%20breakout%20season%20after%20he%20went%20from%20being%20in%20a%20tandem%20with%20the%20Calgary%20Flames%20to%20emerging%20as%20a%20No.%201%20option%20with%20the%20Flyers.%20Vladar%20had%20his%20strongest%20individual%20campaign%20to%20date%20after%20finishing%20the%20regular%20season%2029-14-7%20with%20a%202.42%20goals-against%20average%20and%20a%20.906%20save%20percentage.%20Those%20performances%20made%20him%20one%20of%20the%20most%20important%20players%20in%20the%20Flyers%27%20push%20to%20return%20to%20the%20playoffs%20for%20the%20first%20time%20since%20the%202019-20%20season.%20Vladar%27s%20regular-season%20exploits%20continued%20into%20the%20playoffs%20where%20he%20helped%20the%20Flyers%20beat%20their%20cross-state%20rival%2C%20Pittsburgh%20Penguins%20%2C%20for%20their%20first%20playoff%20series%20victory%20since%202020.%20Despite%20only%20having%20two%20games%20of%20postseason%20experience%20before%20last%20season%2C%20Vladar%20went%204-6%20with%20a%202.19%20GAA%20and%20a%20.922%20save%20percentage%20before%20the%20Flyers%20were%20eliminated%20in%20the%20second%20round%20by%20the%20eventual%20Stanley%20Cup%20champion%20Carolina%20Hurricanes%20.%20Getting%20a%20deal%20done%20for%20Vladar%2C%20who%20still%20had%20a%20year%20left%20on%20his%20contract%20at%20%243.35%20million%20annually%2C%20now%20means%20the%20Flyers%20can%20continue%20to%20strengthen%20their%20team%20elsewhere.%20Defenseman%20Jamie%20Drysdale%20and%20forward%20Trevor%20Zegras%20are%20the%20Flyers%20most%20notable%20restricted%20free%20agents%20with%20PuckPedia%20projecting%20they%20have%20%2432.681%20million%20in%20cap%20space.%22%2C%22source%22%3A%22ESPN%22%2C%22sourceUrl%22%3A%22https%3A%2F%2Fwww.espn.com%2Fnhl%2Fstory%2F_%2Fid%2F49237892%2Fflyers-extend-goaltender-dan-vladar-28-five-year-deal%22%2C%22imageUrl%22%3A%22https%3A%2F%2Fa.espncdn.com%2Fphoto%2F2026%2F0701%2Fr1682741_600x600_1-1.jpg%22%2C%22publishedAt%22%3A%222026-07-01T16%3A31%3A28Z%22%2C%22tags%22%3A%5B%22news%22%2C%22Dan%20Vladar%22%5D%2C%22teams%22%3A%5B%22Philadelphia%20Flyers%22%5D%2C%22leagues%22%3A%5B%22NHL%22%5D%7D",
+      "text": "You need to enable JavaScript to run this app. NewsSAllMy TeamsNBANFLMLBMLSNHLUCLEPLLIGANCAABWNBA🏆Playoff RaceFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.NHL14m agoFlyers extend goaltender Dan Vladar, 28, with five-year dealGoaltender Dan Vladar, who led the Flyers to the Stanley Cup playoffs last season, when they advanced to Round 2 after defeating Pittsburgh, landed a contract extension from Philadelphia Wednesday, agreeing to a five-year deal worth $5.5 million annually.ESPNListenF11d agoHow do F1 sprint races work? Format, qualifying and moreF1 sprints are in-season events that can earn extra points in the standings. Check out more information on how they work now.EESPNListennews2d agoHovland rings up 1st win of year, beating Scheffler in Travelers playoffViktor Hovland made birdie on the par-4 18th hole Monday morning to win the Travelers Championship in a playoff over world No. 1 Scottie Scheffler.EESPNListenScottie Scheffler2d agoScheffler forces Monday playoff with Hovland at TravelersScottie Scheffler made an 8-foot par putt on the 18th hole Sunday, forcing a sudden-death playoff against Viktor Hovland on Monday at the rain-delayed Travelers.EESPNListenGeorge Russell2d agoGeorge Russell's breakthrough, Ferrari's setback as F1 title race shifts again at Austrian GPESPN's Laurence Edmondson breaks down George Russell's breakthrough, Ferrari's setback and what Austria means for Formula 1's evolving title race.EESPNListen🏥Injury ReportNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.NHL24m agoNHL free agency 2026: Grades, fits for all the big signingsWith free agency underway, we're handing out marks for all of the big deals around the league.ESPNListennews - uk tennis32m agoWimbledon 2026 today: Live updates, news as Serena Williams sustains knee injury, Nick Kyrgios returns - July 1ESPN has live updates from Day 3 of Wimbledon with Jannik Sinner, Aryna Sabalenka and Novak Djokovic all on Centre Court.EESPNListennews3h agoPremier League 2026 summer transfers: All confirmed ins, outs for every clubHere's every Premier League in and out before the 2026-27 season begins.EESPNListenRylie Mills6h agoSeahawks DT Rylie Mills is ready for breakout Year 2Now fully healthy, Rylie Mills looks to break out on Seattle's defensive line in 2026.EESPNListennews19h agoSergio Garcia misses out on British Open; 3 Americans qualifySergio García will miss the British Open for the third time in four years after he failed to secure among the 20 qualifying spots handed out Tuesday. A trio of Americans -- Peter Uihlein, Caleb Surratt and James Nicholas -- qualified.EESPNListennews - fantasy20h agoNHL free agency 2026: Which players improved their fantasy hockey potential?What are the fantasy hockey implications of every big move in the NHL this offseason? Find out here.EESPNListenBen Shelton22h agoBen Shelton stunned at Wimbledon with 1st-round loss to Finnish qualifierFourth-seeded Ben Shelton is out after the 1st-round at Wimbledon, falling to Finland's Otto Virtanen 6-4, 6-7 (8), 6-2, 7-6 (9).EESPNListenlist1d ago2026 NFL offseason grades: Draft, trades, mor",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/article/espn-49237892?article=%7B%22id%22%3A%22espn-49237892%22%2C%22title%22%3A%22Flyers%20extend%20goaltender%20Dan%20Vladar%2C%2028%2C%20with%20five-year%20deal%22%2C%22summary%22%3A%22Goaltender%20Dan%20Vladar%2C%20who%20led%20the%20Flyers%20to%20the%20Stanley%20Cup%20playoffs%20last%20season%2C%20when%20they%20advanced%20to%20Round%202%20after%20defeating%20Pittsburgh%2C%20landed%20a%20contract%20extension%20from%20Philadelphia%20Wednesday%2C%20agreeing%20to%20a%20five-year%20deal%20worth%20%245.5%20million%20annually.%22%2C%22content%22%3A%22Dan%20Vladar%20has%20signed%20a%20five-year%20contract%20extension%20with%20the%20Philadelphia%20Flyers%20worth%20%245.5%20million%20annually%2C%20the%20team%20announced%20on%20Wednesday.%20The%2028-year-old%20Vladar%2C%20who%20was%20heading%20into%20the%20final%20year%20of%20his%20contract%2C%20had%20a%20breakout%20season%20after%20he%20went%20from%20being%20in%20a%20tandem%20with%20the%20Calgary%20Flames%20to%20emerging%20as%20a%20No.%201%20option%20with%20the%20Flyers.%20Vladar%20had%20his%20strongest%20individual%20campaign%20to%20date%20after%20finishing%20the%20regular%20season%2029-14-7%20with%20a%202.42%20goals-against%20average%20and%20a%20.906%20save%20percentage.%20Those%20performances%20made%20him%20one%20of%20the%20most%20important%20players%20in%20the%20Flyers%27%20push%20to%20return%20to%20the%20playoffs%20for%20the%20first%20time%20since%20the%202019-20%20season.%20Vladar%27s%20regular-season%20exploits%20continued%20into%20the%20playoffs%20where%20he%20helped%20the%20Flyers%20beat%20their%20cross-state%20rival%2C%20Pittsburgh%20Penguins%20%2C%20for%20their%20first%20playoff%20series%20victory%20since%202020.%20Despite%20only%20having%20two%20games%20of%20postseason%20experience%20before%20last%20season%2C%20Vladar%20went%204-6%20with%20a%202.19%20GAA%20and%20a%20.922%20save%20percentage%20before%20the%20Flyers%20were%20eliminated%20in%20the%20second%20round%20by%20the%20eventual%20Stanley%20Cup%20champion%20Carolina%20Hurricanes%20.%20Getting%20a%20deal%20done%20for%20Vladar%2C%20who%20still%20had%20a%20year%20left%20on%20his%20contract%20at%20%243.35%20million%20annually%2C%20now%20means%20the%20Flyers%20can%20continue%20to%20strengthen%20their%20team%20elsewhere.%20Defenseman%20Jamie%20Drysdale%20and%20forward%20Trevor%20Zegras%20are%20the%20Flyers%20most%20notable%20restricted%20free%20agents%20with%20PuckPedia%20projecting%20they%20have%20%2432.681%20million%20in%20cap%20space.%22%2C%22source%22%3A%22ESPN%22%2C%22sourceUrl%22%3A%22https%3A%2F%2Fwww.espn.com%2Fnhl%2Fstory%2F_%2Fid%2F49237892%2Fflyers-extend-goaltender-dan-vladar-28-five-year-deal%22%2C%22imageUrl%22%3A%22https%3A%2F%2Fa.espncdn.com%2Fphoto%2F2026%2F0701%2Fr1682741_600x600_1-1.jpg%22%2C%22publishedAt%22%3A%222026-07-01T16%3A31%3A28Z%22%2C%22tags%22%3A%5B%22news%22%2C%22Dan%20Vladar%22%5D%2C%22teams%22%3A%5B%22Philadelphia%20Flyers%22%5D%2C%22leagues%22%3A%5B%22NHL%22%5D%7D"
+    }
+  },
+  {
+    "step": 30,
+    "name": "onboarding-welcome-return",
+    "file": "screenshots/30-onboarding-welcome-return.png",
+    "note": "Onboarding welcome entry point, revisited after core route audit.",
+    "state": {
+      "buttons": [],
+      "path": "/onboarding",
+      "text": "You need to enable JavaScript to run this app. FOURTHQUARTERYour sports. Your way. One app.Live scores & updatesAI-powered game recapsPersonalized news feedGet Started",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/onboarding"
+    }
+  },
+  {
+    "step": 31,
+    "name": "onboarding-sports-step",
+    "file": "screenshots/31-onboarding-sports-step.png",
+    "note": "Onboarding sport/team preference setup step after Get Started.",
+    "state": {
+      "buttons": [],
+      "path": "/onboarding",
+      "text": "You need to enable JavaScript to run this app. Pick Your SportsSelect all that you followNBANHLNFLMLBNCAA BasketballMLSPremier LeagueChampions LgeLa LigaWNBAUFC / MMABoxingATP TennisWTA TennisOlympicsX GamesContinue",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/onboarding"
+    }
+  },
+  {
+    "step": 32,
+    "name": "handoff-home-after-audit",
+    "file": "screenshots/32-handoff-home-after-audit.png",
+    "note": "Returned browser to the primary Home route after audit.",
+    "state": {
+      "buttons": [
+        {
+          "h": 34,
+          "text": "S",
+          "w": 34,
+          "x": 549,
+          "y": 103
+        }
+      ],
+      "path": "/?dev_skip_onboarding=1",
+      "text": "You need to enable JavaScript to run this app. Good morning,Sports FanSearchSIN ONE BREATHAI1 games live across MLB. 1 nail-biters going down to the wire.MLBLIVEBottom 1stMUST WATCHChicago White SoxAway1–0Oriole Park at Camden YardsBaltimore OriolesHomeOpen Gamecast›⚡ Overtime thrillerFWCMLIVE45'+4'TIGHTCongo DRAway1–0Mercedes-Benz StadiumEnglandHomeOpen Gamecast›🔥 Down to the wire — DR up 12 nail-biters15 upcomingMake it yoursFollow teams to get personalized scores, alerts, and AI recapsSet UpToday's GamesSee allNBAMLB1 LIVEMLSNFLPICKLIVE · Bottom 1stChicago White Sox1Baltimore Orioles012:10 PMTexas RangersCleveland Guardians12:35 PMDetroit TigersNew York Yankees12:35 PMWashington NationalsBoston Red Sox1:20 PMSan Diego PadresChicago Cubs2:07 PMNew York MetsToronto Blue JaysDraft CenterNFLNBANHLMLBHeadlinesSee allLakers trade for Jazz C Walker Kessler, sign trio, sources sayThe Lakers are acquiring Walker Kessler from the Jazz for unprotected first-round picks in 2031 and 2033 and first-round swaps in 2028 and 2030 and signing Sandro Mamukelashvili, Quentin Grimes and Collin Sexton, sources told ESPN.NBA3m agoLakers trade for Jazz C Walker Kessler, sign trio, sources sayThe Lakers are acquiring Walker Kessler from the Jazz for unprotected first-round picks in 2031 and 2033 and first-round swaps in 2028 and 2030 and signing Sandro Mamukelashvili, Quentin Grimes and Collin Sexton, sources told ESPN.ESPNListen🏀NBA7NBA trade tracker: Updates for every deal of the 2026 offseasonShams: Lakers sign Quentin Grimes, Collin SextonHome2ScoresSportsStandsNews",
+      "title": "Fourth Quarter",
+      "url": "http://localhost:8082/?dev_skip_onboarding=1"
+    }
+  }
+]

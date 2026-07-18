@@ -9,7 +9,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
-import { FONTS, FONT_SIZES } from "@/constants/typography";
+import { FONTS } from "@/constants/typography";
 import { usePreferences } from "@/context/PreferencesContext";
 import { TEAMS_BY_LEAGUE, SPORTS } from "@/constants/sports";
 import { SearchButton } from "@/components/SearchButton";
@@ -47,25 +47,19 @@ const statCard = StyleSheet.create({
     color: C.text,
     fontSize: 24,
     fontWeight: "900",
-    fontFamily: FONTS.bodyBold,
+    fontFamily: FONTS.bodyHeavy,
   },
   label: {
     color: C.textTertiary,
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "800",
     letterSpacing: 0.5,
     textTransform: "uppercase",
+    fontFamily: FONTS.bodyBold,
   },
 });
 
 function FandomCommandCenter({ preferences, primaryColor }: { preferences: any; primaryColor: string }) {
-  const SPORT_ICONS: Record<string, string> = {
-    NBA: "🏀", NFL: "🏈", MLB: "⚾", MLS: "⚽", NHL: "🏒",
-    EPL: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", UCL: "⭐", LIGA: "🇪🇸", NCAAB: "🎓", WNBA: "🏀",
-    UFC: "🥋", BOXING: "🥊", ATP: "🎾", WTA: "🎾",
-    OLYMPICS: "🏅", XGAMES: "🏂",
-  };
-
   const favLeague = preferences.favoriteLeagues[0] ?? null;
   const teamsCount = preferences.favoriteTeams.length;
   const leaguesCount = preferences.favoriteLeagues.length;
@@ -77,7 +71,7 @@ function FandomCommandCenter({ preferences, primaryColor }: { preferences: any; 
   ];
 
   const insights: string[] = [];
-  if (favLeague) insights.push(`Your go-to league: ${SPORT_ICONS[favLeague] ?? "🏆"} ${favLeague}`);
+  if (favLeague) insights.push(`Your go-to league: ${favLeague}`);
   if (teamsCount >= 3) insights.push(`Following ${teamsCount} teams across ${leaguesCount} sports`);
   else if (teamsCount === 1) insights.push(`Following 1 team — add more for better recommendations`);
   if (leaguesCount === 0) insights.push("Add your favorite sports to personalize the app");
@@ -110,23 +104,23 @@ function FandomCommandCenter({ preferences, primaryColor }: { preferences: any; 
 const fanS = StyleSheet.create({
   section: { gap: 10, paddingVertical: 4 },
   heading: {
-    fontSize: 18, fontWeight: "800", color: C.text,
-    fontFamily: FONTS.bodyBold, letterSpacing: -0.2,
+    fontSize: 18, fontWeight: "900", color: C.text,
+    fontFamily: FONTS.bodyHeavy, letterSpacing: 0,
   },
   statsRow: { flexDirection: "row", gap: 10 },
   statBox: {
     flex: 1, backgroundColor: C.card, borderRadius: 16, padding: 16,
     alignItems: "center", borderWidth: 1, borderColor: C.cardBorder, gap: 4,
   },
-  statVal: { fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyBold },
-  statLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
+  statVal: { fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyHeavy },
+  statLabel: { color: C.textTertiary, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
   insightCard: {
     backgroundColor: C.glassLight, borderRadius: 14,
     padding: 12, gap: 8,
     borderWidth: 1, borderColor: C.glassMedium,
   },
   insightRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-  insightText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.body, flex: 1 },
+  insightText: { color: C.textSecondary, fontSize: 13, fontFamily: FONTS.bodyMedium, flex: 1 },
 });
 
 export default function ProfileScreen() {
@@ -221,7 +215,11 @@ export default function ProfileScreen() {
                   selectTextOnFocus
                 />
               ) : (
-                <Pressable onPress={() => { setNameInput(preferences.name); setEditingName(true); }}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit display name"
+                  onPress={() => { setNameInput(preferences.name); setEditingName(true); }}
+                >
                   <View style={styles.nameRow}>
                     <Text style={styles.profileName}>{preferences.name}</Text>
                     <Ionicons name="pencil" size={14} color={C.textTertiary} />
@@ -253,7 +251,13 @@ export default function ProfileScreen() {
               const active = preferences.favoriteLeagues.includes(sport.id);
               const color = LEAGUE_COLORS[sport.id] ?? C.accent;
               return (
-                <Pressable key={sport.id} onPress={() => toggleLeague(sport.id)}>
+                <Pressable
+                  key={sport.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${active ? "Remove" : "Add"} ${sport.label}`}
+                  accessibilityState={{ selected: active }}
+                  onPress={() => toggleLeague(sport.id)}
+                >
                   <View style={[styles.leagueChip, active && { borderColor: color, backgroundColor: `${color}18` }]}>
                     <Ionicons name={sport.icon as any} size={14} color={active ? color : C.textTertiary} />
                     <Text style={[styles.leagueChipText, active && { color }]}>{sport.label}</Text>
@@ -273,7 +277,13 @@ export default function ProfileScreen() {
               const leagueKey = Object.entries(TEAMS_BY_LEAGUE).find(([, teams]) => teams.includes(team))?.[0];
               const teamColor = leagueKey ? (LEAGUE_COLORS[leagueKey] ?? C.accent) : C.accent;
               return (
-                <Pressable key={team} onPress={() => toggleTeam(team)}>
+                <Pressable
+                  key={team}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${active ? "Remove" : "Add"} ${team}`}
+                  accessibilityState={{ selected: active }}
+                  onPress={() => toggleTeam(team)}
+                >
                   <View style={[styles.teamRow, active && { borderColor: `${teamColor}55`, backgroundColor: `${teamColor}0A` }]}>
                     <View style={[styles.teamAvatar, { backgroundColor: active ? `${teamColor}22` : "rgba(255,255,255,0.07)" }]}>
                       <Text style={[styles.teamAvatarText, active && { color: teamColor }]}>
@@ -296,6 +306,9 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Experience Mode</Text>
           <View style={styles.modeCard}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Use fan mode"
+              accessibilityState={{ selected: preferences.appMode === "fan" }}
               style={[styles.modeOption, preferences.appMode === "fan" && styles.modeOptionActive]}
               onPress={() => { Haptics.selectionAsync(); setPreferences({ appMode: "fan" as any }); }}
             >
@@ -308,6 +321,9 @@ export default function ProfileScreen() {
             </Pressable>
             <View style={styles.sep} />
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Use nerd mode"
+              accessibilityState={{ selected: preferences.appMode === "nerd" }}
               style={[styles.modeOption, preferences.appMode === "nerd" && styles.modeOptionActive]}
               onPress={() => { Haptics.selectionAsync(); setPreferences({ appMode: "nerd" as any }); }}
             >
@@ -355,7 +371,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* REDO SETUP */}
-        <Pressable onPress={handleReonboard}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Redo onboarding setup" onPress={handleReonboard}>
           <View style={styles.redoBtn}>
             <Ionicons name="refresh-outline" size={18} color={C.accent} />
             <Text style={styles.redoBtnText}>Redo Setup</Text>
@@ -410,7 +426,7 @@ const settingRowS = StyleSheet.create({
   sublabel: {
     color: C.textTertiary,
     fontSize: 12,
-    fontFamily: FONTS.body,
+    fontFamily: FONTS.bodyMedium,
     marginTop: 1,
   },
 });
@@ -426,11 +442,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: "900",
     color: C.text,
-    fontFamily: FONTS.bodyBold,
-    letterSpacing: -0.5,
+    fontFamily: FONTS.bodyHeavy,
+    letterSpacing: 0,
   },
 
   profileCard: {
@@ -471,7 +487,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 22,
     fontWeight: "900",
-    fontFamily: FONTS.bodyBold,
+    fontFamily: FONTS.bodyHeavy,
   },
   nameRow: {
     flexDirection: "row",
@@ -480,14 +496,14 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: "900",
     color: C.text,
-    fontFamily: FONTS.bodyBold,
+    fontFamily: FONTS.bodyHeavy,
   },
   nameInput: {
     color: C.text,
     fontSize: 20,
-    fontFamily: FONTS.bodyBold,
+    fontFamily: FONTS.bodyHeavy,
     borderBottomWidth: 1.5,
     borderBottomColor: C.accent,
     paddingBottom: 2,
@@ -496,7 +512,7 @@ const styles = StyleSheet.create({
     color: C.textTertiary,
     fontSize: 13,
     marginTop: 3,
-    fontFamily: FONTS.body,
+    fontFamily: FONTS.bodyMedium,
   },
   statsRow: {
     flexDirection: "row",
@@ -506,10 +522,10 @@ const styles = StyleSheet.create({
   section: { gap: 14, paddingVertical: 8 },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
     color: C.text,
-    fontFamily: FONTS.bodyBold,
-    letterSpacing: -0.2,
+    fontFamily: FONTS.bodyHeavy,
+    letterSpacing: 0,
   },
   chipsWrap: {
     flexDirection: "row",
@@ -530,8 +546,8 @@ const styles = StyleSheet.create({
   leagueChipText: {
     color: C.textSecondary,
     fontSize: 13,
-    fontWeight: "700",
-    fontFamily: FONTS.bodySemiBold,
+    fontWeight: "800",
+    fontFamily: FONTS.bodyBold,
   },
   teamsList: { gap: 8 },
   teamRow: {
@@ -587,8 +603,8 @@ const styles = StyleSheet.create({
   redoBtnText: {
     color: C.accent,
     fontSize: 15,
-    fontWeight: "700",
-    fontFamily: FONTS.bodySemiBold,
+    fontWeight: "800",
+    fontFamily: FONTS.bodyBold,
   },
   footer: {
     alignItems: "center",
@@ -605,7 +621,7 @@ const styles = StyleSheet.create({
   footerSub: {
     color: C.textTertiary,
     fontSize: 11,
-    fontFamily: FONTS.body,
+    fontFamily: FONTS.bodyMedium,
   },
   modeCard: {
     backgroundColor: C.card,
@@ -627,13 +643,13 @@ const styles = StyleSheet.create({
   modeLabel: {
     color: C.textSecondary,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
     fontFamily: FONTS.bodyBold,
   },
   modeSub: {
     color: C.textTertiary,
     fontSize: 12,
     marginTop: 2,
-    fontFamily: FONTS.body,
+    fontFamily: FONTS.bodyMedium,
   },
 });

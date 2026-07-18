@@ -243,7 +243,7 @@ export function MomentumGraph({
       </View>
       <View style={styles.winPcts}>
         <Text style={styles.winPct}>{Math.round(awayProb * 100)}%</Text>
-        <Text style={styles.winLabel}>WIN PROBABILITY</Text>
+        <Text style={styles.winLabel}>COMPUTED WIN LEAN</Text>
         <Text style={styles.winPct}>{Math.round(homeProb * 100)}%</Text>
       </View>
     </View>

@@ -57,7 +57,12 @@ async function startBroadcastLoop() {
       const base = `http://localhost:${port}`;
       const resp = await fetch(`${base}/api/sports/games`).catch(() => null);
       if (resp?.ok) {
-        const games = await resp.json();
+        const payload: unknown = await resp.json();
+        const games = Array.isArray(payload)
+          ? payload
+          : payload && typeof payload === "object" && Array.isArray((payload as { games?: unknown }).games)
+            ? (payload as { games: unknown[] }).games
+            : [];
         if (Array.isArray(games) && games.length > 0) {
           broadcastGames(games);
 
