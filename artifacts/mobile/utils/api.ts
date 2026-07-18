@@ -102,7 +102,7 @@ export const api = {
     apiFetch<{ rankings: GolfRankingEntry[] }>(`/sports/golf/rankings?type=${type}`),
 
   getInOneBreath: () =>
-    apiFetch<{ summary: string; generated: string }>("/sports/in-one-breath"),
+    apiFetch<{ summary: string; generated: string; focus?: string; angle?: string }>("/sports/in-one-breath"),
 
   getDraft: (league: string, year?: number) => {
     const params = year ? `?year=${year}` : "";
@@ -192,9 +192,12 @@ export interface Game {
   sportArchetype?: SportArchetype;
   homeTeam: string;
   awayTeam: string;
+  homeAbbreviation?: string;
+  awayAbbreviation?: string;
   homeScore: number | null;
   awayScore: number | null;
   status: "upcoming" | "live" | "finished";
+  statusDetail?: string | null;
   startTime: string;
   quarter: string | null;
   timeRemaining: string | null;
@@ -215,9 +218,58 @@ export interface PlayerStatLine {
   stats: Record<string, string>;
 }
 
+export interface BaseballAthlete {
+  id: string;
+  name: string;
+  shortName: string | null;
+  headshot: string | null;
+}
+
+export interface BaseballSituation {
+  balls: number | null;
+  strikes: number | null;
+  outs: number | null;
+  inning: number | null;
+  inningHalf: "top" | "bottom" | null;
+  onFirst: BaseballAthlete | null;
+  onSecond: BaseballAthlete | null;
+  onThird: BaseballAthlete | null;
+  batter: BaseballAthlete | null;
+  pitcher: BaseballAthlete | null;
+}
+
+export interface BaseballPlayState extends BaseballSituation {
+  id: string;
+  type: string;
+  typeText: string;
+  text: string;
+  awayScore: number | null;
+  homeScore: number | null;
+  scoringPlay: boolean;
+  teamId: string | null;
+}
+
+export interface BaseballGamecast {
+  situation: BaseballSituation;
+  recentPlays: BaseballPlayState[];
+  lineScore: {
+    away: BaseballLineScoreTeam;
+    home: BaseballLineScoreTeam;
+  } | null;
+}
+
+export interface BaseballLineScoreTeam {
+  innings: Array<number | null>;
+  runs: number | null;
+  hits: number | null;
+  errors: number | null;
+  leftOnBase: number | null;
+}
+
 export interface GameDetail {
   game: Game;
   keyPlays: { time: string; description: string; team: string }[];
+  baseballGamecast: BaseballGamecast | null;
   homeStats: Record<string, string | number>;
   awayStats: Record<string, string | number>;
   homeLineup: string[];

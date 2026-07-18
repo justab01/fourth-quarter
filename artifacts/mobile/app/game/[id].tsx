@@ -1,8 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Platform, ActivityIndicator, Image, Animated, Dimensions,
-  Linking,
+  Platform, ActivityIndicator, Image, Animated,
+  Linking, Share,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,20 +20,28 @@ import { TeamLogo } from "@/components/GameCard";
 import { ArenaRenderer } from "@/components/ArenaRenderer";
 import { MomentumGraph } from "@/components/MomentumGraph";
 import { useGameSocket } from "@/hooks/useGameSocket";
-import { LiveTrackerPanel, computeTrackerState } from "@/components/LiveTrackerPanel";
+import { LiveTrackerPanel, computeTrackerState, type TrackerState } from "@/components/LiveTrackerPanel";
+import { BaseballGamecast } from "@/components/BaseballGamecast";
 
 const C = Colors.dark;
-const { width: SCREEN_W } = Dimensions.get("window");
 
 type GameTab = "gamecast" | "boxscore" | "playbyplay" | "stats" | "lineups";
+type GamePlay = { time: string; description: string; team: string };
 
 const TABS: { key: GameTab; label: string; icon: string }[] = [
   { key: "gamecast",   label: "Gamecast",   icon: "tv-outline" },
   { key: "boxscore",   label: "Box Score",  icon: "grid-outline" },
-  { key: "playbyplay", label: "Plays",      icon: "list-outline" },
+  { key: "playbyplay", label: "Scoring",    icon: "list-outline" },
   { key: "stats",      label: "Stats",      icon: "bar-chart-outline" },
   { key: "lineups",    label: "Lineups",    icon: "people-outline" },
 ];
+
+const GAME_TAB_KEYS = new Set<GameTab>(TABS.map((tab) => tab.key));
+
+function normalizeGameTab(tab?: string | string[] | null): GameTab {
+  const value = Array.isArray(tab) ? tab[0] : tab;
+  return value && GAME_TAB_KEYS.has(value as GameTab) ? value as GameTab : "gamecast";
+}
 
 const PLAYER_STAT_COLS: Record<string, string[]> = {
   NBA:   ["MIN", "PTS", "REB", "AST", "FG"],
@@ -80,33 +89,78 @@ const ESPN_SPORT_SLUGS: Record<string, string> = {
 
 function getEspnGamecastUrl(league: string, gameId: string): string {
   const sport = ESPN_SPORT_SLUGS[league] ?? "sports";
-  return `https://www.espn.com/${sport}/game/_/gameId/${gameId}`;
+  const rawGameId = gameId.includes("-") ? gameId.slice(gameId.indexOf("-") + 1) : gameId;
+  return `https://www.espn.com/${sport}/game/_/gameId/${rawGameId}`;
+}
+
+function shortTeamName(teamName: string): string {
+  return teamName.split(" ").slice(-1)[0] ?? teamName;
+}
+
+function formatGameStart(startTime?: string | null): string {
+  if (!startTime) return "Time TBD";
+  return new Date(startTime).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function scoreStatusLine(game: any): string {
+  if (game.statusDetail) return game.statusDetail;
+  if (game.status === "upcoming") return `Starts ${formatGameStart(game.startTime)}`;
+  const away = game.awayScore ?? 0;
+  const home = game.homeScore ?? 0;
+  if (game.status === "finished") {
+    if (away === home) return "Final score is tied";
+    return `${shortTeamName(away > home ? game.awayTeam : game.homeTeam)} won by ${Math.abs(away - home)}`;
+  }
+  if (away === home) return "Tie game";
+  return `${shortTeamName(away > home ? game.awayTeam : game.homeTeam)} leads by ${Math.abs(away - home)}`;
+}
+
+function comparableStatValue(value: string | number | undefined): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (value == null) return null;
+  const raw = String(value).trim();
+  if (!raw || raw === "—") return null;
+  const madeAttempt = raw.match(/^(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)$/);
+  if (madeAttempt) {
+    const made = Number(madeAttempt[1]);
+    const attempt = Number(madeAttempt[2]);
+    return attempt > 0 ? made / attempt : made;
+  }
+  const pct = raw.match(/^(-?\d+(?:\.\d+)?)%$/);
+  if (pct) return Number(pct[1]);
+  const firstNumber = raw.match(/-?\d+(?:\.\d+)?/);
+  return firstNumber ? Number(firstNumber[0]) : null;
 }
 
 function getSportVenueGradient(league: string): [string, string, string, string] {
   const map: Record<string, [string, string, string, string]> = {
-    NBA:   ["#4A1A00", "#241000", "#100700", "#0F0F0F"],
-    WNBA:  ["#5C1F00", "#2A0E00", "#140700", "#0F0F0F"],
-    NCAAB: ["#001845", "#000E25", "#000710", "#0F0F0F"],
-    NFL:   ["#071525", "#040D17", "#02080D", "#0F0F0F"],
-    NCAAF: ["#1A1000", "#0D0800", "#060400", "#0F0F0F"],
-    MLB:   ["#280808", "#140404", "#090202", "#0F0F0F"],
-    MLS:   ["#051F0D", "#020F06", "#010703", "#0F0F0F"],
-    EPL:   ["#1A0028", "#0D0014", "#06000A", "#0F0F0F"],
-    UCL:   ["#001040", "#000820", "#000410", "#0F0F0F"],
-    LIGA:  ["#280505", "#140202", "#090101", "#0F0F0F"],
-    BUN:   ["#1A0008", "#0D0004", "#060002", "#0F0F0F"],
-    SERA:  ["#00101A", "#00080D", "#000406", "#0F0F0F"],
-    LIG1:  ["#001028", "#000814", "#00040A", "#0F0F0F"],
-    UEL:   ["#1A0F00", "#0D0800", "#060400", "#0F0F0F"],
-    UECL:  ["#001A0D", "#000D06", "#000603", "#0F0F0F"],
-    NWSL:  ["#0D1A28", "#060D14", "#03060A", "#0F0F0F"],
-    FWCM:  ["#140014", "#0A000A", "#050005", "#0F0F0F"],
-    EURO:  ["#001428", "#000A14", "#00050A", "#0F0F0F"],
-    COPA:  ["#0A1400", "#050A00", "#020500", "#0F0F0F"],
-    NHL:   ["#040E1C", "#020711", "#010408", "#0F0F0F"],
+    NBA:   ["#A9532A", "#5A3428", "#263648", "#17202A"],
+    WNBA:  ["#AA5D36", "#57362E", "#263648", "#17202A"],
+    NCAAB: ["#314F8D", "#263D69", "#213040", "#17202A"],
+    NFL:   ["#315A7A", "#273B52", "#213040", "#17202A"],
+    NCAAF: ["#8F6840", "#594435", "#253242", "#17202A"],
+    MLB:   ["#8A3737", "#56313B", "#253242", "#17202A"],
+    MLS:   ["#2E7552", "#284C42", "#213040", "#17202A"],
+    EPL:   ["#623A68", "#47324F", "#253242", "#17202A"],
+    UCL:   ["#354C8A", "#2C3D68", "#213040", "#17202A"],
+    LIGA:  ["#8A3A3A", "#55313D", "#253242", "#17202A"],
+    BUN:   ["#8B3E3A", "#56323A", "#253242", "#17202A"],
+    SERA:  ["#2E7186", "#294A59", "#213040", "#17202A"],
+    LIG1:  ["#315A7A", "#273B52", "#213040", "#17202A"],
+    UEL:   ["#A96C32", "#5A4432", "#253242", "#17202A"],
+    UECL:  ["#2E7552", "#284C42", "#213040", "#17202A"],
+    NWSL:  ["#315A7A", "#273B52", "#213040", "#17202A"],
+    FWCM:  ["#934D78", "#57364E", "#253242", "#17202A"],
+    EURO:  ["#354C8A", "#2C3D68", "#213040", "#17202A"],
+    COPA:  ["#6D8846", "#455C3C", "#223343", "#17202A"],
+    NHL:   ["#315A7A", "#273B52", "#213040", "#17202A"],
   };
-  return map[league] ?? ["#100914", "#08040A", "#040205", "#0F0F0F"];
+  return map[league] ?? ["#5E446E", "#3D334C", "#253242", "#17202A"];
 }
 
 // ── Play type classification ───────────────────────────────────────────────────
@@ -147,11 +201,22 @@ function playBadge(type: PlayType, desc: string): string | null {
 export default function GameDetailScreen() {
   const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
   const insets = useSafeAreaInsets();
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<GameTab>(
-    (tabParam as GameTab | undefined) ?? "gamecast"
-  );
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const gameScrollRef = useRef<ScrollView>(null);
+  const [activeTab, setActiveTab] = useState<GameTab>(normalizeGameTab(tabParam));
+  const [isGameHubExpanded, setIsGameHubExpanded] = useState(false);
+  const topPad = Platform.OS === "web"
+    ? (viewportWidth >= 620 ? 52 : 14)
+    : insets.top;
+  const framedWeb = Platform.OS === "web" && viewportWidth >= 620;
+  const appViewportHeight = framedWeb
+    ? Math.min(900, viewportHeight - 28) - 25
+    : viewportHeight;
+  const gameContentWidth = framedWeb
+    ? Math.min(430, viewportWidth - 48) - 14
+    : viewportWidth;
+  const gamecastHeight = Math.max(540, appViewportHeight - topPad - 60);
 
   const { data, isLoading } = useQuery({
     queryKey: ["game", id],
@@ -174,6 +239,15 @@ export default function GameDetailScreen() {
     onUpdate: onWsUpdate,
   });
 
+  useEffect(() => {
+    const nextTab = normalizeGameTab(tabParam);
+    setActiveTab((current) => current === nextTab ? current : nextTab);
+  }, [tabParam]);
+
+  useEffect(() => {
+    if (activeTab !== "gamecast") setIsGameHubExpanded(false);
+  }, [activeTab]);
+
   const game = data?.game;
   const rawColor = game ? (LEAGUE_COLORS[game.league] ?? C.accent) : C.accent;
   const dc =
@@ -181,26 +255,82 @@ export default function GameDetailScreen() {
     : rawColor === "#1A1A2E" ? "#4CAF50"
     : rawColor;
 
-  const venueGrad = game ? getSportVenueGradient(game.league) : ["#0F0F0F", "#0F0F0F", "#0F0F0F", "#0F0F0F"] as [string,string,string,string];
+  const venueGrad = game ? getSportVenueGradient(game.league) : ["#17202A", "#1D2936", "#253242", "#17202A"] as [string,string,string,string];
 
   const isLive     = game?.status === "live";
   const isFinished = game?.status === "finished";
+  const isBaseballGamecast = game?.league === "MLB" && activeTab === "gamecast";
+
+  useEffect(() => {
+    if (isBaseballGamecast) {
+      gameScrollRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+    }
+  }, [isBaseballGamecast, isGameHubExpanded]);
+
+  const playByPlayRows: GamePlay[] = game?.league === "MLB" && data?.baseballGamecast?.recentPlays?.length
+    ? data.baseballGamecast.recentPlays.map((play) => ({
+        time: play.inning != null
+          ? `${play.inningHalf === "bottom" ? "Bot" : "Top"} ${play.inning}`
+          : "",
+        description: play.text,
+        team: "",
+      }))
+    : data?.keyPlays ?? [];
   const awayWin = isFinished && (game?.awayScore ?? 0) > (game?.homeScore ?? 0);
   const homeWin = isFinished && (game?.homeScore ?? 0) > (game?.awayScore ?? 0);
+
+  const handleShare = useCallback(() => {
+    if (!game || !id) return;
+    const url = getEspnGamecastUrl(game.league, id);
+    Share.share({
+      title: `${game.awayTeam} @ ${game.homeTeam}`,
+      message: `${game.awayTeam} @ ${game.homeTeam}: ${url}`,
+    }).catch(() => {
+      Linking.openURL(url).catch(() => {});
+    });
+  }, [game, id]);
+
+  const handleBack = useCallback(() => {
+    if (isGameHubExpanded) {
+      setIsGameHubExpanded(false);
+      return;
+    }
+    const canGoBack = typeof (router as any).canGoBack === "function" && (router as any).canGoBack();
+    if (canGoBack) router.back();
+    else router.replace("/");
+  }, [isGameHubExpanded]);
+
+  const selectTab = useCallback((tab: GameTab) => {
+    setActiveTab(tab);
+    router.setParams({ tab });
+  }, []);
 
   return (
     <View style={[s.root, { paddingTop: topPad }]}>
       {/* ── Fixed top nav ──────────────────────────────────────────────────── */}
       <View style={s.nav}>
-        <Pressable onPress={() => router.back()} style={s.navBack} hitSlop={8}>
+        <Pressable
+          onPress={handleBack}
+          style={s.navBack}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-back" size={22} color={C.text} />
         </Pressable>
         <Text style={s.navTitle} numberOfLines={1}>
           {game ? `${game.awayTeam} @ ${game.homeTeam}` : "Game Detail"}
         </Text>
-        <View style={s.navRight}>
+        <Pressable
+          onPress={handleShare}
+          style={s.navRight}
+          hitSlop={8}
+          disabled={!game}
+          accessibilityRole="button"
+          accessibilityLabel={game ? `Share ${game.awayTeam} at ${game.homeTeam}` : "Share game"}
+        >
           <Ionicons name="share-outline" size={20} color={C.textSecondary} />
-        </View>
+        </Pressable>
       </View>
 
       {isLoading || !game ? (
@@ -209,10 +339,16 @@ export default function GameDetailScreen() {
           <Text style={s.loadingText}>Loading game…</Text>
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} stickyHeaderIndices={[1]}>
+        <ScrollView
+          ref={gameScrollRef}
+          showsVerticalScrollIndicator={false}
+          stickyHeaderIndices={isBaseballGamecast ? undefined : [1]}
+          scrollEnabled={!isBaseballGamecast}
+          bounces={!isBaseballGamecast}
+        >
 
           {/* ── Hero score section ─────────────────────────────────────────── */}
-          <View>
+          {!isBaseballGamecast && <View>
             <LinearGradient colors={venueGrad} style={s.hero} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}>
               {/* League-color tint */}
               <LinearGradient
@@ -233,15 +369,24 @@ export default function GameDetailScreen() {
                   </>
                 )}
                 {isFinished && <Text style={s.statusExtra}> · FINAL</Text>}
-                {!isLive && !isFinished && game.startTime && (
-                  <Text style={s.statusExtra}> · {new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</Text>
+                {!isLive && !isFinished && (game.statusDetail || game.startTime) && (
+                  <Text style={s.statusExtra}>
+                    {" · "}
+                    {game.statusDetail ?? new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                  </Text>
                 )}
               </View>
 
               {/* Teams + score */}
               <View style={s.heroTeams}>
                 {/* Away */}
-                <Pressable style={s.heroTeamCol} onPress={() => goToTeam(game.awayTeam, game.league)} hitSlop={8}>
+                <Pressable
+                  style={s.heroTeamCol}
+                  onPress={() => goToTeam(game.awayTeam, game.league)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${game.awayTeam} team page`}
+                >
                   <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={96} borderColor={`${dc}55`} />
                   <Text style={[s.heroTeamName, awayWin && { color: dc }]} numberOfLines={2}>{game.awayTeam}</Text>
                   <Text style={s.heroTeamLabel}>AWAY</Text>
@@ -271,7 +416,13 @@ export default function GameDetailScreen() {
                 </View>
 
                 {/* Home */}
-                <Pressable style={[s.heroTeamCol, { alignItems: "flex-end" }]} onPress={() => goToTeam(game.homeTeam, game.league)} hitSlop={8}>
+                <Pressable
+                  style={[s.heroTeamCol, { alignItems: "flex-end" }]}
+                  onPress={() => goToTeam(game.homeTeam, game.league)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${game.homeTeam} team page`}
+                >
                   <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={96} borderColor={`${dc}55`} />
                   <Text style={[s.heroTeamName, { textAlign: "right" }, homeWin && { color: dc }]} numberOfLines={2}>{game.homeTeam}</Text>
                   <Text style={[s.heroTeamLabel, { textAlign: "right" }]}>HOME</Text>
@@ -287,35 +438,54 @@ export default function GameDetailScreen() {
                     Linking.openURL(url).catch(() => {});
                   }}
                   hitSlop={8}
+                  accessibilityRole="link"
+                  accessibilityLabel="Open ESPN Gamecast for this game"
                 >
                   <Ionicons name="radio" size={13} color={dc} />
-                  <Text style={[s.watchText, { color: dc }]}>Watch Live</Text>
+                  <Text style={[s.watchText, { color: dc }]}>ESPN Gamecast</Text>
                 </Pressable>
               )}
             </LinearGradient>
-          </View>
+          </View>}
 
           {/* ── Floating tab bar ───────────────────────────────────────────── */}
-          <View style={s.tabBarWrap}>
+          {!isBaseballGamecast && <View style={s.tabBarWrap}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabBar}>
               {TABS.map(tab => {
                 const active = activeTab === tab.key;
+                const tabLabel = game.league === "MLB" && tab.key === "playbyplay" ? "Plays" : tab.label;
                 return (
-                  <Pressable key={tab.key} onPress={() => setActiveTab(tab.key)} style={[s.tab, active && { borderBottomColor: dc }]}>
+                  <Pressable
+                    key={tab.key}
+                    onPress={() => selectTab(tab.key)}
+                    style={[s.tab, active && { borderBottomColor: dc }]}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`Show ${tabLabel}`}
+                  >
                     <Ionicons name={tab.icon as any} size={14} color={active ? dc : C.textTertiary} />
-                    <Text style={[s.tabLabel, active && { color: dc, fontWeight: "800" }]}>{tab.label}</Text>
+                    <Text style={[s.tabLabel, active && { color: dc, fontWeight: "800" }]}>{tabLabel}</Text>
                   </Pressable>
                 );
               })}
             </ScrollView>
-          </View>
+          </View>}
 
           {/* ── Tab content ────────────────────────────────────────────────── */}
-          <View style={s.content}>
+          <View style={[s.content, isBaseballGamecast && s.baseballContent]}>
 
             {/* GAMECAST */}
             {activeTab === "gamecast" && (
-              <GamecastTab data={data} game={game} dc={dc} />
+              <GamecastTab
+                data={data}
+                game={game}
+                dc={dc}
+                onSelectTab={selectTab}
+                gamecastHeight={gamecastHeight}
+                contentWidth={gameContentWidth}
+                isGameHubExpanded={isGameHubExpanded}
+                onGameHubExpandedChange={setIsGameHubExpanded}
+              />
             )}
 
             {/* BOX SCORE */}
@@ -368,21 +538,27 @@ export default function GameDetailScreen() {
                   </>
                 ) : (
                   <View style={s.emptyBoxState}>
-                    <Text style={s.emptyBoxIcon}>
-                      {game.status === "live" ? "📊" : game.status === "upcoming" ? "🕐" : "📋"}
-                    </Text>
+                    <View style={[s.emptyBoxIconWrap, { borderColor: `${dc}30`, backgroundColor: `${dc}10` }]}>
+                      <Ionicons
+                        name={game.status === "live" ? "stats-chart-outline" : game.status === "upcoming" ? "time-outline" : "clipboard-outline"}
+                        size={24}
+                        color={dc}
+                      />
+                    </View>
                     <Text style={s.emptyBoxTitle}>
                       {game.status === "live"
                         ? "Stats Updating Live"
                         : game.status === "upcoming"
-                        ? "Pre-Game"
+                        ? (game.statusDetail ? `Game ${game.statusDetail}` : "Pre-Game")
                         : "Stats Unavailable"}
                     </Text>
                     <Text style={s.emptyBoxMsg}>
                       {game.status === "live"
                         ? "Player stats are being compiled. They'll appear here shortly."
                         : game.status === "upcoming"
-                        ? "Box score stats will appear here once the game begins."
+                        ? (game.statusDetail
+                          ? "This game is not currently scheduled to begin. Check back for an updated start time."
+                          : "Box score stats will appear here once the game begins.")
                         : "Detailed stats were not available for this game."}
                     </Text>
                     {game.status === "live" && (
@@ -398,10 +574,10 @@ export default function GameDetailScreen() {
             {/* PLAY-BY-PLAY */}
             {activeTab === "playbyplay" && (
               <View style={s.tabSection}>
-                {data.keyPlays.length === 0 ? (
-                  <Text style={s.empty}>No play data yet</Text>
+                {playByPlayRows.length === 0 ? (
+                  <Text style={s.empty}>No ESPN play feed yet</Text>
                 ) : (() => {
-                  const reversed = [...data.keyPlays].reverse();
+                  const reversed = [...playByPlayRows].reverse();
                   return (
                     <View style={s.playsCard}>
                       {reversed.map((play: any, i: number) => (
@@ -451,7 +627,7 @@ function computeWinProb(game: any): number {
   let urgency = 1;
   if (period.includes("4") || period.includes("q4") || period.includes("3rd period") || period.includes("9th")) urgency = 2.5;
   else if (period.includes("3") || period.includes("q3") || period.includes("2nd period") || period.includes("7th")) urgency = 1.6;
-  else if (period.includes("ot") || period.includes("overtime") || period.includes("extra")) urgency = 4;
+  else if (/\b(?:ot|overtime|extra)\b/i.test(period)) urgency = 4;
 
   const adjustedDiff = diff * urgency * 1.5;
   return Math.min(0.97, Math.max(0.03, 1 / (1 + Math.exp(-adjustedDiff / 12))));
@@ -473,13 +649,13 @@ function WinProbBar({ game, dc }: { game: any; dc: string }) {
 
   return (
     <View style={wpb.wrap}>
-      {/* Label row: AWAY 38%  |  WIN PROBABILITY  |  62% HOME */}
+      {/* Label row: AWAY 38%  |  COMPUTED WIN LEAN  |  62% HOME */}
       <View style={wpb.labelRow}>
         <View style={wpb.teamBlock}>
           <Text style={[wpb.pct, { color: !homeLeading ? dc : C.textTertiary }]}>{awayPct}%</Text>
           <Text style={[wpb.teamLabel, { color: !homeLeading ? dc : C.textTertiary }]}>{awayShort}</Text>
         </View>
-        <Text style={wpb.centerLabel}>WIN PROBABILITY</Text>
+        <Text style={wpb.centerLabel}>COMPUTED WIN LEAN</Text>
         <View style={[wpb.teamBlock, { alignItems: "flex-end" }]}>
           <Text style={[wpb.pct, { color: homeLeading ? dc : C.textTertiary }]}>{homePct}%</Text>
           <Text style={[wpb.teamLabel, { color: homeLeading ? dc : C.textTertiary }]}>{homeShort}</Text>
@@ -493,7 +669,7 @@ function WinProbBar({ game, dc }: { game: any; dc: string }) {
       </View>
       {/* Favored label */}
       <Text style={wpb.favoredLabel}>
-        {isToss ? "Toss-up game" : `${homeLeading ? homeShort : awayShort} favored`}
+        {isToss ? "Toss-up estimate" : `${homeLeading ? homeShort : awayShort} edge based on score state`}
       </Text>
     </View>
   );
@@ -516,10 +692,40 @@ const wpb = StyleSheet.create({
 });
 
 // ─── Gamecast tab ──────────────────────────────────────────────────────────────
-function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
+function GamecastTab({
+  data,
+  game,
+  dc,
+  onSelectTab,
+  gamecastHeight,
+  contentWidth,
+  isGameHubExpanded,
+  onGameHubExpandedChange,
+}: {
+  data: any;
+  game: any;
+  dc: string;
+  onSelectTab: (tab: GameTab) => void;
+  gamecastHeight: number;
+  contentWidth: number;
+  isGameHubExpanded: boolean;
+  onGameHubExpandedChange: (expanded: boolean) => void;
+}) {
   const isLive = game.status === "live";
   const isFinished = game.status === "finished";
-  const keyPlays = data.keyPlays ?? [];
+  const keyPlays: GamePlay[] = data.keyPlays ?? [];
+
+  if (game.league === "MLB") {
+    return (
+      <BaseballGamecast
+        data={data}
+        width={contentWidth}
+        height={gamecastHeight}
+        expanded={isGameHubExpanded}
+        onExpandedChange={onGameHubExpandedChange}
+      />
+    );
+  }
 
   // Compute canonical tracker state from play-by-play
   const trackerState = React.useMemo(
@@ -543,11 +749,20 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
 
   return (
     <View style={s.tabSection}>
+      <GameCommandCenter
+        game={game}
+        dc={dc}
+        keyPlays={keyPlays}
+        trackerState={trackerState}
+        hasTeamStats={Object.keys(data.homeStats ?? {}).length > 0}
+        hasBoxScore={(data.homePlayerStats?.length ?? 0) + (data.awayPlayerStats?.length ?? 0) > 0}
+        onSelectTab={onSelectTab}
+      />
 
       {/* ── Arena (sport-specific SVG + live overlays) ────────────────────── */}
       <ArenaRenderer
         league={game.league}
-        width={SCREEN_W - 32}
+        width={contentWidth - 32}
         accentColor={dc}
         homeScore={game.homeScore}
         awayScore={game.awayScore}
@@ -561,7 +776,7 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
       />
 
       {/* ── AI Preview card for upcoming games ───────────────────────────── */}
-      {!isLive && !isFinished && (
+      {!isLive && !isFinished && !game.statusDetail && (
         <AiPreviewCard gameId={game.id} dc={dc} />
       )}
 
@@ -582,7 +797,7 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
           homeScore={game.homeScore ?? 0}
           awayScore={game.awayScore ?? 0}
           accentColor={dc}
-          width={SCREEN_W - 32}
+          width={contentWidth - 32}
           league={game.league}
         />
       )}
@@ -610,6 +825,281 @@ function GamecastTab({ data, game, dc }: { data: any; game: any; dc: string }) {
     </View>
   );
 }
+
+function GameCommandCenter({
+  game,
+  dc,
+  keyPlays,
+  trackerState,
+  hasTeamStats,
+  hasBoxScore,
+  onSelectTab,
+}: {
+  game: any;
+  dc: string;
+  keyPlays: GamePlay[];
+  trackerState: TrackerState;
+  hasTeamStats: boolean;
+  hasBoxScore: boolean;
+  onSelectTab: (tab: GameTab) => void;
+}) {
+  const latestPlay = keyPlays[keyPlays.length - 1] ?? null;
+  const isLive = game.status === "live";
+  const isFinished = game.status === "finished";
+  const hasScheduleUpdate = Boolean(game.statusDetail);
+  const statusLabel = game.statusDetail ?? (isLive ? "Live now" : isFinished ? "Final" : "Upcoming");
+  const periodLine = [game.quarter, game.timeRemaining].filter(Boolean).join(" · ");
+  const situationLine =
+    trackerState.situationLine ||
+    periodLine ||
+    (game.venue ? game.venue : scoreStatusLine(game));
+  const feedLine = latestPlay
+    ? `${keyPlays.length} ESPN feed ${keyPlays.length === 1 ? "event" : "events"}`
+    : hasScheduleUpdate
+      ? "Schedule update"
+      : isLive
+      ? "Scoreboard feed only so far"
+      : isFinished
+        ? "Scoring feed limited"
+        : "Pregame feed";
+  const insightLine = isLive || isFinished
+    ? "Momentum and win lean below are computed from score/play feed."
+    : hasScheduleUpdate
+      ? "Projections stay hidden until the matchup has a confirmed start."
+      : "Preview mode will fill in once the matchup gets closer.";
+
+  const actions: { label: string; icon: string; tab: GameTab; enabled: boolean }[] = [
+    { label: "Stats", icon: "bar-chart-outline", tab: "stats", enabled: hasTeamStats },
+    { label: "Scoring", icon: "list-outline", tab: "playbyplay", enabled: keyPlays.length > 0 },
+    { label: "Box", icon: "grid-outline", tab: "boxscore", enabled: hasBoxScore },
+  ];
+
+  if (!isLive && !isFinished && !hasScheduleUpdate) {
+    actions.unshift({ label: "Lineups", icon: "people-outline", tab: "lineups", enabled: true });
+  }
+
+  return (
+    <View style={[gcc.card, { borderColor: `${dc}28` }]}>
+      <LinearGradient
+        colors={[`${dc}12`, "transparent"]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      <View style={gcc.topRow}>
+        <View style={[gcc.statusIcon, { backgroundColor: `${dc}18`, borderColor: `${dc}35` }]}>
+          <Ionicons name={isLive ? "radio" : isFinished ? "checkmark" : "time-outline"} size={16} color={dc} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={gcc.kicker}>Game Center</Text>
+          <Text style={gcc.title}>{scoreStatusLine(game)}</Text>
+        </View>
+        <View style={[gcc.statusPill, isLive && { backgroundColor: C.liveGlow, borderColor: C.live }]}>
+          {isLive && <View style={gcc.liveDot} />}
+          <Text style={[gcc.statusText, isLive && { color: C.live }]}>{statusLabel}</Text>
+        </View>
+      </View>
+
+      <View style={gcc.metaGrid}>
+        <InfoPill icon={trackerState.situationIcon} label="Situation" value={situationLine || "Game state pending"} color={trackerState.situationColor || dc} />
+        <InfoPill icon="server-outline" label="Feed" value={feedLine} color={dc} />
+        <InfoPill
+          icon="sparkles-outline"
+          label="Insight"
+          value={hasScheduleUpdate ? "On hold" : isLive || isFinished ? "Computed, not official" : "Pregame"}
+          color={C.accentGold}
+        />
+      </View>
+
+      {latestPlay && (
+        <View style={gcc.latestPlay}>
+          <View style={[gcc.latestIcon, { backgroundColor: `${dc}18` }]}>
+            <Ionicons name={playIcon(classifyPlay(latestPlay.description)).name as any} size={14} color={dc} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={gcc.latestLabel}>Latest feed event {latestPlay.time ? `· ${latestPlay.time}` : ""}</Text>
+            <Text style={gcc.latestText} numberOfLines={2}>{latestPlay.description}</Text>
+          </View>
+        </View>
+      )}
+
+      <View style={gcc.actionRow}>
+        {actions.map((action) => (
+          <Pressable
+            key={action.label}
+            disabled={!action.enabled}
+            onPress={() => onSelectTab(action.tab)}
+            style={({ pressed }) => [
+              gcc.action,
+              action.enabled && { borderColor: `${dc}30`, backgroundColor: `${dc}10` },
+              !action.enabled && gcc.actionDisabled,
+              pressed && action.enabled && { backgroundColor: `${dc}1A` },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={action.enabled ? `Open ${action.label}` : `${action.label} unavailable`}
+          >
+            <Ionicons name={action.icon as any} size={14} color={action.enabled ? dc : C.textTertiary} />
+            <Text style={[gcc.actionText, action.enabled && { color: C.text }]}>{action.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Text style={gcc.truthNote}>{insightLine}</Text>
+    </View>
+  );
+}
+
+function InfoPill({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
+  return (
+    <View style={gcc.infoPill}>
+      <View style={[gcc.infoIcon, { backgroundColor: `${color}18` }]}>
+        <Ionicons name={icon as any} size={12} color={color} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={gcc.infoLabel}>{label}</Text>
+        <Text style={gcc.infoValue} numberOfLines={2}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+const gcc = StyleSheet.create({
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: C.card,
+    overflow: "hidden",
+    padding: 14,
+    gap: 12,
+  },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  statusIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  kicker: {
+    color: C.textTertiary,
+    fontSize: 10,
+    fontFamily: FONTS.bodyHeavy,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  title: {
+    color: C.text,
+    fontSize: 17,
+    fontFamily: FONTS.bodyHeavy,
+    marginTop: 2,
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.glassMedium,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  liveDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.live },
+  statusText: {
+    color: C.textSecondary,
+    fontSize: 10,
+    fontFamily: FONTS.bodyHeavy,
+    textTransform: "uppercase",
+  },
+  metaGrid: { gap: 8 },
+  infoPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.glassLight,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  infoIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoLabel: {
+    color: C.textTertiary,
+    fontSize: 9,
+    fontFamily: FONTS.bodyHeavy,
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+  },
+  infoValue: {
+    color: C.text,
+    fontSize: 12,
+    fontFamily: FONTS.bodyMedium,
+    lineHeight: 16,
+    marginTop: 1,
+  },
+  latestPlay: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 12,
+    backgroundColor: C.backgroundSecondary,
+    padding: 10,
+  },
+  latestIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  latestLabel: {
+    color: C.textTertiary,
+    fontSize: 10,
+    fontFamily: FONTS.bodyHeavy,
+    textTransform: "uppercase",
+  },
+  latestText: {
+    color: C.text,
+    fontSize: 13,
+    fontFamily: FONTS.bodyMedium,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  actionRow: { flexDirection: "row", gap: 8 },
+  action: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.glassMedium,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 8,
+  },
+  actionDisabled: { opacity: 0.45, backgroundColor: C.glassLight },
+  actionText: {
+    color: C.textTertiary,
+    fontSize: 12,
+    fontFamily: FONTS.bodyHeavy,
+  },
+  truthNote: {
+    color: C.textTertiary,
+    fontSize: 11,
+    fontFamily: FONTS.body,
+    lineHeight: 16,
+  },
+});
 
 // ─── AI Preview card for upcoming games ────────────────────────────────────────
 function AiPreviewCard({ gameId, dc }: { gameId: string; dc: string }) {
@@ -819,10 +1309,10 @@ function QuickStatsBar({ homeTeam, awayTeam, homeStats, awayStats, dc }: {
   return (
     <View style={s.quickStats}>
       {keys.map((key, i) => {
-        const hv = Number(homeStats[key]) || 0;
-        const av = Number(awayStats[key]) || 0;
-        const total = hv + av;
-        const homePct = total > 0 ? hv / total : 0.5;
+        const hv = comparableStatValue(homeStats[key]) ?? 0;
+        const av = comparableStatValue(awayStats[key]) ?? 0;
+        const total = Math.abs(hv) + Math.abs(av);
+        const homePct = total > 0 ? Math.max(0.05, Math.min(0.95, Math.abs(hv) / total)) : 0.5;
         return (
           <View key={key} style={[s.quickStatRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
             <Text style={s.quickStatVal}>{awayStats[key]}</Text>
@@ -853,19 +1343,29 @@ function TeamStatsSection({ homeTeam, awayTeam, homeStats, awayStats, dc, league
   return (
     <View style={s.statsCard}>
       <View style={s.statsHead}>
-        <Pressable style={{ flex: 1 }} onPress={() => goToTeam(awayTeam, league)}>
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={() => goToTeam(awayTeam, league)}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${awayTeam} team page`}
+        >
           <Text style={[s.statsTeam, { color: dc }]} numberOfLines={1}>{awayTeam}</Text>
         </Pressable>
         <Text style={s.statsLabel}>TEAM STATS</Text>
-        <Pressable style={{ flex: 1 }} onPress={() => goToTeam(homeTeam, league)}>
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={() => goToTeam(homeTeam, league)}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${homeTeam} team page`}
+        >
           <Text style={[s.statsTeam, { color: dc, textAlign: "right" }]} numberOfLines={1}>{homeTeam}</Text>
         </Pressable>
       </View>
       {keys.map((key, i) => {
-        const hv = Number(homeStats[key]) || 0;
-        const av = Number(awayStats[key]) || 0;
-        const total = hv + av;
-        const homePct = total > 0 ? hv / total : 0.5;
+        const hv = comparableStatValue(homeStats[key]) ?? 0;
+        const av = comparableStatValue(awayStats[key]) ?? 0;
+        const total = Math.abs(hv) + Math.abs(av);
+        const homePct = total > 0 ? Math.max(0.05, Math.min(0.95, Math.abs(hv) / total)) : 0.5;
         return (
           <View key={key} style={[s.statRow, i === keys.length - 1 && { borderBottomWidth: 0 }]}>
             <Text style={[s.statVal, av >= hv && { color: dc }]}>{awayStats[key]}</Text>
@@ -897,7 +1397,12 @@ function PlayerBoxscore({ teamName, teamLogo, players, league, dc, overrideCols,
 
   return (
     <View style={s.boxCard}>
-      <Pressable style={s.boxTeamHeader} onPress={() => goToTeam(teamName, league)}>
+      <Pressable
+        style={s.boxTeamHeader}
+        onPress={() => goToTeam(teamName, league)}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${teamName} team page`}
+      >
         <TeamLogo uri={teamLogo} name={teamName} size={28} borderColor={`${dc}44`} />
         <Text style={[s.boxTeamName, { color: dc }]}>{teamName}{sectionLabel ? ` — ${sectionLabel}` : ""}</Text>
       </Pressable>
@@ -909,7 +1414,13 @@ function PlayerBoxscore({ teamName, teamLogo, players, league, dc, overrideCols,
         const isGK = player.stats?.role === "GK";
         const isGoalie = player.stats?.role === "G";
         return (
-          <Pressable key={player.name} style={s.boxRow} onPress={() => goToPlayer(player.name)}>
+          <Pressable
+            key={player.name}
+            style={s.boxRow}
+            onPress={() => goToPlayer(player.name)}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${player.name} player page`}
+          >
             <View style={s.boxPlayerCell}>
               {player.starter && <View style={[s.starterDot, { backgroundColor: dc }]} />}
               <Text style={s.boxPlayer} numberOfLines={1}>{player.name}</Text>
@@ -937,7 +1448,12 @@ function LineupSection({ teamName, teamLogo, league, players, dc }: {
   const bench = players.filter(p => !p.starter);
   return (
     <View style={s.lineupSection}>
-      <Pressable style={s.lineupTeamHeader} onPress={() => goToTeam(teamName, league)}>
+      <Pressable
+        style={s.lineupTeamHeader}
+        onPress={() => goToTeam(teamName, league)}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${teamName} team page`}
+      >
         <TeamLogo uri={teamLogo} name={teamName} size={32} borderColor={`${dc}44`} />
         <Text style={[s.lineupTeamName, { color: dc }]}>{teamName}</Text>
       </Pressable>
@@ -968,7 +1484,12 @@ function PlayerRow({ player, idx, dc, league, isStarter }: {
   const [err, setErr] = useState(false);
   const url = getEspnHeadshotUrl(player.name, league);
   return (
-    <Pressable style={s.playerRow} onPress={() => goToPlayer(player.name)}>
+    <Pressable
+      style={s.playerRow}
+      onPress={() => goToPlayer(player.name)}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${player.name} player page`}
+    >
       <View style={[s.playerNumBadge, isStarter ? { backgroundColor: `${dc}22` } : { backgroundColor: "rgba(255,255,255,0.06)" }]}>
         <Text style={[s.playerNum, isStarter && { color: dc }]}>{idx + 1}</Text>
       </View>
@@ -1046,6 +1567,7 @@ const s = StyleSheet.create({
 
   // content
   content: { paddingBottom: 60 },
+  baseballContent: { paddingBottom: 0 },
   tabSection: { padding: 16, gap: 14 },
 
   // win probability
@@ -1076,7 +1598,7 @@ const s = StyleSheet.create({
   // section headers
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
   sectionAccent: { width: 4, height: 18, borderRadius: 2 },
-  sectionTitle: { fontSize: 17, fontWeight: "800", color: C.text, fontFamily: FONTS.bodyBold, letterSpacing: -0.2 },
+  sectionTitle: { fontSize: 17, fontWeight: "800", color: C.text, fontFamily: FONTS.bodyBold },
 
   // plays
   playsCard: { backgroundColor: C.card, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder },
@@ -1160,7 +1682,15 @@ const s = StyleSheet.create({
 
   empty: { color: C.textTertiary, fontSize: 14, textAlign: "center", paddingVertical: 20, fontFamily: FONTS.body },
   emptyBoxState: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 24 },
-  emptyBoxIcon: { fontSize: 36, marginBottom: 12 },
+  emptyBoxIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
   emptyBoxTitle: { color: C.text, fontSize: 17, fontFamily: FONTS.bodyBold, marginBottom: 8, textAlign: "center" },
   emptyBoxMsg: { color: C.textSecondary, fontSize: 14, fontFamily: FONTS.body, textAlign: "center", lineHeight: 20, marginBottom: 12 },
   emptyBoxHint: { fontSize: 13, fontFamily: FONTS.bodySemiBold, textAlign: "center" },

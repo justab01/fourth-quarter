@@ -516,12 +516,12 @@ const s = StyleSheet.create({
 });
 
 const pick = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
+  backdrop: { flex: 1, backgroundColor: "rgba(13,19,26,0.68)" },
   sheet: {
-    backgroundColor: "#1C1C1E",
+    backgroundColor: C.cardElevated,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingTop: 14, paddingHorizontal: 20,
-    borderWidth: 1, borderColor: C.glassMedium,
+    borderWidth: 1, borderColor: C.glassBorder,
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,

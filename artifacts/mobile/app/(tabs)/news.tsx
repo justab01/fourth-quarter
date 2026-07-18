@@ -8,11 +8,12 @@ import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
-import { FONTS, FONT_SIZES } from "@/constants/typography";
+import { FONTS } from "@/constants/typography";
 import { api, type NewsArticle } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsCardSkeleton } from "@/components/LoadingSkeleton";
+import { SearchButton } from "@/components/SearchButton";
 import { ProfileButton } from "@/components/ProfileButton";
 
 const C = Colors.dark;
@@ -28,12 +29,12 @@ const FILTER_COLORS: Record<string, string> = {
 // ─── Narrative bucket classifier ──────────────────────────────────────────────
 type NarrativeBucket = "playoff" | "injury" | "trades" | "highlights" | "general";
 
-const BUCKET_META: Record<NarrativeBucket, { label: string; emoji: string; color: string }> = {
-  playoff:    { label: "Playoff Race",     emoji: "🏆", color: C.accentGreen },
-  injury:     { label: "Injury Report",    emoji: "🏥", color: "#E05C5C" },
-  trades:     { label: "Trades & Moves",   emoji: "📦", color: C.accentBlue },
-  highlights: { label: "Highlights",       emoji: "⚡", color: C.accentGold },
-  general:    { label: "Around the League",emoji: "📰", color: C.textSecondary },
+const BUCKET_META: Record<NarrativeBucket, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+  playoff:    { label: "Playoff Race",      icon: "trophy-outline", color: C.accentGreen },
+  injury:     { label: "Injury Report",     icon: "medkit-outline", color: "#E05C5C" },
+  trades:     { label: "Trades & Moves",    icon: "swap-horizontal-outline", color: C.accentBlue },
+  highlights: { label: "Highlights",        icon: "flash-outline", color: C.accentGold },
+  general:    { label: "Around the League", icon: "newspaper-outline", color: C.textSecondary },
 };
 
 function classifyArticle(article: NewsArticle): NarrativeBucket {
@@ -60,11 +61,11 @@ function groupByNarrative(articles: NewsArticle[]): Array<{ bucket: NarrativeBuc
 
 // ─── Narrative section header ──────────────────────────────────────────────────
 function NarrativeHeader({ bucket }: { bucket: NarrativeBucket }) {
-  const { label, emoji, color } = BUCKET_META[bucket];
+  const { label, icon, color } = BUCKET_META[bucket];
   return (
     <View style={nh.row}>
       <View style={[nh.bar, { backgroundColor: color }]} />
-      <Text style={nh.emoji}>{emoji}</Text>
+      <Ionicons name={icon} size={15} color={color} />
       <Text style={[nh.label, { color }]}>{label}</Text>
     </View>
   );
@@ -73,7 +74,6 @@ function NarrativeHeader({ bucket }: { bucket: NarrativeBucket }) {
 const nh = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 6 },
   bar: { width: 3, height: 18, borderRadius: 2 },
-  emoji: { fontSize: 15 },
   label: { fontSize: 14, fontWeight: "800", fontFamily: FONTS.bodyHeavy, letterSpacing: 0.2 },
 });
 
@@ -132,6 +132,9 @@ export default function NewsScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>News</Text>
+            <Text style={styles.subtitle}>
+              {filtered.length} {filtered.length === 1 ? "story" : "stories"} · {filter === "All" ? "All sports" : filter}
+            </Text>
             {filter === "My Teams" && preferences.favoriteTeams.length > 0 && (
               <View style={styles.personalTag}>
                 <Ionicons name="star" size={11} color={C.accent} />
@@ -139,7 +142,10 @@ export default function NewsScreen() {
               </View>
             )}
           </View>
-          <ProfileButton />
+          <View style={styles.headerActions}>
+            <SearchButton />
+            <ProfileButton />
+          </View>
         </View>
 
         {/* Filter chips */}
@@ -153,7 +159,13 @@ export default function NewsScreen() {
             const active = filter === f;
             const color  = FILTER_COLORS[f] ?? C.accent;
             return (
-              <Pressable key={f} onPress={() => setFilter(f)}>
+              <Pressable
+                key={f}
+                accessibilityRole="button"
+                accessibilityLabel={`Show ${f} news`}
+                accessibilityState={{ selected: active }}
+                onPress={() => setFilter(f)}
+              >
                 <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}18` }]}>
                   {active && f === "My Teams" && (
                     <Ionicons name="star" size={11} color={color} />
@@ -233,11 +245,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "900",
     color: C.text,
     fontFamily: FONTS.bodyHeavy,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
+  },
+  subtitle: {
+    color: C.textTertiary,
+    fontSize: 12,
+    fontFamily: FONTS.bodyMedium,
+    marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   personalTag: {
     flexDirection: "row",
@@ -273,7 +296,7 @@ const styles = StyleSheet.create({
   chipText: {
     color: C.textSecondary,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "800",
     fontFamily: FONTS.bodyBold,
   },
 
@@ -286,9 +309,9 @@ const styles = StyleSheet.create({
   empty: { alignItems: "center", paddingVertical: 70, gap: 12 },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: C.textSecondary,
-    fontFamily: FONTS.bodyBold,
+    fontFamily: FONTS.bodyHeavy,
   },
-  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: FONTS.body },
+  emptyText: { fontSize: 14, color: C.textTertiary, fontFamily: FONTS.bodyMedium },
 });

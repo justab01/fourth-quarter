@@ -60,7 +60,7 @@ export function ScoresTab({ team, onScroll, contentInsetTop = 0 }: ScoresTabProp
             />
           ))
         )}
-        <Text style={styles.hint}>Tap a game for quarter scores, player stats, and team comparison</Text>
+        <Text style={styles.hint}>Tap a game for quarter scores and player stats, then open GameCast for the full matchup</Text>
       </View>
 
       {/* Playoff Race Preview */}
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   playoffRankNum: { fontSize: 24, fontWeight: "900", fontFamily: FONTS.bodyHeavy },
   playoffRankLabel: { fontSize: 10, color: C.textTertiary },
   playoffStats: { flexDirection: "row", gap: 8 },
-  playoffStatBox: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", borderRadius: 8, paddingVertical: 8, alignItems: "center" },
+  playoffStatBox: { flex: 1, backgroundColor: C.glassLight, borderRadius: 8, paddingVertical: 8, alignItems: "center" },
   playoffStatLabel: { fontSize: 10, color: C.textTertiary },
   playoffStatValue: { fontSize: 14, fontWeight: "700", fontFamily: FONTS.bodyBold },
 
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   playerName: { fontSize: 13, fontWeight: "700", fontFamily: FONTS.bodyBold, color: C.text },
   playerMeta: { fontSize: 10, color: C.textSecondary, marginTop: 1 },
   playerStats: { flexDirection: "row", gap: 4 },
-  playerStatBox: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", borderRadius: 6, paddingVertical: 4, alignItems: "center" },
+  playerStatBox: { flex: 1, backgroundColor: C.glassLight, borderRadius: 6, paddingVertical: 4, alignItems: "center" },
   playerStatText: { fontSize: 12 },
   playerStatValue: { fontSize: 12, fontWeight: "700", fontFamily: FONTS.bodyBold, color: C.text },
   playerStatLabel: { fontSize: 12, color: C.textTertiary },

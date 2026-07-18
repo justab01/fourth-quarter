@@ -25,7 +25,7 @@ const DEFAULT_PREFS: UserPreferences = {
   rivals: [],
   darkMode: true,
   notifications: true,
-  onboardingComplete: false,
+  onboardingComplete: true,
   appMode: "fan" as AppMode,
 };
 

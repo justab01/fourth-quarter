@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
@@ -9,12 +9,12 @@ import { useSearch } from "@/context/SearchContext";
 const C = Colors.dark;
 
 export default function SearchTab() {
-  const { openSearch, isOpen } = useSearch();
+  const { openSearch } = useSearch();
 
   useFocusEffect(
     useCallback(() => {
-      if (!isOpen) openSearch();
-    }, [openSearch, isOpen])
+      openSearch();
+    }, [openSearch])
   );
 
   return (

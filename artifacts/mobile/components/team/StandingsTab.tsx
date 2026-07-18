@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   playoffStats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: C.glassLight,
     borderRadius: 12,
     paddingVertical: 12,
   },

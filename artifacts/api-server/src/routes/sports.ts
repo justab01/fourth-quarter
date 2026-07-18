@@ -94,6 +94,7 @@ async function espnFetch(url: string): Promise<unknown> {
 interface EspnTeam {
   id: string;
   displayName: string;
+  abbreviation?: string;
   logo?: string;
 }
 
@@ -102,11 +103,15 @@ interface EspnCompetitor {
   team?: EspnTeam;
   athlete?: { id?: string; displayName?: string; logo?: string };
   score?: string;
+  linescores?: Array<{ displayValue?: string; value?: number }>;
+  hits?: number;
+  errors?: number;
 }
 
 interface EspnStatusType {
   state: "pre" | "in" | "post";
   description: string;
+  name?: string;
   detail?: string;
   shortDetail?: string;
 }
@@ -175,11 +180,21 @@ interface EspnBoxscore {
 
 interface EspnPlay {
   id: string;
-  text: string;
+  text?: string | null;
   scoringPlay: boolean;
   team?: { id: string };
-  period?: { displayValue: string };
+  type?: { id?: string; text?: string; type?: string };
+  period?: { displayValue: string; number?: number; type?: string };
   clock?: { displayValue: string };
+  awayScore?: number;
+  homeScore?: number;
+  resultCount?: { balls?: number; strikes?: number };
+  pitchCount?: { balls?: number; strikes?: number };
+  outs?: number;
+  onFirst?: { athlete?: { id?: string } } | null;
+  onSecond?: { athlete?: { id?: string } } | null;
+  onThird?: { athlete?: { id?: string } } | null;
+  participants?: Array<{ athlete?: { id?: string }; type?: string }>;
 }
 
 interface EspnRosterEntry {
@@ -195,6 +210,16 @@ interface EspnSummary {
   boxscore: EspnBoxscore;
   plays?: EspnPlay[];
   rosters?: EspnRoster[];
+  situation?: {
+    balls?: number;
+    strikes?: number;
+    outs?: number;
+    onFirst?: { playerId?: string | number };
+    onSecond?: { playerId?: string | number };
+    onThird?: { playerId?: string | number };
+    pitcher?: { playerId?: string | number };
+    batter?: { playerId?: string | number };
+  };
   header?: {
     competitions: EspnCompetition[];
   };
@@ -206,6 +231,54 @@ interface PlayerStatLine {
   name: string;
   starter: boolean;
   stats: Record<string, string>;
+}
+
+interface BaseballAthlete {
+  id: string;
+  name: string;
+  shortName: string | null;
+  headshot: string | null;
+}
+
+interface BaseballSituation {
+  balls: number | null;
+  strikes: number | null;
+  outs: number | null;
+  inning: number | null;
+  inningHalf: "top" | "bottom" | null;
+  onFirst: BaseballAthlete | null;
+  onSecond: BaseballAthlete | null;
+  onThird: BaseballAthlete | null;
+  batter: BaseballAthlete | null;
+  pitcher: BaseballAthlete | null;
+}
+
+interface BaseballPlayState extends BaseballSituation {
+  id: string;
+  type: string;
+  typeText: string;
+  text: string;
+  awayScore: number | null;
+  homeScore: number | null;
+  scoringPlay: boolean;
+  teamId: string | null;
+}
+
+interface BaseballGamecast {
+  situation: BaseballSituation;
+  recentPlays: BaseballPlayState[];
+  lineScore: {
+    away: BaseballLineScoreTeam;
+    home: BaseballLineScoreTeam;
+  } | null;
+}
+
+interface BaseballLineScoreTeam {
+  innings: Array<number | null>;
+  runs: number | null;
+  hits: number | null;
+  errors: number | null;
+  leftOnBase: number | null;
 }
 
 type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing" | "seasonal";
@@ -234,11 +307,14 @@ interface GameShape {
   sportArchetype: SportArchetype;
   homeTeam: string;
   awayTeam: string;
+  homeAbbreviation?: string;
+  awayAbbreviation?: string;
   homeTeamId?: string;
   awayTeamId?: string;
   homeScore: number | null;
   awayScore: number | null;
   status: "live" | "finished" | "upcoming";
+  statusDetail?: string | null;
   startTime: string;
   quarter: string | null;
   timeRemaining: string | null;
@@ -256,6 +332,7 @@ interface GameShape {
 interface GameDetailShape {
   game: GameShape;
   keyPlays: Array<{ time: string; description: string; team: string }>;
+  baseballGamecast: BaseballGamecast | null;
   homeStats: Record<string, string | number>;
   awayStats: Record<string, string | number>;
   homeLineup: string[];
@@ -356,6 +433,23 @@ function mapStatus(state: string): "live" | "finished" | "upcoming" {
   return "upcoming";
 }
 
+function getUnavailableStatus(statusType?: EspnStatusType): string | null {
+  const raw = [
+    statusType?.description,
+    statusType?.detail,
+    statusType?.shortDetail,
+    statusType?.name,
+  ].filter(Boolean).join(" ");
+
+  if (/\bpostponed\b|\bppd\b/i.test(raw)) return "Postponed";
+  if (/\bcancel(?:l)?ed\b/i.test(raw)) return "Canceled";
+  if (/\bsuspended\b/i.test(raw)) return "Suspended";
+  if (/\babandoned\b/i.test(raw)) return "Abandoned";
+  if (/\bno contest\b/i.test(raw)) return "No contest";
+  if (/\bdelayed\b/i.test(raw)) return "Delayed";
+  return null;
+}
+
 function parseDetail(detail: string | undefined, state: string, leagueKey?: string): { quarter: string | null; timeRemaining: string | null } {
   if (state === "post") return { quarter: "Final", timeRemaining: null };
   if (state !== "in" || !detail) return { quarter: null, timeRemaining: null };
@@ -399,8 +493,11 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   const cfg = LEAGUE_CONFIG[leagueKey];
   const statusType = ev.status?.type ?? comp?.status?.type;
   const state: string = statusType?.state ?? "pre";
-  const status = mapStatus(state);
-  const { quarter, timeRemaining } = parseDetail(statusType?.detail ?? statusType?.shortDetail, state, leagueKey);
+  const statusDetail = getUnavailableStatus(statusType);
+  const status = statusDetail ? "upcoming" : mapStatus(state);
+  const { quarter, timeRemaining } = statusDetail
+    ? { quarter: statusDetail, timeRemaining: null }
+    : parseDetail(statusType?.detail ?? statusType?.shortDetail, state, leagueKey);
   const archetype = getArchetype(leagueKey);
 
   const getDisplayName = (c: any) =>
@@ -434,6 +531,7 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
       homeScore: null,
       awayScore: null,
       status,
+      statusDetail,
       startTime: ev.date ?? comp?.startDate ?? new Date().toISOString(),
       quarter: status === "finished" ? "Final" : quarter,
       timeRemaining: status === "finished" ? null : (leaderScore ? `Leader: ${leaderScore}` : timeRemaining),
@@ -450,6 +548,7 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     const raceComp = ev.competitions?.find((c: any) => c.type?.abbreviation === "Race") ?? comp;
     const raceStatus = raceComp?.status?.type ?? statusType;
     const raceState = raceStatus?.state ?? state;
+    const raceStatusDetail = getUnavailableStatus(raceStatus);
 
     return {
       id: `${leagueKey.toLowerCase()}-${ev.id}`,
@@ -462,9 +561,10 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
       awayTeamId: undefined,
       homeScore: null,
       awayScore: null,
-      status: mapStatus(raceState),
+      status: raceStatusDetail ? "upcoming" : mapStatus(raceState),
+      statusDetail: raceStatusDetail,
       startTime: ev.date ?? raceComp?.startDate ?? new Date().toISOString(),
-      quarter: raceState === "post" ? "Final" : null,
+      quarter: raceStatusDetail ?? (raceState === "post" ? "Final" : null),
       timeRemaining: null,
       venue: circuitName ?? comp?.venue?.fullName ?? null,
       homeTeamLogo: null,
@@ -507,11 +607,14 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     sportArchetype: archetype,
     homeTeam: normalizeTeamName(homeName),
     awayTeam: normalizeTeamName(awayName),
+    homeAbbreviation: home?.team?.abbreviation,
+    awayAbbreviation: away?.team?.abbreviation,
     homeTeamId: getEntityIdInner(home),
     awayTeamId: getEntityIdInner(away),
     homeScore: status === "upcoming" ? null : homeScore,
     awayScore: status === "upcoming" ? null : awayScore,
     status,
+    statusDetail,
     startTime: ev.date ?? comp?.startDate ?? new Date().toISOString(),
     quarter,
     timeRemaining,
@@ -998,7 +1101,7 @@ function extractBoxscore(
   // ─── Key plays from scoring plays ─────────────────────────────────────────
   const keyPlays: Array<{ time: string; description: string; team: string }> = [];
   const plays = json.plays ?? [];
-  const homeTeamId = bs.teams?.find((t) => t.team.displayName === game.homeTeam)?.team.id ?? "";
+  const homeTeamId = bs?.teams?.find((t) => t.team.displayName === game.homeTeam)?.team.id ?? "";
   const scoringPlays = plays.filter((p) => p.scoringPlay);
   scoringPlays.slice(-8).forEach((p) => {
     const period = p.period?.displayValue ?? "";
@@ -1006,7 +1109,7 @@ function extractBoxscore(
     const time = [clock, period].filter(Boolean).join(" · ");
     const teamId = p.team?.id ?? "";
     const teamName = teamId ? (teamId === homeTeamId ? game.homeTeam : game.awayTeam) : "";
-    keyPlays.push({ time, description: p.text, team: teamName });
+    keyPlays.push({ time, description: p.text ?? "", team: teamName });
   });
 
   // Fallback: recent plays if no scoring plays yet (e.g. upcoming)
@@ -1018,11 +1121,154 @@ function extractBoxscore(
         const period = p.period?.displayValue ?? "";
         const clock = p.clock?.displayValue ?? "";
         const time = [clock, period].filter(Boolean).join(" · ");
-        keyPlays.push({ time, description: p.text, team: "" });
+        keyPlays.push({ time, description: p.text ?? "", team: "" });
       });
   }
 
   return { homeStats, awayStats, homePlayerStats, awayPlayerStats, homeLineup, awayLineup, keyPlays };
+}
+
+function extractBaseballGamecast(json: EspnSummary): BaseballGamecast {
+  const athletes = new Map<string, BaseballAthlete>();
+
+  const rememberAthlete = (raw: any): void => {
+    const id = raw?.id != null ? String(raw.id) : "";
+    const name = raw?.displayName ?? raw?.fullName ?? "";
+    if (!id || !name) return;
+    athletes.set(id, {
+      id,
+      name,
+      shortName: raw?.shortName ?? null,
+      headshot: raw?.headshot?.href ?? null,
+    });
+  };
+
+  for (const playerEntry of json.boxscore?.players ?? []) {
+    for (const group of playerEntry.statistics ?? []) {
+      for (const entry of group.athletes ?? []) rememberAthlete(entry.athlete);
+    }
+  }
+  for (const roster of (json as any).rosters ?? []) {
+    for (const entry of roster.roster ?? roster.entries ?? []) {
+      rememberAthlete(entry.athlete ?? entry);
+    }
+  }
+  for (const competitor of (json as any).header?.competitions?.[0]?.competitors ?? []) {
+    for (const probable of competitor.probables ?? []) rememberAthlete(probable.athlete);
+  }
+
+  const resolveAthlete = (id: string | number | null | undefined): BaseballAthlete | null => {
+    if (id == null) return null;
+    return athletes.get(String(id)) ?? null;
+  };
+  const resolveRunner = (id: string | number | null | undefined): BaseballAthlete | null => {
+    if (id == null) return null;
+    return resolveAthlete(id) ?? {
+      id: String(id),
+      name: "Runner",
+      shortName: null,
+      headshot: null,
+    };
+  };
+
+  const participantId = (play: EspnPlay | undefined, type: string): string | null => {
+    const id = play?.participants?.find((entry) => entry.type === type)?.athlete?.id;
+    return id != null ? String(id) : null;
+  };
+
+  const baseId = (
+    play: EspnPlay | undefined,
+    base: "onFirst" | "onSecond" | "onThird",
+  ): string | null => {
+    const id = play?.[base]?.athlete?.id;
+    if (id != null) return String(id);
+    return participantId(play, base);
+  };
+
+  const normalizeHalf = (value?: string | null): "top" | "bottom" | null => {
+    const normalized = (value ?? "").toLowerCase();
+    if (normalized.startsWith("top")) return "top";
+    if (normalized.startsWith("bot") || normalized.startsWith("bottom")) return "bottom";
+    return null;
+  };
+
+  const plays = (json.plays ?? []).filter((play) => Boolean(play.text));
+  const latest = plays[plays.length - 1];
+  const current = json.situation;
+  const currentCount = latest?.resultCount ?? latest?.pitchCount;
+
+  const situation: BaseballSituation = {
+    balls: current?.balls ?? currentCount?.balls ?? null,
+    strikes: current?.strikes ?? currentCount?.strikes ?? null,
+    outs: current?.outs ?? latest?.outs ?? null,
+    inning: latest?.period?.number ?? null,
+    inningHalf: normalizeHalf(latest?.period?.type),
+    onFirst: resolveRunner(current?.onFirst?.playerId ?? baseId(latest, "onFirst")),
+    onSecond: resolveRunner(current?.onSecond?.playerId ?? baseId(latest, "onSecond")),
+    onThird: resolveRunner(current?.onThird?.playerId ?? baseId(latest, "onThird")),
+    batter: resolveAthlete(current?.batter?.playerId ?? participantId(latest, "batter")),
+    pitcher: resolveAthlete(current?.pitcher?.playerId ?? participantId(latest, "pitcher")),
+  };
+
+  const recentPlays: BaseballPlayState[] = plays.slice(-12).map((play) => {
+    const count = play.resultCount ?? play.pitchCount;
+    return {
+      id: play.id,
+      type: play.type?.type ?? "",
+      typeText: play.type?.text ?? "",
+      text: play.text ?? "",
+      awayScore: typeof play.awayScore === "number" ? play.awayScore : null,
+      homeScore: typeof play.homeScore === "number" ? play.homeScore : null,
+      scoringPlay: play.scoringPlay,
+      teamId: play.team?.id ?? null,
+      balls: count?.balls ?? null,
+      strikes: count?.strikes ?? null,
+      outs: play.outs ?? null,
+      inning: play.period?.number ?? null,
+      inningHalf: normalizeHalf(play.period?.type),
+      onFirst: resolveRunner(baseId(play, "onFirst")),
+      onSecond: resolveRunner(baseId(play, "onSecond")),
+      onThird: resolveRunner(baseId(play, "onThird")),
+      batter: resolveAthlete(participantId(play, "batter")),
+      pitcher: resolveAthlete(participantId(play, "pitcher")),
+    };
+  });
+
+  const competition = json.header?.competitions?.[0];
+  const awayCompetitor = competition?.competitors?.find((entry) => entry.homeAway === "away");
+  const homeCompetitor = competition?.competitors?.find((entry) => entry.homeAway === "home");
+
+  const leftOnBaseFor = (competitor: EspnCompetitor | undefined): number | null => {
+    const teamId = competitor?.team?.id;
+    if (!teamId) return null;
+    const teamStats = json.boxscore?.teams?.find((entry) => entry.team.id === teamId)?.statistics ?? [];
+    const stat = teamStats.find((entry) => {
+      const name = entry.name.toLowerCase();
+      return name === "leftonbase" || name === "leftonbases" || name.includes("runnersleftonbase");
+    });
+    if (!stat) return null;
+    const value = Number.parseInt(stat.displayValue, 10);
+    return Number.isFinite(value) ? value : null;
+  };
+
+  const toLineScoreTeam = (competitor: EspnCompetitor | undefined): BaseballLineScoreTeam => ({
+    innings: (competitor?.linescores ?? []).map((entry) => {
+      const raw = entry.value ?? (entry.displayValue != null ? Number.parseInt(entry.displayValue, 10) : NaN);
+      return Number.isFinite(raw) ? Number(raw) : null;
+    }),
+    runs: competitor?.score != null && competitor.score !== ""
+      ? Number.parseInt(competitor.score, 10)
+      : null,
+    hits: typeof competitor?.hits === "number" ? competitor.hits : null,
+    errors: typeof competitor?.errors === "number" ? competitor.errors : null,
+    leftOnBase: leftOnBaseFor(competitor),
+  });
+
+  const lineScore = awayCompetitor && homeCompetitor
+    ? { away: toLineScoreTeam(awayCompetitor), home: toLineScoreTeam(homeCompetitor) }
+    : null;
+
+  return { situation, recentPlays, lineScore };
 }
 
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
@@ -1125,10 +1371,14 @@ router.get("/sports/game/:gameId", async (req, res) => {
 
     const { homeStats, awayStats, homePlayerStats, awayPlayerStats, homeLineup, awayLineup, keyPlays } =
       extractBoxscore(summaryJson, leagueKey, game);
+    const baseballGamecast = leagueKey === "MLB"
+      ? extractBaseballGamecast(summaryJson)
+      : null;
 
     const detail: GameDetailShape = {
       game,
       keyPlays,
+      baseballGamecast,
       homeStats,
       awayStats,
       homeLineup,
@@ -1443,11 +1693,8 @@ router.get("/sports/team", async (req, res) => {
       })
       // Step 3: word-by-word match — needle's words all appear in the display name's words
       ?? teams.find((t) => {
-        const dnWords = normalizeName(t.team.displayName).split(/(?=[A-Z])|(?<=[a-z])(?=[A-Z])/);
         const needleWords = name.toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
         const dn = normalizeName(t.team.displayName);
-        // Check if the team's mascot/last word matches a word in the needle
-        const mascot = t.team.nickname ? normalizeName(t.team.nickname) : dn.replace(normalizeName(t.team.location ?? ""), "");
         return needleWords.some(w => w.length > 3 && dn.includes(w));
       });
 
@@ -2345,7 +2592,7 @@ router.get("/sports/standings", async (req, res) => {
 
 router.get("/sports/in-one-breath", async (_req, res) => {
   const cacheKey = "in-one-breath";
-  const cached = getCached<{ summary: string; generated: string }>(cacheKey);
+  const cached = getCached<{ summary: string; generated: string; focus?: string; angle?: string }>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   try {
@@ -2364,7 +2611,45 @@ router.get("/sports/in-one-breath", async (_req, res) => {
       return diff <= 5;
     });
 
-    const prompt = `You are a sports broadcaster. Summarize today's sports day in exactly 2 punchy sentences. Be specific with team names and scores. Use a confident, insider tone.
+    const featured =
+      closeGames[0]
+      ?? live[0]
+      ?? finished.find((g: any) => g.homeScore != null && g.awayScore != null)
+      ?? upcoming[0]
+      ?? null;
+    const leagueList = Object.keys(leagueCounts);
+    const leagueFocus = featured?.league ?? leagueList[0] ?? "Sports";
+    const focus = featured ? `${leagueFocus} spotlight` : "Daily read";
+    const angle = closeGames.length > 0
+      ? `${closeGames.length} tight live`
+      : live.length > 0
+        ? `${live.length} live now`
+        : upcoming.length > 0
+          ? `${upcoming.length} ahead`
+          : `${finished.length} final`;
+    const clock = (g: any) => [g.quarter, g.timeRemaining].filter(Boolean).join(" ");
+    const score = (g: any) => `${g.awayTeam} ${g.awayScore ?? 0}, ${g.homeTeam} ${g.homeScore ?? 0}`;
+    const fallbackSummary = (() => {
+      if (!featured) {
+        return "The board is quiet right now, so this is a catch-up window: check finals, reset your alerts, and let the next slate come to you.";
+      }
+      if (featured.status === "live") {
+        const diff = Math.abs((featured.homeScore ?? 0) - (featured.awayScore ?? 0));
+        const liveContext = diff <= 5
+          ? "That is close enough to deserve the first tap."
+          : "That is the cleanest live thread to open first.";
+        return `${featured.awayTeam} at ${featured.homeTeam} is the current read: ${score(featured)}${clock(featured) ? `, ${clock(featured)}` : ""}. ${liveContext} Behind it, ${upcoming.length} matchups are still ahead and ${finished.length} finals are ready for catch-up.`;
+      }
+      if (featured.status === "finished") {
+        const homeWon = (featured.homeScore ?? 0) > (featured.awayScore ?? 0);
+        const winner = homeWon ? featured.homeTeam : featured.awayTeam;
+        return `${winner} already shaped the day with ${score(featured)}. Start with that result, then use the rest of the board to decide what needs a deeper recap.`;
+      }
+      const starts = new Date(featured.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      return `${featured.awayTeam} at ${featured.homeTeam} is the next circle on the board, set for ${starts}. Use the live and final tabs now, then come back when this one turns into the main thread.`;
+    })();
+
+    const prompt = `You are writing the "In One Breath" module for a modern sports fan hub. Summarize today's sports day in exactly 2 specific sentences. Do not sound generic. Give fans a clear first tap: which game, result, or upcoming matchup deserves attention and why.
 
 Here's what's happening:
 - ${live.length} games live right now across ${Object.keys(leagueCounts).join(", ") || "no leagues"}
@@ -2379,13 +2664,7 @@ Respond with ONLY the 2-sentence summary, no quotes or extra text.`;
 
     const groqKey = process.env.GROQ_API_KEY;
     if (!groqKey) {
-      const fallbackLines: string[] = [];
-      if (live.length > 0) fallbackLines.push(`${live.length} games live across ${Object.keys(leagueCounts).join(", ")}.`);
-      else if (upcoming.length > 0) fallbackLines.push(`${upcoming.length} games on tap today.`);
-      else fallbackLines.push("Quiet day across the sports world.");
-      if (closeGames.length > 0) fallbackLines.push(`${closeGames.length} nail-biters going down to the wire.`);
-      else if (finished.length > 0) fallbackLines.push(`${finished.length} games already in the books.`);
-      const result = { summary: fallbackLines.join(" "), generated: new Date().toISOString() };
+      const result = { summary: fallbackSummary, generated: new Date().toISOString(), focus, angle };
       setCached(cacheKey, result, 120_000);
       res.json(result);
       return;
@@ -2403,13 +2682,18 @@ Respond with ONLY the 2-sentence summary, no quotes or extra text.`;
     });
 
     const groqJson = await groqRes.json() as any;
-    const summary = groqJson.choices?.[0]?.message?.content?.trim() ?? "Sports day is loading — check back soon.";
-    const result = { summary, generated: new Date().toISOString() };
+    const summary = groqJson.choices?.[0]?.message?.content?.trim() ?? fallbackSummary;
+    const result = { summary, generated: new Date().toISOString(), focus, angle };
     setCached(cacheKey, result, 120_000);
     res.json(result);
   } catch (err) {
     console.error("In One Breath error:", err);
-    res.json({ summary: "The sports world is buzzing today — stay tuned for live updates.", generated: new Date().toISOString() });
+    res.json({
+      summary: "The live read could not refresh, but the board is still open: start with current games, then jump into finals for the cleanest catch-up path.",
+      generated: new Date().toISOString(),
+      focus: "Refresh needed",
+      angle: "Board still open",
+    });
   }
 });
 

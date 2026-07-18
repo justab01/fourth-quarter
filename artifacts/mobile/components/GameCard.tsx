@@ -33,27 +33,27 @@ function getLeagueColor(league: string): string {
 
 function getSportVenueGradient(league: string): [string, string, string, string] {
   const map: Record<string, [string, string, string, string]> = {
-    NBA:    ["#5C2800", "#301400", "#160900", "#0F0F0F"],
-    WNBA:   ["#5C1F00", "#2A0E00", "#140700", "#0F0F0F"],
-    NCAAB:  ["#001845", "#000E25", "#000710", "#0F0F0F"],
-    NFL:    ["#0A1E34", "#06121F", "#03090F", "#0F0F0F"],
-    NCAAF:  ["#1A1000", "#0D0800", "#060400", "#0F0F0F"],
-    MLB:    ["#320A0A", "#1A0505", "#0D0303", "#0F0F0F"],
-    MLS:    ["#062A12", "#031508", "#010A04", "#0F0F0F"],
-    EPL:    ["#1A0028", "#0D0014", "#06000A", "#0F0F0F"],
-    UCL:    ["#001040", "#000820", "#000410", "#0F0F0F"],
-    LIGA:   ["#280505", "#140202", "#090101", "#0F0F0F"],
-    NHL:    ["#061828", "#030D16", "#01060B", "#0F0F0F"],
-    ATP:    ["#0D1A00", "#070F00", "#030800", "#0F0F0F"],
-    WTA:    ["#200014", "#10000A", "#080005", "#0F0F0F"],
-    UFC:    ["#1A0800", "#0D0400", "#060200", "#0F0F0F"],
-    BOXING: ["#200000", "#100000", "#080000", "#0F0F0F"],
-    PGA:    ["#002A0A", "#001505", "#000A03", "#0F0F0F"],
-    LIV:    ["#001A2A", "#000D15", "#00060A", "#0F0F0F"],
-    F1:     ["#2A0000", "#150000", "#0A0000", "#0F0F0F"],
-    NASCAR: ["#1A1000", "#0D0800", "#060400", "#0F0F0F"],
+    NBA:    ["#A9532A", "#5A3428", "#263648", "#17202A"],
+    WNBA:   ["#AA5D36", "#57362E", "#263648", "#17202A"],
+    NCAAB:  ["#314F8D", "#263D69", "#213040", "#17202A"],
+    NFL:    ["#315A7A", "#273B52", "#213040", "#17202A"],
+    NCAAF:  ["#8F6840", "#594435", "#253242", "#17202A"],
+    MLB:    ["#8A3737", "#56313B", "#253242", "#17202A"],
+    MLS:    ["#2E7552", "#284C42", "#213040", "#17202A"],
+    EPL:    ["#623A68", "#47324F", "#253242", "#17202A"],
+    UCL:    ["#354C8A", "#2C3D68", "#213040", "#17202A"],
+    LIGA:   ["#8A3A3A", "#55313D", "#253242", "#17202A"],
+    NHL:    ["#315A7A", "#273B52", "#213040", "#17202A"],
+    ATP:    ["#6D8846", "#455C3C", "#223343", "#17202A"],
+    WTA:    ["#934D78", "#57364E", "#253242", "#17202A"],
+    UFC:    ["#8F4B32", "#57362E", "#253242", "#17202A"],
+    BOXING: ["#8B3E3A", "#56323A", "#253242", "#17202A"],
+    PGA:    ["#2E7552", "#284C42", "#213040", "#17202A"],
+    LIV:    ["#2E7186", "#294A59", "#213040", "#17202A"],
+    F1:     ["#8A3737", "#56313B", "#253242", "#17202A"],
+    NASCAR: ["#A96C32", "#5A4432", "#253242", "#17202A"],
   };
-  return map[league] ?? ["#16091E", "#0D0512", "#060209", "#0F0F0F"];
+  return map[league] ?? ["#5E446E", "#3D334C", "#253242", "#17202A"];
 }
 
 // ── Pulsing live indicator ────────────────────────────────────────────────────
@@ -156,7 +156,7 @@ const RIVALRY_PAIRS: [string, string][] = [
 function getContextChip(game: Game): { label: string; color: string; bg: string } | null {
   const diff = Math.abs((game.homeScore ?? 0) - (game.awayScore ?? 0));
   const period = (game.quarter ?? "").toLowerCase();
-  const isOT = period.includes("ot") || period.includes("overtime");
+  const isOT = /\b(?:ot|overtime)\b/i.test(period);
   const isLate = period.includes("4th") || period.includes("q4") || period.includes("9th") || period.includes("3rd period");
   const isRivalry = RIVALRY_PAIRS.some(([a, b]) =>
     (game.homeTeam.includes(a.split(" ").slice(-1)[0]) && game.awayTeam.includes(b.split(" ").slice(-1)[0])) ||
@@ -214,7 +214,7 @@ function calcWinProb(homeScore: number, awayScore: number, quarter: string | nul
   const diff = homeScore - awayScore;
   const q = (quarter ?? "").toLowerCase();
   let factor = 1.0;
-  if (q.includes("ot") || q.includes("overtime")) factor = 2.8;
+  if (/\b(?:ot|overtime)\b/i.test(q)) factor = 2.8;
   else if (q.includes("4th") || q.includes("q4") || q.includes("3rd period") || q.includes("9th")) factor = 2.0;
   else if (q.includes("3rd") || q.includes("q3") || q.includes("2nd period") || q.includes("7th") || q.includes("8th")) factor = 1.5;
   else if (q.includes("2nd") || q.includes("q2") || q.includes("1st period") || q.includes("5th") || q.includes("6th")) factor = 1.2;
