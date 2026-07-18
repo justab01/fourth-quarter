@@ -21,6 +21,21 @@ import { QuickGamePanel, type QuickGameTab } from "@/components/QuickGamePanel";
 
 const C = Colors.dark;
 const COMPACT_CONTROL_HIT_SLOP = { top: 8, bottom: 8, left: 0, right: 0 } as const;
+const SUMMER_LEAGUE_FAMILY = "NBA_SUMMER_LEAGUE";
+const SUMMER_LEAGUE_CIRCUITS = ["NBASLV", "NBASLC", "NBASLU"] as const;
+const SUMMER_LEAGUE_CIRCUIT_SET = new Set<string>(SUMMER_LEAGUE_CIRCUITS);
+
+function isSummerLeagueGame(game: Game): boolean {
+  return game.competition?.key === SUMMER_LEAGUE_FAMILY || SUMMER_LEAGUE_CIRCUIT_SET.has(game.league);
+}
+
+function matchesLeagueFilter(game: Game, league: string): boolean {
+  return league === SUMMER_LEAGUE_FAMILY ? isSummerLeagueGame(game) : game.league === league;
+}
+
+function scoreboardLeagueKey(game: Game): string {
+  return isSummerLeagueGame(game) ? SUMMER_LEAGUE_FAMILY : game.league;
+}
 
 const LEAGUE_KEYS = Array.from(new Set(MASTER_SPORT_CATEGORIES.flatMap((sport) => sport.leagues.map((league) => league.key))));
 
@@ -28,6 +43,10 @@ type LeagueMeta = { color: string; icon: keyof typeof Ionicons.glyphMap; fullNam
 
 const LEAGUE_META: Record<string, LeagueMeta> = {
   NBA:    { color: C.nba,       icon: "basketball-outline", fullName: "NBA" },
+  NBA_SUMMER_LEAGUE: { color: "#FF9A3D", icon: "sunny-outline", fullName: "NBA Summer League" },
+  NBASLV: { color: "#FF9A3D", icon: "sunny-outline", fullName: "Las Vegas" },
+  NBASLC: { color: "#F4C15D", icon: "sunny-outline", fullName: "California Classic" },
+  NBASLU: { color: "#63B3ED", icon: "sunny-outline", fullName: "Salt Lake City" },
   NFL:    { color: C.nfl,       icon: "american-football-outline", fullName: "NFL" },
   MLB:    { color: C.mlb,       icon: "baseball-outline", fullName: "MLB" },
   MLS:    { color: C.mls,       icon: "football-outline", fullName: "MLS" },
@@ -111,7 +130,7 @@ type SportCategoryKey = "all" | "major" | "world" | "college" | "individual" | "
 
 const SCORE_SPORT_CATEGORIES: { key: SportCategoryKey; label: string; icon: keyof typeof Ionicons.glyphMap; leagues: string[] }[] = [
   { key: "all", label: "All", icon: "grid-outline", leagues: [] },
-  { key: "major", label: "Daily", icon: "radio-outline", leagues: ["NBA", "WNBA", "NFL", "MLB", "NHL"] },
+  { key: "major", label: "Daily", icon: "radio-outline", leagues: ["NBA", SUMMER_LEAGUE_FAMILY, "WNBA", "NFL", "MLB", "NHL"] },
   { key: "world", label: "World", icon: "earth-outline", leagues: leaguesForSports(["soccer"]) },
   { key: "college", label: "College", icon: "school-outline", leagues: LEAGUE_KEYS.filter((league) => league.startsWith("NCAA")) },
   { key: "individual", label: "Golf/Tennis", icon: "person-outline", leagues: leaguesForSports(["golf", "tennis"]) },
@@ -159,7 +178,8 @@ const SCORE_EVENT_LANES: {
 
 function leagueMatchesCategory(league: string, category: SportCategoryKey): boolean {
   if (category === "all") return true;
-  return SCORE_SPORT_CATEGORIES.find(c => c.key === category)?.leagues.includes(league) ?? true;
+  const normalizedLeague = SUMMER_LEAGUE_CIRCUIT_SET.has(league) ? SUMMER_LEAGUE_FAMILY : league;
+  return SCORE_SPORT_CATEGORIES.find(c => c.key === category)?.leagues.includes(normalizedLeague) ?? true;
 }
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
@@ -798,7 +818,7 @@ function CompactScoreRow({
           <Text style={[compact.statusText, isLive && { color: C.live }]}>
             {game.statusDetail ?? (isLive ? "LIVE" : isFinished ? "FINAL" : formatTime(game.startTime))}
           </Text>
-          <Text style={compact.leagueText}>{game.league}</Text>
+          <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? game.league}</Text>
         </View>
         <View style={[compact.icon, { backgroundColor: `${meta.color}18` }]}>
           <Ionicons name={meta.icon} size={14} color={meta.color} />
@@ -824,7 +844,7 @@ function CompactScoreRow({
       <View style={[compact.statusRail, { backgroundColor: isLive ? C.live : meta.color }]} />
       <View style={compact.statusCol}>
         <Text style={[compact.statusText, isLive && { color: C.live }]}>{formatGameClock(game)}</Text>
-        <Text style={compact.leagueText}>{game.league}</Text>
+        <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? game.league}</Text>
       </View>
       <View style={compact.teams}>
         <View style={compact.teamLine}>
@@ -1069,7 +1089,15 @@ export default function LiveScreen() {
     });
     return Array.from(seen);
   }, [all]);
-  const categoryLeagues = allLeagueKeys.filter(league => leagueMatchesCategory(league, activeCategory));
+  const categoryLeagues = allLeagueKeys
+    .filter(league => leagueMatchesCategory(league, activeCategory))
+    .sort((a, b) => {
+      const summerOrder = ["NBA", SUMMER_LEAGUE_FAMILY, ...SUMMER_LEAGUE_CIRCUITS];
+      const aIndex = summerOrder.indexOf(a);
+      const bIndex = summerOrder.indexOf(b);
+      if (aIndex >= 0 || bIndex >= 0) return (aIndex >= 0 ? aIndex : 100) - (bIndex >= 0 ? bIndex : 100);
+      return 0;
+    });
   const leagueFilters = ["All", ...categoryLeagues];
   const activeCategoryMeta = SCORE_SPORT_CATEGORIES.find(category => category.key === activeCategory) ?? SCORE_SPORT_CATEGORIES[0];
 
@@ -1088,7 +1116,7 @@ export default function LiveScreen() {
     ? new Set(myTeamGames.map(game => game.id))
     : null;
 
-  let filteredBase: Game[] = activeLeague === "All" ? all : all.filter(g => g.league === activeLeague);
+  let filteredBase: Game[] = activeLeague === "All" ? all : all.filter(g => matchesLeagueFilter(g, activeLeague));
   filteredBase = filteredBase.filter(g => leagueMatchesCategory(g.league, activeCategory));
 
   if (smartFilter === "my-teams") {
@@ -1112,14 +1140,14 @@ export default function LiveScreen() {
   const counts = getScoreboardCounts(filteredBase);
 
   const leagueList = activeLeague === "All"
-    ? categoryLeagues
+    ? Array.from(new Set(filteredBase.map(scoreboardLeagueKey)))
     : [activeLeague as string];
 
   const leagueSections = leagueList
     .map(league => ({
       league,
       games: filteredBase
-        .filter(g => g.league === league && !pinnedMyTeamIds?.has(g.id))
+        .filter(g => matchesLeagueFilter(g, league) && !pinnedMyTeamIds?.has(g.id))
         .sort((a, b) => {
           const statusDiff = getStatusOrder(a) - getStatusOrder(b);
           if (statusDiff !== 0) return statusDiff;
@@ -1243,8 +1271,18 @@ export default function LiveScreen() {
               const meta = league === "All" ? null : getLeagueMeta(league);
               const color = league === "All" ? C.accent : (meta?.color ?? C.accent);
               const categoryGames = all.filter(g => leagueMatchesCategory(g.league, activeCategory));
-              const count = league === "All" ? categoryGames.length : all.filter(g => g.league === league).length;
-              const liveCount = league === "All" ? categoryGames.filter(g => g.status === "live").length : all.filter(g => g.league === league && g.status === "live").length;
+              const leagueGames = league === "All" ? categoryGames : all.filter(g => matchesLeagueFilter(g, league));
+              const count = leagueGames.length;
+              const liveCount = leagueGames.filter(g => g.status === "live").length;
+              const chipLabel = league === SUMMER_LEAGUE_FAMILY
+                ? "Summer"
+                : league === "NBASLV"
+                  ? "Vegas"
+                  : league === "NBASLC"
+                    ? "California"
+                    : league === "NBASLU"
+                      ? "Salt Lake"
+                      : league;
 
               if (league !== "All" && count === 0) return null;
 
@@ -1254,7 +1292,7 @@ export default function LiveScreen() {
                   onPress={() => setActiveLeague(league)}
                   hitSlop={COMPACT_CONTROL_HIT_SLOP}
                   accessibilityRole="button"
-                  accessibilityLabel={`Show ${league} scores`}
+                  accessibilityLabel={`Show ${meta?.fullName ?? league} scores`}
                   accessibilityState={{ selected: active }}
                 >
                   <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}1A` }]}>
@@ -1263,7 +1301,7 @@ export default function LiveScreen() {
                     ) : league === "All" ? (
                       <Ionicons name="grid" size={11} color={active ? color : C.textTertiary} />
                     ) : null}
-                    <Text style={[styles.chipText, active && { color }]}>{league}</Text>
+                    <Text style={[styles.chipText, active && { color }]}>{chipLabel}</Text>
                     {liveCount > 0 ? (
                       <View style={[styles.chipLive, active && { backgroundColor: `${color}40` }]}>
                         <View style={[styles.chipLiveDot, { backgroundColor: active ? color : C.live }]} />
