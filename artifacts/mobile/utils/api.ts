@@ -1,4 +1,9 @@
-const BASE = process.env.EXPO_PUBLIC_DOMAIN
+const isLocalWebPreview = typeof window !== "undefined"
+  && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+const BASE = isLocalWebPreview
+  ? "http://localhost:3001/api"
+  : process.env.EXPO_PUBLIC_DOMAIN
   ? (process.env.EXPO_PUBLIC_DOMAIN.includes("localhost") || process.env.EXPO_PUBLIC_DOMAIN.includes("127.0.0.1")
       ? `http://${process.env.EXPO_PUBLIC_DOMAIN}/api`
       : `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`)
@@ -31,7 +36,7 @@ export const api = {
   },
 
   getGameDetail: (gameId: string) =>
-    apiFetch<GameDetail>(`/sports/game/${gameId}`),
+    apiFetch<GameDetail>(`/sports/game/${gameId}`, { cache: "no-store" }),
 
   getStandings: (league: string) =>
     apiFetch<{ standings: StandingEntry[]; tournament: TournamentRound[] }>(`/sports/standings?league=${league}`),
@@ -296,6 +301,7 @@ export interface BaseballPlayState extends BaseballSituation {
 
 export interface BaseballGamecast {
   situation: BaseballSituation;
+  plays: BaseballPlayState[];
   recentPlays: BaseballPlayState[];
   lineScore: {
     away: BaseballLineScoreTeam;

@@ -300,8 +300,9 @@ export default function GameDetailScreen() {
     }
   }, [isBaseballGamecast, isGameHubExpanded]);
 
-  const playByPlayRows: GamePlay[] = game?.league === "MLB" && data?.baseballGamecast?.recentPlays?.length
-    ? data.baseballGamecast.recentPlays.map((play) => ({
+  const baseballPlays = data?.baseballGamecast?.plays ?? data?.baseballGamecast?.recentPlays;
+  const playByPlayRows: GamePlay[] = game?.league === "MLB" && baseballPlays?.length
+    ? baseballPlays.map((play) => ({
         time: play.inning != null
           ? `${play.inningHalf === "bottom" ? "Bot" : "Top"} ${play.inning}`
           : "",

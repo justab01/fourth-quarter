@@ -279,6 +279,7 @@ interface BaseballPlayState extends BaseballSituation {
 
 interface BaseballGamecast {
   situation: BaseballSituation;
+  plays: BaseballPlayState[];
   recentPlays: BaseballPlayState[];
   lineScore: {
     away: BaseballLineScoreTeam;
@@ -1260,7 +1261,7 @@ function extractBaseballGamecast(json: EspnSummary): BaseballGamecast {
     pitcher: resolveAthlete(current?.pitcher?.playerId ?? participantId(latest, "pitcher")),
   };
 
-  const recentPlays: BaseballPlayState[] = plays.slice(-12).map((play) => {
+  const normalizedPlays: BaseballPlayState[] = plays.map((play) => {
     const count = play.resultCount ?? play.pitchCount;
     return {
       id: play.id,
@@ -1283,6 +1284,7 @@ function extractBaseballGamecast(json: EspnSummary): BaseballGamecast {
       pitcher: resolveAthlete(participantId(play, "pitcher")),
     };
   });
+  const recentPlays = normalizedPlays.slice(-12);
 
   const competition = json.header?.competitions?.[0];
   const awayCompetitor = competition?.competitors?.find((entry) => entry.homeAway === "away");
@@ -1318,7 +1320,7 @@ function extractBaseballGamecast(json: EspnSummary): BaseballGamecast {
     ? { away: toLineScoreTeam(awayCompetitor), home: toLineScoreTeam(homeCompetitor) }
     : null;
 
-  return { situation, recentPlays, lineScore };
+  return { situation, plays: normalizedPlays, recentPlays, lineScore };
 }
 
 // ─── ROUTES ──────────────────────────────────────────────────────────────────

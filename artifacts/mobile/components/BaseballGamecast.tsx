@@ -354,7 +354,7 @@ export function BaseballGamecast({
   const expandedTop = Math.max(176, Math.min(206, Math.round(height * 0.24)));
   const collapsedTop = Math.max(expandedTop + 180, height - GAME_DETAILS_PEEK_HEIGHT);
   const collapsedOffset = collapsedTop - expandedTop;
-  const plays = gamecast?.recentPlays ?? [];
+  const plays = gamecast?.plays ?? gamecast?.recentPlays ?? [];
   const liveIndex = Math.max(0, plays.length - 1);
   const [selectedIndex, setSelectedIndex] = useState(liveIndex);
   const [section, setSection] = useState<BaseballHubSection>(initialSection);
@@ -426,7 +426,7 @@ export function BaseballGamecast({
   const playCall = selectedPlay?.text ?? (game.status === "upcoming"
     ? `First pitch ${new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
     : game.statusDetail ?? "Waiting for the next verified play.");
-  const recentRail = plays.slice(-7);
+  const recentRail = (gamecast?.recentPlays ?? plays).slice(-7);
   const railStartIndex = Math.max(0, plays.length - recentRail.length);
   const selectedId = selectedPlay?.id ?? null;
 

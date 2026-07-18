@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Image,
   Platform,
   Pressable,
   ScrollView,
+  SectionList,
   StyleSheet,
   Text,
   View,
@@ -244,43 +245,66 @@ function PlayRows({
 
   return (
     <View>
-      {visible.map((play, index) => {
-        const selected = play.id === selectedPlayId;
-        const inning = play.inning != null
-          ? `${play.inningHalf === "bottom" ? "BOT" : "TOP"} ${play.inning}`
-          : "GAME";
-        return (
-          <Pressable
-            key={play.id}
-            onPress={() => onSelectPlay(play.id)}
-            style={[styles.playRow, selected && styles.playRowSelected, index === visible.length - 1 && styles.lastRow]}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            accessibilityLabel={`${inning}. ${play.text}`}
-            {...WEB_PRESS_PROPS}
-          >
-            <View style={styles.playRail}>
-              <Ionicons
-                name={selected ? "radio-button-on" : "ellipse"}
-                size={selected ? 18 : 9}
-                color={selected ? C.accent : C.textTertiary}
-              />
-              {index < visible.length - 1 ? <View style={styles.playRailLine} /> : null}
-            </View>
-            <Text style={[styles.playInning, selected && styles.playInningActive]}>{inning}</Text>
-            <View style={styles.playCopy}>
-              <Text style={[styles.playText, selected && styles.playTextActive]}>{play.text}</Text>
-              <Text style={styles.playMeta}>
-                {play.balls ?? "–"}–{play.strikes ?? "–"} · {play.outs ?? "–"} out{play.outs === 1 ? "" : "s"}
-              </Text>
-            </View>
-            <Text style={styles.playScore}>{play.awayScore ?? "–"}–{play.homeScore ?? "–"}</Text>
-          </Pressable>
-        );
-      })}
+      {visible.map((play, index) => (
+        <PlayRow
+          key={play.id}
+          play={play}
+          selected={play.id === selectedPlayId}
+          last={index === visible.length - 1}
+          onSelectPlay={onSelectPlay}
+        />
+      ))}
     </View>
   );
 }
+
+function playInningLabel(play: BaseballPlayState): string {
+  if (play.inning == null) return "GAME";
+  return `${play.inningHalf === "bottom" ? "BOT" : "TOP"} ${play.inning}`;
+}
+
+const PlayRow = React.memo(function PlayRow({
+  play,
+  selected,
+  last,
+  onSelectPlay,
+}: {
+  play: BaseballPlayState;
+  selected: boolean;
+  last: boolean;
+  onSelectPlay: (playId: string) => void;
+}) {
+  const inning = playInningLabel(play);
+  const handlePress = useCallback(() => onSelectPlay(play.id), [onSelectPlay, play.id]);
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={[styles.playRow, selected && styles.playRowSelected, last && styles.lastRow]}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${inning}. ${play.text}`}
+      {...WEB_PRESS_PROPS}
+    >
+      <View style={styles.playRail}>
+        <Ionicons
+          name={selected ? "radio-button-on" : "ellipse"}
+          size={selected ? 18 : 9}
+          color={selected ? C.accent : C.textTertiary}
+        />
+        {!last ? <View style={styles.playRailLine} /> : null}
+      </View>
+      <Text style={[styles.playInning, selected && styles.playInningActive]}>{inning}</Text>
+      <View style={styles.playCopy}>
+        <Text style={[styles.playText, selected && styles.playTextActive]}>{play.text}</Text>
+        <Text style={styles.playMeta}>
+          {play.balls ?? "–"}–{play.strikes ?? "–"} · {play.outs ?? "–"} out{play.outs === 1 ? "" : "s"}
+        </Text>
+      </View>
+      <Text style={styles.playScore}>{play.awayScore ?? "–"}–{play.homeScore ?? "–"}</Text>
+    </Pressable>
+  );
+});
 
 function TeamComparison({ data }: { data: GameDetail }) {
   const lineScore = data.baseballGamecast?.lineScore;
@@ -330,22 +354,71 @@ function Overview(props: BaseballGameHubProps) {
   );
 }
 
-function Plays(props: BaseballGameHubProps) {
-  const plays = props.data.baseballGamecast?.recentPlays ?? [];
+function CompletePlayFeed(props: BaseballGameHubProps) {
+  const plays = props.data.baseballGamecast?.plays
+    ?? props.data.baseballGamecast?.recentPlays
+    ?? [];
+  const sections = useMemo(() => {
+    const grouped: Array<{ title: string; data: BaseballPlayState[] }> = [];
+    for (const play of [...plays].reverse()) {
+      const title = playInningLabel(play);
+      const current = grouped[grouped.length - 1];
+      if (current?.title === title) current.data.push(play);
+      else grouped.push({ title, data: [play] });
+    }
+    return grouped;
+  }, [plays]);
+  const renderItem = useCallback(({
+    item,
+    index,
+    section,
+  }: {
+    item: BaseballPlayState;
+    index: number;
+    section: { data: BaseballPlayState[] };
+  }) => (
+    <PlayRow
+      play={item}
+      selected={item.id === props.selectedPlayId}
+      last={index === section.data.length - 1}
+      onSelectPlay={props.onSelectPlay}
+    />
+  ), [props.onSelectPlay, props.selectedPlayId]);
+
   return (
-    <View style={styles.sectionBlock}>
-      <View style={styles.sectionTitleRow}>
-        <View>
-          <Text style={styles.eyebrow}>VERIFIED PLAY FEED</Text>
-          <Text style={styles.sectionSubhead}>Tap any play to replay its field state.</Text>
+    <SectionList
+      style={styles.content}
+      contentContainerStyle={styles.completeFeedContent}
+      sections={sections}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      renderSectionHeader={({ section }) => (
+        <View style={styles.playSectionHeader}>
+          <Text style={styles.playSectionTitle}>{section.title}</Text>
         </View>
-        <Pressable onPress={props.onReturnLive} style={styles.returnLive} accessibilityRole="button" accessibilityLabel="Return to live play" {...WEB_PRESS_PROPS}>
-          <Ionicons name="radio-button-on" size={13} color={C.live} />
-          <Text style={styles.returnLiveText}>LIVE</Text>
-        </Pressable>
-      </View>
-      <PlayRows plays={plays} selectedPlayId={props.selectedPlayId} onSelectPlay={props.onSelectPlay} />
-    </View>
+      )}
+      ListHeaderComponent={(
+        <View style={styles.completeFeedHeader}>
+          <View>
+            <Text style={styles.eyebrow}>VERIFIED PLAY FEED</Text>
+            <Text style={styles.sectionSubhead}>{plays.length} official events · tap any play to replay its field state.</Text>
+          </View>
+          <Pressable onPress={props.onReturnLive} style={styles.returnLive} accessibilityRole="button" accessibilityLabel="Return to live play" {...WEB_PRESS_PROPS}>
+            <Ionicons name="radio-button-on" size={13} color={C.live} />
+            <Text style={styles.returnLiveText}>LIVE</Text>
+          </Pressable>
+        </View>
+      )}
+      ListEmptyComponent={<EmptyState icon="list-outline" title="No plays yet" detail="Verified play-by-play will appear here when the official feed begins." />}
+      showsVerticalScrollIndicator={false}
+      stickySectionHeadersEnabled
+      nestedScrollEnabled
+      initialNumToRender={14}
+      maxToRenderPerBatch={12}
+      windowSize={7}
+      scrollEnabled={props.expanded}
+      pointerEvents={props.expanded ? "auto" : "none"}
+    />
   );
 }
 
@@ -468,7 +541,7 @@ export function BaseballGameHub(props: BaseballGameHubProps) {
 
   let content: React.ReactNode;
   if (props.section === "overview") content = <Overview {...props} />;
-  else if (props.section === "plays") content = <Plays {...props} />;
+  else if (props.section === "plays") content = null;
   else if (props.section === "box") content = <BoxScore data={props.data} />;
   else if (props.section === "stats") content = <Stats data={props.data} />;
   else content = <Lineups data={props.data} />;
@@ -480,6 +553,7 @@ export function BaseballGameHub(props: BaseballGameHubProps) {
       importantForAccessibility={props.expanded ? "auto" : "no-hide-descendants"}
     >
       <HubTabs section={props.section} onSectionChange={props.onSectionChange} />
+      {props.section === "plays" ? <CompletePlayFeed {...props} /> : (
       <ScrollView
         ref={scrollRef}
         style={styles.content}
@@ -491,6 +565,7 @@ export function BaseballGameHub(props: BaseballGameHubProps) {
       >
         {content}
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -500,6 +575,10 @@ const styles = StyleSheet.create({
   rootCollapsed: { display: "none" },
   content: { flex: 1 },
   contentContainer: { paddingHorizontal: 16, paddingBottom: 48 },
+  completeFeedContent: { paddingHorizontal: 16, paddingBottom: 48 },
+  completeFeedHeader: { minHeight: 76, paddingVertical: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  playSectionHeader: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 7, backgroundColor: "#111C26", borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: C.separator },
+  playSectionTitle: { color: C.accent, fontFamily: FONTS.bodyHeavy, fontSize: 10, letterSpacing: 0.5 },
   tabs: {
     height: 54,
     paddingHorizontal: 10,
