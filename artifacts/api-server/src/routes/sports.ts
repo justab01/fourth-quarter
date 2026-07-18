@@ -3,6 +3,19 @@ import https from "https";
 import zlib from "zlib";
 import { createHash } from "crypto";
 import { db, sportGameEvents, sportGameStates } from "@workspace/db";
+import {
+  NBA_SUMMER_LEAGUE_CIRCUITS,
+  NBA_SUMMER_LEAGUE_COMPETITION_KEY,
+  type CompetitionContext,
+  type ParticipantIdentity,
+  createCanonicalGameId,
+  createParticipantIdentity,
+  createSportsCacheKey,
+  expandCompetitionKey,
+  getCompetitionContext,
+  getVerifiedScoreboardWindow,
+  parseCanonicalGameId,
+} from "../sports/competitionRegistry";
 
 const router: IRouter = Router();
 
@@ -287,7 +300,10 @@ const COMBAT_SET = new Set(["UFC", "BOXING", "BELLATOR", "PFL"]);
 const GOLF_SET   = new Set(["PGA", "LIV", "LPGA"]);
 const RACING_SET = new Set(["F1", "NASCAR", "IRL"]);
 const SOCCER_SET = new Set(["MLS", "EPL", "UCL", "LIGA", "BUN", "SERA", "LIG1", "UEL", "UECL", "NWSL", "FWCM", "EURO", "COPA", "NCAASM", "NCAASW"]);
-const BASKETBALL_SET = new Set(["NBA", "WNBA", "NCAAB", "NCAAW"]);
+const BASKETBALL_SET = new Set([
+  "NBA", "WNBA", "NCAAB", "NCAAW",
+  "NBASLV", "NBASLC", "NBASLU",
+]);
 
 function getArchetype(league: string): SportArchetype {
   if (TENNIS_SET.has(league)) return "tennis";
@@ -304,6 +320,7 @@ interface GameShape {
   id: string;
   sport: string;
   league: string;
+  competition?: CompetitionContext;
   sportArchetype: SportArchetype;
   homeTeam: string;
   awayTeam: string;
@@ -311,6 +328,8 @@ interface GameShape {
   awayAbbreviation?: string;
   homeTeamId?: string;
   awayTeamId?: string;
+  homeParticipant?: ParticipantIdentity | null;
+  awayParticipant?: ParticipantIdentity | null;
   homeScore: number | null;
   awayScore: number | null;
   status: "live" | "finished" | "upcoming";
@@ -348,6 +367,9 @@ const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
   // ── Basketball ────────────────────────────────────────────────────────────
   NBA:      { espnPath: "basketball/nba",                     displaySport: "Basketball" },
   WNBA:     { espnPath: "basketball/wnba",                    displaySport: "Basketball" },
+  NBASLV:   { espnPath: NBA_SUMMER_LEAGUE_CIRCUITS.NBASLV.source.sportPath, displaySport: "Basketball" },
+  NBASLC:   { espnPath: NBA_SUMMER_LEAGUE_CIRCUITS.NBASLC.source.sportPath, displaySport: "Basketball" },
+  NBASLU:   { espnPath: NBA_SUMMER_LEAGUE_CIRCUITS.NBASLU.source.sportPath, displaySport: "Basketball" },
   // ── Football ──────────────────────────────────────────────────────────────
   NFL:      { espnPath: "football/nfl",                       displaySport: "Football"   },
   // ── Baseball ──────────────────────────────────────────────────────────────
@@ -404,6 +426,7 @@ const LEAGUE_CONFIG: Record<string, LeagueConfig> = {
   OLYMPICS: { espnPath: "olympics",                           displaySport: "Olympics"   },
   XGAMES:   { espnPath: "action-sports/xgames",              displaySport: "X Games"    },
 };
+const KNOWN_LEAGUE_KEYS = new Set(Object.keys(LEAGUE_CONFIG));
 
 const GAMELOG_PATH: Record<string, string> = {
   NBA: "basketball/nba", NFL: "football/nfl", MLB: "baseball/mlb", NHL: "hockey/nhl",
@@ -487,6 +510,13 @@ function normalizeTeamName(name: string): string {
   return TEAM_NAME_MAP[name] ?? name;
 }
 
+function seasonYearFromDate(date: string | undefined): number {
+  const parsed = date ? Number.parseInt(date.slice(0, 4), 10) : Number.NaN;
+  return Number.isInteger(parsed) && parsed > 1900
+    ? parsed
+    : new Date().getUTCFullYear();
+}
+
 function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
   const comp = ev.competitions[0];
   const competitors = comp?.competitors ?? [];
@@ -520,7 +550,7 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     }));
 
     return {
-      id: `${leagueKey.toLowerCase()}-${ev.id}`,
+      id: createCanonicalGameId(leagueKey, ev.id),
       sport: cfg.displaySport,
       league: leagueKey,
       sportArchetype: archetype,
@@ -551,7 +581,7 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     const raceStatusDetail = getUnavailableStatus(raceStatus);
 
     return {
-      id: `${leagueKey.toLowerCase()}-${ev.id}`,
+      id: createCanonicalGameId(leagueKey, ev.id),
       sport: cfg.displaySport,
       league: leagueKey,
       sportArchetype: archetype,
@@ -600,17 +630,31 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
     awayName = awayName ?? "Unknown";
   }
 
+  const normalizedHomeName = normalizeTeamName(homeName);
+  const normalizedAwayName = normalizeTeamName(awayName);
+  const competition = getCompetitionContext(
+    leagueKey,
+    seasonYearFromDate(ev.date ?? comp?.startDate),
+  );
+
   return {
-    id: `${leagueKey.toLowerCase()}-${ev.id}`,
+    id: createCanonicalGameId(leagueKey, ev.id),
     sport: cfg.displaySport,
     league: leagueKey,
+    competition: competition ?? undefined,
     sportArchetype: archetype,
-    homeTeam: normalizeTeamName(homeName),
-    awayTeam: normalizeTeamName(awayName),
+    homeTeam: normalizedHomeName,
+    awayTeam: normalizedAwayName,
     homeAbbreviation: home?.team?.abbreviation,
     awayAbbreviation: away?.team?.abbreviation,
     homeTeamId: getEntityIdInner(home),
     awayTeamId: getEntityIdInner(away),
+    homeParticipant: competition
+      ? createParticipantIdentity(leagueKey, getEntityIdInner(home), normalizedHomeName)
+      : undefined,
+    awayParticipant: competition
+      ? createParticipantIdentity(leagueKey, getEntityIdInner(away), normalizedAwayName)
+      : undefined,
     homeScore: status === "upcoming" ? null : homeScore,
     awayScore: status === "upcoming" ? null : awayScore,
     status,
@@ -629,7 +673,7 @@ function mapEvent(ev: EspnEvent, leagueKey: string): GameShape {
 }
 
 async function fetchLeagueGames(leagueKey: string, dateStr?: string): Promise<GameShape[]> {
-  const cacheKey = `scoreboard-${leagueKey}-${dateStr ?? "today"}`;
+  const cacheKey = createSportsCacheKey("scoreboard", leagueKey, dateStr ?? "today");
   const cached = getCached<GameShape[]>(cacheKey);
   if (cached) return cached;
 
@@ -637,7 +681,10 @@ async function fetchLeagueGames(leagueKey: string, dateStr?: string): Promise<Ga
   if (existing) return existing as Promise<GameShape[]>;
 
   const cfg = LEAGUE_CONFIG[leagueKey];
-  const dateParam = dateStr ? `?dates=${dateStr}` : "";
+  const dateParams = new URLSearchParams();
+  if (dateStr) dateParams.set("dates", dateStr);
+  if (dateStr?.includes("-")) dateParams.set("limit", "200");
+  const dateParam = dateParams.size ? `?${dateParams.toString()}` : "";
   const url = `https://site.api.espn.com/apis/site/v2/sports/${cfg.espnPath}/scoreboard${dateParam}`;
 
   const promise = (async () => {
@@ -647,10 +694,13 @@ async function fetchLeagueGames(leagueKey: string, dateStr?: string): Promise<Ga
         .filter((ev) => ev.competitions?.length > 0)
         .map((ev) => mapEvent(ev, leagueKey));
       const hasLive = games.some((g) => g.status === "live");
-      const isToday = !dateStr;
-      const isFuture = dateStr ? dateStr > todayYYYYMMDD() : false;
-      const ttl = isToday && hasLive ? 15_000
-                : isToday ? 60_000
+      const today = todayYYYYMMDD();
+      const [rangeStart, rangeEnd] = dateStr?.split("-") ?? [];
+      const includesToday = !dateStr
+        || (Boolean(rangeStart) && Boolean(rangeEnd) && rangeStart <= today && today <= rangeEnd);
+      const isFuture = dateStr ? (rangeStart ?? dateStr) > today : false;
+      const ttl = includesToday && hasLive ? 15_000
+                : includesToday ? 60_000
                 : isFuture ? 120_000
                 : 300_000;
       setCached(cacheKey, games, ttl);
@@ -1274,7 +1324,12 @@ function extractBaseballGamecast(json: EspnSummary): BaseballGamecast {
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
 
 router.get("/sports/games", async (req, res) => {
-  const { league, date } = req.query as { league?: string; date?: string };
+  const { league, date, competition, season } = req.query as {
+    league?: string;
+    date?: string;
+    competition?: string;
+    season?: string;
+  };
 
   // date param: accept YYYYMMDD or YYYY-MM-DD, normalise to YYYYMMDD for ESPN
   let espnDate: string | undefined;
@@ -1283,12 +1338,30 @@ router.get("/sports/games", async (req, res) => {
     if (/^\d{8}$/.test(raw)) espnDate = raw;
   }
 
-  const leagues = league
-    ? (league.toUpperCase() === "ALL"
-        ? Object.keys(LEAGUE_CONFIG)
-        : league.toUpperCase().split(",").filter((l) => l in LEAGUE_CONFIG))
-    : [
+  const normalizedCompetition = (
+    competition
+    ?? (league?.toUpperCase() === NBA_SUMMER_LEAGUE_COMPETITION_KEY ? league : undefined)
+  )?.toUpperCase();
+  if (normalizedCompetition && normalizedCompetition !== NBA_SUMMER_LEAGUE_COMPETITION_KEY) {
+    res.status(400).json({ error: `Unknown competition: ${normalizedCompetition}` });
+    return;
+  }
+
+  const requestedSeason = season && /^\d{4}$/.test(season)
+    ? Number.parseInt(season, 10)
+    : normalizedCompetition
+      ? 2026
+      : null;
+
+  const leagues = normalizedCompetition
+    ? expandCompetitionKey(normalizedCompetition)
+    : league
+      ? (league.toUpperCase() === "ALL"
+          ? Object.keys(LEAGUE_CONFIG)
+          : league.toUpperCase().split(",").filter((l) => l in LEAGUE_CONFIG))
+      : [
         "NBA", "WNBA", "NFL", "MLB", "NHL",
+        "NBASLV", "NBASLC", "NBASLU",
         "NCAAB", "NCAAW", "NCAAF", "NCAABB", "NCAAHM", "NCAAHW", "NCAASM", "NCAASW", "NCAALM", "NCAALW", "NCAAVW", "NCAAWP", "NCAAFH",
         "EPL", "LIGA", "BUN", "SERA", "LIG1", "MLS", "NWSL", "UCL", "UEL", "UECL",
         "FWCM", "EURO", "COPA",
@@ -1297,8 +1370,15 @@ router.get("/sports/games", async (req, res) => {
       ];
 
   try {
-    const results = await Promise.all(leagues.map((l) => fetchLeagueGames(l, espnDate)));
-    const games = results.flat();
+    const results = await Promise.all(leagues.map((leagueKey) => {
+      const verifiedWindow = requestedSeason
+        ? getVerifiedScoreboardWindow(leagueKey, requestedSeason)
+        : null;
+      return fetchLeagueGames(leagueKey, espnDate ?? verifiedWindow ?? undefined);
+    }));
+    const games = Array.from(
+      new Map(results.flat().map((game) => [game.id, game])).values(),
+    );
     games.sort((a, b) => {
       const pri: Record<string, number> = { live: 0, upcoming: 1, finished: 2 };
       return (pri[a.status] ?? 3) - (pri[b.status] ?? 3);
@@ -1315,18 +1395,21 @@ router.get("/sports/game/:gameId", async (req, res) => {
   // Support two ID formats:
   //   1. Prefixed:  "nba-401810863"  (canonical)
   //   2. Raw + query: "401810863?league=NBA"  (backward-compat fallback)
-  const dashIdx = gameId.indexOf("-");
   const queryLeague = (req.query.league as string | undefined)?.toUpperCase();
+  const parsedGameId = parseCanonicalGameId(gameId, KNOWN_LEAGUE_KEYS);
+  const parsedQueryGameId = queryLeague
+    ? parseCanonicalGameId(`${queryLeague.toLowerCase()}-${gameId}`, KNOWN_LEAGUE_KEYS)
+    : null;
 
   let leagueKey: string;
   let espnId: string;
 
-  if (dashIdx !== -1 && LEAGUE_CONFIG[gameId.slice(0, dashIdx).toUpperCase()]) {
-    leagueKey = gameId.slice(0, dashIdx).toUpperCase();
-    espnId = gameId.slice(dashIdx + 1);
-  } else if (queryLeague && LEAGUE_CONFIG[queryLeague]) {
-    leagueKey = queryLeague;
-    espnId = gameId;
+  if (parsedGameId) {
+    leagueKey = parsedGameId.leagueKey;
+    espnId = parsedGameId.sourceEventId;
+  } else if (parsedQueryGameId) {
+    leagueKey = parsedQueryGameId.leagueKey;
+    espnId = parsedQueryGameId.sourceEventId;
   } else {
     res.status(400).json({ error: "Invalid game ID. Use format '{league}-{id}' or add ?league= param." });
     return;
@@ -1334,7 +1417,7 @@ router.get("/sports/game/:gameId", async (req, res) => {
 
   const cfg = LEAGUE_CONFIG[leagueKey]!;
 
-  const cacheKey = `game-detail-${gameId}`;
+  const cacheKey = createSportsCacheKey("game-detail", leagueKey, espnId);
   const cached = getCached<GameDetailShape>(cacheKey);
   if (cached) { res.json(cached); return; }
 
@@ -2705,17 +2788,20 @@ router.get("/sports/game-preview/:gameId", async (req, res): Promise<void> => {
   if (cached) { res.json(cached); return; }
 
   try {
-    const dashIdx = gameId.indexOf("-");
     const queryLeague = (req.query.league as string | undefined)?.toUpperCase();
+    const parsedGameId = parseCanonicalGameId(gameId, KNOWN_LEAGUE_KEYS);
+    const parsedQueryGameId = queryLeague
+      ? parseCanonicalGameId(`${queryLeague.toLowerCase()}-${gameId}`, KNOWN_LEAGUE_KEYS)
+      : null;
     let leagueKey: string;
     let espnId: string;
 
-    if (dashIdx !== -1 && LEAGUE_CONFIG[gameId.slice(0, dashIdx).toUpperCase()]) {
-      leagueKey = gameId.slice(0, dashIdx).toUpperCase();
-      espnId = gameId.slice(dashIdx + 1);
-    } else if (queryLeague && LEAGUE_CONFIG[queryLeague]) {
-      leagueKey = queryLeague;
-      espnId = gameId;
+    if (parsedGameId) {
+      leagueKey = parsedGameId.leagueKey;
+      espnId = parsedGameId.sourceEventId;
+    } else if (parsedQueryGameId) {
+      leagueKey = parsedQueryGameId.leagueKey;
+      espnId = parsedQueryGameId.sourceEventId;
     } else {
       res.status(400).json({ error: "Invalid game ID." });
       return;
