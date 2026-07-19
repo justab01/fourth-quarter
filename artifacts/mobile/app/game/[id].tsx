@@ -48,8 +48,8 @@ const BASEBALL_HUB_SECTIONS = new Set<BaseballHubSection>([
   "overview",
   "plays",
   "box",
-  "stats",
   "lineups",
+  "details",
 ]);
 
 function normalizeBaseballSection(section?: string | string[] | null): BaseballHubSection {
