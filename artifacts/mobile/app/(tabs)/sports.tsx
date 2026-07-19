@@ -23,6 +23,14 @@ import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 
 const C = Colors.dark;
+const SUMMER_LEAGUE_CIRCUITS = new Set(["NBASLV", "NBASLC", "NBASLU"]);
+
+function sportIncludesGame(sport: SportCategory, game: Game): boolean {
+  const leagueKeys = new Set(sport.leagues.map((league) => league.key));
+  if (leagueKeys.has(game.league)) return true;
+  return leagueKeys.has("NBA_SUMMER_LEAGUE")
+    && (game.competition?.key === "NBA_SUMMER_LEAGUE" || SUMMER_LEAGUE_CIRCUITS.has(game.league));
+}
 
 type SportLane = {
   key: string;
@@ -146,20 +154,18 @@ function getSport(id: string) {
 
 function getLiveCount(games: Game[], sport: SportCategory): number {
   if (!games.length) return 0;
-  const leagueKeys = new Set(sport.leagues.map((league) => league.key));
-  return games.filter((game) => game.status === "live" && leagueKeys.has(game.league)).length;
+  return games.filter((game) => game.status === "live" && sportIncludesGame(sport, game)).length;
 }
 
 function getTotalGames(games: Game[], sport: SportCategory): number {
   if (!games.length) return 0;
-  const leagueKeys = new Set(sport.leagues.map((league) => league.key));
-  return games.filter((game) => leagueKeys.has(game.league)).length;
+  return games.filter((game) => sportIncludesGame(sport, game)).length;
 }
 
 function getSeasonPhase(sportId: string): string | null {
   const month = new Date().getMonth();
   const phases: Record<string, Record<number, string>> = {
-    basketball: { 0: "Midseason", 1: "All-Star", 2: "Push", 3: "Playoffs", 4: "Finals", 5: "Finals", 9: "Preseason", 10: "Opening" },
+    basketball: { 0: "Midseason", 1: "All-Star", 2: "Push", 3: "Playoffs", 4: "Finals", 5: "Finals", 6: "Summer League", 9: "Preseason", 10: "Opening" },
     football: { 0: "Playoffs", 1: "Super Bowl", 3: "Draft", 8: "Kickoff", 9: "Midseason", 10: "Rivalry", 11: "Playoffs" },
     baseball: { 2: "Spring", 3: "Opening", 6: "All-Star", 7: "Deadline", 8: "Race", 9: "Postseason" },
     soccer: { 0: "Window", 1: "Knockouts", 4: "Finals", 5: "World", 7: "Opening", 11: "Winter" },

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
@@ -28,17 +29,27 @@ const C = Colors.dark;
 
 const LEAGUE_ACCENT: Record<string, string> = {
   NBA: "#C9082A",
+  NBA_SUMMER_LEAGUE: "#FF9A3D",
+  NBASLV: "#FF9A3D",
+  NBASLC: "#F4C15D",
+  NBASLU: "#63B3ED",
   WNBA: "#FF6B35",
   NCAAB: "#003087",
   NCAAW: "#E31837",
 };
 
-const BASKETBALL_LEAGUES = ["NBA", "WNBA", "NCAAB", "NCAAW"] as const;
+const BASKETBALL_LEAGUES = ["NBA", "NBA_SUMMER_LEAGUE", "WNBA", "NCAAB", "NCAAW"] as const;
+const SUMMER_CIRCUITS = [
+  { key: "NBASLV", label: "Las Vegas", shortLabel: "Vegas" },
+  { key: "NBASLC", label: "California Classic", shortLabel: "California" },
+  { key: "NBASLU", label: "Salt Lake City", shortLabel: "Salt Lake" },
+] as const;
+const SUMMER_CIRCUIT_KEYS = new Set<string>(SUMMER_CIRCUITS.map((circuit) => circuit.key));
 
 // Date the WNBA 2026 season opens (used as fallback if next-game query is empty)
 const WNBA_OPENER_FALLBACK = new Date("2026-05-16T19:00:00-04:00");
 
-type PanelKey = "all" | "NBA" | "WNBA" | "NCAAB" | "NCAAW";
+type PanelKey = "all" | "NBA" | "NBA_SUMMER_LEAGUE" | "WNBA" | "NCAAB" | "NCAAW";
 
 interface Props {
   activeLeague: string; // "all" | "NBA" | "WNBA" | "NCAAB" | "NCAAW"
@@ -50,15 +61,15 @@ export function BasketballHub({ activeLeague, todayDate }: Props) {
     ? (activeLeague as PanelKey)
     : "all";
 
-  // Today's games across all 4 basketball leagues
+  // Today's games across the basketball family, including all three Summer circuits.
   const { data: gamesData, isLoading: gamesLoading } = useQuery({
     queryKey: ["bball-hub-games", todayDate],
-    queryFn: () => api.getGames("NBA,WNBA,NCAAB,NCAAW", todayDate),
+    queryFn: () => api.getGames("NBA,WNBA,NCAAB,NCAAW,NBASLV,NBASLC,NBASLU", todayDate),
     staleTime: 60_000,
   });
 
-  const isBasketballLeague = (league: string): league is (typeof BASKETBALL_LEAGUES)[number] =>
-    (BASKETBALL_LEAGUES as readonly string[]).includes(league);
+  const isBasketballLeague = (league: string) =>
+    (BASKETBALL_LEAGUES as readonly string[]).includes(league) || SUMMER_CIRCUIT_KEYS.has(league);
   const allBballGames = (gamesData?.games ?? []).filter((g) => isBasketballLeague(g.league));
 
   // Smooth fade transition between panels
@@ -76,6 +87,7 @@ export function BasketballHub({ activeLeague, todayDate }: Props) {
     <Animated.View style={[styles.root, { opacity: fadeAnim }]}>
       {shownPanel === "all" && <AllPanel games={allBballGames} loading={gamesLoading} />}
       {shownPanel === "NBA" && <NbaPanel games={allBballGames.filter((g) => g.league === "NBA")} loading={gamesLoading} />}
+      {shownPanel === "NBA_SUMMER_LEAGUE" && <SummerLeaguePanel />}
       {shownPanel === "WNBA" && <WnbaPanel />}
       {shownPanel === "NCAAB" && <NcaaMPanel />}
       {shownPanel === "NCAAW" && <NcaaWPanel />}
@@ -229,6 +241,112 @@ function NbaPanel({ games, loading }: { games: Game[]; loading: boolean }) {
       {stLoading ? <SkeletonRows count={6} /> :
         stError ? <ErrorMsg text="Couldn't load standings." /> :
         <ConferenceStandings standings={standings?.standings ?? []} league="NBA" />}
+    </>
+  );
+}
+
+type SummerCircuitFilter = "all" | (typeof SUMMER_CIRCUITS)[number]["key"];
+
+function relevantSummerGames(games: Game[]): Game[] {
+  const now = Date.now();
+  const live = games.filter((game) => game.status === "live");
+  const upcoming = games
+    .filter((game) => game.status === "upcoming" && new Date(game.startTime).getTime() >= now)
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  if (live.length || upcoming.length) return [...live, ...upcoming].slice(0, 10);
+  return [...games]
+    .filter((game) => game.status === "finished")
+    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+    .slice(0, 10);
+}
+
+function SummerLeaguePanel() {
+  const [circuit, setCircuit] = useState<SummerCircuitFilter>("all");
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["bball-hub-games", "NBA_SUMMER_LEAGUE", 2026],
+    queryFn: () => api.getCompetitionGames("NBA_SUMMER_LEAGUE", 2026),
+    staleTime: 5 * 60_000,
+  });
+  const allGames = data?.games ?? [];
+  const visibleCircuits = circuit === "all"
+    ? SUMMER_CIRCUITS
+    : SUMMER_CIRCUITS.filter((entry) => entry.key === circuit);
+
+  return (
+    <>
+      <View style={styles.summerHero}>
+        <LinearGradient
+          colors={["rgba(255,154,61,0.28)", "rgba(244,193,93,0.10)", "rgba(99,179,237,0.08)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Text style={styles.summerEyebrow}>2026 OFFSEASON LIVE BOARD</Text>
+        <Text style={styles.summerTitle}>NBA Summer League</Text>
+        <Text style={styles.summerDetail}>
+          {allGames.length > 0 ? `${allGames.length} verified games` : "Verified schedule"} · Las Vegas, California and Salt Lake
+        </Text>
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summerFilters}>
+        {[
+          { key: "all" as const, label: "All circuits" },
+          ...SUMMER_CIRCUITS.map((entry) => ({ key: entry.key, label: entry.shortLabel })),
+        ].map((entry) => {
+          const active = circuit === entry.key;
+          const count = entry.key === "all"
+            ? allGames.length
+            : allGames.filter((game) => game.competition?.circuitKey === entry.key || game.league === entry.key).length;
+          return (
+            <Pressable
+              key={entry.key}
+              onPress={() => setCircuit(entry.key)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`Show ${entry.label} Summer League games`}
+              style={[styles.summerFilter, active && styles.summerFilterActive]}
+            >
+              <Text style={[styles.summerFilterText, active && styles.summerFilterTextActive]}>{entry.label}</Text>
+              <Text style={[styles.summerFilterCount, active && styles.summerFilterTextActive]}>{count}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {isLoading ? <SkeletonStrip /> : isError ? (
+        <ErrorMsg text="Couldn't load the verified Summer League schedule." />
+      ) : (
+        visibleCircuits.map((entry) => {
+          const circuitGames = allGames.filter((game) =>
+            game.competition?.circuitKey === entry.key || game.league === entry.key
+          );
+          const games = relevantSummerGames(circuitGames);
+          return (
+            <React.Fragment key={entry.key}>
+              <SectionHeader
+                leftAccent={LEAGUE_ACCENT[entry.key]}
+                leftText={entry.label.toUpperCase()}
+                rightText={`${circuitGames.length} games`}
+              />
+              {games.length === 0 ? <EmptyMsg text={`No ${entry.label} games are available.`} /> : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripContent}>
+                  {games.map((game) => <GameStripCard key={game.id} game={game} />)}
+                </ScrollView>
+              )}
+            </React.Fragment>
+          );
+        })
+      )}
+
+      <View style={styles.summerExplainer}>
+        <Ionicons name="information-circle-outline" size={18} color={LEAGUE_ACCENT.NBA_SUMMER_LEAGUE} />
+        <View style={styles.summerExplainerCopy}>
+          <Text style={styles.summerExplainerTitle}>One competition, three circuits</Text>
+          <Text style={styles.summerExplainerText}>
+            Every matchup keeps its official circuit source and Summer participant identity separate from the regular NBA season.
+          </Text>
+        </View>
+      </View>
     </>
   );
 }
@@ -505,7 +623,7 @@ function GameStripCard({ game }: { game: Game }) {
     >
       <View style={styles.gcTop}>
         <Text style={[styles.gcLeague, { color: accent }]} numberOfLines={1}>
-          {game.league}
+          {game.competition?.circuitLabel ?? game.league}
           {game.round ? ` · ${game.round.toUpperCase()}` : ""}
         </Text>
         {isLive ? (
@@ -958,6 +1076,52 @@ function DraftHeroCard({
 // ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { paddingBottom: 32 },
+  summerHero: {
+    minHeight: 148,
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 18,
+    borderRadius: 18,
+    overflow: "hidden",
+    justifyContent: "flex-end",
+    borderWidth: 1,
+    borderColor: "rgba(255,154,61,0.28)",
+    backgroundColor: C.cardElevated,
+  },
+  summerEyebrow: { color: "#FFB56D", fontFamily: FONTS.bodyHeavy, fontSize: 10, letterSpacing: 1.3 },
+  summerTitle: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 26, marginTop: 6 },
+  summerDetail: { color: C.textSecondary, fontFamily: FONTS.bodyMedium, fontSize: 12, marginTop: 6 },
+  summerFilters: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
+  summerFilter: {
+    minHeight: 38,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.cardElevated,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  summerFilterActive: { borderColor: "#FF9A3D", backgroundColor: "rgba(255,154,61,0.14)" },
+  summerFilterText: { color: C.textSecondary, fontFamily: FONTS.bodyBold, fontSize: 11 },
+  summerFilterTextActive: { color: "#FFB56D" },
+  summerFilterCount: { color: C.textTertiary, fontFamily: FONTS.bodyHeavy, fontSize: 10 },
+  summerExplainer: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.cardElevated,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  summerExplainerCopy: { flex: 1, gap: 4 },
+  summerExplainerTitle: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 13 },
+  summerExplainerText: { color: C.textSecondary, fontFamily: FONTS.bodyMedium, fontSize: 12, lineHeight: 17 },
 
   sh: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",

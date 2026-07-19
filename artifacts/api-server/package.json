@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "while true; do NODE_ENV=development NODE_OPTIONS=--max-old-space-size=256 tsx ./src/index.ts; echo '[api-server] crashed, restarting in 2s...'; sleep 2; done",
     "build": "tsx ./build.ts",
+    "test": "node --import tsx --test src/sports/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

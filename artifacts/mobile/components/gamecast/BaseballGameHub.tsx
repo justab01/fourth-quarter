@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Image,
   Platform,
   Pressable,
   ScrollView,
+  SectionList,
   StyleSheet,
   Text,
   View,
@@ -244,43 +245,66 @@ function PlayRows({
 
   return (
     <View>
-      {visible.map((play, index) => {
-        const selected = play.id === selectedPlayId;
-        const inning = play.inning != null
-          ? `${play.inningHalf === "bottom" ? "BOT" : "TOP"} ${play.inning}`
-          : "GAME";
-        return (
-          <Pressable
-            key={play.id}
-            onPress={() => onSelectPlay(play.id)}
-            style={[styles.playRow, selected && styles.playRowSelected, index === visible.length - 1 && styles.lastRow]}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            accessibilityLabel={`${inning}. ${play.text}`}
-            {...WEB_PRESS_PROPS}
-          >
-            <View style={styles.playRail}>
-              <Ionicons
-                name={selected ? "radio-button-on" : "ellipse"}
-                size={selected ? 18 : 9}
-                color={selected ? C.accent : C.textTertiary}
-              />
-              {index < visible.length - 1 ? <View style={styles.playRailLine} /> : null}
-            </View>
-            <Text style={[styles.playInning, selected && styles.playInningActive]}>{inning}</Text>
-            <View style={styles.playCopy}>
-              <Text style={[styles.playText, selected && styles.playTextActive]}>{play.text}</Text>
-              <Text style={styles.playMeta}>
-                {play.balls ?? "–"}–{play.strikes ?? "–"} · {play.outs ?? "–"} out{play.outs === 1 ? "" : "s"}
-              </Text>
-            </View>
-            <Text style={styles.playScore}>{play.awayScore ?? "–"}–{play.homeScore ?? "–"}</Text>
-          </Pressable>
-        );
-      })}
+      {visible.map((play, index) => (
+        <PlayRow
+          key={play.id}
+          play={play}
+          selected={play.id === selectedPlayId}
+          last={index === visible.length - 1}
+          onSelectPlay={onSelectPlay}
+        />
+      ))}
     </View>
   );
 }
+
+function playInningLabel(play: BaseballPlayState): string {
+  if (play.inning == null) return "GAME";
+  return `${play.inningHalf === "bottom" ? "BOT" : "TOP"} ${play.inning}`;
+}
+
+const PlayRow = React.memo(function PlayRow({
+  play,
+  selected,
+  last,
+  onSelectPlay,
+}: {
+  play: BaseballPlayState;
+  selected: boolean;
+  last: boolean;
+  onSelectPlay: (playId: string) => void;
+}) {
+  const inning = playInningLabel(play);
+  const handlePress = useCallback(() => onSelectPlay(play.id), [onSelectPlay, play.id]);
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={[styles.playRow, selected && styles.playRowSelected, last && styles.lastRow]}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`${inning}. ${play.text}`}
+      {...WEB_PRESS_PROPS}
+    >
+      <View style={styles.playRail}>
+        <Ionicons
+          name={selected ? "radio-button-on" : "ellipse"}
+          size={selected ? 18 : 9}
+          color={selected ? C.accent : C.textTertiary}
+        />
+        {!last ? <View style={styles.playRailLine} /> : null}
+      </View>
+      <Text style={[styles.playInning, selected && styles.playInningActive]}>{inning}</Text>
+      <View style={styles.playCopy}>
+        <Text style={[styles.playText, selected && styles.playTextActive]}>{play.text}</Text>
+        <Text style={styles.playMeta}>
+          {play.balls ?? "–"}–{play.strikes ?? "–"} · {play.outs ?? "–"} out{play.outs === 1 ? "" : "s"}
+        </Text>
+      </View>
+      <Text style={styles.playScore}>{play.awayScore ?? "–"}–{play.homeScore ?? "–"}</Text>
+    </Pressable>
+  );
+});
 
 function TeamComparison({ data }: { data: GameDetail }) {
   const lineScore = data.baseballGamecast?.lineScore;
@@ -330,22 +354,71 @@ function Overview(props: BaseballGameHubProps) {
   );
 }
 
-function Plays(props: BaseballGameHubProps) {
-  const plays = props.data.baseballGamecast?.recentPlays ?? [];
+function CompletePlayFeed(props: BaseballGameHubProps) {
+  const plays = props.data.baseballGamecast?.plays
+    ?? props.data.baseballGamecast?.recentPlays
+    ?? [];
+  const sections = useMemo(() => {
+    const grouped: Array<{ title: string; data: BaseballPlayState[] }> = [];
+    for (const play of [...plays].reverse()) {
+      const title = playInningLabel(play);
+      const current = grouped[grouped.length - 1];
+      if (current?.title === title) current.data.push(play);
+      else grouped.push({ title, data: [play] });
+    }
+    return grouped;
+  }, [plays]);
+  const renderItem = useCallback(({
+    item,
+    index,
+    section,
+  }: {
+    item: BaseballPlayState;
+    index: number;
+    section: { data: BaseballPlayState[] };
+  }) => (
+    <PlayRow
+      play={item}
+      selected={item.id === props.selectedPlayId}
+      last={index === section.data.length - 1}
+      onSelectPlay={props.onSelectPlay}
+    />
+  ), [props.onSelectPlay, props.selectedPlayId]);
+
   return (
-    <View style={styles.sectionBlock}>
-      <View style={styles.sectionTitleRow}>
-        <View>
-          <Text style={styles.eyebrow}>VERIFIED PLAY FEED</Text>
-          <Text style={styles.sectionSubhead}>Tap any play to replay its field state.</Text>
+    <SectionList
+      style={styles.content}
+      contentContainerStyle={styles.completeFeedContent}
+      sections={sections}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      renderSectionHeader={({ section }) => (
+        <View style={styles.playSectionHeader}>
+          <Text style={styles.playSectionTitle}>{section.title}</Text>
         </View>
-        <Pressable onPress={props.onReturnLive} style={styles.returnLive} accessibilityRole="button" accessibilityLabel="Return to live play" {...WEB_PRESS_PROPS}>
-          <Ionicons name="radio-button-on" size={13} color={C.live} />
-          <Text style={styles.returnLiveText}>LIVE</Text>
-        </Pressable>
-      </View>
-      <PlayRows plays={plays} selectedPlayId={props.selectedPlayId} onSelectPlay={props.onSelectPlay} />
-    </View>
+      )}
+      ListHeaderComponent={(
+        <View style={styles.completeFeedHeader}>
+          <View>
+            <Text style={styles.eyebrow}>VERIFIED PLAY FEED</Text>
+            <Text style={styles.sectionSubhead}>{plays.length} official events · tap any play to replay its field state.</Text>
+          </View>
+          <Pressable onPress={props.onReturnLive} style={styles.returnLive} accessibilityRole="button" accessibilityLabel="Return to live play" {...WEB_PRESS_PROPS}>
+            <Ionicons name="radio-button-on" size={13} color={C.live} />
+            <Text style={styles.returnLiveText}>LIVE</Text>
+          </Pressable>
+        </View>
+      )}
+      ListEmptyComponent={<EmptyState icon="list-outline" title="No plays yet" detail="Verified play-by-play will appear here when the official feed begins." />}
+      showsVerticalScrollIndicator={false}
+      stickySectionHeadersEnabled
+      nestedScrollEnabled
+      initialNumToRender={14}
+      maxToRenderPerBatch={12}
+      windowSize={7}
+      scrollEnabled={props.expanded}
+      pointerEvents={props.expanded ? "auto" : "none"}
+    />
   );
 }
 
@@ -468,7 +541,7 @@ export function BaseballGameHub(props: BaseballGameHubProps) {
 
   let content: React.ReactNode;
   if (props.section === "overview") content = <Overview {...props} />;
-  else if (props.section === "plays") content = <Plays {...props} />;
+  else if (props.section === "plays") content = null;
   else if (props.section === "box") content = <BoxScore data={props.data} />;
   else if (props.section === "stats") content = <Stats data={props.data} />;
   else content = <Lineups data={props.data} />;
@@ -480,6 +553,7 @@ export function BaseballGameHub(props: BaseballGameHubProps) {
       importantForAccessibility={props.expanded ? "auto" : "no-hide-descendants"}
     >
       <HubTabs section={props.section} onSectionChange={props.onSectionChange} />
+      {props.section === "plays" ? <CompletePlayFeed {...props} /> : (
       <ScrollView
         ref={scrollRef}
         style={styles.content}
@@ -491,6 +565,7 @@ export function BaseballGameHub(props: BaseballGameHubProps) {
       >
         {content}
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -500,6 +575,10 @@ const styles = StyleSheet.create({
   rootCollapsed: { display: "none" },
   content: { flex: 1 },
   contentContainer: { paddingHorizontal: 16, paddingBottom: 48 },
+  completeFeedContent: { paddingHorizontal: 16, paddingBottom: 48 },
+  completeFeedHeader: { minHeight: 76, paddingVertical: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  playSectionHeader: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 7, backgroundColor: "#111C26", borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: C.separator },
+  playSectionTitle: { color: C.accent, fontFamily: FONTS.bodyHeavy, fontSize: 10, letterSpacing: 0.5 },
   tabs: {
     height: 54,
     paddingHorizontal: 10,
@@ -510,26 +589,26 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: "center", justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   tabActive: { borderBottomColor: C.accent },
-  tabText: { color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 11, letterSpacing: 0.5 },
+  tabText: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, letterSpacing: 0.35 },
   tabTextActive: { color: C.accent },
   sectionBlock: { paddingVertical: 18, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(244,238,229,0.15)" },
-  eyebrow: { color: C.textSecondary, fontFamily: FONTS.displayMedium, fontSize: 12, letterSpacing: 1.1 },
-  sectionSubhead: { color: C.textTertiary, fontFamily: FONTS.body, fontSize: 11, marginTop: 3 },
+  eyebrow: { color: C.textSecondary, fontFamily: FONTS.bodyHeavy, fontSize: 12, letterSpacing: 0.7 },
+  sectionSubhead: { color: C.textTertiary, fontFamily: FONTS.bodyMedium, fontSize: 11, marginTop: 3 },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   teamFallback: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.separator },
-  teamFallbackText: { color: C.textSecondary, fontFamily: FONTS.display, fontSize: 12 },
+  teamFallbackText: { color: C.textSecondary, fontFamily: FONTS.bodyHeavy, fontSize: 12 },
   emptyState: { minHeight: 130, alignItems: "center", justifyContent: "center", paddingHorizontal: 28, gap: 6 },
   emptyTitle: { color: C.text, fontFamily: FONTS.bodyBold, fontSize: 14, textAlign: "center" },
   emptyDetail: { color: C.textTertiary, fontFamily: FONTS.body, fontSize: 12, lineHeight: 18, textAlign: "center" },
   lineTable: { paddingTop: 10 },
   lineHeader: { flexDirection: "row", alignItems: "center", minWidth: 360, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-  lineHeaderCell: { width: 34, paddingVertical: 7, color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 10, textAlign: "center" },
+  lineHeaderCell: { width: 34, paddingVertical: 7, color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 9, textAlign: "center" },
   lineTeamHeader: { width: 90, textAlign: "left" },
   lineRow: { minWidth: 360, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
   lineRowCompact: { minWidth: 352 },
   lineTeam: { width: 90, flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8 },
   lineTeamCompact: { width: 82 },
-  lineTeamText: { color: C.text, fontFamily: FONTS.displayMedium, fontSize: 13 },
+  lineTeamText: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 12 },
   inningCell: { width: 34, color: C.text, fontFamily: FONTS.displayMedium, fontSize: 14, textAlign: "center" },
   totalCell: { width: 34, color: C.textSecondary, fontFamily: FONTS.display, fontSize: 15, textAlign: "center" },
   lineCellCompact: { width: 30 },
@@ -538,28 +617,28 @@ const styles = StyleSheet.create({
   betweenInnings: { minHeight: 82, marginTop: 12, paddingVertical: 13, flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: C.separator },
   betweenIcon: { width: 42, height: 42, borderRadius: 21, borderCurve: "continuous", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(242,166,90,0.12)" },
   betweenCopy: { flex: 1, gap: 3 },
-  betweenTitle: { color: C.text, fontFamily: FONTS.displayMedium, fontSize: 16 },
+  betweenTitle: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 15 },
   betweenDetail: { color: C.textTertiary, fontFamily: FONTS.bodyMedium, fontSize: 11, lineHeight: 16 },
   matchupSide: { flex: 1, alignItems: "flex-start" },
   matchupSideRight: { alignItems: "flex-end" },
   athletePortrait: { width: 78, height: 82, resizeMode: "cover", backgroundColor: C.card },
   athleteFallback: { width: 78, height: 82, alignItems: "center", justifyContent: "center", backgroundColor: C.card },
-  athleteFallbackText: { color: C.textSecondary, fontFamily: FONTS.display, fontSize: 28 },
-  matchupRole: { color: C.accent, fontFamily: FONTS.displayMedium, fontSize: 11, letterSpacing: 0.7, marginTop: 8 },
-  matchupName: { maxWidth: 135, color: C.text, fontFamily: FONTS.display, fontSize: 18, lineHeight: 22 },
-  matchupStat: { color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 12, marginTop: 2 },
+  athleteFallbackText: { color: C.textSecondary, fontFamily: FONTS.bodyHeavy, fontSize: 24 },
+  matchupRole: { color: C.accent, fontFamily: FONTS.bodyBold, fontSize: 10, letterSpacing: 0.5, marginTop: 8 },
+  matchupName: { maxWidth: 135, color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 17, lineHeight: 22 },
+  matchupStat: { color: C.textTertiary, fontFamily: FONTS.bodyMedium, fontSize: 11, marginTop: 2 },
   matchupCenter: { width: 78, alignItems: "center", paddingTop: 12 },
   matchupCount: { color: C.text, fontFamily: FONTS.display, fontSize: 28 },
-  matchupCountLabel: { color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 9, letterSpacing: 0.7 },
+  matchupCountLabel: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 9, letterSpacing: 0.5 },
   matchupDivider: { width: 36, height: 1, backgroundColor: C.separator, marginVertical: 9 },
-  matchupOuts: { color: C.textSecondary, fontFamily: FONTS.displayMedium, fontSize: 13 },
+  matchupOuts: { color: C.textSecondary, fontFamily: FONTS.bodyBold, fontSize: 11 },
   textRight: { textAlign: "right" },
   playRow: { minHeight: 68, flexDirection: "row", alignItems: "flex-start", paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
   playRowSelected: { backgroundColor: "rgba(242,166,90,0.055)" },
   lastRow: { borderBottomWidth: 0 },
   playRail: { width: 24, alignItems: "center", paddingTop: 2, alignSelf: "stretch" },
   playRailLine: { width: 1, flex: 1, marginTop: 2, backgroundColor: C.separator },
-  playInning: { width: 48, color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 11, paddingTop: 2 },
+  playInning: { width: 48, color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, paddingTop: 2 },
   playInningActive: { color: C.accent },
   playCopy: { flex: 1, paddingRight: 8 },
   playText: { color: C.textSecondary, fontFamily: FONTS.bodyMedium, fontSize: 12, lineHeight: 17 },
@@ -569,28 +648,28 @@ const styles = StyleSheet.create({
   comparisonHeader: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12 },
   comparisonTeam: { flexDirection: "row", alignItems: "center", gap: 8 },
   comparisonTeamRight: { justifyContent: "flex-end" },
-  comparisonTeamName: { color: C.text, fontFamily: FONTS.displayMedium, fontSize: 13 },
+  comparisonTeamName: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 12 },
   comparisonRow: { minHeight: 38, flexDirection: "row", alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
   comparisonValue: { width: 56, color: C.text, fontFamily: FONTS.display, fontSize: 20 },
-  comparisonLabel: { flex: 1, color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 10, letterSpacing: 0.8, textAlign: "center" },
+  comparisonLabel: { flex: 1, color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 9, letterSpacing: 0.5, textAlign: "center" },
   returnLive: { minWidth: 62, minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, borderWidth: 1, borderColor: "rgba(57,229,140,0.35)" },
   returnLiveText: { color: C.live, fontFamily: FONTS.bodyBold, fontSize: 10, letterSpacing: 0.6 },
   teamSectionTitle: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 12 },
-  teamSectionName: { color: C.text, fontFamily: FONTS.display, fontSize: 19 },
+  teamSectionName: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 18 },
   playerGroup: { marginTop: 12 },
-  tableLabel: { color: C.accent, fontFamily: FONTS.displayMedium, fontSize: 10, letterSpacing: 0.9, marginBottom: 5 },
+  tableLabel: { color: C.accent, fontFamily: FONTS.bodyBold, fontSize: 9, letterSpacing: 0.6, marginBottom: 5 },
   playerHeaderRow: { flexDirection: "row", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-  playerHeader: { width: 42, paddingVertical: 7, color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 9, textAlign: "center" },
+  playerHeader: { width: 42, paddingVertical: 7, color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 8, textAlign: "center" },
   playerRow: { flexDirection: "row", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
   playerNameCell: { width: 142, paddingVertical: 9, paddingRight: 8, color: C.text, fontFamily: FONTS.bodyMedium, fontSize: 11 },
   playerStat: { width: 42, paddingVertical: 9, color: C.textSecondary, fontFamily: FONTS.mono, fontSize: 10, textAlign: "center" },
   statsHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 10 },
-  statsTeam: { width: 80, color: C.text, fontFamily: FONTS.display, fontSize: 17 },
+  statsTeam: { width: 80, color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 16 },
   statRow: { minHeight: 45, flexDirection: "row", alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
   statValue: { width: 78, color: C.text, fontFamily: FONTS.display, fontSize: 18 },
   statLabel: { flex: 1, color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, textAlign: "center", letterSpacing: 0.5 },
   lineupRow: { minHeight: 45, flexDirection: "row", alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
   lineupOrder: { width: 32, color: C.accent, fontFamily: FONTS.displayMedium, fontSize: 13 },
   lineupName: { flex: 1, color: C.text, fontFamily: FONTS.bodyMedium, fontSize: 13 },
-  lineupRole: { color: C.textTertiary, fontFamily: FONTS.displayMedium, fontSize: 10, letterSpacing: 0.5 },
+  lineupRole: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 9, letterSpacing: 0.35 },
 });

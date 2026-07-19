@@ -4,8 +4,6 @@ import {
   Animated,
   Image,
   ImageBackground,
-  PanResponder,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -26,12 +24,15 @@ import {
   BaseballGameHub,
   type BaseballHubSection,
 } from "@/components/gamecast/BaseballGameHub";
+import {
+  GAME_DETAILS_PEEK_HEIGHT,
+  GameDetailsSheet,
+} from "@/components/gamecast/GameDetailsSheet";
 
 const C = Colors.dark;
 const FIELD_REFERENCE_WIDTH = 390;
 const FIELD_REFERENCE_HEIGHT = 560;
 const SCORE_RIBBON_HEIGHT = 72;
-const SHEET_PEEK_HEIGHT = 56;
 
 interface BaseballGamecastProps {
   data: GameDetail;
@@ -39,6 +40,10 @@ interface BaseballGamecastProps {
   height: number;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
+  initialSection?: BaseballHubSection;
+  onSectionChange?: (section: BaseballHubSection) => void;
+  initialSelectedPlayId?: string | null;
+  onSelectedPlayChange?: (playId: string | null) => void;
 }
 
 interface Point { x: number; y: number }
@@ -331,42 +336,31 @@ function FieldHistory({ plays, selectedId }: { plays: BaseballPlayState[]; selec
   );
 }
 
-export function BaseballGamecast({ data, width, height, expanded, onExpandedChange }: BaseballGamecastProps) {
+export function BaseballGamecast({
+  data,
+  width,
+  height,
+  expanded,
+  onExpandedChange,
+  initialSection = "overview",
+  onSectionChange,
+  initialSelectedPlayId,
+  onSelectedPlayChange,
+}: BaseballGamecastProps) {
   const game = data.game;
   const gamecast = data.baseballGamecast;
   const fieldWidth = Math.min(width, 440);
   const fieldHeight = Math.max(480, height - SCORE_RIBBON_HEIGHT);
   const expandedTop = Math.max(176, Math.min(206, Math.round(height * 0.24)));
-  const collapsedTop = Math.max(expandedTop + 180, height - SHEET_PEEK_HEIGHT);
+  const collapsedTop = Math.max(expandedTop + 180, height - GAME_DETAILS_PEEK_HEIGHT);
   const collapsedOffset = collapsedTop - expandedTop;
-  const plays = gamecast?.recentPlays ?? [];
+  const plays = gamecast?.plays ?? gamecast?.recentPlays ?? [];
   const liveIndex = Math.max(0, plays.length - 1);
   const [selectedIndex, setSelectedIndex] = useState(liveIndex);
-  const [section, setSection] = useState<BaseballHubSection>("overview");
+  const [section, setSection] = useState<BaseballHubSection>(initialSection);
   const [selectedFieldPlayer, setSelectedFieldPlayer] = useState<FieldPlayerSelection | null>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
   const motionProgress = useRef(new Animated.Value(1)).current;
-  const sheetOffset = useRef(new Animated.Value(expanded ? 0 : collapsedOffset)).current;
-  const dragStart = useRef(expanded ? 0 : collapsedOffset);
-  const webDragStartY = useRef<number | null>(null);
-  const webDragStartOffset = useRef(expanded ? 0 : collapsedOffset);
-  const webDidDrag = useRef(false);
-  const suppressNextPress = useRef(false);
-
-  const animateSheet = useCallback((nextExpanded: boolean) => {
-    const destination = nextExpanded ? 0 : collapsedOffset;
-    if (reduceMotion) {
-      sheetOffset.setValue(destination);
-    } else {
-      Animated.spring(sheetOffset, {
-        toValue: destination,
-        damping: 25,
-        stiffness: 240,
-        mass: 0.9,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [collapsedOffset, reduceMotion, sheetOffset]);
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
@@ -375,101 +369,25 @@ export function BaseballGamecast({ data, width, height, expanded, onExpandedChan
   }, []);
 
   useEffect(() => {
-    animateSheet(expanded);
-  }, [animateSheet, expanded]);
-
-  useEffect(() => {
     setSelectedIndex((current) => current >= liveIndex - 1 ? liveIndex : Math.min(current, liveIndex));
   }, [liveIndex]);
 
   useEffect(() => {
+    setSection(initialSection);
+  }, [initialSection]);
+
+  useEffect(() => {
+    if (!initialSelectedPlayId || initialSelectedPlayId === "live") {
+      setSelectedIndex(liveIndex);
+      return;
+    }
+    const routeIndex = plays.findIndex((play) => play.id === initialSelectedPlayId);
+    if (routeIndex >= 0) setSelectedIndex(routeIndex);
+  }, [initialSelectedPlayId, liveIndex, plays]);
+
+  useEffect(() => {
     setSelectedFieldPlayer(null);
   }, [selectedIndex, expanded]);
-
-  const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dy) > 5,
-    onMoveShouldSetPanResponderCapture: (_event, gesture) => Math.abs(gesture.dy) > 5,
-    onPanResponderGrant: () => {
-      sheetOffset.stopAnimation((value) => { dragStart.current = value; });
-    },
-    onPanResponderMove: (_event, gesture) => {
-      const next = Math.max(0, Math.min(collapsedOffset, dragStart.current + gesture.dy));
-      sheetOffset.setValue(next);
-    },
-    onPanResponderRelease: (_event, gesture) => {
-      const current = Math.max(0, Math.min(collapsedOffset, dragStart.current + gesture.dy));
-      const midpoint = collapsedOffset / 2;
-      const shouldExpand = gesture.vy < -0.35 || (gesture.vy < 0.35 && current < midpoint);
-      onExpandedChange(shouldExpand);
-      animateSheet(shouldExpand);
-      AccessibilityInfo.announceForAccessibility(shouldExpand ? "Game details expanded" : "Game details collapsed");
-    },
-    onPanResponderTerminate: () => animateSheet(expanded),
-    onPanResponderTerminationRequest: () => false,
-  }), [animateSheet, collapsedOffset, expanded, onExpandedChange, sheetOffset]);
-
-  const webDragHandlers = useMemo(() => Platform.OS === "web" ? ({
-    onPointerDown: (event: any) => {
-      const nativeEvent = event.nativeEvent ?? event;
-      webDragStartY.current = nativeEvent.clientY;
-      webDragStartOffset.current = expanded ? 0 : collapsedOffset;
-      webDidDrag.current = false;
-      event.currentTarget?.setPointerCapture?.(nativeEvent.pointerId);
-      event.preventDefault?.();
-    },
-    onPointerMove: (event: any) => {
-      if (webDragStartY.current == null) return;
-      const nativeEvent = event.nativeEvent ?? event;
-      const distance = nativeEvent.clientY - webDragStartY.current;
-      if (Math.abs(distance) > 4) webDidDrag.current = true;
-      const next = Math.max(0, Math.min(collapsedOffset, webDragStartOffset.current + distance));
-      sheetOffset.setValue(next);
-    },
-    onPointerUp: (event: any) => {
-      if (webDragStartY.current == null) return;
-      const nativeEvent = event.nativeEvent ?? event;
-      const distance = nativeEvent.clientY - webDragStartY.current;
-      const current = Math.max(0, Math.min(collapsedOffset, webDragStartOffset.current + distance));
-      const didDrag = webDidDrag.current;
-      webDragStartY.current = null;
-      webDidDrag.current = false;
-      if (!didDrag) return;
-      suppressNextPress.current = true;
-      setTimeout(() => { suppressNextPress.current = false; }, 0);
-      const shouldExpand = current < collapsedOffset / 2;
-      onExpandedChange(shouldExpand);
-      animateSheet(shouldExpand);
-      AccessibilityInfo.announceForAccessibility(shouldExpand ? "Game details expanded" : "Game details collapsed");
-      event.currentTarget?.blur?.();
-      event.preventDefault?.();
-    },
-    onPointerCancel: () => {
-      webDragStartY.current = null;
-      webDidDrag.current = false;
-      animateSheet(expanded);
-    },
-    onWheel: (event: any) => {
-      const nativeEvent = event.nativeEvent ?? event;
-      const deltaY = nativeEvent.deltaY ?? 0;
-      if (deltaY < -8 && !expanded) {
-        onExpandedChange(true);
-        animateSheet(true);
-        event.preventDefault?.();
-      } else if (deltaY > 8 && expanded) {
-        onExpandedChange(false);
-        animateSheet(false);
-        event.preventDefault?.();
-      }
-      event.currentTarget?.blur?.();
-    },
-  } as any) : panResponder.panHandlers, [
-    animateSheet,
-    collapsedOffset,
-    expanded,
-    onExpandedChange,
-    panResponder.panHandlers,
-    sheetOffset,
-  ]);
 
   const selectedPlay = plays[selectedIndex] ?? null;
   const isAtLive = selectedIndex === liveIndex;
@@ -508,7 +426,7 @@ export function BaseballGamecast({ data, width, height, expanded, onExpandedChan
   const playCall = selectedPlay?.text ?? (game.status === "upcoming"
     ? `First pitch ${new Date(game.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
     : game.statusDetail ?? "Waiting for the next verified play.");
-  const recentRail = plays.slice(-7);
+  const recentRail = (gamecast?.recentPlays ?? plays).slice(-7);
   const railStartIndex = Math.max(0, plays.length - recentRail.length);
   const selectedId = selectedPlay?.id ?? null;
 
@@ -533,24 +451,29 @@ export function BaseballGamecast({ data, width, height, expanded, onExpandedChan
 
   const selectPlay = useCallback((playId: string) => {
     const index = plays.findIndex((play) => play.id === playId);
-    if (index >= 0) setSelectedIndex(index);
-  }, [plays]);
+    if (index >= 0) {
+      setSelectedIndex(index);
+      onSelectedPlayChange?.(playId);
+    }
+  }, [onSelectedPlayChange, plays]);
 
-  const returnLive = useCallback(() => setSelectedIndex(liveIndex), [liveIndex]);
+  const selectRailPlay = useCallback((index: number) => {
+    const play = plays[index];
+    if (!play) return;
+    setSelectedIndex(index);
+    onSelectedPlayChange?.(play.id);
+  }, [onSelectedPlayChange, plays]);
+  const returnLive = useCallback(() => {
+    setSelectedIndex(liveIndex);
+    onSelectedPlayChange?.(null);
+  }, [liveIndex, onSelectedPlayChange]);
+  const changeSection = useCallback((nextSection: BaseballHubSection) => {
+    setSection(nextSection);
+    onSectionChange?.(nextSection);
+  }, [onSectionChange]);
   const selectFieldPlayer = useCallback((athlete: BaseballAthlete, role: string) => {
     setSelectedFieldPlayer((current) => current?.athlete.id === athlete.id && current.role === role ? null : { athlete, role });
   }, []);
-  const toggleExpanded = useCallback(() => {
-    if (suppressNextPress.current) {
-      suppressNextPress.current = false;
-      return;
-    }
-    const next = !expanded;
-    onExpandedChange(next);
-    animateSheet(next);
-    AccessibilityInfo.announceForAccessibility(next ? "Game details expanded" : "Game details collapsed");
-  }, [animateSheet, expanded, onExpandedChange]);
-
   const stateSummary = [
     inningLabel(displayState, game.quarter),
     displayState.outs == null ? null : `${displayState.outs} outs`,
@@ -621,7 +544,7 @@ export function BaseballGamecast({ data, width, height, expanded, onExpandedChan
             const absoluteIndex = railStartIndex + localIndex;
             const selected = absoluteIndex === selectedIndex;
             return (
-              <Pressable key={play.id} onPress={() => setSelectedIndex(absoluteIndex)} style={styles.railStop} accessibilityRole="button" accessibilityLabel={`Show play ${localIndex + 1}: ${play.text}`} accessibilityState={{ selected }}>
+              <Pressable key={play.id} onPress={() => selectRailPlay(absoluteIndex)} style={styles.railStop} accessibilityRole="button" accessibilityLabel={`Show play ${localIndex + 1}: ${play.text}`} accessibilityState={{ selected }}>
                 <Ionicons name={selected ? "radio-button-on" : "ellipse"} size={selected ? 19 : 9} color={selected ? C.accent : "rgba(244,238,229,0.55)"} />
               </Pressable>
             );
@@ -639,42 +562,24 @@ export function BaseballGamecast({ data, width, height, expanded, onExpandedChan
         </View>
       </ImageBackground>
 
-      <Animated.View
-        style={[
-          styles.sheet,
-          {
-            top: expandedTop,
-            height: height - expandedTop + 8,
-            transform: [{ translateY: sheetOffset }],
-          },
-        ]}
+      <GameDetailsSheet
+        expanded={expanded}
+        onExpandedChange={onExpandedChange}
+        top={expandedTop}
+        height={height - expandedTop + 8}
+        collapsedOffset={collapsedOffset}
       >
-        <Pressable
-          onPress={toggleExpanded}
-          style={styles.sheetHandle}
-          accessibilityRole="button"
-          accessibilityLabel={expanded ? "Collapse game details" : "Expand game details"}
-          accessibilityState={{ expanded }}
-          {...webDragHandlers}
-        >
-          <View style={styles.grabber} />
-          <View style={styles.handleLabelRow}>
-            <Ionicons name={expanded ? "chevron-down" : "chevron-up"} size={14} color={C.textSecondary} />
-            <Text style={styles.handleLabel}>GAME DETAILS</Text>
-            <Ionicons name={expanded ? "chevron-down" : "chevron-up"} size={14} color={C.textSecondary} />
-          </View>
-        </Pressable>
         <BaseballGameHub
           data={data}
           expanded={expanded}
           section={section}
-          onSectionChange={setSection}
+          onSectionChange={changeSection}
           selectedPlayId={selectedId}
           onSelectPlay={selectPlay}
           onReturnLive={returnLive}
           visibleState={displayState}
         />
-      </Animated.View>
+      </GameDetailsSheet>
     </View>
   );
 }
@@ -685,10 +590,10 @@ const styles = StyleSheet.create({
   scoreTeam: { minWidth: 78, flexDirection: "row", alignItems: "center", gap: 5 },
   scoreTeamHome: { justifyContent: "flex-end" },
   scoreLogo: { width: 25, height: 25, resizeMode: "contain" },
-  scoreAbbr: { color: C.text, fontFamily: FONTS.displayMedium, fontSize: 17 },
+  scoreAbbr: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 15 },
   scoreNumber: { color: C.text, fontFamily: FONTS.display, fontSize: 28, lineHeight: 32 },
   scoreSituation: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3 },
-  inning: { color: C.accent, fontFamily: FONTS.displayMedium, fontSize: 14, letterSpacing: 0.6 },
+  inning: { color: C.accent, fontFamily: FONTS.bodyBold, fontSize: 12, letterSpacing: 0.4 },
   situationLine: { flexDirection: "row", alignItems: "center", gap: 7 },
   baseState: { flexDirection: "row", gap: 1, alignItems: "center" },
   outs: { color: C.textSecondary, fontFamily: FONTS.bodyBold, fontSize: 9, letterSpacing: 0.4 },
@@ -704,12 +609,12 @@ const styles = StyleSheet.create({
   compactPlayIcon: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(242,166,90,0.16)" },
   compactPlayCopy: { flex: 1 },
   compactPlayEyebrow: { color: C.accent, fontFamily: FONTS.bodyBold, fontSize: 8, letterSpacing: 1 },
-  compactPlayText: { marginTop: 2, color: C.text, fontFamily: FONTS.displayMedium, fontSize: 11, lineHeight: 14 },
+  compactPlayText: { marginTop: 2, color: C.text, fontFamily: FONTS.bodyMedium, fontSize: 11, lineHeight: 15 },
   compactSituation: { alignItems: "flex-end", gap: 5 },
   compactCount: { color: C.text, fontFamily: FONTS.display, fontSize: 19 },
   fieldHistory: { position: "absolute", left: 8, top: "54%", width: 94, paddingLeft: 5, borderLeftWidth: 1, borderLeftColor: "rgba(244,238,229,0.5)", gap: 6 },
   fieldHistoryRow: { minHeight: 15, flexDirection: "row", alignItems: "center", gap: 4 },
-  fieldHistoryText: { flex: 1, color: "rgba(244,238,229,0.64)", fontFamily: FONTS.mono, fontSize: 8, textTransform: "uppercase" },
+  fieldHistoryText: { flex: 1, color: "rgba(244,238,229,0.64)", fontFamily: FONTS.bodyBold, fontSize: 8, textTransform: "uppercase" },
   fieldHistoryTextActive: { color: C.accent },
   trailDot: { position: "absolute" },
   ball: { position: "absolute", width: 20, height: 20, alignItems: "center", justifyContent: "center", zIndex: 7, shadowColor: C.accent, shadowOpacity: 0.9, shadowRadius: 7, shadowOffset: { width: 0, height: 0 } },
@@ -718,17 +623,17 @@ const styles = StyleSheet.create({
   runnerBase: { position: "absolute", top: -8, zIndex: 6, minWidth: 22, paddingHorizontal: 4, paddingVertical: 1, color: "#0A1118", backgroundColor: C.accent, fontFamily: FONTS.monoBold, fontSize: 8, textAlign: "center" },
   runnerHeadshot: { width: 46, height: 46, borderRadius: 23, borderWidth: 2, borderColor: C.accent, backgroundColor: C.card },
   runnerFallback: { width: 46, height: 46, borderRadius: 23, borderWidth: 2, borderColor: C.accent, backgroundColor: "rgba(13,21,29,0.88)", alignItems: "center", justifyContent: "center" },
-  runnerName: { marginTop: -1, maxWidth: 70, paddingHorizontal: 5, paddingVertical: 2, overflow: "hidden", color: C.text, backgroundColor: "rgba(8,14,20,0.88)", fontFamily: FONTS.displayMedium, fontSize: 10, letterSpacing: 0.25 },
+  runnerName: { marginTop: -1, maxWidth: 70, paddingHorizontal: 5, paddingVertical: 2, overflow: "hidden", color: C.text, backgroundColor: "rgba(8,14,20,0.88)", fontFamily: FONTS.bodyHeavy, fontSize: 9 },
   fieldParticipant: { position: "absolute", width: 68, alignItems: "center", zIndex: 5 },
   fieldParticipantHeld: { opacity: 0.68 },
   fieldParticipantHeadshot: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: "#F4EEE5", backgroundColor: C.card },
   fieldParticipantFallback: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: "#F4EEE5", alignItems: "center", justifyContent: "center", backgroundColor: C.card },
   fieldParticipantRole: { marginTop: -1, paddingHorizontal: 4, paddingTop: 2, color: C.accent, backgroundColor: "rgba(8,14,20,0.92)", fontFamily: FONTS.bodyBold, fontSize: 7, letterSpacing: 0.45 },
-  fieldParticipantName: { maxWidth: 74, paddingHorizontal: 5, paddingBottom: 2, color: C.text, backgroundColor: "rgba(8,14,20,0.92)", fontFamily: FONTS.displayMedium, fontSize: 10 },
+  fieldParticipantName: { maxWidth: 74, paddingHorizontal: 5, paddingBottom: 2, color: C.text, backgroundColor: "rgba(8,14,20,0.92)", fontFamily: FONTS.bodyHeavy, fontSize: 9 },
   pendingBatter: { position: "absolute", width: 68, alignItems: "center", zIndex: 5, opacity: 0.74 },
   pendingBatterIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: C.textTertiary, backgroundColor: "rgba(8,14,20,0.82)" },
   pendingBatterRole: { marginTop: -1, paddingHorizontal: 4, paddingTop: 2, color: C.textSecondary, backgroundColor: "rgba(8,14,20,0.92)", fontFamily: FONTS.bodyBold, fontSize: 7, letterSpacing: 0.35 },
-  pendingBatterName: { paddingHorizontal: 5, paddingBottom: 2, color: C.textTertiary, backgroundColor: "rgba(8,14,20,0.92)", fontFamily: FONTS.displayMedium, fontSize: 9 },
+  pendingBatterName: { paddingHorizontal: 5, paddingBottom: 2, color: C.textTertiary, backgroundColor: "rgba(8,14,20,0.92)", fontFamily: FONTS.bodyBold, fontSize: 8 },
   livePlayerCard: { position: "absolute", left: 14, right: 14, top: 14, minHeight: 82, zIndex: 9, flexDirection: "row", alignItems: "center", gap: 10, padding: 10, paddingRight: 34, backgroundColor: "rgba(8,14,20,0.94)", borderLeftWidth: 3, borderLeftColor: C.accent, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(244,238,229,0.18)", shadowColor: "#000", shadowOpacity: 0.35, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } },
   livePlayerHeadshot: { width: 58, height: 58, borderRadius: 29, borderWidth: 1.5, borderColor: C.accent, backgroundColor: C.card },
   livePlayerFallback: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: C.accent, backgroundColor: C.card },
@@ -736,7 +641,7 @@ const styles = StyleSheet.create({
   livePlayerEyebrowRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   livePlayerRole: { color: C.accent, fontFamily: FONTS.bodyBold, fontSize: 8, letterSpacing: 0.8 },
   livePlayerMoment: { color: C.textTertiary, fontFamily: FONTS.mono, fontSize: 8 },
-  livePlayerName: { marginTop: 2, color: C.text, fontFamily: FONTS.display, fontSize: 17, lineHeight: 20 },
+  livePlayerName: { marginTop: 2, color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 16, lineHeight: 20 },
   livePlayerStats: { minHeight: 22, marginTop: 4, flexDirection: "row", alignItems: "center", gap: 14 },
   livePlayerStat: { flexDirection: "row", alignItems: "baseline", gap: 3 },
   livePlayerStatValue: { color: C.text, fontFamily: FONTS.displayMedium, fontSize: 13 },
@@ -753,9 +658,4 @@ const styles = StyleSheet.create({
   playCallRule: { width: 3, alignSelf: "stretch", backgroundColor: C.accent },
   playCallText: { flex: 1, color: C.text, fontFamily: FONTS.bodyBold, fontSize: 12, lineHeight: 17 },
   replayLabel: { color: C.accent, fontFamily: FONTS.monoBold, fontSize: 9, letterSpacing: 1 },
-  sheet: { position: "absolute", left: 0, right: 0, zIndex: 10, overflow: "hidden", backgroundColor: "#15212C", borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: "rgba(244,238,229,0.2)", shadowColor: "#000", shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: -8 }, elevation: 18 },
-  sheetHandle: { height: SHEET_PEEK_HEIGHT, alignItems: "center", justifyContent: "center", backgroundColor: "#111C26", outlineWidth: 0 },
-  grabber: { width: 64, height: 4, borderRadius: 2, backgroundColor: "rgba(244,238,229,0.34)", marginBottom: 8 },
-  handleLabelRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  handleLabel: { color: C.textSecondary, fontFamily: FONTS.displayMedium, fontSize: 12, letterSpacing: 1.5 },
 });

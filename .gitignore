@@ -5,6 +5,9 @@ dist
 tmp
 out-tsc
 *.tsbuildinfo
+_api-bundle.cjs
+artifacts/mobile/web-dist/
+/public/
 .expo
 .expo-shared
 artifacts/mobile/static-web/
@@ -51,3 +54,5 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+.vercel
+.env*

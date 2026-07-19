@@ -1,4 +1,9 @@
-const BASE = process.env.EXPO_PUBLIC_DOMAIN
+const isLocalWebPreview = typeof window !== "undefined"
+  && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+const BASE = isLocalWebPreview
+  ? "http://localhost:3001/api"
+  : process.env.EXPO_PUBLIC_DOMAIN
   ? (process.env.EXPO_PUBLIC_DOMAIN.includes("localhost") || process.env.EXPO_PUBLIC_DOMAIN.includes("127.0.0.1")
       ? `http://${process.env.EXPO_PUBLIC_DOMAIN}/api`
       : `https://${process.env.EXPO_PUBLIC_DOMAIN}/api`)
@@ -22,8 +27,16 @@ export const api = {
     return apiFetch<{ games: Game[] }>(`/sports/games${q ? `?${q}` : ""}`);
   },
 
+  getCompetitionGames: (competition: CompetitionKey, season: number) => {
+    const params = new URLSearchParams({
+      competition,
+      season: String(season),
+    });
+    return apiFetch<{ games: Game[] }>(`/sports/games?${params.toString()}`);
+  },
+
   getGameDetail: (gameId: string) =>
-    apiFetch<GameDetail>(`/sports/game/${gameId}`),
+    apiFetch<GameDetail>(`/sports/game/${gameId}`, { cache: "no-store" }),
 
   getStandings: (league: string) =>
     apiFetch<{ standings: StandingEntry[]; tournament: TournamentRound[] }>(`/sports/standings?league=${league}`),
@@ -185,15 +198,52 @@ export interface SeasonalSportData {
 
 export type SportArchetype = "team" | "tennis" | "combat" | "multi_event" | "golf" | "racing" | "seasonal";
 
+export type CompetitionKey = "NBA_SUMMER_LEAGUE";
+export type NbaSummerLeagueCircuitKey = "NBASLV" | "NBASLC" | "NBASLU";
+export type NbaSummerLeagueCircuit =
+  | "LAS_VEGAS"
+  | "CALIFORNIA_CLASSIC"
+  | "SALT_LAKE_CITY";
+
+export interface CompetitionContext {
+  key: CompetitionKey;
+  label: "NBA Summer League";
+  parentLeague: "NBA";
+  circuit: NbaSummerLeagueCircuit;
+  circuitKey: NbaSummerLeagueCircuitKey;
+  circuitLabel: string;
+  seasonYear: number;
+  seasonPhase: "summer";
+  source: {
+    provider: "ESPN";
+    leagueId: string;
+    leagueSlug: string;
+    sportPath: string;
+  };
+}
+
+export interface ParticipantIdentity {
+  sourceTeamId: string | null;
+  franchiseTeamId: string | null;
+  franchiseLeague: "NBA";
+  variant: "GOLD" | "BLUE" | null;
+  mappingStatus: "source_default" | "unresolved_variant" | "unavailable";
+}
+
 export interface Game {
   id: string;
   sport: string;
   league: string;
+  competition?: CompetitionContext;
   sportArchetype?: SportArchetype;
   homeTeam: string;
   awayTeam: string;
   homeAbbreviation?: string;
   awayAbbreviation?: string;
+  homeTeamId?: string;
+  awayTeamId?: string;
+  homeParticipant?: ParticipantIdentity | null;
+  awayParticipant?: ParticipantIdentity | null;
   homeScore: number | null;
   awayScore: number | null;
   status: "upcoming" | "live" | "finished";
@@ -251,6 +301,7 @@ export interface BaseballPlayState extends BaseballSituation {
 
 export interface BaseballGamecast {
   situation: BaseballSituation;
+  plays: BaseballPlayState[];
   recentPlays: BaseballPlayState[];
   lineScore: {
     away: BaseballLineScoreTeam;

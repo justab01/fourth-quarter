@@ -1486,13 +1486,22 @@ function getStandingsLeague(sport: SportCategory | undefined, activeLeague: stri
   return sl?.key ?? null;
 }
 
+function getInitialSportLeague(sport: SportCategory | undefined, routeId: string | undefined): string {
+  if (routeId?.toUpperCase() === "NBA_SUMMER_LEAGUE") return "NBA_SUMMER_LEAGUE";
+  if (sport?.id !== "basketball") return "all";
+  const now = new Date();
+  const summerStart = new Date("2026-07-02T00:00:00-05:00");
+  const summerEnd = new Date("2026-07-21T00:00:00-05:00");
+  return now >= summerStart && now < summerEnd ? "NBA_SUMMER_LEAGUE" : "all";
+}
+
 export default function SportBoardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const { openSearch } = useSearch();
 
   const sport = getSportById(id ?? "") ?? getSportByLeague((id ?? "").toUpperCase());
-  const [activeLeague, setActiveLeagueRaw] = useState<string>("all");
+  const [activeLeague, setActiveLeagueRaw] = useState<string>(() => getInitialSportLeague(sport, id));
   const [activeGroup, setActiveGroup] = useState<LeagueGroup | "all">("all");
   const [activeSubTab, setActiveSubTab] = useState<string>("all");
   const [selectedWeightClass, setSelectedWeightClass] = useState<string>("all");
@@ -1576,6 +1585,7 @@ export default function SportBoardScreen() {
 
   // Live top athletes for sport pages
   const topAthletesLeague = useMemo(() => {
+    if (activeLeague === "NBA_SUMMER_LEAGUE") return null;
     if (activeLeague !== "all") return activeLeague;
     // For "all", use first league with rankings
     return sport?.leagues.find(l => RANKINGS_LEAGUES.has(l.key))?.key ?? null;
@@ -3294,7 +3304,7 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root, { paddingTop: Platform.OS === "web" ? 48 : insets.top }]}>
       <StatusBar barStyle="light-content" />
 
       <LinearGradient
