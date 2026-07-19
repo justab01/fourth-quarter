@@ -77,4 +77,21 @@ for (const f of files) {
   fs.writeFileSync(f, after);
 }
 
+// 3) Paint the web app-shell dark BEFORE React mounts. Without this the raw
+//    index.html body is white, so a hard load / deep link (e.g. /sport/soccer)
+//    flashes a blank white screen for a beat until the JS boots and paints the
+//    dark UI. Inject a tiny inline style matching the app root BG (#0A0805).
+if (fs.existsSync(indexHtml)) {
+  const html = fs.readFileSync(indexHtml, "utf8");
+  if (!html.includes("id=\"fq-shell-bg\"")) {
+    const shellStyle =
+      '<style id="fq-shell-bg">html,body,#root{background-color:#0A0805;}</style>';
+    const patched = html.includes("</head>")
+      ? html.replace("</head>", `${shellStyle}</head>`)
+      : shellStyle + html;
+    fs.writeFileSync(indexHtml, patched);
+    console.log("flatten-web-assets: injected dark app-shell background into index.html");
+  }
+}
+
 console.log(`flatten-web-assets: renamed ${dirs.length} node_modules dir(s), rewrote refs in ${refCount} file(s)`);

@@ -117,16 +117,29 @@ export function MomentGraphic({
     );
   }
 
+  // No image → intentional league-tinted tile (not a broken-looking framed icon).
   return (
-    <View style={frameStyle}>
+    <View style={[frameStyle, isThumbnail && { borderColor: `${accent}33` }]}>
       <LinearGradient
-        colors={[`${accent}28`, C.cardElevated, "rgba(255,255,255,0.02)"]}
+        colors={isThumbnail
+          ? [`${accent}4D`, `${accent}1F`, "rgba(23,32,42,0.35)"]
+          : [`${accent}28`, C.cardElevated, "rgba(255,255,255,0.02)"]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
-      <View style={[styles.generatedRing, isThumbnail && styles.thumbnailGeneratedRing, { borderColor: `${accent}66` }]}>
-        <Ionicons name={moment.article ? "newspaper-outline" : "pulse-outline"} size={isThumbnail ? 18 : 28} color={accent} />
+      <View style={[
+        styles.generatedRing,
+        isThumbnail && styles.thumbnailGeneratedRing,
+        isThumbnail
+          ? { borderColor: "transparent", backgroundColor: `${accent}33` }
+          : { borderColor: `${accent}66` },
+      ]}>
+        <Ionicons
+          name={moment.article ? "newspaper" : "pulse"}
+          size={isThumbnail ? 18 : 28}
+          color={isThumbnail ? "#fff" : accent}
+        />
       </View>
       {!isThumbnail ? (
         <>

@@ -270,7 +270,17 @@ const C = Colors.dark;
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
 
 // ── Sport-Specific Hero Visual Overlays ───────────────────────────────────────────
-function SportHeroOverlay({ sportId, accentColor }: { sportId: string; accentColor: string }) {
+// DISABLED: these decorative field motifs (soccer penalty box + pitch line,
+// football hashmarks, etc.) are absolutely positioned over the hero and collide
+// with the header controls (back button / title / search) and the league chips —
+// they render as visible lines/boxes "behind" the content ("shit behind shit").
+// The hero gradient alone is clean; a properly clipped, subtle sport texture can
+// return in the sports-tab polish pass. Kept intact below for that redesign.
+function SportHeroOverlay(_props: { sportId: string; accentColor: string }) {
+  return null;
+}
+
+function SportHeroOverlayImpl({ sportId, accentColor }: { sportId: string; accentColor: string }) {
   // Football: Field with hashmarks
   if (sportId === "football") {
     return (

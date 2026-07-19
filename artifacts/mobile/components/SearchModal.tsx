@@ -13,6 +13,8 @@ import { useSearch } from "@/context/SearchContext";
 import { usePreferences } from "@/context/PreferencesContext";
 import { api } from "@/utils/api";
 import { ALL_TEAMS, ALL_PLAYERS, type SearchTeam, type SearchPlayer } from "@/constants/allPlayers";
+import { TeamLogo } from "@/components/GameCard";
+import { resolveOpponentLogoUrl } from "@/utils/teamLogos";
 
 const C = Colors.dark;
 
@@ -39,16 +41,21 @@ function teamSlug(team: SearchTeam): string {
 }
 
 function ResultRow({
-  icon, label, sublabel, badge, color, onPress,
+  icon, label, sublabel, badge, color, onPress, logo,
 }: {
   icon: string; label: string; sublabel?: string; badge?: string; color?: string; onPress: () => void;
+  logo?: { uri: string | null; name: string };
 }) {
   return (
     <Pressable onPress={onPress}>
       <View style={row.container}>
-        <View style={[row.iconBox, { backgroundColor: color ? `${color}20` : "rgba(239,120,40,0.1)" }]}>
-          <Ionicons name={icon as any} size={16} color={color ?? C.accent} />
-        </View>
+        {logo ? (
+          <TeamLogo uri={logo.uri} name={logo.name} size={36} borderColor={color ? `${color}55` : undefined} />
+        ) : (
+          <View style={[row.iconBox, { backgroundColor: color ? `${color}20` : "rgba(239,120,40,0.1)" }]}>
+            <Ionicons name={icon as any} size={16} color={color ?? C.accent} />
+          </View>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={row.label} numberOfLines={1}>{label}</Text>
           {sublabel && <Text style={row.sub} numberOfLines={1}>{sublabel}</Text>}
@@ -290,6 +297,7 @@ export function SearchModal() {
                 <ResultRow
                   key={team.name + team.league}
                   icon="shield"
+                  logo={{ uri: resolveOpponentLogoUrl(team.name, team.league), name: team.name }}
                   label={team.name}
                   sublabel={`${team.league} · ${team.rank}`}
                   badge={myTeams.includes(team.name) ? "Following" : team.abbr}
@@ -348,6 +356,7 @@ export function SearchModal() {
                 <ResultRow
                   key={game.id}
                   icon={game.status === "live" ? "radio-button-on" : game.status === "finished" ? "checkmark-circle" : "time"}
+                  logo={{ uri: game.awayTeamLogo ?? resolveOpponentLogoUrl(game.awayTeam, game.league), name: game.awayTeam }}
                   label={`${game.awayTeam} @ ${game.homeTeam}`}
                   sublabel={game.status === "finished"
                     ? `Final: ${game.awayScore}–${game.homeScore}`
