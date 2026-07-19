@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   Platform,
@@ -530,57 +530,117 @@ function CompletePlayFeed(props: BaseballGameHubProps) {
   );
 }
 
-const BATTER_COLS = ["H-AB", "R", "H", "RBI", "HR", "BB", "K"];
-const PITCHER_COLS = ["IP", "H", "R", "ER", "BB", "K"];
+type TeamSide = "away" | "home";
 
-function PlayerTable({ team, logo, players }: { team: string; logo?: string | null; players: PlayerStatLine[] }) {
-  const batters = players.filter((player) => player.stats.role !== "P");
-  const pitchers = players.filter((player) => player.stats.role === "P");
-
-  const table = (label: string, rows: PlayerStatLine[], wanted: string[]) => {
-    const columns = wanted.filter((column) => rows.some((player) => player.stats[column] != null));
-    if (rows.length === 0 || columns.length === 0) return null;
-    return (
-      <View style={styles.playerGroup}>
-        <Text style={styles.tableLabel}>{label}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View>
-            <View style={styles.playerHeaderRow}>
-              <Text style={[styles.playerHeader, styles.playerNameCell]}>PLAYER</Text>
-              {columns.map((column) => <Text key={column} style={styles.playerHeader}>{column}</Text>)}
-            </View>
-            {rows.map((player) => (
-              <View key={`${label}-${player.name}`} style={styles.playerRow}>
-                <Text style={styles.playerNameCell} numberOfLines={1}>{player.name}</Text>
-                {columns.map((column) => <Text key={column} style={styles.playerStat}>{player.stats[column] ?? "–"}</Text>)}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-    );
-  };
-
+function SmallFace({ name, size = 33 }: { name: string; size?: number }) {
   return (
-    <View style={styles.sectionBlock}>
-      <View style={styles.teamSectionTitle}>
-        <TeamMark uri={logo} name={team} size={30} />
-        <Text style={styles.teamSectionName}>{team}</Text>
-      </View>
-      {table("BATTING", batters, BATTER_COLS)}
-      {table("PITCHING", pitchers, PITCHER_COLS)}
-      {batters.length === 0 && pitchers.length === 0 ? (
-        <EmptyState icon="grid-outline" title="Box score is updating" detail="Official player lines have not been published for this game yet." />
-      ) : null}
+    <View style={[styles.smallFace, { width: size, height: size }]}>
+      <Text style={styles.smallFaceInitial}>{name.charAt(0)}</Text>
     </View>
   );
 }
 
+// v9 mockup team switch used by BOX + LINEUP.
+function TeamSwitch({ data, side, onSide }: { data: GameDetail; side: TeamSide; onSide: (s: TeamSide) => void }) {
+  const opt = (s: TeamSide, name: string, logo: string | null) => (
+    <Pressable
+      onPress={() => onSide(s)}
+      style={[styles.teamOption, side === s && styles.teamOptionOn]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: side === s }}
+      {...WEB_PRESS_PROPS}
+    >
+      <TeamMark uri={logo} name={name} size={20} />
+      <Text style={[styles.teamOptionText, side === s && styles.teamOptionTextOn]} numberOfLines={1}>{name}</Text>
+    </Pressable>
+  );
+  return (
+    <View style={styles.teamSwitch}>
+      {opt("away", lastName(data.game.awayTeam), data.game.awayTeamLogo)}
+      {opt("home", lastName(data.game.homeTeam), data.game.homeTeamLogo)}
+    </View>
+  );
+}
+
+const BOX_BAT_COLS = ["H-AB", "R", "RBI", "HR", "BB", "K"];
+const BOX_PITCH_COLS = ["IP", "H", "R", "ER", "BB", "K"];
+
+function impactBatter(players: PlayerStatLine[]): PlayerStatLine | null {
+  const score = (p: PlayerStatLine) =>
+    (Number(p.stats["HR"]) || 0) * 3 + (Number(p.stats["RBI"]) || 0) * 2 + (Number(p.stats["R"]) || 0);
+  const ranked = players.filter((p) => p.stats.role !== "P" && score(p) > 0).sort((a, b) => score(b) - score(a));
+  return ranked[0] ?? null;
+}
+
+function impactLine(p: PlayerStatLine): string {
+  const hr = Number(p.stats["HR"]) || 0;
+  const rbi = Number(p.stats["RBI"]) || 0;
+  const parts: string[] = [];
+  if (hr > 0) parts.push(`${hr} home run${hr === 1 ? "" : "s"}`);
+  if (rbi > 0) parts.push(`${rbi} driven in`);
+  return parts.length ? `${parts.join(". ")}.` : "A key bat in today's lineup.";
+}
+
+// BOX (v9): team switch → impact bat card → batting/pitching pills → table.
 function BoxScore({ data }: { data: GameDetail }) {
+  const [side, setSide] = useState<TeamSide>("home");
+  const [mode, setMode] = useState<"batting" | "pitching">("batting");
+  const isFinal = data.game.status === "finished";
+  const players = (side === "away" ? data.awayPlayerStats : data.homePlayerStats) ?? [];
+  const abbr = (side === "away" ? data.game.awayAbbreviation : data.game.homeAbbreviation)
+    ?? lastName(side === "away" ? data.game.awayTeam : data.game.homeTeam);
+  const impact = impactBatter(players);
+  const rows = players.filter((p) => (mode === "batting" ? p.stats.role !== "P" : p.stats.role === "P"));
+  const cols = (mode === "batting" ? BOX_BAT_COLS : BOX_PITCH_COLS).filter((c) => rows.some((p) => p.stats[c] != null));
+
   return (
     <>
-      <PlayerTable team={data.game.awayTeam} logo={data.game.awayTeamLogo} players={data.awayPlayerStats ?? []} />
-      <PlayerTable team={data.game.homeTeam} logo={data.game.homeTeamLogo} players={data.homePlayerStats ?? []} />
+      <SectionHead title="Box score" meta={isFinal ? "FINAL LINES" : "LIVE LINES"} />
+      <TeamSwitch data={data} side={side} onSide={setSide} />
+      {impact ? (
+        <View style={styles.impact}>
+          <Text style={styles.impactEyebrow}>IMPACT BAT · {abbr.toUpperCase()}</Text>
+          <Text style={styles.impactName}>{impact.name}</Text>
+          <Text style={styles.impactDesc}>{impactLine(impact)}</Text>
+          <View style={styles.impactStats}>
+            <View><Text style={styles.impactStatValue}>{impact.stats["H-AB"] ?? "–"}</Text><Text style={styles.impactStatLabel}>H–AB</Text></View>
+            <View><Text style={styles.impactStatValue}>{impact.stats["HR"] ?? "0"}</Text><Text style={styles.impactStatLabel}>HR</Text></View>
+            <View><Text style={styles.impactStatValue}>{impact.stats["RBI"] ?? "0"}</Text><Text style={styles.impactStatLabel}>RBI</Text></View>
+          </View>
+        </View>
+      ) : null}
+      <View style={styles.mode}>
+        {(["batting", "pitching"] as const).map((m) => (
+          <Pressable key={m} onPress={() => setMode(m)} style={[styles.modePill, mode === m && styles.modePillOn]} accessibilityRole="button" accessibilityState={{ selected: mode === m }} {...WEB_PRESS_PROPS}>
+            <Text style={[styles.modePillText, mode === m && styles.modePillTextOn]}>{m.toUpperCase()}</Text>
+          </Pressable>
+        ))}
+      </View>
+      {rows.length > 0 && cols.length > 0 ? (
+        <View>
+          <View style={styles.tableHead}>
+            <Text style={[styles.tableHeadCell, styles.tableHeadPlayer]}>PLAYER</Text>
+            {cols.map((c) => <Text key={c} style={styles.tableHeadCell}>{c}</Text>)}
+          </View>
+          {rows.map((p) => (
+            <View key={p.name} style={styles.boxRow}>
+              <View style={styles.boxPlayer}>
+                <SmallFace name={p.name} />
+                <View style={styles.flexMin}>
+                  <Text style={styles.boxPlayerName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={styles.boxPlayerRole}>{p.starter ? "STARTER" : "SUB"}</Text>
+                </View>
+              </View>
+              {cols.map((c) => {
+                const hot = (c === "HR" || c === "RBI") && (Number(p.stats[c]) || 0) > 0;
+                return <Text key={c} style={[styles.boxCell, hot && styles.hot]}>{p.stats[c] ?? "–"}</Text>;
+              })}
+            </View>
+          ))}
+        </View>
+      ) : (
+        <EmptyState icon="grid-outline" title="Box score is updating" detail="Official player lines have not been published for this game yet." />
+      )}
     </>
   );
 }
@@ -610,89 +670,116 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 // DETAILS: factual game info that does not belong in Story, Plays, Box, or
 // Lineup. Every optional field (venue, team stats, first pitch) is omitted when
 // unavailable — no placeholder attendance/weather/broadcast is ever invented.
+function SectionHead({ title, meta }: { title: string; meta: string }) {
+  return (
+    <View style={styles.sectionHead}>
+      <Text style={styles.sectionHeadTitle}>{title}</Text>
+      <Text style={styles.sectionHeadMeta}>{meta}</Text>
+    </View>
+  );
+}
+
+function CompareRow({ label, away, home }: { label: string; away?: number | null; home?: number | null }) {
+  if (away == null && home == null) return null;
+  return (
+    <View style={styles.compareRow}>
+      <Text style={styles.compareValue}>{away ?? "–"}</Text>
+      <Text style={styles.compareLabel}>{label}</Text>
+      <Text style={styles.compareValue}>{home ?? "–"}</Text>
+    </View>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+    </View>
+  );
+}
+
+// DETAILS (v9): section head, venue card, team comparison, game information.
+// Optional fields omitted when unsourced — no placeholder metrics.
 function GameDetails({ data }: { data: GameDetail }) {
   const g = data.game;
+  const ls = data.baseballGamecast?.lineScore;
   const firstPitch = formatFirstPitch(g.startTime);
-  const statusText = g.status === "finished" ? "Final"
-    : g.status === "live" ? (g.statusDetail ?? "Live")
-    : "Scheduled";
-  const teamStatKeys = Array.from(new Set([
-    ...Object.keys(data.awayStats ?? {}),
-    ...Object.keys(data.homeStats ?? {}),
-  ]));
+  const statusText = g.status === "finished" ? "FINAL" : g.status === "live" ? "LIVE" : "SCHEDULED";
+  const resultText = g.awayScore != null && g.homeScore != null
+    ? `${lastName(g.homeTeam)} ${g.homeScore}, ${lastName(g.awayTeam)} ${g.awayScore}`
+    : g.status === "finished" ? "Final" : "In progress";
   const eventCount = data.baseballGamecast?.plays?.length ?? 0;
 
   return (
     <>
+      <SectionHead title="Game details" meta={`${(g.league ?? "MLB").toUpperCase()} · ${statusText}`} />
       {g.venue ? (
-        <View style={styles.sectionBlock}>
-          <Text style={styles.eyebrow}>VENUE</Text>
-          <Text style={styles.detailVenue}>{g.venue}</Text>
-        </View>
-      ) : null}
-      <TeamComparison data={data} />
-      {teamStatKeys.length > 0 ? (
-        <View style={styles.sectionBlock}>
-          <View style={styles.statsHeader}>
-            <Text style={styles.statsTeam}>{g.awayAbbreviation ?? lastName(g.awayTeam)}</Text>
-            <Text style={styles.eyebrow}>TEAM STATS</Text>
-            <Text style={[styles.statsTeam, styles.textRight]}>{g.homeAbbreviation ?? lastName(g.homeTeam)}</Text>
+        <View style={styles.venue}>
+          <View style={styles.venueDiamond} />
+          <View style={styles.venueCopy}>
+            <Text style={styles.venueEyebrow}>THE BALLPARK</Text>
+            <Text style={styles.venueName}>{g.venue}</Text>
           </View>
-          {teamStatKeys.map((key) => (
-            <View key={key} style={styles.statRow}>
-              <Text style={styles.statValue}>{data.awayStats?.[key] ?? "–"}</Text>
-              <Text style={styles.statLabel}>{key}</Text>
-              <Text style={[styles.statValue, styles.textRight]}>{data.homeStats?.[key] ?? "–"}</Text>
-            </View>
-          ))}
         </View>
       ) : null}
-      <View style={styles.sectionBlock}>
-        <Text style={styles.eyebrow}>GAME INFO</Text>
-        <DetailRow label="RESULT" value={statusText} />
-        {firstPitch ? <DetailRow label="FIRST PITCH" value={firstPitch} /> : null}
-        <DetailRow label="LEAGUE" value={(g.league ?? "MLB").toUpperCase()} />
+      <Text style={styles.over}>TEAM COMPARISON</Text>
+      <View style={styles.compareHead}>
+        <Text style={styles.compareTeam}>{g.awayAbbreviation ?? lastName(g.awayTeam)}</Text>
+        <View style={styles.compareLabel} />
+        <Text style={[styles.compareTeam, styles.textRight]}>{g.homeAbbreviation ?? lastName(g.homeTeam)}</Text>
       </View>
-      <View style={styles.sectionBlock}>
-        <Text style={styles.eyebrow}>FEED</Text>
-        <Text style={styles.detailFreshness}>
-          {eventCount > 0
-            ? `${eventCount} verified events synced from the official feed.`
-            : "Verified play data will appear as the official feed publishes it."}
-        </Text>
+      <CompareRow label="HITS" away={ls?.away.hits} home={ls?.home.hits} />
+      <CompareRow label="ERRORS" away={ls?.away.errors} home={ls?.home.errors} />
+      <CompareRow label="RUNNERS LEFT ON" away={ls?.away.leftOnBase} home={ls?.home.leftOnBase} />
+      <View style={styles.infoBlock}>
+        <Text style={styles.over}>GAME INFORMATION</Text>
+        {firstPitch ? <InfoRow label="First pitch" value={firstPitch} /> : null}
+        <InfoRow label="League" value="Major League Baseball" />
+        <InfoRow label="Result" value={resultText} />
+        <InfoRow label="Verified feed" value={eventCount > 0 ? `${eventCount} events` : "Updating"} />
       </View>
     </>
   );
 }
 
-function LineupTeam({ team, logo, players, fallback }: { team: string; logo?: string | null; players: PlayerStatLine[]; fallback: string[] }) {
-  const rows: PlayerStatLine[] = players.length > 0
-    ? players
+// LINEUP (v9): team switch → team brand → batting order rows with today's line.
+function Lineups({ data }: { data: GameDetail }) {
+  const [side, setSide] = useState<TeamSide>("away");
+  const isFinal = data.game.status === "finished";
+  const players = (side === "away" ? data.awayPlayerStats : data.homePlayerStats) ?? [];
+  const fallback = (side === "away" ? data.awayLineup : data.homeLineup) ?? [];
+  const teamName = side === "away" ? data.game.awayTeam : data.game.homeTeam;
+  const teamLogo = side === "away" ? data.game.awayTeamLogo : data.game.homeTeamLogo;
+  const batters = players.filter((p) => p.stats.role !== "P");
+  const rows: PlayerStatLine[] = batters.length > 0
+    ? batters
     : fallback.map((name) => ({ name, starter: true, stats: {} }));
+
   return (
-    <View style={styles.sectionBlock}>
-      <View style={styles.teamSectionTitle}>
-        <TeamMark uri={logo} name={team} size={30} />
-        <Text style={styles.teamSectionName}>{team}</Text>
+    <>
+      <SectionHead title="Batting order" meta={isFinal ? "FINAL LINEUP" : "LIVE LINEUP"} />
+      <TeamSwitch data={data} side={side} onSide={setSide} />
+      <View style={styles.lineupBrand}>
+        <TeamMark uri={teamLogo} name={teamName} size={34} />
+        <View style={styles.flexMin}>
+          <Text style={styles.lineupBrandName} numberOfLines={1}>{teamName}</Text>
+          <Text style={styles.lineupBrandSub}>{side === "away" ? "Away order" : "Home order"}</Text>
+        </View>
       </View>
       {rows.length > 0 ? rows.map((player, index) => (
-        <View key={`${team}-${player.name}`} style={styles.lineupRow}>
+        <View key={`${side}-${player.name}-${index}`} style={styles.lineupRow}>
           <Text style={styles.lineupOrder}>{index + 1}</Text>
-          <Text style={styles.lineupName}>{player.name}</Text>
-          {player.stats.role ? <Text style={styles.lineupRole}>{player.stats.role}</Text> : null}
+          <SmallFace name={player.name} size={34} />
+          <View style={styles.flexMin}>
+            <Text style={styles.lineupName} numberOfLines={1}>{player.name}</Text>
+            <Text style={styles.lineupRole}>{player.stats.role ? player.stats.role : player.starter ? "STARTER" : "SUB"}</Text>
+          </View>
+          <Text style={styles.lineupToday}>{player.stats["H-AB"] ?? "—"}</Text>
         </View>
       )) : (
         <EmptyState icon="people-outline" title="Lineup unavailable" detail="The official batting order has not been published yet." />
       )}
-    </View>
-  );
-}
-
-function Lineups({ data }: { data: GameDetail }) {
-  return (
-    <>
-      <LineupTeam team={data.game.awayTeam} logo={data.game.awayTeamLogo} players={data.awayPlayerStats ?? []} fallback={data.awayLineup ?? []} />
-      <LineupTeam team={data.game.homeTeam} logo={data.game.homeTeamLogo} players={data.homePlayerStats ?? []} fallback={data.homeLineup ?? []} />
     </>
   );
 }
@@ -814,7 +901,7 @@ const styles = StyleSheet.create({
   playInning: { width: 48, color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, paddingTop: 2 },
   playInningActive: { color: C.accent },
   playCopy: { flex: 1, paddingRight: 8 },
-  playText: { color: C.textSecondary, fontFamily: FONTS.bodyMedium, fontSize: 12, lineHeight: 17 },
+  playText: { color: C.textSecondary, fontFamily: SERIF, fontWeight: "700", fontSize: 14, lineHeight: 19 },
   playTextActive: { color: C.text },
   playMeta: { color: C.textTertiary, fontFamily: FONTS.mono, fontSize: 9, marginTop: 4 },
   playScore: { width: 34, color: C.textSecondary, fontFamily: FONTS.displayMedium, fontSize: 12, textAlign: "right", paddingTop: 2 },
@@ -841,10 +928,10 @@ const styles = StyleSheet.create({
   statRow: { minHeight: 45, flexDirection: "row", alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
   statValue: { width: 78, color: C.text, fontFamily: FONTS.display, fontSize: 18 },
   statLabel: { flex: 1, color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, textAlign: "center", letterSpacing: 0.5 },
-  lineupRow: { minHeight: 45, flexDirection: "row", alignItems: "center", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
-  lineupOrder: { width: 32, color: C.accent, fontFamily: FONTS.displayMedium, fontSize: 13 },
-  lineupName: { flex: 1, color: C.text, fontFamily: FONTS.bodyMedium, fontSize: 13 },
-  lineupRole: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 9, letterSpacing: 0.35 },
+  lineupRow: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
+  lineupOrder: { width: 22, color: "#768793", fontFamily: FONTS.display, fontSize: 12, textAlign: "center" },
+  lineupName: { color: C.text, fontFamily: FONTS.bodyBold, fontSize: 12 },
+  lineupRole: { color: "#7F8F9A", fontFamily: FONTS.bodyMedium, fontSize: 7, letterSpacing: 0.3, marginTop: 1 },
   storyHeadline: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 22, lineHeight: 28, marginTop: 6 },
   storyBody: { color: C.textSecondary, fontFamily: FONTS.bodyMedium, fontSize: 13, lineHeight: 19, marginTop: 6 },
   detailVenue: { color: C.text, fontFamily: FONTS.bodyBold, fontSize: 15, marginTop: 6 },
@@ -874,4 +961,56 @@ const styles = StyleSheet.create({
   breath: { marginTop: 17, padding: 15, borderRadius: 20, borderCurve: "continuous", backgroundColor: "rgba(242,166,90,0.10)", borderWidth: 1, borderColor: "rgba(242,166,90,0.18)" },
   breathText: { color: C.text, fontFamily: SERIF, fontWeight: "700", fontSize: 15, lineHeight: 21 },
   breathNote: { color: "#8E9CA6", fontFamily: FONTS.bodyMedium, fontSize: 9, marginTop: 7 },
+  // ── shared section head + DETAILS (v9 mockup) ──────────────────────
+  sectionHead: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 4, marginBottom: 15 },
+  sectionHeadTitle: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 22, letterSpacing: -0.5 },
+  sectionHeadMeta: { color: "#82919B", fontFamily: FONTS.bodyBold, fontSize: 8, letterSpacing: 0.5, marginBottom: 3 },
+  venue: { height: 122, borderRadius: 22, borderCurve: "continuous", overflow: "hidden", backgroundColor: "#1E3431", borderWidth: 1, borderColor: "rgba(255,255,255,0.09)", marginBottom: 16, justifyContent: "flex-end" },
+  venueDiamond: { position: "absolute", width: 70, height: 70, left: "50%", top: 22, marginLeft: -35, borderWidth: 1, borderColor: "rgba(249,226,194,0.4)", transform: [{ rotate: "45deg" }] },
+  venueCopy: { padding: 14 },
+  venueEyebrow: { color: "#EAA065", fontFamily: FONTS.bodyHeavy, fontSize: 8, letterSpacing: 0.5 },
+  venueName: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 16, marginTop: 3 },
+  compareHead: { flexDirection: "row", alignItems: "center", marginTop: 10, marginBottom: 2 },
+  compareTeam: { flex: 1, color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 12 },
+  compareRow: { flexDirection: "row", alignItems: "center", paddingVertical: 11, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(244,238,229,0.09)" },
+  compareValue: { flex: 1, color: C.text, fontFamily: FONTS.display, fontSize: 18, textAlign: "center" },
+  compareLabel: { flex: 1.25, color: "#7F909B", fontFamily: FONTS.bodyBold, fontSize: 8, letterSpacing: 0.5, textAlign: "center" },
+  infoBlock: { marginTop: 18 },
+  infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(244,238,229,0.09)" },
+  infoLabel: { color: "#80919C", fontFamily: FONTS.bodyMedium, fontSize: 12 },
+  infoValue: { maxWidth: "60%", color: C.text, fontFamily: FONTS.bodyBold, fontSize: 12, textAlign: "right" },
+  // ── BOX + LINEUP (v9 mockup) ───────────────────────────────────────
+  flexMin: { flex: 1, minWidth: 0 },
+  teamSwitch: { flexDirection: "row", gap: 5, padding: 5, borderRadius: 15, borderCurve: "continuous", backgroundColor: "rgba(4,9,13,0.42)", marginBottom: 15 },
+  teamOption: { flex: 1, height: 38, borderRadius: 12, borderCurve: "continuous", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
+  teamOptionOn: { backgroundColor: "rgba(255,255,255,0.10)" },
+  teamOptionText: { color: "#84939E", fontFamily: FONTS.bodyHeavy, fontSize: 10 },
+  teamOptionTextOn: { color: C.text },
+  smallFace: { borderRadius: 12, borderCurve: "continuous", alignItems: "center", justifyContent: "center", backgroundColor: "#293946" },
+  smallFaceInitial: { color: C.textSecondary, fontFamily: FONTS.bodyHeavy, fontSize: 13 },
+  impact: { minHeight: 128, borderRadius: 24, borderCurve: "continuous", padding: 16, overflow: "hidden", backgroundColor: "#20303C", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", marginBottom: 14 },
+  impactEyebrow: { color: C.accent, fontFamily: FONTS.bodyHeavy, fontSize: 8, letterSpacing: 0.5 },
+  impactName: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 20, marginTop: 7 },
+  impactDesc: { color: "#9EABB4", fontFamily: FONTS.bodyMedium, fontSize: 10, marginTop: 3, maxWidth: 220 },
+  impactStats: { flexDirection: "row", gap: 18, marginTop: 13 },
+  impactStatValue: { color: C.text, fontFamily: FONTS.display, fontSize: 16 },
+  impactStatLabel: { color: "#788994", fontFamily: FONTS.bodyBold, fontSize: 7, letterSpacing: 0.4, marginTop: 1 },
+  mode: { flexDirection: "row", gap: 7, marginBottom: 10 },
+  modePill: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 99, backgroundColor: "rgba(255,255,255,0.06)" },
+  modePillOn: { backgroundColor: "rgba(242,166,90,0.16)" },
+  modePillText: { color: "#7F8F99", fontFamily: FONTS.bodyHeavy, fontSize: 9, letterSpacing: 0.3 },
+  modePillTextOn: { color: C.accent },
+  tableHead: { flexDirection: "row", alignItems: "center", paddingBottom: 7 },
+  tableHeadCell: { width: 34, color: "#6F818C", fontFamily: FONTS.bodyBold, fontSize: 8, textAlign: "center" },
+  tableHeadPlayer: { flex: 1, textAlign: "left" },
+  boxRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(244,238,229,0.08)" },
+  boxPlayer: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 },
+  boxPlayerName: { color: C.text, fontFamily: FONTS.bodyBold, fontSize: 11 },
+  boxPlayerRole: { color: "#7C8D98", fontFamily: FONTS.bodyMedium, fontSize: 7, marginTop: 1, letterSpacing: 0.3 },
+  boxCell: { width: 34, color: C.textSecondary, fontFamily: FONTS.mono, fontSize: 11, textAlign: "center" },
+  hot: { color: C.accent, fontFamily: FONTS.monoBold },
+  lineupBrand: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 13 },
+  lineupBrandName: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 15 },
+  lineupBrandSub: { color: "#85949E", fontFamily: FONTS.bodyMedium, fontSize: 8, marginTop: 1 },
+  lineupToday: { width: 44, color: C.text, fontFamily: FONTS.bodyBold, fontSize: 11, textAlign: "right" },
 });
