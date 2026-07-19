@@ -21,6 +21,8 @@ import type {
 } from "@/utils/api";
 
 const C = Colors.dark;
+// Editorial serif for headlines, matching the approved v9 mockup (ui-serif/Georgia).
+const SERIF = Platform.OS === "web" ? "Georgia, 'Times New Roman', serif" : "Georgia";
 const WEB_PRESS_PROPS = Platform.OS === "web"
   ? { onMouseDown: (event: { preventDefault: () => void }) => event.preventDefault() }
   : {};
@@ -181,52 +183,60 @@ function findPlayer(data: GameDetail, athlete: BaseballAthlete | null): PlayerSt
     .find((player) => player.name === athlete.name) ?? null;
 }
 
+function AthleteFace({ athlete }: { athlete: BaseballAthlete | null }) {
+  if (athlete?.headshot) return <Image source={{ uri: athlete.headshot }} style={styles.personFace} />;
+  return (
+    <View style={styles.personFaceFallback}>
+      {athlete
+        ? <Text style={styles.personFaceInitial}>{athlete.name.charAt(0)}</Text>
+        : <Ionicons name="person" size={20} color={C.textTertiary} />}
+    </View>
+  );
+}
+
+// v9 mockup .match card: batter face + label + count + pitcher face.
 function Matchup({ data, state }: { data: GameDetail; state: BaseballSituation }) {
   const batterLine = findPlayer(data, state.batter);
   const pitcherLine = findPlayer(data, state.pitcher);
+  const isFinal = data.game.status === "finished";
   const batterStat = batterLine?.stats["H-AB"] ?? batterLine?.stats["AVG"] ?? null;
-  const pitcherStat = pitcherLine?.stats["IP"] ?? pitcherLine?.stats["K"] ?? null;
+  const pitcherStat = pitcherLine?.stats["IP"] ? `${pitcherLine.stats["IP"]} IP`
+    : pitcherLine?.stats["K"] ? `${pitcherLine.stats["K"]} K` : null;
 
   if (!state.batter && !state.pitcher) {
     return (
-      <View style={styles.sectionBlock}>
-        <Text style={styles.eyebrow}>RIGHT NOW</Text>
-        <View style={styles.betweenInnings}>
-          <View style={styles.betweenIcon}>
-            <Ionicons name="hourglass-outline" size={20} color={C.accent} />
-          </View>
-          <View style={styles.betweenCopy}>
-            <Text style={styles.betweenTitle}>Between innings</Text>
-            <Text style={styles.betweenDetail}>
-              The next batter and pitcher will appear when the official feed confirms the matchup.
-            </Text>
-          </View>
+      <View style={styles.betweenInnings}>
+        <View style={styles.betweenIcon}>
+          <Ionicons name="hourglass-outline" size={18} color={C.accent} />
+        </View>
+        <View style={styles.betweenCopy}>
+          <Text style={styles.betweenTitle}>Between innings</Text>
+          <Text style={styles.betweenDetail}>The next batter and pitcher appear when the official feed confirms the matchup.</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.sectionBlock}>
-      <Text style={styles.eyebrow}>RIGHT NOW</Text>
-      <View style={styles.matchup}>
-        <View style={styles.matchupSide}>
-          <AthletePortrait athlete={state.batter} />
-          <Text style={styles.matchupRole}>BATTING</Text>
-          <Text style={styles.matchupName} numberOfLines={1}>{state.batter?.name ?? "Awaiting batter"}</Text>
-          {batterStat ? <Text style={styles.matchupStat}>{batterStat}</Text> : null}
+    <View style={styles.match}>
+      <View style={styles.person}>
+        <AthleteFace athlete={state.batter} />
+        <View style={styles.personCopy}>
+          <Text style={styles.personLabel}>{isFinal ? "FINAL BATTER" : "AT BAT"}</Text>
+          <Text style={styles.personName} numberOfLines={1}>{state.batter?.name ?? "Awaiting batter"}</Text>
+          {batterStat ? <Text style={styles.personSub} numberOfLines={1}>{batterStat}</Text> : null}
         </View>
-        <View style={styles.matchupCenter}>
-          <Text style={styles.matchupCount}>{state.balls ?? "–"}–{state.strikes ?? "–"}</Text>
-          <Text style={styles.matchupCountLabel}>COUNT</Text>
-          <View style={styles.matchupDivider} />
-          <Text style={styles.matchupOuts}>{state.outs ?? "–"} OUT{state.outs === 1 ? "" : "S"}</Text>
-        </View>
-        <View style={[styles.matchupSide, styles.matchupSideRight]}>
-          <AthletePortrait athlete={state.pitcher} />
-          <Text style={styles.matchupRole}>PITCHING</Text>
-          <Text style={[styles.matchupName, styles.textRight]} numberOfLines={1}>{state.pitcher?.name ?? "Awaiting pitcher"}</Text>
-          {pitcherStat ? <Text style={[styles.matchupStat, styles.textRight]}>{pitcherStat}</Text> : null}
+      </View>
+      <View style={styles.countBox}>
+        <Text style={styles.countValue}>{state.balls ?? "–"}–{state.strikes ?? "–"}</Text>
+        <Text style={styles.countLabel}>{isFinal ? "FINAL COUNT" : "COUNT"}</Text>
+      </View>
+      <View style={[styles.person, styles.personRight]}>
+        <AthleteFace athlete={state.pitcher} />
+        <View style={[styles.personCopy, styles.personCopyRight]}>
+          <Text style={styles.personLabel}>PITCHING</Text>
+          <Text style={[styles.personName, styles.textRight]} numberOfLines={1}>{state.pitcher?.name ?? "Awaiting pitcher"}</Text>
+          {pitcherStat ? <Text style={[styles.personSub, styles.textRight]} numberOfLines={1}>{pitcherStat}</Text> : null}
         </View>
       </View>
     </View>
@@ -420,38 +430,34 @@ function StoryHeadline({ data }: { data: GameDetail }) {
     : data.game.status === "live" ? "THE GAME RIGHT NOW"
     : "COMING UP";
   return (
-    <View style={styles.sectionBlock}>
-      <Text style={styles.eyebrow}>{eyebrow}</Text>
-      <Text style={styles.storyHeadline}>{storyHeadline(data)}</Text>
+    <View style={styles.storyTop}>
+      <Text style={styles.over}>{eyebrow}</Text>
+      <Text style={styles.hero}>{storyHeadline(data)}</Text>
+      <Text style={styles.support}>The field above stays the live source. This room explains the game without replacing it.</Text>
     </View>
   );
 }
 
-function HowWeGotHere({ data }: { data: GameDetail }) {
+// v9 mockup .breath narrative card — deterministic scoring-swing summary.
+function Breath({ data }: { data: GameDetail }) {
   const text = howWeGotHere(data);
   if (!text) return null;
   return (
-    <View style={styles.sectionBlock}>
-      <Text style={styles.eyebrow}>HOW WE GOT HERE</Text>
-      <Text style={styles.storyBody}>{text}</Text>
+    <View style={styles.breath}>
+      <Text style={styles.breathText}>{text}</Text>
+      <Text style={styles.breathNote}>Built from the verified line score and scoring by inning.</Text>
     </View>
   );
 }
 
-// STORY: spec order — headline → matchup → line score → how-we-got-here →
-// latest plate appearances. Team comparison lives in DETAILS.
+// STORY (v9): headline → matchup card → line score → "how we got here" card.
 function Overview(props: BaseballGameHubProps) {
-  const plays = props.data.baseballGamecast?.recentPlays ?? [];
   return (
     <>
       <StoryHeadline data={props.data} />
       <Matchup data={props.data} state={props.visibleState} />
       <LineScore data={props.data} />
-      <HowWeGotHere data={props.data} />
-      <View style={styles.sectionBlock}>
-        <Text style={styles.eyebrow}>LATEST PLAYS</Text>
-        <PlayRows plays={plays} selectedPlayId={props.selectedPlayId} onSelectPlay={props.onSelectPlay} limit={3} />
-      </View>
+      <Breath data={props.data} />
     </>
   );
 }
@@ -740,18 +746,24 @@ const styles = StyleSheet.create({
   completeFeedHeader: { minHeight: 76, paddingVertical: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   playSectionHeader: { marginHorizontal: -16, paddingHorizontal: 16, paddingVertical: 7, backgroundColor: "#111C26", borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: C.separator },
   playSectionTitle: { color: C.accent, fontFamily: FONTS.bodyHeavy, fontSize: 10, letterSpacing: 0.5 },
+  // v9 mockup dock: pill segmented control, active tab is a filled amber pill.
   tabs: {
-    height: 54,
-    paddingHorizontal: 10,
     flexDirection: "row",
-    alignItems: "stretch",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(244,238,229,0.16)",
+    gap: 4,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 6,
+    padding: 5,
+    borderRadius: 17,
+    borderCurve: "continuous",
+    backgroundColor: "rgba(5,10,14,0.48)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
-  tab: { flex: 1, alignItems: "center", justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
-  tabActive: { borderBottomColor: C.accent },
-  tabText: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, letterSpacing: 0.35 },
-  tabTextActive: { color: C.accent },
+  tab: { flex: 1, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 12, borderCurve: "continuous" },
+  tabActive: { backgroundColor: C.accent },
+  tabText: { color: "#8998A3", fontFamily: FONTS.bodyHeavy, fontSize: 10, letterSpacing: 0.2 },
+  tabTextActive: { color: "#111820" },
   sectionBlock: { paddingVertical: 18, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(244,238,229,0.15)" },
   eyebrow: { color: C.textSecondary, fontFamily: FONTS.bodyHeavy, fontSize: 12, letterSpacing: 0.7 },
   sectionSubhead: { color: C.textTertiary, fontFamily: FONTS.bodyMedium, fontSize: 11, marginTop: 3 },
@@ -840,4 +852,26 @@ const styles = StyleSheet.create({
   detailLabel: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, letterSpacing: 0.5 },
   detailValue: { maxWidth: "62%", color: C.text, fontFamily: FONTS.bodyMedium, fontSize: 13, textAlign: "right" },
   detailFreshness: { color: C.textTertiary, fontFamily: FONTS.bodyMedium, fontSize: 12, lineHeight: 18, marginTop: 6 },
+  // ── STORY (v9 mockup) ──────────────────────────────────────────────
+  storyTop: { paddingTop: 6, paddingBottom: 2 },
+  over: { color: "#E99D63", fontFamily: FONTS.bodyHeavy, fontSize: 10, letterSpacing: 1.2, marginBottom: 8 },
+  hero: { color: C.text, fontFamily: SERIF, fontWeight: "700", fontSize: 25, lineHeight: 30, letterSpacing: -0.4 },
+  support: { color: "#94A2AC", fontFamily: FONTS.bodyMedium, fontSize: 11, lineHeight: 16, marginTop: 9 },
+  match: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 18, paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(244,238,229,0.12)" },
+  person: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0 },
+  personRight: { flexDirection: "row-reverse" },
+  personCopy: { flex: 1, minWidth: 0 },
+  personCopyRight: { alignItems: "flex-end" },
+  personFace: { width: 46, height: 46, borderRadius: 15, borderCurve: "continuous", resizeMode: "cover", backgroundColor: C.card },
+  personFaceFallback: { width: 46, height: 46, borderRadius: 15, borderCurve: "continuous", alignItems: "center", justifyContent: "center", backgroundColor: C.card },
+  personFaceInitial: { color: C.textSecondary, fontFamily: FONTS.bodyHeavy, fontSize: 18 },
+  personLabel: { color: "#E99D63", fontFamily: FONTS.bodyHeavy, fontSize: 8, letterSpacing: 0.5 },
+  personName: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 13, marginTop: 2 },
+  personSub: { color: "#82919B", fontFamily: FONTS.bodyMedium, fontSize: 9, marginTop: 2 },
+  countBox: { width: 66, alignItems: "center" },
+  countValue: { color: C.text, fontFamily: FONTS.display, fontSize: 24 },
+  countLabel: { color: "#778792", fontFamily: FONTS.bodyBold, fontSize: 7, letterSpacing: 1, marginTop: 2 },
+  breath: { marginTop: 17, padding: 15, borderRadius: 20, borderCurve: "continuous", backgroundColor: "rgba(242,166,90,0.10)", borderWidth: 1, borderColor: "rgba(242,166,90,0.18)" },
+  breathText: { color: C.text, fontFamily: SERIF, fontWeight: "700", fontSize: 15, lineHeight: 21 },
+  breathNote: { color: "#8E9CA6", fontFamily: FONTS.bodyMedium, fontSize: 9, marginTop: 7 },
 });

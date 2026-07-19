@@ -188,12 +188,24 @@ export function GameDetailsSheet({
         accessibilityState={{ expanded }}
         {...webDragHandlers}
       >
-        <View style={styles.grabber} />
-        <View style={styles.handleLabelRow}>
-          <Ionicons name={expanded ? "chevron-down" : "chevron-up"} size={14} color={C.textSecondary} />
-          <Text style={styles.handleLabel}>{label}</Text>
-          <Ionicons name={expanded ? "chevron-down" : "chevron-up"} size={14} color={C.textSecondary} />
-        </View>
+        {expanded ? (
+          <View style={styles.roomState}>
+            <Text style={styles.roomStateLabel}>FULL-SCREEN GAME ROOM</Text>
+            <View style={styles.roomStateReturn}>
+              <Ionicons name="chevron-down" size={12} color={C.accent} />
+              <Text style={styles.roomStateReturnText}>RETURN TO FIELD</Text>
+            </View>
+          </View>
+        ) : (
+          <>
+            <View style={styles.grabber} />
+            <View style={styles.handleLabelRow}>
+              <Ionicons name="chevron-up" size={14} color={C.textSecondary} />
+              <Text style={styles.handleLabel}>{label}</Text>
+              <Ionicons name="chevron-up" size={14} color={C.textSecondary} />
+            </View>
+          </>
+        )}
       </Pressable>
       {children}
     </Animated.View>
@@ -242,4 +254,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.8,
   },
+  // Expanded state header (v9 mockup): "FULL-SCREEN GAME ROOM" · "↓ RETURN TO FIELD".
+  roomState: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+  },
+  roomStateLabel: { color: "#7F8790", fontFamily: FONTS.bodyHeavy, fontSize: 9, letterSpacing: 0.9 },
+  roomStateReturn: { flexDirection: "row", alignItems: "center", gap: 3 },
+  roomStateReturnText: { color: C.accent, fontFamily: FONTS.bodyHeavy, fontSize: 9, letterSpacing: 0.9 },
 });
