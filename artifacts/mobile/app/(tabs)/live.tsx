@@ -9,7 +9,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { FONTS } from "@/constants/typography";
-import { SPORT_CATEGORIES as MASTER_SPORT_CATEGORIES, type SportCategory as MasterSportCategory } from "@/constants/sportCategories";
+import { SPORT_CATEGORIES as MASTER_SPORT_CATEGORIES, type SportCategory as MasterSportCategory, prettyLeagueLabel } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 import { GameCard, TeamLogo } from "@/components/GameCard";
@@ -818,7 +818,7 @@ function CompactScoreRow({
           <Text style={[compact.statusText, isLive && { color: C.live }]}>
             {game.statusDetail ?? (isLive ? "LIVE" : isFinished ? "FINAL" : formatTime(game.startTime))}
           </Text>
-          <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? game.league}</Text>
+          <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? prettyLeagueLabel(game.league)}</Text>
         </View>
         <View style={[compact.icon, { backgroundColor: `${meta.color}18` }]}>
           <Ionicons name={meta.icon} size={14} color={meta.color} />
@@ -844,7 +844,7 @@ function CompactScoreRow({
       <View style={[compact.statusRail, { backgroundColor: isLive ? C.live : meta.color }]} />
       <View style={compact.statusCol}>
         <Text style={[compact.statusText, isLive && { color: C.live }]}>{formatGameClock(game)}</Text>
-        <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? game.league}</Text>
+        <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? prettyLeagueLabel(game.league)}</Text>
       </View>
       <View style={compact.teams}>
         <View style={compact.teamLine}>
@@ -1085,14 +1085,19 @@ export default function LiveScreen() {
   const allLeagueKeys = useMemo(() => {
     const seen = new Set<string>();
     [...LEAGUE_KEYS, ...all.map(g => g.league)].forEach(league => {
-      if (league) seen.add(league);
+      if (!league) return;
+      // Vegas / California Classic / Salt Lake are circuits WITHIN the NBA Summer
+      // League, not siblings of it — collapse them into one "Summer League" chip.
+      seen.add(SUMMER_LEAGUE_CIRCUIT_SET.has(league) ? SUMMER_LEAGUE_FAMILY : league);
     });
     return Array.from(seen);
   }, [all]);
   const categoryLeagues = allLeagueKeys
     .filter(league => leagueMatchesCategory(league, activeCategory))
     .sort((a, b) => {
-      const summerOrder = ["NBA", SUMMER_LEAGUE_FAMILY, ...SUMMER_LEAGUE_CIRCUITS];
+      // Circuits are collapsed into SUMMER_LEAGUE_FAMILY before this runs, so
+      // they never appear here — order the family right after NBA.
+      const summerOrder = ["NBA", SUMMER_LEAGUE_FAMILY];
       const aIndex = summerOrder.indexOf(a);
       const bIndex = summerOrder.indexOf(b);
       if (aIndex >= 0 || bIndex >= 0) return (aIndex >= 0 ? aIndex : 100) - (bIndex >= 0 ? bIndex : 100);
@@ -1274,15 +1279,11 @@ export default function LiveScreen() {
               const leagueGames = league === "All" ? categoryGames : all.filter(g => matchesLeagueFilter(g, league));
               const count = leagueGames.length;
               const liveCount = leagueGames.filter(g => g.status === "live").length;
+              // Circuits are collapsed into the family above, so the family chip
+              // covers all of Vegas / California / Salt Lake under one label.
               const chipLabel = league === SUMMER_LEAGUE_FAMILY
-                ? "Summer"
-                : league === "NBASLV"
-                  ? "Vegas"
-                  : league === "NBASLC"
-                    ? "California"
-                    : league === "NBASLU"
-                      ? "Salt Lake"
-                      : league;
+                ? "Summer League"
+                : prettyLeagueLabel(league);
 
               if (league !== "All" && count === 0) return null;
 
