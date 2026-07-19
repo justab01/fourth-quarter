@@ -351,7 +351,12 @@ export function BaseballGamecast({
   const gamecast = data.baseballGamecast;
   const fieldWidth = Math.min(width, 440);
   const fieldHeight = Math.max(480, height - SCORE_RIBBON_HEIGHT);
-  const expandedTop = Math.max(176, Math.min(206, Math.round(height * 0.24)));
+  // Full-screen takeover (approved 2026-07-18 spec): the expanded game room sits
+  // flush under the compact score ribbon and covers the field ENTIRELY — no
+  // partial resting state, no field strip. Only the expanded rest position moves
+  // up; the collapsed peek (collapsedTop) is unchanged, so the resting Gamecast
+  // is untouched. The gesture still animates between these two states.
+  const expandedTop = SCORE_RIBBON_HEIGHT;
   const collapsedTop = Math.max(expandedTop + 180, height - GAME_DETAILS_PEEK_HEIGHT);
   const collapsedOffset = collapsedTop - expandedTop;
   const plays = gamecast?.plays ?? gamecast?.recentPlays ?? [];
@@ -498,21 +503,9 @@ export function BaseballGamecast({
         accessibilityLabel={`Baseball field. ${stateSummary}`}
       >
         <View style={styles.fieldShade} pointerEvents="none" />
-        {expanded ? (
-          <View style={styles.compactFieldState} pointerEvents="none">
-            <View style={styles.compactPlayIcon}>
-              <Ionicons name="baseball" size={18} color="#FFF8EC" />
-            </View>
-            <View style={styles.compactPlayCopy}>
-              <Text style={styles.compactPlayEyebrow}>{isAtLive ? "ON THE FIELD" : "REPLAYING"}</Text>
-              <Text style={styles.compactPlayText} numberOfLines={2}>{playCall}</Text>
-            </View>
-            <View style={styles.compactSituation}>
-              <BaseState state={displayState} />
-              <Text style={styles.compactCount}>{displayState.balls ?? "–"}–{displayState.strikes ?? "–"}</Text>
-            </View>
-          </View>
-        ) : null}
+        {/* The old expanded "ON THE FIELD" strip is removed: the full-screen
+            game room now covers the field in the expanded state (spec supersedes
+            the partial resting state that kept a field strip visible). */}
         <FieldHistory plays={recentRail} selectedId={selectedId} />
         {trailDots.map((dot, index) => (
           <Ionicons key={`${selectedId}-trail-${index}`} name="ellipse" size={5} color="rgba(242,166,90,0.78)" style={[styles.trailDot, { left: dot.x - 2.5, top: dot.y - 2.5 }]} />
