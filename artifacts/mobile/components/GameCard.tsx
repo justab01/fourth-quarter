@@ -14,8 +14,16 @@ import {
   shortAthleteName, SPORT_EMOJI,
 } from "@/utils/sportArchetype";
 import { ALL_TEAMS } from "@/constants/allPlayers";
+import { resolveOpponentLogoUrl } from "@/utils/teamLogos";
 
 const C = Colors.dark;
+
+// Prefer the API-provided crest; if it's missing (common on upcoming games and
+// less-covered leagues like NWSL / internationals), derive one from the team
+// name + league so rows don't fall to an empty circle.
+function teamLogoUri(uri: string | null | undefined, name: string, league: string): string | null {
+  return uri || resolveOpponentLogoUrl(name, league);
+}
 
 // ── League color map ──────────────────────────────────────────────────────────
 function getLeagueColor(league: string): string {
@@ -368,7 +376,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={80} color={leagueColor} />
                 ) : (
-                  <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={80} borderColor={`${leagueColor}55`} />
+                  <TeamLogo uri={teamLogoUri(game.awayTeamLogo, game.awayTeam, game.league)} name={game.awayTeam} size={80} borderColor={`${leagueColor}55`} />
                 )}
                 <Text style={hero.teamName} numberOfLines={2}>
                   {isEventSport ? (game.eventTitle ?? game.awayTeam) : (isTennis || isCombat) ? shortAthleteName(game.awayTeam) : game.awayTeam}
@@ -430,7 +438,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={80} color={leagueColor} />
                 ) : (
-                  <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={80} borderColor={`${leagueColor}55`} />
+                  <TeamLogo uri={teamLogoUri(game.homeTeamLogo, game.homeTeam, game.league)} name={game.homeTeam} size={80} borderColor={`${leagueColor}55`} />
                 )}
                 <Text style={[hero.teamName, { textAlign: "right" }]} numberOfLines={2}>
                   {isEventSport ? (game.venue ?? game.homeTeam) : (isTennis || isCombat) ? shortAthleteName(game.homeTeam) : game.homeTeam}
@@ -501,7 +509,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={22} color={leagueColor} />
                 ) : (
-                  <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={22} />
+                  <TeamLogo uri={teamLogoUri(game.awayTeamLogo, game.awayTeam, game.league)} name={game.awayTeam} size={22} />
                 )}
                 <Text style={[cpt.teamName, isFinished && !awayWin && !combatAwayWin && cpt.teamDim]} numberOfLines={1}>
                   {isEventSport ? (game.eventTitle ?? game.awayTeam) : (isTennis || isCombat) ? shortAthleteName(game.awayTeam) : game.awayTeam}
@@ -521,7 +529,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
                 {(isTennis || isCombat || isEventSport) ? (
                   <SportBadge emoji={sportEmoji} size={22} color={leagueColor} />
                 ) : (
-                  <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={22} />
+                  <TeamLogo uri={teamLogoUri(game.homeTeamLogo, game.homeTeam, game.league)} name={game.homeTeam} size={22} />
                 )}
                 <Text style={[cpt.teamName, isFinished && !homeWin && !combatHomeWin && cpt.teamDim]} numberOfLines={1}>
                   {isEventSport ? (game.venue ?? game.homeTeam) : (isTennis || isCombat) ? shortAthleteName(game.homeTeam) : game.homeTeam}
@@ -842,7 +850,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               onPress={(e) => { e.stopPropagation(); goToTeam(game.awayTeam, game.league); }}
               hitSlop={4}
             >
-              <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={28} />
+              <TeamLogo uri={teamLogoUri(game.awayTeamLogo, game.awayTeam, game.league)} name={game.awayTeam} size={28} />
               <Text style={[dflt.teamName, isFinished && !awayWin && dflt.teamDim]} numberOfLines={1}>
                 {game.awayTeam}
               </Text>
@@ -862,7 +870,7 @@ export function GameCard({ game, onPress, variant = "default", isFavorite = fals
               onPress={(e) => { e.stopPropagation(); goToTeam(game.homeTeam, game.league); }}
               hitSlop={4}
             >
-              <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={28} />
+              <TeamLogo uri={teamLogoUri(game.homeTeamLogo, game.homeTeam, game.league)} name={game.homeTeam} size={28} />
               <Text style={[dflt.teamName, isFinished && !homeWin && dflt.teamDim]} numberOfLines={1}>
                 {game.homeTeam}
               </Text>

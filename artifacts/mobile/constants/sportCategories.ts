@@ -284,6 +284,23 @@ const SPORT_ALIASES: Record<string, string> = {
   ncaasw: "soccer",
 };
 
+// Human-readable labels for league/circuit codes that would otherwise leak raw
+// to the UI. The NBA Summer League is played across three circuits — Las Vegas
+// (NBASLV), the California Classic (NBASLC) and Salt Lake City (NBASLU) — so all
+// three read as one brand, "Summer League". Codes not listed here already read
+// fine as compact badges (NBA, MLB, EPL, …) and pass through unchanged.
+const LEAGUE_LABEL_OVERRIDES: Record<string, string> = {
+  NBA_SUMMER_LEAGUE: "Summer League",
+  NBASLV: "Summer League",
+  NBASLC: "Summer League",
+  NBASLU: "Summer League",
+};
+
+export function prettyLeagueLabel(code: string | null | undefined): string {
+  if (!code) return "";
+  return LEAGUE_LABEL_OVERRIDES[code.toUpperCase()] ?? code;
+}
+
 export function getSportById(id: string): SportCategory | undefined {
   const direct = SPORT_CATEGORIES.find((s) => s.id === id);
   if (direct) return direct;

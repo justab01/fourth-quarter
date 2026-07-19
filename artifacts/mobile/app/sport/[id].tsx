@@ -121,6 +121,26 @@ const RANKINGS_LEAGUES = new Set(["ATP", "WTA", "UFC", "PGA", "F1", "NASCAR", "I
 
 const STANDINGS_LEAGUES = new Set(["NBA", "NFL", "MLB", "NHL", "WNBA", "MLS", "EPL", "LIGA", "BUN", "SERA", "LIG1", "NWSL"]);
 
+// On "All" with no rankings-based league (e.g. soccer), fall back to the sport's
+// marquee league so Top Athletes pulls real names from the API (standings-
+// leaders' rosters) instead of the alphabetical static roster — which is why
+// soccer used to show three Atlanta United defenders for all of world soccer.
+const SPORT_MARQUEE_LEAGUE: Record<string, string> = {
+  basketball: "NBA", football: "NFL", baseball: "MLB", hockey: "NHL",
+  soccer: "EPL", golf: "PGA", tennis: "ATP", combat: "UFC", motorsports: "F1",
+};
+
+// The static athlete list carries a placeholder stat ("D — on roster") for
+// players without real numbers. Treat that — and bare position codes — as "no
+// stat" so the UI never shows a meaningless pill.
+function cleanAthleteStat(stat?: string | null): string | null {
+  if (!stat) return null;
+  const s = stat.trim();
+  if (/on roster/i.test(s)) return null;
+  if (/^[A-Za-z]{1,3}$/.test(s)) return null; // bare position code, e.g. "D", "GK"
+  return s;
+}
+
 // Sub-navigation configs for sports with multiple sub-categories
 const SUB_NAV_CONFIGS: Record<string, { tabs: { label: string; leagues: string[] }[] }> = {
   basketball: {
@@ -1597,9 +1617,13 @@ export default function SportBoardScreen() {
   const topAthletesLeague = useMemo(() => {
     if (activeLeague === "NBA_SUMMER_LEAGUE") return null;
     if (activeLeague !== "all") return activeLeague;
-    // For "all", use first league with rankings
-    return sport?.leagues.find(l => RANKINGS_LEAGUES.has(l.key))?.key ?? null;
-  }, [activeLeague, sport]);
+    // For "all": prefer a rankings league, else the sport's marquee league, else
+    // the first league — so the API is actually queried for real athletes.
+    return sport?.leagues.find(l => RANKINGS_LEAGUES.has(l.key))?.key
+      ?? SPORT_MARQUEE_LEAGUE[sportId]
+      ?? sport?.leagues[0]?.key
+      ?? null;
+  }, [activeLeague, sport, sportId]);
 
   const { data: topAthletesData, isLoading: topAthletesLoading } = useQuery({
     queryKey: ["top-athletes", topAthletesLeague],
@@ -1754,8 +1778,8 @@ export default function SportBoardScreen() {
         name: a.name,
         team: a.team ?? "",
         league: a.league,
-        position: a.stat ?? "",
-        stat: a.stat ?? "",
+        position: cleanAthleteStat(a.stat) ?? "",
+        stat: cleanAthleteStat(a.stat) ?? "",
         resolvedHeadshot: a.headshot || getEspnHeadshotUrl(a.name, a.league) || undefined,
       }));
     }
@@ -1783,10 +1807,14 @@ export default function SportBoardScreen() {
     } else {
       filterSet = sportLeagueKeys;
     }
-    return ALL_PLAYERS.filter((p) => filterSet.has(p.league)).slice(0, 12).map(p => ({
-      ...p,
-      resolvedHeadshot: p.headshotUrl || getEspnHeadshotUrl(p.name, p.league) || undefined,
-    }));
+    return ALL_PLAYERS.filter((p) => filterSet.has(p.league))
+      // Players with a real statline lead; the "on roster" placeholder rosters sink.
+      .sort((a, b) => (cleanAthleteStat(b.stat) ? 1 : 0) - (cleanAthleteStat(a.stat) ? 1 : 0))
+      .slice(0, 12).map(p => ({
+        ...p,
+        stat: cleanAthleteStat(p.stat) ?? "",
+        resolvedHeadshot: p.headshotUrl || getEspnHeadshotUrl(p.name, p.league) || undefined,
+      }));
   }, [topAthletesData, rankingsData, rankingsLeague, activeLeague, activeLeagueKeys, hasGroups, activeGroup, groupLeagueKeys, sportLeagueKeys]);
 
   // ── Why Watch Today AI context ───────────────────────────────────────────────

@@ -21,8 +21,9 @@ import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { ProfileButton } from "@/components/ProfileButton";
 import { goToTeam } from "@/utils/navHelpers";
 import { ALL_TEAMS } from "@/constants/allPlayers";
-import { isTennisLeague, isCombatLeague, shortAthleteName } from "@/utils/sportArchetype";
+import { isTennisLeague, isCombatLeague, isGolfLeague, isRacingLeague, shortAthleteName } from "@/utils/sportArchetype";
 import { getCreatorPreviews } from "@/constants/communityPreview";
+import { prettyLeagueLabel } from "@/constants/sportCategories";
 
 const C = Colors.dark;
 
@@ -300,6 +301,15 @@ function getTeamAbbr(teamName: string) {
 }
 
 function getMomentTitle(game: Game, myTeams: string[]) {
+  // Golf & racing are leaderboards, not two-team matchups — the generic template
+  // below would read "S. Woo Kim and 1. golfers are tied." Give them event copy.
+  if (isGolfLeague(game.league) || isRacingLeague(game.league)) {
+    const event = game.eventTitle?.trim() || game.venue?.trim() || game.league;
+    if (game.status === "live") return `${event} is live.`;
+    if (game.status === "finished") return `${event} — final results are in.`;
+    return `${event} is on the calendar.`;
+  }
+
   const follows = myTeams.includes(game.homeTeam) || myTeams.includes(game.awayTeam);
   const homeScore = game.homeScore ?? 0;
   const awayScore = game.awayScore ?? 0;
@@ -311,7 +321,7 @@ function getMomentTitle(game: Game, myTeams: string[]) {
     if (diff === 0) return `${shortAthleteName(game.homeTeam)} and ${shortAthleteName(game.awayTeam)} are tied.`;
     if (isCloseGame(game)) return `${leaderShort} protecting a ${getLeadDescriptor(game.league, diff)}.`;
     if (follows) return `${leaderShort} is driving your board.`;
-    return `${game.league} has the live window.`;
+    return `${prettyLeagueLabel(game.league)} has the live window.`;
   }
 
   if (game.status === "finished") {
@@ -322,6 +332,18 @@ function getMomentTitle(game: Game, myTeams: string[]) {
 }
 
 function getMomentLines(game: Game, myTeams: string[]) {
+  // Event sports: no two-team score line (would print "AwayTeam 0, HomeTeam 0").
+  if (isGolfLeague(game.league) || isRacingLeague(game.league)) {
+    const out: string[] = [];
+    if (game.venue && game.venue !== game.eventTitle) out.push(game.venue);
+    out.push(
+      game.status === "live" ? "Leaderboard is moving — jump into the live board."
+      : game.status === "finished" ? "Final results are posted."
+      : "The field and tee times are set."
+    );
+    return out.slice(0, 3);
+  }
+
   const scoreLine = getScoreLine(game).replace(/\.$/, "");
   const context = cleanContextLine(getGameContext(game, myTeams));
   const clock = [game.quarter, game.timeRemaining].filter(Boolean).join(" ");
@@ -369,7 +391,7 @@ function buildBreathMoments(allGames: Game[], articles: NewsArticle[], myTeams: 
       id: `game-${game.id}`,
       type: "game",
       statusLabel: game.status === "live" ? "LIVE" : game.status === "finished" ? "FINAL" : "NEXT",
-      leagueLabel: game.league,
+      leagueLabel: prettyLeagueLabel(game.league),
       title: getMomentTitle(game, myTeams),
       lines: getMomentLines(game, myTeams),
       accentColor: game.status === "live" ? C.live : getLeagueColor(game.league),
@@ -698,7 +720,7 @@ function LiveGameMiniCard({ game, onPress }: { game: Game; onPress: (game: Game)
       style={({ pressed }) => [liveRailStyles.card, pressed && liveRailStyles.cardPressed]}
     >
       <View style={liveRailStyles.cardTop}>
-        <Text style={liveRailStyles.league}>{game.league}</Text>
+        <Text style={liveRailStyles.league}>{prettyLeagueLabel(game.league)}</Text>
         <Text style={[liveRailStyles.period, { color: periodColor }]} numberOfLines={1}>{formatPeriodLabel(game)}</Text>
       </View>
 
@@ -909,7 +931,7 @@ function WhatMattersNow({
     const title = followsGame
       ? `${followedTeam} is the first read`
       : game.status === "live"
-        ? `${game.league} has the live window`
+        ? `${prettyLeagueLabel(game.league)} has the live window`
         : game.eventTitle || `${game.awayTeam} at ${game.homeTeam}`;
     const body = followsGame
       ? `${firstName ? `${firstName}, ` : ""}${getScoreLine(game)} ${context ?? "This is where your board starts before you open the full game."}`
@@ -930,7 +952,7 @@ function WhatMattersNow({
             <Ionicons name={followsGame ? "person-circle-outline" : "compass-outline"} size={13} color={C.accentGold} />
             <Text style={matterStyles.kickerText}>{followsGame ? "FOR YOU" : "START HERE"}</Text>
           </View>
-          <Text style={matterStyles.leagueLabel}>{game.league}</Text>
+          <Text style={matterStyles.leagueLabel}>{prettyLeagueLabel(game.league)}</Text>
         </View>
 
         <Text style={matterStyles.title}>{title}</Text>
@@ -1355,7 +1377,7 @@ function getFanPulseTicketForGame(game: Game, index: number): FanPulseTicket {
     const tied = diff === 0;
     return {
       id: `game-${game.id}`,
-      sourceTag: `LIVE · ${game.league}`,
+      sourceTag: `LIVE · ${prettyLeagueLabel(game.league)}`,
       question: tied ? "Who wins from here?" : `Will ${leaderShort} hold this lead?`,
       context: [clock, score, leadLine].filter(Boolean).join(" · "),
       options: tied ? [getTeamAbbr(game.awayTeam), getTeamAbbr(game.homeTeam)] : ["YES", "NO"],
@@ -1378,7 +1400,7 @@ function getFanPulseTicketForGame(game: Game, index: number): FanPulseTicket {
     const starts = formatPulseStartsAt(game.startTime);
     return {
       id: `game-${game.id}`,
-      sourceTag: `${game.league} · Next`,
+      sourceTag: `${prettyLeagueLabel(game.league)} · Next`,
       question: `Does ${homeShort} win this matchup?`,
       context: `${getTeamAbbr(game.awayTeam)} at ${getTeamAbbr(game.homeTeam)} · ${starts}`,
       options: ["REAL", "REACH"],
@@ -1397,7 +1419,7 @@ function getFanPulseTicketForGame(game: Game, index: number): FanPulseTicket {
 
   return {
     id: `game-${game.id}`,
-    sourceTag: `${game.league} · Final`,
+    sourceTag: `${prettyLeagueLabel(game.league)} · Final`,
     question: `Was ${possessive(leaderShort)} win a real signal?`,
     context: score,
     options: ["REAL", "REACH"],

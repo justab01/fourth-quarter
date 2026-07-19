@@ -15,6 +15,7 @@ import { api } from "@/utils/api";
 import { ALL_TEAMS, ALL_PLAYERS, type SearchTeam, type SearchPlayer } from "@/constants/allPlayers";
 import { TeamLogo } from "@/components/GameCard";
 import { resolveOpponentLogoUrl } from "@/utils/teamLogos";
+import { prettyLeagueLabel } from "@/constants/sportCategories";
 
 const C = Colors.dark;
 
@@ -25,6 +26,24 @@ const LEAGUE_COLORS: Record<string, string> = {
   UFC: C.ufc, BOXING: C.boxing, ATP: C.atp, WTA: C.wta,
   OLYMPICS: C.olympics, XGAMES: C.xgames,
 };
+
+// Major pro leagues rank above college / minor circuits when relevance ties —
+// so "Lakers" surfaces the LA Lakers before Mercyhurst Lakers.
+const MAJOR_LEAGUES = new Set([
+  "NBA", "NFL", "MLB", "NHL", "WNBA", "EPL", "UCL", "UEL", "LIGA", "BUN",
+  "SERA", "LIG1", "MLS", "NWSL", "UFC", "ATP", "WTA", "PGA", "F1", "NASCAR",
+]);
+
+// Score how well a team/competitor name matches the query: exact > starts-with >
+// word-starts-with > substring. Returns 0 for no textual hit.
+function nameMatchScore(name: string, q: string): number {
+  const n = name.toLowerCase();
+  if (n === q) return 300;
+  if (n.startsWith(q)) return 160;
+  if (n.split(/\s+/).some((w) => w.startsWith(q))) return 90;
+  if (n.includes(q)) return 40;
+  return 0;
+}
 
 function slugify(name: string): string {
   return name
@@ -170,12 +189,20 @@ export function SearchModal() {
       ).slice(0, 8)
     : ALL_PLAYERS.filter(p => myTeams.some(t => p.team === t)).slice(0, 5);
 
+  const rankGame = (g: any): number => {
+    let s = Math.max(nameMatchScore(g.homeTeam, q), nameMatchScore(g.awayTeam, q));
+    if (MAJOR_LEAGUES.has(g.league)) s += 40;
+    if (g.status === "live") s += 20;
+    else if (g.status === "upcoming") s += 10;
+    return s;
+  };
+
   const matchedGames = q.length >= 2
     ? (gamesData?.games ?? []).filter(g =>
         g.homeTeam.toLowerCase().includes(q) ||
         g.awayTeam.toLowerCase().includes(q) ||
         g.league.toLowerCase().includes(q)
-      ).slice(0, 3)
+      ).sort((a, b) => rankGame(b) - rankGame(a)).slice(0, 3)
     : [];
 
   const matchedNews = q.length >= 2
@@ -185,11 +212,14 @@ export function SearchModal() {
       ).slice(0, 3)
     : [];
 
-  const sortedTeams = [...matchedTeams].sort((a, b) => {
-    const aFav = myTeams.includes(a.name) ? -1 : 0;
-    const bFav = myTeams.includes(b.name) ? -1 : 0;
-    return aFav - bFav;
-  });
+  const rankTeam = (t: SearchTeam): number => {
+    let s = nameMatchScore(t.name, q);
+    if (t.abbr.toLowerCase() === q) s += 200;
+    if (myTeams.includes(t.name)) s += 1000;
+    if (MAJOR_LEAGUES.has(t.league)) s += 40;
+    return s - t.name.length * 0.1; // nudge the canonical (shorter) name up on ties
+  };
+  const sortedTeams = [...matchedTeams].sort((a, b) => rankTeam(b) - rankTeam(a));
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -322,8 +352,8 @@ export function SearchModal() {
                   key={`live-${athlete.espnId}-${athlete.league}`}
                   icon="person-circle"
                   label={athlete.name}
-                  sublabel={`${athlete.position || "—"} · ${athlete.team || athlete.league}`}
-                  badge={athlete.league.toUpperCase()}
+                  sublabel={`${athlete.position || "—"} · ${athlete.team || prettyLeagueLabel(athlete.league.toUpperCase())}`}
+                  badge={prettyLeagueLabel(athlete.league.toUpperCase())}
                   color={LEAGUE_COLORS[athlete.league.toUpperCase()] ?? C.accent}
                   onPress={() => goLiveAthlete(athlete)}
                 />
@@ -362,8 +392,8 @@ export function SearchModal() {
                     ? `Final: ${game.awayScore}–${game.homeScore}`
                     : game.status === "live"
                     ? `LIVE · ${game.awayScore}–${game.homeScore}`
-                    : `Upcoming · ${game.league}`}
-                  badge={game.league}
+                    : `Upcoming · ${prettyLeagueLabel(game.league)}`}
+                  badge={prettyLeagueLabel(game.league)}
                   color={game.status === "live" ? C.live : LEAGUE_COLORS[game.league]}
                   onPress={() => goGame(game.id)}
                 />
