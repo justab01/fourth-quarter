@@ -586,7 +586,9 @@ function ScoreboardDeck({
   onGamePress: (game: Game) => void;
 }) {
   const dateLabel = formatDateLabel(dateOffset);
-  const slateLabel = dateOffset < 0 ? "Past slate" : dateOffset > 0 ? "Upcoming slate" : "Today";
+  // On today the title already reads "Today", so use a section label for the
+  // eyebrow instead of repeating it ("TODAY / Today").
+  const slateLabel = dateOffset === 0 ? "Scoreboard" : dateOffset < 0 ? "Past slate" : "Upcoming slate";
   const topMeta = topGame ? getLeagueMeta(topGame.league) : null;
 
   return (

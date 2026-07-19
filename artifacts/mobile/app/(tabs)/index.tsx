@@ -349,11 +349,12 @@ function getMomentLines(game: Game, myTeams: string[]) {
   const clock = [game.quarter, game.timeRemaining].filter(Boolean).join(" ");
 
   if (game.status === "live") {
-    return [
-      scoreLine,
-      clock || context || "Live thread is open.",
-      context && context !== clock ? context : getLiveActionPrompt(game.league),
-    ].slice(0, 3);
+    // scoreLine already carries the clock ("…, Bottom 7th") — don't repeat it as
+    // its own line (that produced "Bottom 7th / Bottom 7th").
+    const lines = [scoreLine];
+    if (context && context !== clock) lines.push(context);
+    lines.push(getLiveActionPrompt(game.league));
+    return lines.slice(0, 3);
   }
 
   if (game.status === "finished") {
@@ -3382,7 +3383,7 @@ export default function HubScreen() {
           <MyTeamsStrip myTeams={myTeams} allGames={allGames} />
         </View>
 
-        {/* ── IN ONE BREATH ── */}
+        {/* ── IN ONE BREATH + AI RECAPS (one narrative zone: what's live/next, then what just happened) ── */}
         <View style={styles.section}>
           <InOneBreath
             allGames={allGames}
@@ -3394,6 +3395,19 @@ export default function HubScreen() {
             onArticlePress={handleArticlePress}
           />
         </View>
+
+        {finishedGames.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeading label="AI Recaps" badge={
+              <View style={styles.recapBadge}>
+                <Ionicons name="sparkles" size={11} color={C.accentGold} />
+              </View>
+            } />
+            <View style={styles.cardList}>
+              {finishedGames.slice(0, 2).map(g => <RecapCard key={g.id} game={g} />)}
+            </View>
+          </View>
+        )}
 
         {/* ── LIVE GAMES ── */}
         <View style={styles.section}>
@@ -3442,19 +3456,6 @@ export default function HubScreen() {
           </View>
         </View>
 
-        {/* ── AI RECAPS ── */}
-        {finishedGames.length > 0 && (
-          <View style={styles.section}>
-            <SectionHeading label="AI Recaps" badge={
-              <View style={styles.recapBadge}>
-                <Ionicons name="sparkles" size={11} color={C.accentGold} />
-              </View>
-            } />
-            <View style={styles.cardList}>
-              {finishedGames.slice(0, 2).map(g => <RecapCard key={g.id} game={g} />)}
-            </View>
-          </View>
-        )}
       </ScrollView>
     </View>
   );
