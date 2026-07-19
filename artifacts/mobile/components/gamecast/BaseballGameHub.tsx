@@ -25,14 +25,18 @@ const WEB_PRESS_PROPS = Platform.OS === "web"
   ? { onMouseDown: (event: { preventDefault: () => void }) => event.preventDefault() }
   : {};
 
-export type BaseballHubSection = "overview" | "plays" | "box" | "stats" | "lineups";
+// Approved spec dock (2026-07-18 baseball-fullscreen-game-room): exactly five
+// equal destinations. Route keys stay `overview`/`lineups` for deep-link
+// compatibility (Story→section=overview, Lineup→section=lineups); labels match
+// the spec. STATS is folded into DETAILS (team stats/comparison); DETAILS is new.
+export type BaseballHubSection = "overview" | "plays" | "box" | "lineups" | "details";
 
 const SECTIONS: Array<{ key: BaseballHubSection; label: string }> = [
-  { key: "overview", label: "OVERVIEW" },
+  { key: "overview", label: "STORY" },
   { key: "plays", label: "PLAYS" },
   { key: "box", label: "BOX" },
-  { key: "stats", label: "STATS" },
-  { key: "lineups", label: "LINEUPS" },
+  { key: "lineups", label: "LINEUP" },
+  { key: "details", label: "DETAILS" },
 ];
 
 interface BaseballGameHubProps {
@@ -339,17 +343,115 @@ function TeamComparison({ data }: { data: GameDetail }) {
   );
 }
 
+function inningOrdinal(n: number): string {
+  const j = n % 10;
+  const k = n % 100;
+  if (j === 1 && k !== 11) return `${n}st`;
+  if (j === 2 && k !== 12) return `${n}nd`;
+  if (j === 3 && k !== 13) return `${n}rd`;
+  return `${n}th`;
+}
+
+// Deterministic STORY headline derived only from verified score, inning, outs,
+// and status. No render-time generative model, no invented facts.
+function storyHeadline(data: GameDetail): string {
+  const g = data.game;
+  const away = lastName(g.awayTeam);
+  const home = lastName(g.homeTeam);
+  const as = g.awayScore;
+  const hs = g.homeScore;
+
+  if (g.status === "finished") {
+    if (as == null || hs == null) return `${away} and ${home} have wrapped up at ${g.venue ?? "the ballpark"}.`;
+    if (as === hs) return `${away} and ${home} finished tied ${as}–${hs}.`;
+    const winner = as > hs ? away : home;
+    const loser = as > hs ? home : away;
+    const high = Math.max(as, hs);
+    const low = Math.min(as, hs);
+    const margin = high - low;
+    const flavor = margin === 1 ? " in a one-run game" : margin >= 6 ? " in a runaway" : "";
+    return `${winner} beat ${loser} ${high}–${low}${flavor}.`;
+  }
+
+  if (g.status === "live") {
+    const sit = data.baseballGamecast?.situation;
+    const inning = sit?.inning ?? null;
+    const half = sit?.inningHalf === "bottom" ? "bottom" : "top";
+    const outs = sit?.outs;
+    const frame = inning ? `${half} of the ${inningOrdinal(inning)}` : "underway";
+    const outsText = outs != null ? `, ${outs} out${outs === 1 ? "" : "s"}` : "";
+    if (as == null || hs == null) return `${away} and ${home} are ${frame}${outsText}.`;
+    if (as === hs) return `Tied ${as}–${hs} in the ${frame}${outsText} — the next swing matters.`;
+    const leader = as > hs ? away : home;
+    const high = Math.max(as, hs);
+    const low = Math.min(as, hs);
+    return `${leader} lead ${high}–${low} in the ${frame}${outsText}.`;
+  }
+
+  const firstPitch = formatFirstPitch(g.startTime);
+  return `${away} visit ${home}${firstPitch ? ` — first pitch ${firstPitch}` : ""}.`;
+}
+
+// Deterministic scoring-swing summary from verified line-score inning totals.
+function howWeGotHere(data: GameDetail): string | null {
+  const ls = data.baseballGamecast?.lineScore;
+  if (!ls) return null;
+  const away = lastName(data.game.awayTeam);
+  const home = lastName(data.game.homeTeam);
+  const bigInning = (innings: Array<number | null>) => {
+    let runs = 0;
+    let idx = -1;
+    innings.forEach((value, i) => {
+      if (value != null && value > runs) { runs = value; idx = i; }
+    });
+    return { runs, inning: idx + 1 };
+  };
+  const a = bigInning(ls.away.innings);
+  const h = bigInning(ls.home.innings);
+  const parts: string[] = [];
+  if (h.runs >= 2) parts.push(`${home} pushed ${h.runs} across in the ${inningOrdinal(h.inning)}`);
+  if (a.runs >= 2) parts.push(`${away} answered with ${a.runs} in the ${inningOrdinal(a.inning)}`);
+  if (parts.length === 0) return null;
+  return `${parts.join(", ")}.`;
+}
+
+function StoryHeadline({ data }: { data: GameDetail }) {
+  const eyebrow = data.game.status === "finished" ? "FINAL"
+    : data.game.status === "live" ? "THE GAME RIGHT NOW"
+    : "COMING UP";
+  return (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.eyebrow}>{eyebrow}</Text>
+      <Text style={styles.storyHeadline}>{storyHeadline(data)}</Text>
+    </View>
+  );
+}
+
+function HowWeGotHere({ data }: { data: GameDetail }) {
+  const text = howWeGotHere(data);
+  if (!text) return null;
+  return (
+    <View style={styles.sectionBlock}>
+      <Text style={styles.eyebrow}>HOW WE GOT HERE</Text>
+      <Text style={styles.storyBody}>{text}</Text>
+    </View>
+  );
+}
+
+// STORY: spec order — headline → matchup → line score → how-we-got-here →
+// latest plate appearances. Team comparison lives in DETAILS.
 function Overview(props: BaseballGameHubProps) {
   const plays = props.data.baseballGamecast?.recentPlays ?? [];
   return (
     <>
-      <LineScore data={props.data} />
+      <StoryHeadline data={props.data} />
       <Matchup data={props.data} state={props.visibleState} />
+      <LineScore data={props.data} />
+      <HowWeGotHere data={props.data} />
       <View style={styles.sectionBlock}>
         <Text style={styles.eyebrow}>LATEST PLAYS</Text>
         <PlayRows plays={plays} selectedPlayId={props.selectedPlayId} onSelectPlay={props.onSelectPlay} limit={3} />
       </View>
-      <TeamComparison data={props.data} />
     </>
   );
 }
@@ -477,24 +579,83 @@ function BoxScore({ data }: { data: GameDetail }) {
   );
 }
 
-function Stats({ data }: { data: GameDetail }) {
-  const keys = Array.from(new Set([...Object.keys(data.awayStats ?? {}), ...Object.keys(data.homeStats ?? {})]));
-  if (keys.length === 0) return <EmptyState icon="stats-chart-outline" title="Team stats are updating" detail="Real game totals will appear when the official feed publishes them." />;
+function formatFirstPitch(startTime?: string | null): string | null {
+  if (!startTime) return null;
+  const date = new Date(startTime);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <View style={styles.sectionBlock}>
-      <View style={styles.statsHeader}>
-        <Text style={styles.statsTeam}>{data.game.awayAbbreviation ?? lastName(data.game.awayTeam)}</Text>
-        <Text style={styles.eyebrow}>TEAM STATS</Text>
-        <Text style={[styles.statsTeam, styles.textRight]}>{data.game.homeAbbreviation ?? lastName(data.game.homeTeam)}</Text>
-      </View>
-      {keys.map((key) => (
-        <View key={key} style={styles.statRow}>
-          <Text style={styles.statValue}>{data.awayStats?.[key] ?? "–"}</Text>
-          <Text style={styles.statLabel}>{key}</Text>
-          <Text style={[styles.statValue, styles.textRight]}>{data.homeStats?.[key] ?? "–"}</Text>
-        </View>
-      ))}
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailValue} numberOfLines={1}>{value}</Text>
     </View>
+  );
+}
+
+// DETAILS: factual game info that does not belong in Story, Plays, Box, or
+// Lineup. Every optional field (venue, team stats, first pitch) is omitted when
+// unavailable — no placeholder attendance/weather/broadcast is ever invented.
+function GameDetails({ data }: { data: GameDetail }) {
+  const g = data.game;
+  const firstPitch = formatFirstPitch(g.startTime);
+  const statusText = g.status === "finished" ? "Final"
+    : g.status === "live" ? (g.statusDetail ?? "Live")
+    : "Scheduled";
+  const teamStatKeys = Array.from(new Set([
+    ...Object.keys(data.awayStats ?? {}),
+    ...Object.keys(data.homeStats ?? {}),
+  ]));
+  const eventCount = data.baseballGamecast?.plays?.length ?? 0;
+
+  return (
+    <>
+      {g.venue ? (
+        <View style={styles.sectionBlock}>
+          <Text style={styles.eyebrow}>VENUE</Text>
+          <Text style={styles.detailVenue}>{g.venue}</Text>
+        </View>
+      ) : null}
+      <TeamComparison data={data} />
+      {teamStatKeys.length > 0 ? (
+        <View style={styles.sectionBlock}>
+          <View style={styles.statsHeader}>
+            <Text style={styles.statsTeam}>{g.awayAbbreviation ?? lastName(g.awayTeam)}</Text>
+            <Text style={styles.eyebrow}>TEAM STATS</Text>
+            <Text style={[styles.statsTeam, styles.textRight]}>{g.homeAbbreviation ?? lastName(g.homeTeam)}</Text>
+          </View>
+          {teamStatKeys.map((key) => (
+            <View key={key} style={styles.statRow}>
+              <Text style={styles.statValue}>{data.awayStats?.[key] ?? "–"}</Text>
+              <Text style={styles.statLabel}>{key}</Text>
+              <Text style={[styles.statValue, styles.textRight]}>{data.homeStats?.[key] ?? "–"}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      <View style={styles.sectionBlock}>
+        <Text style={styles.eyebrow}>GAME INFO</Text>
+        <DetailRow label="RESULT" value={statusText} />
+        {firstPitch ? <DetailRow label="FIRST PITCH" value={firstPitch} /> : null}
+        <DetailRow label="LEAGUE" value={(g.league ?? "MLB").toUpperCase()} />
+      </View>
+      <View style={styles.sectionBlock}>
+        <Text style={styles.eyebrow}>FEED</Text>
+        <Text style={styles.detailFreshness}>
+          {eventCount > 0
+            ? `${eventCount} verified events synced from the official feed.`
+            : "Verified play data will appear as the official feed publishes it."}
+        </Text>
+      </View>
+    </>
   );
 }
 
@@ -543,8 +704,8 @@ export function BaseballGameHub(props: BaseballGameHubProps) {
   if (props.section === "overview") content = <Overview {...props} />;
   else if (props.section === "plays") content = null;
   else if (props.section === "box") content = <BoxScore data={props.data} />;
-  else if (props.section === "stats") content = <Stats data={props.data} />;
-  else content = <Lineups data={props.data} />;
+  else if (props.section === "lineups") content = <Lineups data={props.data} />;
+  else content = <GameDetails data={props.data} />;
 
   return (
     <View
@@ -672,4 +833,11 @@ const styles = StyleSheet.create({
   lineupOrder: { width: 32, color: C.accent, fontFamily: FONTS.displayMedium, fontSize: 13 },
   lineupName: { flex: 1, color: C.text, fontFamily: FONTS.bodyMedium, fontSize: 13 },
   lineupRole: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 9, letterSpacing: 0.35 },
+  storyHeadline: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 22, lineHeight: 28, marginTop: 6 },
+  storyBody: { color: C.textSecondary, fontFamily: FONTS.bodyMedium, fontSize: 13, lineHeight: 19, marginTop: 6 },
+  detailVenue: { color: C.text, fontFamily: FONTS.bodyBold, fontSize: 15, marginTop: 6 },
+  detailRow: { minHeight: 42, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
+  detailLabel: { color: C.textTertiary, fontFamily: FONTS.bodyBold, fontSize: 10, letterSpacing: 0.5 },
+  detailValue: { maxWidth: "62%", color: C.text, fontFamily: FONTS.bodyMedium, fontSize: 13, textAlign: "right" },
+  detailFreshness: { color: C.textTertiary, fontFamily: FONTS.bodyMedium, fontSize: 12, lineHeight: 18, marginTop: 6 },
 });
