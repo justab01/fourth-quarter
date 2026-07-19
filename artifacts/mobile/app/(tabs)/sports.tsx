@@ -21,6 +21,7 @@ import { useSearch } from "@/context/SearchContext";
 import { ProfileButton } from "@/components/ProfileButton";
 import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
+import { getCreatorPreviews } from "@/constants/communityPreview";
 
 const C = Colors.dark;
 const SUMMER_LEAGUE_CIRCUITS = new Set(["NBASLV", "NBASLC", "NBASLU"]);
@@ -378,37 +379,83 @@ function CultureLaneCard({ lane }: { lane: CultureLane }) {
   );
 }
 
+const CREATOR_ACCENTS = [C.accentGold, C.accentGreen, C.accentBlue];
+
+function creatorInitials(name: string) {
+  return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+}
+
 function CreatorShelf() {
+  // Sport-tagged creators first, then top up from the general (home) roster so the
+  // shelf always shows a full slate rather than a single row.
+  const sportCreators = getCreatorPreviews("sport", { limit: 3 });
+  const filler = getCreatorPreviews("home", { limit: 4 }).filter(
+    (c) => !sportCreators.some((s) => s.id === c.id),
+  );
+  const creators = [...sportCreators, ...filler].slice(0, 3);
+
+  // No curated creator matches this surface yet → keep the honest concept shelf.
+  if (creators.length === 0) {
+    return (
+      <View style={styles.creatorPanel}>
+        <View style={styles.creatorHeader}>
+          <View>
+            <Text style={styles.creatorEyebrow}>CREATOR SPOTLIGHT</Text>
+            <Text style={styles.creatorTitle}>Media shelves, not random cards.</Text>
+          </View>
+          <View style={styles.previewBadge}>
+            <Text style={styles.previewBadgeText}>Blueprint</Text>
+          </View>
+        </View>
+        <Text style={styles.creatorBody}>
+          Short clips, podcast cuts, watch rooms, and creator shows route by sport, team, game, or event. No fake playback until real media exists.
+        </Text>
+        <View style={styles.creatorLaneRow}>
+          {CREATOR_LANES.map((lane) => (
+            <View key={lane.title} accessibilityLabel={`${lane.title} preview`} style={styles.creatorLane}>
+              <Ionicons name={lane.icon} size={15} color={C.accentGold} />
+              <Text style={styles.creatorLaneTitle} numberOfLines={1}>{lane.title}</Text>
+              <Text style={styles.creatorLaneLabel} numberOfLines={2}>{lane.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.creatorPanel}>
       <View style={styles.creatorHeader}>
         <View>
           <Text style={styles.creatorEyebrow}>CREATOR SPOTLIGHT</Text>
-          <Text style={styles.creatorTitle}>Media shelves, not random cards.</Text>
+          <Text style={styles.creatorTitle}>Reads worth following.</Text>
         </View>
         <View style={styles.previewBadge}>
-          <Text style={styles.previewBadgeText}>Blueprint</Text>
+          <Text style={styles.previewBadgeText}>Pilot</Text>
         </View>
       </View>
-      <Text style={styles.creatorBody}>
-        Short clips, podcast cuts, watch rooms, and creator shows should route by sport, team, game, or event. No fake playback until real media exists.
-      </Text>
-      <View style={styles.creatorLaneRow}>
-        {CREATOR_LANES.map((lane) => (
-          <View
-            key={lane.title}
-            accessibilityLabel={`${lane.title} preview`}
-            style={styles.creatorLane}
-          >
-            <Ionicons name={lane.icon} size={15} color={C.accentGold} />
-            <Text style={styles.creatorLaneTitle} numberOfLines={1}>{lane.title}</Text>
-            <Text style={styles.creatorLaneLabel} numberOfLines={2}>{lane.label}</Text>
-            <View style={styles.creatorLanePreview}>
-              <Text style={styles.creatorLanePreviewText}>Preview</Text>
+
+      <View style={styles.creatorList}>
+        {creators.map((creator, index) => {
+          const accent = CREATOR_ACCENTS[index % CREATOR_ACCENTS.length];
+          return (
+            <View key={creator.id} style={styles.creatorRow}>
+              <View style={[styles.creatorAvatar, { backgroundColor: `${accent}24`, borderColor: `${accent}55` }]}>
+                <Text style={[styles.creatorAvatarText, { color: accent }]}>{creatorInitials(creator.name)}</Text>
+              </View>
+              <View style={styles.creatorRowBody}>
+                <View style={styles.creatorRowTop}>
+                  <Text style={styles.creatorRowName} numberOfLines={1}>{creator.name}</Text>
+                  <Text style={[styles.creatorRowTopic, { color: accent }]} numberOfLines={1}>{creator.topic}</Text>
+                </View>
+                <Text style={styles.creatorRowMeta} numberOfLines={1}>{creator.handle} · {creator.role}</Text>
+                <Text style={styles.creatorRowTake} numberOfLines={2}>{creator.take}</Text>
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
+      <Text style={styles.creatorFootnote}>Curated creator previews — creator publishing opens once segments are verified.</Text>
     </View>
   );
 }
@@ -1074,6 +1121,73 @@ const styles = StyleSheet.create({
     color: C.textSecondary,
     fontSize: 12,
     lineHeight: 18,
+    fontFamily: FONTS.bodyMedium,
+  },
+  creatorList: {
+    gap: 9,
+  },
+  creatorRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 11,
+    padding: 11,
+    borderRadius: 14,
+    backgroundColor: C.glassLight,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+  },
+  creatorAvatar: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 13,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+  creatorAvatarText: {
+    fontSize: 13,
+    fontFamily: FONTS.bodyHeavy,
+  },
+  creatorRowBody: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  creatorRowTop: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  creatorRowName: {
+    flexShrink: 1,
+    color: C.text,
+    fontSize: 13,
+    fontFamily: FONTS.bodyHeavy,
+  },
+  creatorRowTopic: {
+    fontSize: 10,
+    fontFamily: FONTS.bodyHeavy,
+    textTransform: "uppercase",
+    letterSpacing: 0,
+  },
+  creatorRowMeta: {
+    color: C.textTertiary,
+    fontSize: 11,
+    fontFamily: FONTS.bodyBold,
+  },
+  creatorRowTake: {
+    color: C.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: FONTS.bodyMedium,
+    marginTop: 2,
+  },
+  creatorFootnote: {
+    color: C.textTertiary,
+    fontSize: 10,
+    lineHeight: 14,
     fontFamily: FONTS.bodyMedium,
   },
   creatorLaneRow: {
