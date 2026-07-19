@@ -1,0 +1,19 @@
+# Vercel upload ignore. This OVERRIDES .gitignore for deploys.
+#
+# CRITICAL: do NOT use a bare `node_modules` pattern here. Expo's web export
+# writes hashed font/image assets under paths like
+#   artifacts/mobile/web-dist/assets/__node_modules/.pnpm/<pkg>/node_modules/.../Ionicons.ttf
+# A bare `node_modules` rule matches that deep segment and drops the fonts from
+# the upload, so Vercel serves index.html for .ttf requests → icon boxes.
+# Instead, ignore ONLY the dependency node_modules dirs by anchored path.
+.git
+.vercel
+.env
+.env.*
+_api-bundle.cjs
+artifacts/mobile/web-dist
+
+/node_modules
+/artifacts/*/node_modules
+/lib/*/node_modules
+/scripts/node_modules
