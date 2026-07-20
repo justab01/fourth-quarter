@@ -22,6 +22,7 @@ import { getSportById, getSportByLeague, type SportCategory, type LeagueGroup, g
 import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
 import { GameCard, TeamLogo } from "@/components/GameCard";
+import { BaseballSportHome } from "@/components/BaseballSportHome";
 import { BasketballHub } from "@/components/BasketballHub";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
@@ -1518,6 +1519,8 @@ function getStandingsLeague(sport: SportCategory | undefined, activeLeague: stri
 
 function getInitialSportLeague(sport: SportCategory | undefined, routeId: string | undefined): string {
   if (routeId?.toUpperCase() === "NBA_SUMMER_LEAGUE") return "NBA_SUMMER_LEAGUE";
+  // Baseball's redesigned page toggles MLB / College (no "All"), so default to MLB.
+  if (sport?.id === "baseball") return "MLB";
   if (sport?.id !== "basketball") return "all";
   const now = new Date();
   const summerStart = new Date("2026-07-02T00:00:00-05:00");
@@ -3340,6 +3343,26 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
         );
     }
   };
+
+  // Baseball gets its own dedicated, redesigned home (isolated from the generic
+  // team-sport layout). Other sports keep the generic render below.
+  if (sport?.id === "baseball") {
+    return (
+      <BaseballSportHome
+        sportName={sport.name}
+        accentColor={accentColor}
+        topInset={Platform.OS === "web" ? 48 : insets.top}
+        games={nonGolfGames}
+        athletes={topAthletes}
+        standings={standingsData?.standings ?? []}
+        news={filteredNews}
+        leagues={sport.leagues}
+        activeLeague={activeLeague}
+        onSelectLeague={setActiveLeague}
+        gamesLoading={gamesLoading}
+      />
+    );
+  }
 
   return (
     <View style={[styles.root, { paddingTop: Platform.OS === "web" ? 48 : insets.top }]}>
