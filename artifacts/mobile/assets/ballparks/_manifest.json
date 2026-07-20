@@ -1,0 +1,213 @@
+[
+  {
+    "venue": "American Family Field",
+    "wikiTitle": "American Family Field",
+    "slug": "american-family-field",
+    "skipped": true
+  },
+  {
+    "venue": "Angel Stadium",
+    "wikiTitle": "Angel Stadium",
+    "slug": "angel-stadium",
+    "skipped": true
+  },
+  {
+    "venue": "Busch Stadium",
+    "wikiTitle": "Busch Stadium",
+    "slug": "busch-stadium",
+    "skipped": true
+  },
+  {
+    "venue": "Chase Field",
+    "wikiTitle": "Chase Field",
+    "slug": "chase-field",
+    "skipped": true
+  },
+  {
+    "venue": "Citi Field",
+    "wikiTitle": "Citi Field",
+    "slug": "citi-field",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Mets_vs._Giants_at_Citifield_%2843259898195%29.jpg",
+    "file": "citi-field.src.jpg",
+    "note": "replaced World-Fair mismatch with real interior"
+  },
+  {
+    "venue": "Citizens Bank Park",
+    "wikiTitle": "Citizens Bank Park",
+    "slug": "citizens-bank-park",
+    "skipped": true
+  },
+  {
+    "venue": "Comerica Park",
+    "wikiTitle": "Comerica Park",
+    "slug": "comerica-park",
+    "skipped": true
+  },
+  {
+    "venue": "Coors Field",
+    "wikiTitle": "Coors Field",
+    "slug": "coors-field",
+    "skipped": true
+  },
+  {
+    "venue": "Daikin Park",
+    "wikiTitle": "Daikin Park",
+    "slug": "daikin-park",
+    "aliases": [
+      "Minute Maid Park"
+    ],
+    "skipped": true
+  },
+  {
+    "venue": "Dodger Stadium",
+    "wikiTitle": "Dodger Stadium",
+    "slug": "dodger-stadium",
+    "skipped": true
+  },
+  {
+    "venue": "Fenway Park",
+    "wikiTitle": "Fenway Park",
+    "slug": "fenway-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/4/4f/131023-F-PR861-033_Hanscom_participates_in_World_Series_pregame_events.jpg",
+    "file": "fenway-park.src.jpg"
+  },
+  {
+    "venue": "Globe Life Field",
+    "wikiTitle": "Globe Life Field",
+    "slug": "globe-life-field",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/a/a0/GlobeLifeField2021.jpg",
+    "file": "globe-life-field.src.jpg"
+  },
+  {
+    "venue": "Great American Ball Park",
+    "wikiTitle": "Great American Ball Park",
+    "slug": "great-american-ball-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/4/4a/10Cincinnati_2015_%282%29.jpg",
+    "file": "great-american-ball-park.src.jpg"
+  },
+  {
+    "venue": "Kauffman Stadium",
+    "wikiTitle": "Kauffman Stadium",
+    "slug": "kauffman-stadium",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/3/35/Kauffman2017.jpg",
+    "file": "kauffman-stadium.src.jpg"
+  },
+  {
+    "venue": "loanDepot Park",
+    "wikiTitle": "LoanDepot Park",
+    "slug": "loandepot-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/5/53/LOAN_DEPOT_PARK.jpg",
+    "file": "loandepot-park.src.jpg"
+  },
+  {
+    "venue": "Nationals Park",
+    "wikiTitle": "Nationals Park",
+    "slug": "nationals-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/f/f9/Nationals_Park_8.16.19_-_7.jpg",
+    "file": "nationals-park.src.jpg"
+  },
+  {
+    "venue": "Oracle Park",
+    "wikiTitle": "Oracle Park",
+    "slug": "oracle-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Oracle_Park_2021.jpg",
+    "file": "oracle-park.src.jpg"
+  },
+  {
+    "venue": "Oriole Park at Camden Yards",
+    "wikiTitle": "Oriole Park at Camden Yards",
+    "slug": "camden-yards",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/5/51/OrioleParkatCamdenYardsSummer2025.jpg",
+    "file": "camden-yards.src.jpg"
+  },
+  {
+    "venue": "PNC Park",
+    "wikiTitle": "PNC Park",
+    "slug": "pnc-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Pittsburgh_Pirates_park_%28Unsplash%29.jpg",
+    "file": "pnc-park.src.jpg"
+  },
+  {
+    "venue": "Petco Park",
+    "wikiTitle": "Petco Park",
+    "slug": "petco-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/5/55/Petco_Park_Padres_Game.jpg",
+    "file": "petco-park.src.jpg"
+  },
+  {
+    "venue": "Progressive Field",
+    "wikiTitle": "Progressive Field",
+    "slug": "progressive-field",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Cleveland_Guardians_vs._New_York_Yankees_on_Oct_17_2024_%2854102149292%29.jpg",
+    "file": "progressive-field.src.jpg"
+  },
+  {
+    "venue": "Rate Field",
+    "wikiTitle": "Rate Field",
+    "slug": "rate-field",
+    "aliases": [
+      "Guaranteed Rate Field"
+    ],
+    "source": "https://upload.wikimedia.org/wikipedia/commons/5/57/Chicago%2C_Illinois%2C_U.S._%282023%29_-_062.jpg",
+    "file": "rate-field.src.jpg"
+  },
+  {
+    "venue": "Rogers Centre",
+    "wikiTitle": "Rogers Centre",
+    "slug": "rogers-centre",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Rogers_Centre_%28500_Level%29_-_Toronto%2C_ON.jpg",
+    "file": "rogers-centre.src.jpg"
+  },
+  {
+    "venue": "Sutter Health Park",
+    "wikiTitle": "Sutter Health Park",
+    "slug": "sutter-health-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Sutter_Health_Park_aerial_view_2023_%28Quintin_Soloviev%29.jpg",
+    "file": "sutter-health-park.src.jpg"
+  },
+  {
+    "venue": "T-Mobile Park",
+    "wikiTitle": "T-Mobile Park",
+    "slug": "t-mobile-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/1/10/SafecoFieldTop.jpg",
+    "file": "t-mobile-park.src.jpg"
+  },
+  {
+    "venue": "Target Field",
+    "wikiTitle": "Target Field",
+    "slug": "target-field",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/1/17/Target_Field%2C_Minneapolis%2C_Minnesota_%2843167053335%29.jpg",
+    "file": "target-field.src.jpg"
+  },
+  {
+    "venue": "George M. Steinbrenner Field",
+    "wikiTitle": "George M. Steinbrenner Field",
+    "slug": "steinbrenner-field",
+    "aliases": [
+      "Tropicana Field"
+    ],
+    "source": "https://upload.wikimedia.org/wikipedia/commons/e/ef/MacDill_Aircrew%2C_service_members_kick_off_opening_day_ceremony_for_TB_Rays_%28250328-F-YW699-1029%29.jpg",
+    "file": "steinbrenner-field.src.jpg"
+  },
+  {
+    "venue": "Truist Park",
+    "wikiTitle": "Truist Park",
+    "slug": "truist-park",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/0/04/Truist_Park_2025.jpg",
+    "file": "truist-park.src.jpg"
+  },
+  {
+    "venue": "Wrigley Field",
+    "wikiTitle": "Wrigley Field",
+    "slug": "wrigley-field",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Wrigley_Field_in_line_with_sign.jpg",
+    "file": "wrigley-field.src.jpg"
+  },
+  {
+    "venue": "Yankee Stadium",
+    "wikiTitle": "Yankee Stadium",
+    "slug": "yankee-stadium",
+    "source": "https://upload.wikimedia.org/wikipedia/commons/a/af/Yankee_Stadium_overhead_2010.jpg",
+    "file": "yankee-stadium.src.jpg"
+  }
+]
