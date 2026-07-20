@@ -9,6 +9,7 @@ import { TeamLogo } from "@/components/GameCard";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { resolveBallparkImage } from "@/constants/ballparks";
+import { SportFloatingNav, SPORT_NAV_CLEARANCE } from "@/components/SportFloatingNav";
 import type { Game, StandingEntry, SportNewsArticle } from "@/utils/api";
 
 const C = Colors.dark;
@@ -192,7 +193,7 @@ export function BaseballSportHome({
 
   return (
     <View style={[styles.root, { paddingTop: topInset + 4 }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPORT_NAV_CLEARANCE }}>
         {/* Header */}
         <View style={styles.headerBar}>
           <Pressable onPress={() => router.back()} style={styles.circleBtn} hitSlop={8}>
@@ -328,6 +329,7 @@ export function BaseballSportHome({
           </>
         )}
       </ScrollView>
+      <SportFloatingNav active="sports" />
     </View>
   );
 }
