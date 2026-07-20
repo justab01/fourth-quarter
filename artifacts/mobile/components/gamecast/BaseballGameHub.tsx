@@ -10,8 +10,10 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import Colors from "@/constants/colors";
 import { FONTS } from "@/constants/typography";
+import { resolveBallparkImage } from "@/constants/ballparks";
 import type {
   BaseballAthlete,
   BaseballPlayState,
@@ -714,15 +716,33 @@ function GameDetails({ data }: { data: GameDetail }) {
   return (
     <>
       <SectionHead title="Game details" meta={`${(g.league ?? "MLB").toUpperCase()} · ${statusText}`} />
-      {g.venue ? (
-        <View style={styles.venue}>
-          <View style={styles.venueDiamond} />
-          <View style={styles.venueCopy}>
-            <Text style={styles.venueEyebrow}>THE BALLPARK</Text>
-            <Text style={styles.venueName}>{g.venue}</Text>
+      {g.venue ? (() => {
+        const parkImage = resolveBallparkImage(g.venue);
+        // Real bundled ballpark photo when we have one; otherwise the drawn
+        // diamond motif (never a broken image).
+        return parkImage ? (
+          <View style={styles.venuePhotoWrap}>
+            <Image source={parkImage} style={styles.venuePhoto} resizeMode="cover" />
+            <LinearGradient
+              colors={["transparent", "rgba(6,10,9,0.4)", "rgba(6,10,9,0.9)"]}
+              locations={[0, 0.55, 1]}
+              style={styles.venuePhotoScrim}
+            />
+            <View style={styles.venuePhotoText}>
+              <Text style={styles.venueEyebrow}>THE BALLPARK</Text>
+              <Text style={styles.venuePhotoName}>{g.venue}</Text>
+            </View>
           </View>
-        </View>
-      ) : null}
+        ) : (
+          <View style={styles.venue}>
+            <View style={styles.venueDiamond} />
+            <View style={styles.venueCopy}>
+              <Text style={styles.venueEyebrow}>THE BALLPARK</Text>
+              <Text style={styles.venueName}>{g.venue}</Text>
+            </View>
+          </View>
+        );
+      })() : null}
       <Text style={styles.over}>TEAM COMPARISON</Text>
       <View style={styles.compareHead}>
         <Text style={styles.compareTeam}>{g.awayAbbreviation ?? lastName(g.awayTeam)}</Text>
@@ -970,6 +990,11 @@ const styles = StyleSheet.create({
   venueCopy: { padding: 14 },
   venueEyebrow: { color: "#EAA065", fontFamily: FONTS.bodyHeavy, fontSize: 8, letterSpacing: 0.5 },
   venueName: { color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 16, marginTop: 3 },
+  venuePhotoWrap: { height: 150, borderRadius: 22, borderCurve: "continuous", overflow: "hidden", backgroundColor: "#1E3431", borderWidth: 1, borderColor: "rgba(255,255,255,0.09)", marginBottom: 16 },
+  venuePhoto: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
+  venuePhotoScrim: { ...StyleSheet.absoluteFillObject },
+  venuePhotoText: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14 },
+  venuePhotoName: { color: "#fff", fontFamily: FONTS.bodyHeavy, fontSize: 18, marginTop: 3, textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   compareHead: { flexDirection: "row", alignItems: "center", marginTop: 10, marginBottom: 2 },
   compareTeam: { flex: 1, color: C.text, fontFamily: FONTS.bodyHeavy, fontSize: 12 },
   compareRow: { flexDirection: "row", alignItems: "center", paddingVertical: 11, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(244,238,229,0.09)" },
