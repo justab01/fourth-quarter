@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, Text, ScrollView, Pressable, Image, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Pressable, Image, StyleSheet, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -67,7 +67,7 @@ function ScopeChip({ label, active, accentColor, onPress }: { label: string; act
   );
 }
 
-function MarqueeCard({ game, accentColor }: { game: Game; accentColor: string }) {
+function MarqueeCard({ game, accentColor, cardWidth }: { game: Game; accentColor: string; cardWidth: number }) {
   const park = resolveBallparkImage(game.venue);
   const live = game.status === "live";
   const finished = game.status === "finished";
@@ -78,7 +78,7 @@ function MarqueeCard({ game, accentColor }: { game: Game; accentColor: string })
   const stateLine = live ? (game.quarter || game.statusDetail || "In progress") : null;
 
   return (
-    <Pressable onPress={() => goToGame(game.id)} style={styles.marquee}>
+    <Pressable onPress={() => goToGame(game.id)} style={[styles.marquee, { width: cardWidth }]}>
       {park ? (
         <Image source={park} style={StyleSheet.absoluteFill as any} resizeMode="cover" />
       ) : (
@@ -161,6 +161,7 @@ function SectionHead({ title, action, accentColor, onAction }: { title: string; 
 export function BaseballSportHome({
   sportName, accentColor, topInset, games, athletes, standings, news, leagues, activeLeague, onSelectLeague, gamesLoading,
 }: Props) {
+  const { width } = useWindowDimensions();
   const liveGames = useMemo(() => games.filter((g) => g.status === "live"), [games]);
   const upcoming = useMemo(() => games.filter((g) => g.status === "upcoming"), [games]);
   // Marquee: whatever's live, else the next handful of games.
@@ -179,6 +180,15 @@ export function BaseballSportHome({
     () => new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
     [],
   );
+
+  // Size every card to the screen width so the page is optimized on any device,
+  // never fixed px. A lone marquee card fills the width (reads centered); with
+  // more than one, leave a peek so the carousel signals it scrolls.
+  const contentW = width - 40;
+  const marqueeW = marquee.length <= 1 ? contentW : Math.min(contentW, width - 56);
+  const athW = Math.round(contentW * 0.47);
+  const divW = Math.round(contentW * 0.44);
+  const shownGames = games.slice(0, 5);
 
   return (
     <View style={[styles.root, { paddingTop: topInset + 4 }]}>
@@ -223,10 +233,11 @@ export function BaseballSportHome({
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.rail}
-              snapToInterval={312}
+              snapToInterval={marqueeW + 12}
               decelerationRate="fast"
+              scrollEnabled={marquee.length > 1}
             >
-              {marquee.map((g) => <MarqueeCard key={g.id} game={g} accentColor={accentColor} />)}
+              {marquee.map((g) => <MarqueeCard key={g.id} game={g} accentColor={accentColor} cardWidth={marqueeW} />)}
             </ScrollView>
           </>
         ) : null}
@@ -236,7 +247,13 @@ export function BaseballSportHome({
           <>
             <SectionHead title="All games today" accentColor={accentColor} />
             <View style={styles.list}>
-              {games.map((g, i) => <GameRow key={g.id} game={g} accentColor={accentColor} last={i === games.length - 1} />)}
+              {shownGames.map((g, i) => <GameRow key={g.id} game={g} accentColor={accentColor} last={i === shownGames.length - 1} />)}
+              {games.length > 5 && (
+                <Pressable onPress={() => router.push("/(tabs)/live" as any)} style={styles.moreLink}>
+                  <Text style={[styles.moreLinkText, { color: accentColor }]}>See all {games.length} games on Live scores</Text>
+                  <Ionicons name="arrow-forward" size={15} color={accentColor} />
+                </Pressable>
+              )}
             </View>
           </>
         )}
@@ -247,7 +264,7 @@ export function BaseballSportHome({
             <SectionHead title="Division leaders" action="Standings" accentColor={accentColor} onAction={() => router.push("/(tabs)/standings" as any)} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
               {leaders.map((e) => (
-                <View key={e.teamName} style={styles.leadCard}>
+                <View key={e.teamName} style={[styles.leadCard, { width: divW }]}>
                   <Text style={[styles.leadDiv, { color: accentColor }]}>{shortDivision(e.division)}</Text>
                   <View style={styles.leadTeam}>
                     <TeamLogo uri={e.logoUrl} name={e.teamName} size={26} />
@@ -266,7 +283,7 @@ export function BaseballSportHome({
             <SectionHead title="Athletes to watch" accentColor={accentColor} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
               {athletes.slice(0, 6).map((a, i) => (
-                <View key={a.name + i} style={styles.athCard}>
+                <View key={a.name + i} style={[styles.athCard, { width: athW }]}>
                   <View style={[styles.athRank, { backgroundColor: accentColor }]}>
                     <Text style={styles.athRankText}>#{i + 1}</Text>
                   </View>
@@ -335,7 +352,7 @@ const styles = StyleSheet.create({
 
   rail: { paddingHorizontal: 20, gap: 12 },
 
-  marquee: { width: 300, height: 196, borderRadius: 20, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder, backgroundColor: "#15212C" },
+  marquee: { height: 196, borderRadius: 20, overflow: "hidden", borderWidth: 1, borderColor: C.cardBorder, backgroundColor: "#15212C" },
   marqueeTop: { position: "absolute", top: 13, left: 15, right: 15, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   eyebrowPill: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(0,0,0,0.34)", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20 },
   eyebrowText: { fontSize: 10, fontFamily: FONTS.bodyHeavy, letterSpacing: 1.3, color: "#fff" },
@@ -343,12 +360,14 @@ const styles = StyleSheet.create({
   marqueeRight: { fontFamily: FONTS.display, fontSize: 18, color: "#fff", letterSpacing: 0.5 },
   marqueeBtm: { position: "absolute", left: 15, right: 15, bottom: 14 },
   marqueeTeams: { flexDirection: "row", alignItems: "center", gap: 8 },
-  marqueeNm: { fontSize: 15, fontFamily: FONTS.bodyHeavy, color: "#fff", maxWidth: 88 },
+  marqueeNm: { fontSize: 15, fontFamily: FONTS.bodyHeavy, color: "#fff", maxWidth: 110 },
   marqueeAt: { fontSize: 11, color: "#cfcabf", fontFamily: FONTS.bodyBold },
   marqueeVenue: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 8 },
   marqueeVenueText: { fontSize: 12, color: "#d7d2c7", fontFamily: FONTS.bodyMedium, flex: 1 },
 
   list: { paddingHorizontal: 20 },
+  moreLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 14, marginTop: 2, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator },
+  moreLinkText: { fontSize: 13.5, fontFamily: FONTS.bodyBold },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
   rowLogos: { flexDirection: "row", alignItems: "center" },
@@ -359,13 +378,13 @@ const styles = StyleSheet.create({
   rowScore: { fontFamily: FONTS.display, fontSize: 15, color: C.text, letterSpacing: 0.5 },
   rowState: { fontSize: 9, fontFamily: FONTS.bodyHeavy, letterSpacing: 0.8, color: C.textTertiary, marginTop: 2 },
 
-  leadCard: { width: 150, backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder, borderRadius: 16, padding: 12 },
+  leadCard: { backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder, borderRadius: 16, padding: 12 },
   leadDiv: { fontSize: 10, fontFamily: FONTS.bodyHeavy, letterSpacing: 1 },
   leadTeam: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 9 },
   leadName: { fontSize: 13.5, fontFamily: FONTS.bodyHeavy, color: C.text, flex: 1 },
   leadRec: { fontFamily: FONTS.display, fontSize: 13, color: C.textSecondary, marginTop: 6, letterSpacing: 0.5 },
 
-  athCard: { width: 160, backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder, borderRadius: 18, padding: 14, position: "relative" },
+  athCard: { backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder, borderRadius: 18, padding: 14, position: "relative" },
   athRank: { position: "absolute", top: 10, left: 10, paddingHorizontal: 8, paddingVertical: 1, borderRadius: 10, zIndex: 2 },
   athRankText: { fontFamily: FONTS.display, fontSize: 12, color: "#fff", letterSpacing: 0.5 },
   athFace: { width: 56, height: 56, borderRadius: 28, alignSelf: "center", marginTop: 6, marginBottom: 10, backgroundColor: C.separator },
