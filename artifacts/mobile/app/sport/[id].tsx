@@ -3613,7 +3613,8 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontSize: 22,
-    fontFamily: FONTS.bodyBold,
+    // Match the home page marquee ("Sports Fan") weight — Inter ExtraBold, not Bold.
+    fontFamily: FONTS.bodyHeavy,
     color: C.text,
   },
   liveTag: {
@@ -3943,8 +3944,9 @@ const styles = StyleSheet.create({
     borderTopColor: C.separator,
   },
   rankNum: {
-    fontSize: 14,
-    fontFamily: FONTS.bodyBold,
+    fontSize: 15,
+    // Oswald display — match home's numeric treatment for standings ranks.
+    fontFamily: FONTS.display,
     color: C.textSecondary,
     width: 24,
     textAlign: "right",
@@ -4564,9 +4566,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   spotlightRankText: {
-    fontSize: 10,
-    fontFamily: FONTS.bodyBold,
+    fontSize: 11,
+    // Oswald display — home reserves this font for prominent numbers.
+    fontFamily: FONTS.display,
     color: "#fff",
+    letterSpacing: 0.3,
   },
   spotlightHeadshot: {
     width: 56,
