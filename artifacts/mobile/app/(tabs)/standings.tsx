@@ -34,7 +34,7 @@ const LEAGUE_META: Record<string, { color: string; label: string }> = {
 
 const STANDING_SPORT_TABS = [
   { league: "NBA", label: "NBA", views: ["East", "West", "Playoff Picture"] },
-  { league: "MLB", label: "MLB", views: ["AL", "NL", "Divisions", "Wild Card"] },
+  { league: "MLB", label: "MLB", views: ["AL", "NL", "Divisions"] },
   { league: "NFL", label: "NFL", views: ["AFC", "NFC", "Divisions", "Wild Card"] },
   { league: "WNBA", label: "WNBA", views: ["Overall", "Playoff Picture"] },
   { league: "NHL", label: "NHL", views: ["East", "West", "Divisions", "Wild Card"] },
@@ -119,11 +119,9 @@ const ZONE_CONFIGS: Record<string, Zone[]> = {
     { label: "Playoffs", shortLabel: "PLAYOFFS", color: C.accentGreen, upTo: 8 },
     { label: "Out", shortLabel: "OUT", color: C.textTertiary, upTo: 999 },
   ],
-  MLB: [
-    { label: "Postseason", shortLabel: "POSTSEASON", color: C.accentGreen, upTo: 6 },
-    { label: "Wildcard Race", shortLabel: "WILDCARD", color: C.accentGold, upTo: 9 },
-    { label: "Out", shortLabel: "OUT", color: C.textTertiary, upTo: 999 },
-  ],
+  // MLB intentionally has no zone config: standings are ranked per-division
+  // (max rank 5), so global postseason/wildcard thresholds can't be expressed
+  // here without cross-division wild-card math. Same approach as NFL.
   MLS: [
     { label: "Playoffs", shortLabel: "PLAYOFFS", color: C.accentGreen, upTo: 9 },
     { label: "Out", shortLabel: "OUT", color: C.textTertiary, upTo: 999 },
@@ -877,9 +875,12 @@ export default function StandingsScreen() {
   const hasGamesBack = standings.some(e => e.gamesBack !== null);
   const hasZones = !!ZONE_CONFIGS[activeLeague];
   const isSoccer = ["EPL", "UCL", "LIGA", "MLS"].includes(activeLeague);
+  const isBaseball = activeLeague === "MLB";
   const hasDraws = standings.some(e => e.draws != null && e.draws > 0);
-  const hasDiff = standings.some(e => e.differential != null);
-  const hasPoints = standings.some(e => e.points != null);
+  // Baseball standings use Games Back, not "points" or a run-diff column — the
+  // feed's spurious points/differential values don't represent the sport.
+  const hasDiff = standings.some(e => e.differential != null) && !isBaseball;
+  const hasPoints = standings.some(e => e.points != null) && !isBaseball;
   const hasHomeAway = standings.some(e => e.homeRecord != null);
   const hasConferences = standings.some(e => e.conference != null);
   const hasClinch = standings.some(e => e.clinched != null);

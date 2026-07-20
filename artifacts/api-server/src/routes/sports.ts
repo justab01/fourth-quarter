@@ -2245,25 +2245,54 @@ async function fetchLeagueStandings(league: string): Promise<StandingEntry[]> {
       entries = allEntries;
 
     } else if (league === "MLB") {
+      // level=3 exposes division sub-groups (AL/NL East·Central·West) so
+      // baseball standings group by division like the sport actually does.
       const json = await espnFetch(
-        "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings"
+        "https://site.api.espn.com/apis/v2/sports/baseball/mlb/standings?level=3"
       ) as EspnStandingsResponse;
-      const allRaw: (Omit<StandingEntry, "rank">)[] = [];
-      for (const child of json.children ?? []) {
-        for (const e of child.standings?.entries ?? []) {
-          const stats = e.stats ?? [];
-          const wins = Number(getStat(stats, "wins")?.value ?? 0);
-          const losses = Number(getStat(stats, "losses")?.value ?? 0);
-          const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
-          const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
-          const streak = getStat(stats, "streak")?.displayValue ?? null;
-          const logoUrl = e.team.logos?.[0]?.href ?? null;
-          const ext = extractExtendedStats(stats);
-          allRaw.push({ teamName: e.team.displayName, logoUrl, wins, losses, winPct, gamesBack, streak, conference: child.name ?? null, division: null, rankChange: null, ...ext });
+      const allEntries: StandingEntry[] = [];
+      const pushEntry = (e: any, confName: string | null, divName: string | null) => {
+        const stats = e.stats ?? [];
+        const wins = Number(getStat(stats, "wins")?.value ?? 0);
+        const losses = Number(getStat(stats, "losses")?.value ?? 0);
+        const winPct = parseFloat(getStat(stats, "winPercent")?.displayValue ?? "0") || 0;
+        const gamesBack = parseGb(getStat(stats, "gamesBehind")?.displayValue);
+        const streak = getStat(stats, "streak")?.displayValue ?? null;
+        const logoUrl = e.team.logos?.[0]?.href ?? null;
+        const ext = extractExtendedStats(stats);
+        allEntries.push({
+          rank: 0, teamName: e.team.displayName, logoUrl, wins, losses, winPct,
+          gamesBack, streak, conference: confName, division: divName, rankChange: null,
+          ...ext, playoffSeed: null, clinched: null,
+        });
+      };
+      for (const conf of json.children ?? []) {
+        const confName = conf.name ?? null;
+        const divChildren = conf.children ?? [];
+        if (divChildren.length) {
+          for (const div of divChildren) {
+            for (const e of div.standings?.entries ?? []) pushEntry(e, confName, div.name ?? null);
+          }
+        } else {
+          for (const e of conf.standings?.entries ?? []) pushEntry(e, confName, null);
         }
       }
-      allRaw.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
-      entries = allRaw.map((e, i) => ({ ...e, rank: i + 1 }));
+      // Rank within each division (falls back to conference/global if no divisions).
+      const hasDivs = allEntries.some((e) => e.division);
+      if (hasDivs) {
+        const groups = [...new Set(allEntries.map((e) => e.division ?? e.conference))];
+        for (const group of groups) {
+          let rank = 1;
+          allEntries
+            .filter((e) => (e.division ?? e.conference) === group)
+            .sort((a, b) => b.wins - a.wins || a.losses - b.losses)
+            .forEach((e) => { e.rank = rank++; });
+        }
+        entries = allEntries;
+      } else {
+        allEntries.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+        entries = allEntries.map((e, i) => ({ ...e, rank: i + 1 }));
+      }
 
     } else if (league === "NHL") {
       const json = await espnFetch(
