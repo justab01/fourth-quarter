@@ -681,6 +681,13 @@ function SectionHead({ title, meta }: { title: string; meta: string }) {
   );
 }
 
+// Parse a team-total stat ("12", 12, "—") to a number, or null when absent.
+function toStatNum(v: string | number | undefined | null): number | null {
+  if (v == null || v === "—" || v === "–") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 function CompareRow({ label, away, home }: { label: string; away?: number | null; home?: number | null }) {
   if (away == null && home == null) return null;
   return (
@@ -706,6 +713,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function GameDetails({ data }: { data: GameDetail }) {
   const g = data.game;
   const ls = data.baseballGamecast?.lineScore;
+  // Team batting totals (folded in from the retired flat "Stats" tab).
+  const hs = data.homeStats ?? {};
+  const as = data.awayStats ?? {};
   const firstPitch = formatFirstPitch(g.startTime);
   const statusText = g.status === "finished" ? "FINAL" : g.status === "live" ? "LIVE" : "SCHEDULED";
   const resultText = g.awayScore != null && g.homeScore != null
@@ -750,6 +760,11 @@ function GameDetails({ data }: { data: GameDetail }) {
         <Text style={[styles.compareTeam, styles.textRight]}>{g.homeAbbreviation ?? lastName(g.homeTeam)}</Text>
       </View>
       <CompareRow label="HITS" away={ls?.away.hits} home={ls?.home.hits} />
+      <CompareRow label="RUNS" away={toStatNum(as["R"])} home={toStatNum(hs["R"])} />
+      <CompareRow label="HOME RUNS" away={toStatNum(as["HR"])} home={toStatNum(hs["HR"])} />
+      <CompareRow label="RBI" away={toStatNum(as["RBI"])} home={toStatNum(hs["RBI"])} />
+      <CompareRow label="WALKS" away={toStatNum(as["BB"])} home={toStatNum(hs["BB"])} />
+      <CompareRow label="STRIKEOUTS" away={toStatNum(as["K"])} home={toStatNum(hs["K"])} />
       <CompareRow label="ERRORS" away={ls?.away.errors} home={ls?.home.errors} />
       <CompareRow label="RUNNERS LEFT ON" away={ls?.away.leftOnBase} home={ls?.home.leftOnBase} />
       <View style={styles.infoBlock}>

@@ -292,7 +292,13 @@ export default function GameDetailScreen() {
 
   const isLive     = game?.status === "live";
   const isFinished = game?.status === "finished";
-  const isBaseballGamecast = game?.league === "MLB" && activeTab === "gamecast";
+  // MLB uses the swipe-up "game room" hub as its ONLY stats surface. Coerce any
+  // tab (including a ?tab=stats deep link) to gamecast so the legacy flat
+  // Box/Plays/Stats/Lineups tabs are unreachable — their content now lives in
+  // the hub. Non-MLB leagues keep the full flat-tab set unchanged.
+  const isMLB = game?.league === "MLB";
+  const effectiveTab: GameTab = isMLB ? "gamecast" : activeTab;
+  const isBaseballGamecast = isMLB && effectiveTab === "gamecast";
 
   useEffect(() => {
     if (isBaseballGamecast) {
@@ -523,7 +529,7 @@ export default function GameDetailScreen() {
           <View style={[s.content, isBaseballGamecast && s.baseballContent]}>
 
             {/* GAMECAST */}
-            {activeTab === "gamecast" && (
+            {effectiveTab === "gamecast" && (
               <GamecastTab
                 data={data}
                 game={game}
@@ -541,7 +547,7 @@ export default function GameDetailScreen() {
             )}
 
             {/* BOX SCORE */}
-            {activeTab === "boxscore" && (
+            {effectiveTab === "boxscore" && (
               <View style={s.tabSection}>
                 {(data.homePlayerStats?.length || data.awayPlayerStats?.length) ? (
                   <>
@@ -624,7 +630,7 @@ export default function GameDetailScreen() {
             )}
 
             {/* PLAY-BY-PLAY */}
-            {activeTab === "playbyplay" && (
+            {effectiveTab === "playbyplay" && (
               <View style={s.tabSection}>
                 {playByPlayRows.length === 0 ? (
                   <Text style={s.empty}>No ESPN play feed yet</Text>
@@ -642,7 +648,7 @@ export default function GameDetailScreen() {
             )}
 
             {/* STATS */}
-            {activeTab === "stats" && (
+            {effectiveTab === "stats" && (
               <View style={s.tabSection}>
                 <TeamStatsSection
                   homeTeam={game.homeTeam} awayTeam={game.awayTeam}
@@ -653,7 +659,7 @@ export default function GameDetailScreen() {
             )}
 
             {/* LINEUPS */}
-            {activeTab === "lineups" && (
+            {effectiveTab === "lineups" && (
               <View style={s.tabSection}>
                 <LineupSection teamName={game.awayTeam} teamLogo={game.awayTeamLogo} league={game.league}
                   players={data.awayPlayerStats ?? data.awayLineup.map(name => ({ name, starter: true, stats: {} }))} dc={dc} />
