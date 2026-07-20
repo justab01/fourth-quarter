@@ -167,7 +167,7 @@ export function BaseballSportHome({
   const upcoming = useMemo(() => games.filter((g) => g.status === "upcoming"), [games]);
   // Marquee: whatever's live, else the next handful of games.
   const marquee = useMemo(
-    () => (liveGames.length ? liveGames : upcoming.length ? upcoming : games).slice(0, 6),
+    () => (liveGames.length ? liveGames : upcoming.length ? upcoming : games).slice(0, 3),
     [liveGames, upcoming, games],
   );
   const marqueeLabel = liveGames.length ? "Live now" : "Today's marquee";
