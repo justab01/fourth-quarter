@@ -1778,6 +1778,8 @@ export default function SportBoardScreen() {
     const liveAthletes = topAthletesData?.athletes ?? [];
     if (liveAthletes.length > 0) {
       return liveAthletes.map(a => ({
+        athleteId: a.athleteId,
+        rank: a.rank,
         name: a.name,
         team: a.team ?? "",
         league: a.league,
@@ -1792,6 +1794,8 @@ export default function SportBoardScreen() {
     const rankingsAthletes = allRankingsGroups[0]?.entries.slice(0, 12) ?? [];
     if (rankingsAthletes.length > 0) {
       return rankingsAthletes.map((entry, i) => ({
+        athleteId: null,
+        rank: i + 1,
         name: entry.name,
         team: "",
         league: rankingsLeague ?? "",
