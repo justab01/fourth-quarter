@@ -574,11 +574,21 @@ export interface GolfTournament {
 
 export interface GolfRankingEntry {
   rank: number;
+  athleteId: string | null;
   name: string;
   country: string;
+  headshotUrl: string | null;
   points: number;
   events: number;
   movement: number;
+  earnings: string;
+  wins: number;
+  topTens: number;
+  scoringAverage: number | null;
+  drivingDistance: number | null;
+  greensInRegulation: number | null;
+  puttsPerHole: number | null;
+  birdiesPerRound: number | null;
 }
 
 export interface RaceResult {

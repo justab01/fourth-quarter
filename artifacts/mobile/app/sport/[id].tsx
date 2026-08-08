@@ -3392,7 +3392,6 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
         home={golfHomeData}
         schedule={golfScheduleData?.tournaments ?? []}
         rankings={golfRankingsData?.rankings ?? []}
-        athletes={topAthletes}
         news={filteredNews}
         loading={golfHomeLoading}
         refreshing={refreshing}

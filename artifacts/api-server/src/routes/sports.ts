@@ -4506,7 +4506,12 @@ router.get("/sports/golf/schedule", async (req, res) => {
     };
     const espnPath = GOLF_ESPN_PATHS[league] ?? "golf/pga";
 
-    const url = `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/scoreboard?season=${season}`;
+    const windowStart = new Date();
+    windowStart.setUTCDate(windowStart.getUTCDate() - 2);
+    const windowEnd = new Date();
+    windowEnd.setUTCDate(windowEnd.getUTCDate() + 35);
+    const compactDate = (date: Date) => date.toISOString().slice(0, 10).replaceAll("-", "");
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/scoreboard?dates=${compactDate(windowStart)}-${compactDate(windowEnd)}`;
     const json = await espnFetch(url) as any;
     const events = json.events ?? [];
 
@@ -4541,8 +4546,28 @@ router.get("/sports/golf/schedule", async (req, res) => {
       };
     });
 
-    setCached(cacheKey, tournaments, 300_000);
-    res.json({ tournaments });
+    const enrichedTournaments = await Promise.all(tournaments.map(async (tournament) => {
+      try {
+        const core = await cachedFetch(
+          `golf-schedule-core-${league}-${tournament.id}`,
+          300_000,
+          () => espnFetch(`https://sports.core.api.espn.com/v2/sports/golf/leagues/${GOLF_CORE_LEAGUES[normalizeGolfTour(league)]}/events/${tournament.id}?lang=en&region=us`) as Promise<EspnGolfCoreEvent>,
+        );
+        const course = core.courses?.[0];
+        const address = course?.address;
+        return {
+          ...tournament,
+          course: course?.name ?? tournament.course,
+          location: [address?.city, address?.state, address?.country].filter(Boolean).join(", ") || tournament.location,
+          purse: core.displayPurse ?? tournament.purse,
+        };
+      } catch {
+        return tournament;
+      }
+    }));
+
+    setCached(cacheKey, enrichedTournaments, 300_000);
+    res.json({ tournaments: enrichedTournaments });
   } catch (err) {
     console.error("Golf schedule error:", err);
     res.json({ tournaments: [] });
@@ -4553,11 +4578,80 @@ router.get("/sports/golf/schedule", async (req, res) => {
 
 interface GolfRankingEntry {
   rank: number;
+  athleteId: string | null;
   name: string;
   country: string;
+  headshotUrl: string | null;
   points: number;
   events: number;
   movement: number;
+  earnings: string;
+  wins: number;
+  topTens: number;
+  scoringAverage: number | null;
+  drivingDistance: number | null;
+  greensInRegulation: number | null;
+  puttsPerHole: number | null;
+  birdiesPerRound: number | null;
+}
+
+type EspnGolfStatsPlayer = {
+  athlete?: {
+    name?: string;
+    href?: string;
+    flag?: { alt?: string };
+  };
+  stats?: Array<{ name?: string; value?: string; rank?: string }>;
+};
+
+async function fetchEspnGolfPlayerStats(): Promise<GolfRankingEntry[]> {
+  const season = new Date().getFullYear();
+  const url = `https://www.espn.com/golf/stats/player/_/season/${season}/table/general/sort/cupPoints/dir/desc`;
+  const response = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new Error(`ESPN golf stats page failed with HTTP ${response.status}`);
+
+  const html = await response.text();
+  const marker = "window['__espnfitt__']=";
+  const start = html.indexOf(marker);
+  if (start < 0) throw new Error("ESPN golf stats payload was not found");
+  const payloadStart = start + marker.length;
+  const payloadEnd = html.indexOf("</script>", payloadStart);
+  if (payloadEnd < 0) throw new Error("ESPN golf stats payload was incomplete");
+  const root = JSON.parse(html.slice(payloadStart, payloadEnd).replace(/;\s*$/, "")) as any;
+  const players = (root?.page?.content?.statistics?.playerStats ?? []) as EspnGolfStatsPlayer[];
+
+  const numeric = (value: string | undefined): number | null => {
+    if (!value) return null;
+    const parsed = Number.parseFloat(value.replace(/[$,%]/g, "").replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  return players.map((player, index) => {
+    const stats = new Map((player.stats ?? []).map((stat) => [stat.name, stat]));
+    const athleteId = player.athlete?.href?.match(/\/id\/(\d+)/)?.[1] ?? null;
+    const cupPoints = stats.get("cupPoints");
+    return {
+      rank: Number.parseInt(cupPoints?.rank ?? "", 10) || index + 1,
+      athleteId,
+      name: player.athlete?.name ?? "Unknown golfer",
+      country: player.athlete?.flag?.alt ?? "",
+      headshotUrl: athleteId ? `https://a.espncdn.com/i/headshots/golf/players/full/${athleteId}.png` : null,
+      points: numeric(cupPoints?.value) ?? 0,
+      events: numeric(stats.get("tournamentsPlayed")?.value) ?? 0,
+      movement: 0,
+      earnings: stats.get("amount")?.value ?? "",
+      wins: numeric(stats.get("wins")?.value) ?? 0,
+      topTens: numeric(stats.get("topTenFinishes")?.value) ?? 0,
+      scoringAverage: numeric(stats.get("scoringAverage")?.value),
+      drivingDistance: numeric(stats.get("yardsPerDrive")?.value),
+      greensInRegulation: numeric(stats.get("greensInRegPct")?.value),
+      puttsPerHole: numeric(stats.get("strokesPerHole")?.value),
+      birdiesPerRound: numeric(stats.get("birdiesPerRound")?.value),
+    };
+  }).filter((entry) => entry.name !== "Unknown golfer");
 }
 
 router.get("/sports/golf/rankings", async (req, res) => {
@@ -4567,9 +4661,14 @@ router.get("/sports/golf/rankings", async (req, res) => {
   if (cached) { res.json({ rankings: cached }); return; }
 
   try {
-    const url = type === "owgr"
-      ? "https://site.api.espn.com/apis/site/v2/sports/golf/rankings"
-      : "https://site.api.espn.com/apis/site/v2/sports/golf/pga/rankings";
+    if (type === "fedex") {
+      const rankings = await fetchEspnGolfPlayerStats();
+      setCached(cacheKey, rankings, 600_000);
+      res.json({ rankings });
+      return;
+    }
+
+    const url = "https://site.api.espn.com/apis/site/v2/sports/golf/rankings";
 
     const json = await espnFetch(url) as any;
     const rankingsList = json.rankings ?? json.leaders ?? [];
@@ -4582,11 +4681,21 @@ router.get("/sports/golf/rankings", async (req, res) => {
 
       return {
         rank,
+        athleteId: athlete.id ?? null,
         name: athlete.displayName ?? athlete.name ?? "Unknown",
         country: athlete.country?.name ?? athlete.flag?.alt ?? "",
+        headshotUrl: athlete.headshot?.href ?? (athlete.id ? `https://a.espncdn.com/i/headshots/golf/players/full/${athlete.id}.png` : null),
         points: parseFloat(r.points ?? r.value ?? 0),
         events: r.eventsPlayed ?? r.events ?? 0,
         movement,
+        earnings: "",
+        wins: 0,
+        topTens: 0,
+        scoringAverage: null,
+        drivingDistance: null,
+        greensInRegulation: null,
+        puttsPerHole: null,
+        birdiesPerRound: null,
       };
     });
 
