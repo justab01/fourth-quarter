@@ -14,6 +14,15 @@ import {
   getVerifiedScoreboardWindow,
   parseCanonicalGameId,
 } from "../sports/competitionRegistry";
+import {
+  golfCacheTtl,
+  isGolfMajor,
+  normalizeEspnGolfScoreboard,
+  selectFeaturedGolfEvent,
+  type EspnGolfScoreboard,
+  type GolfTourKey,
+  type GolfTournamentSnapshot,
+} from "../sports/golfDomain";
 
 const router: IRouter = Router();
 
@@ -4123,117 +4132,135 @@ router.get("/sports/racing/schedule/:league", async (req, res) => {
 
 // ─── Golf Leaderboard ────────────────────────────────────────────────────────
 
-const GOLF_MAJORS = new Set([
-  "The Masters", "Masters Tournament", "U.S. Open", "The Open Championship",
-  "Open Championship", "PGA Championship", "THE PLAYERS Championship"
-]);
+const GOLF_ESPN_PATHS: Record<Exclude<GolfTourKey, "WORLD">, string> = {
+  PGA: "golf/pga",
+  LPGA: "golf/lpga",
+  LIV: "golf/liv",
+};
 
-function parseScoreToPar(score: string): number {
-  if (!score || score === "E") return 0;
-  const parsed = parseInt(score.replace("+", ""), 10);
-  return isNaN(parsed) ? 0 : parsed;
+function normalizeGolfTour(value: unknown): Exclude<GolfTourKey, "WORLD"> {
+  const tour = typeof value === "string" ? value.toUpperCase() : "PGA";
+  return tour === "LPGA" || tour === "LIV" ? tour : "PGA";
 }
 
-function getCountryCode(countryName: string): string {
-  const codes: Record<string, string> = {
-    "United States": "US", "USA": "US", "England": "GB", "Scotland": "GB",
-    "Ireland": "IE", "Australia": "AU", "South Africa": "ZA", "Japan": "JP",
-    "South Korea": "KR", "Canada": "CA", "Spain": "ES", "Germany": "DE",
-    "Sweden": "SE", "Norway": "NO", "Denmark": "DK", "France": "FR",
-    "Italy": "IT", "Argentina": "AR", "Mexico": "MX", "Thailand": "TH",
-    "China": "CN", "India": "IN", "New Zealand": "NZ", "Belgium": "BE",
-    "Austria": "AT", "Switzerland": "CH", "Netherlands": "NL", "Portugal": "PT",
-    "Brazil": "BR", "Chile": "CL", "Colombia": "CO", "Venezuela": "VE",
-    "Czech Republic": "CZ", "Finland": "FI", "Poland": "PL", "Wales": "GB",
-    "Northern Ireland": "GB"
+function legacyGolfStatus(event: GolfTournamentSnapshot | null): "live" | "completed" | "upcoming" | "unknown" {
+  if (!event) return "unknown";
+  if (["live", "playoff", "delayed", "suspended", "round_complete"].includes(event.status.state)) return "live";
+  if (event.status.state === "final") return "completed";
+  if (event.status.state === "scheduled") return "upcoming";
+  return "unknown";
+}
+
+function golfLeaderboardResponse(event: GolfTournamentSnapshot | null) {
+  return {
+    tournamentId: event?.id ?? null,
+    tournament: event?.name ?? "",
+    tour: event?.tour ?? null,
+    venue: event?.venue ?? "",
+    location: event?.location ?? "",
+    status: legacyGolfStatus(event),
+    eventStatus: event?.status ?? null,
+    round: event?.status.detail ?? "",
+    roundNumber: event?.status.round ?? null,
+    cutLine: null,
+    isMajor: event?.isMajor ?? false,
+    coverage: event?.coverage ?? null,
+    source: event?.provenance ?? null,
+    leaderboard: event?.leaderboard ?? [],
   };
-  return codes[countryName] ?? "";
 }
 
-interface LeaderboardEntry {
-  position: number | null;
-  name: string;
-  score: string;
-  toPar: number;
-  today: string;
-  todayToPar: number;
-  thru: string;
-  country: string;
-  countryCode: string;
-  headshotUrl: string | null;
-  movement: number;
+function staleGolfSnapshot(event: GolfTournamentSnapshot): GolfTournamentSnapshot {
+  return {
+    ...event,
+    provenance: { ...event.provenance, stale: true },
+  };
+}
+
+async function fetchGolfTour(tour: Exclude<GolfTourKey, "WORLD">): Promise<GolfTournamentSnapshot[]> {
+  const fetchedAt = new Date().toISOString();
+  const url = `https://site.api.espn.com/apis/site/v2/sports/${GOLF_ESPN_PATHS[tour]}/scoreboard`;
+  const json = await espnFetch(url) as EspnGolfScoreboard;
+  return normalizeEspnGolfScoreboard(json, tour, fetchedAt);
 }
 
 router.get("/sports/golf/leaderboard", async (req, res) => {
-  const league = ((req.query.league as string) ?? "PGA").toUpperCase();
-  const GOLF_ESPN_PATHS: Record<string, string> = { PGA: "golf/pga", LPGA: "golf/lpga", LIV: "golf/liv" };
-  const espnPath = GOLF_ESPN_PATHS[league] ?? "golf/pga";
-  const cacheKey = `golf-leaderboard-${league}`;
+  const league = normalizeGolfTour(req.query.league);
+  const cacheKey = `golf-leaderboard-v2-${league}`;
   const cached = getCached<unknown>(cacheKey);
   if (cached) { res.json(cached); return; }
 
   try {
-    const url = `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/scoreboard`;
-    const json = await espnFetch(url) as any;
-    const events = json.events ?? [];
-
-    let tournamentName = "";
-    let venue = "";
-    let status = "upcoming";
-    const entries: LeaderboardEntry[] = [];
-
-    const activeEvent = events.find((e: any) => e.status?.type?.state === "in")
-      ?? events.find((e: any) => e.status?.type?.state === "post")
-      ?? events[0];
-
-    if (activeEvent) {
-      tournamentName = activeEvent.name ?? "";
-      const comp = activeEvent.competitions?.[0];
-      venue = comp?.venue?.fullName ?? "";
-      const state = activeEvent.status?.type?.state;
-      status = state === "in" ? "live" : state === "post" ? "completed" : "upcoming";
-
-      const competitors = comp?.competitors ?? [];
-      let prevPosition = 0;
-      for (let i = 0; i < Math.min(competitors.length, 50); i++) {
-        const c = competitors[i];
-        const athlete = c.athlete ?? c;
-        const scoreStr = c.score ?? "E";
-        const todayStr = c.statistics?.[0]?.displayValue ?? "-";
-        const pos = c.order ?? c.sortOrder ?? i + 1;
-        const countryName = athlete.flag?.alt ?? athlete.country?.name ?? "";
-
-        entries.push({
-          position: pos,
-          name: athlete.displayName ?? c.team?.displayName ?? "Unknown",
-          score: scoreStr,
-          toPar: parseScoreToPar(scoreStr),
-          today: todayStr,
-          todayToPar: parseScoreToPar(todayStr),
-          thru: c.status?.thru?.toString() ?? c.linescores?.length?.toString() ?? "-",
-          country: countryName,
-          countryCode: getCountryCode(countryName),
-          headshotUrl: athlete.headshot?.href ?? null,
-          movement: prevPosition > 0 ? prevPosition - pos : 0,
-        });
-        prevPosition = pos;
-      }
-    }
-
-    const statusDesc = activeEvent?.status?.type?.description ?? activeEvent?.status?.type?.detail ?? "";
-    const roundNum = activeEvent?.competitions?.[0]?.competitors?.[0]?.linescores?.length ?? 0;
-    const roundDetail = status === "completed" ? "Final" : status === "live" ? (statusDesc || (roundNum > 0 ? `Round ${roundNum}` : "")) : (roundNum > 0 ? `Round ${roundNum}` : "");
-
-    const isMajor = GOLF_MAJORS.has(tournamentName);
-    const cutLine = null; // ESPN doesn't provide cut line easily
-
-    const response = { tournament: tournamentName, venue, status, round: roundDetail, cutLine, isMajor, leaderboard: entries };
-    setCached(cacheKey, response, 120_000);
+    const events = await fetchGolfTour(league);
+    const featured = selectFeaturedGolfEvent(events);
+    const response = golfLeaderboardResponse(featured);
+    const ttl = golfCacheTtl(featured?.status.state ?? "unknown");
+    setCached(cacheKey, response, ttl);
+    if (featured) setCached(`golf-last-verified-${league}`, featured, 24 * 60 * 60_000);
     res.json(response);
   } catch (err) {
     console.error("Golf leaderboard error:", err);
-    res.json({ tournament: "", venue: "", status: "unknown", round: "", cutLine: null, isMajor: false, leaderboard: [] });
+    const lastVerified = getCached<GolfTournamentSnapshot>(`golf-last-verified-${league}`);
+    if (lastVerified) {
+      res.json(golfLeaderboardResponse(staleGolfSnapshot(lastVerified)));
+      return;
+    }
+    res.json(golfLeaderboardResponse(null));
   }
+});
+
+router.get("/sports/golf/home", async (req, res) => {
+  const requested = typeof req.query.tour === "string" ? req.query.tour.toUpperCase() : "ALL";
+  const tours: Array<Exclude<GolfTourKey, "WORLD">> = requested === "ALL"
+    ? ["PGA", "LPGA", "LIV"]
+    : [normalizeGolfTour(requested)];
+  const cacheKey = `golf-home-v1-${tours.join("-")}`;
+  const cached = getCached<unknown>(cacheKey);
+  if (cached) { res.json(cached); return; }
+
+  const results = await Promise.allSettled(tours.map(fetchGolfTour));
+  const freshEvents = results.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+  const fallbackEvents = tours.flatMap((tour) => {
+    if (freshEvents.some((event) => event.tour === tour)) return [];
+    const fallback = getCached<GolfTournamentSnapshot>(`golf-last-verified-${tour}`);
+    return fallback ? [staleGolfSnapshot(fallback)] : [];
+  });
+  const events = [...freshEvents, ...fallbackEvents];
+  const featured = selectFeaturedGolfEvent(events);
+
+  for (const event of freshEvents) {
+    setCached(`golf-last-verified-${event.tour}`, event, 24 * 60 * 60_000);
+  }
+
+  const leader = featured?.leaderboard[0] ?? null;
+  const pulse = featured && leader ? {
+    kind: "current_state" as const,
+    headline: `${leader.name} ${leader.positionLabel === "1" ? "leads" : "is at the top"} at ${leader.score}`,
+    detail: leader.activeRound == null
+      ? featured.status.detail
+      : leader.thru === "F"
+        ? `Round ${leader.activeRound} complete`
+        : `${leader.holesCompleted} holes complete in Round ${leader.activeRound}`,
+    athleteId: leader.athleteId,
+    round: leader.activeRound,
+    hole: leader.currentHole,
+    verifiedAt: featured.provenance.sourceTimestamp,
+  } : null;
+
+  const response = {
+    tour: requested.toLowerCase(),
+    featured,
+    leaderboard: featured?.leaderboard.slice(0, 8) ?? [],
+    pulse,
+    acrossTours: events.filter((event) => event.id !== featured?.id),
+    coverage: featured?.coverage ?? null,
+    updatedAt: featured?.provenance.sourceTimestamp ?? new Date().toISOString(),
+    stale: Boolean(featured?.provenance.stale),
+    unavailableTours: tours.filter((tour) => !events.some((event) => event.tour === tour)),
+  };
+  const ttl = golfCacheTtl(featured?.status.state ?? "unknown");
+  setCached(cacheKey, response, ttl);
+  res.json(response);
 });
 
 // ─── Golf Schedule ───────────────────────────────────────────────────────────
@@ -4295,7 +4322,7 @@ router.get("/sports/golf/schedule", async (req, res) => {
         status,
         purse: comp?.purse ?? "",
         winner: comp?.winner?.displayName ?? null,
-        isMajor: GOLF_MAJORS.has(e.name ?? ""),
+        isMajor: isGolfMajor(e.name ?? ""),
       };
     });
 
