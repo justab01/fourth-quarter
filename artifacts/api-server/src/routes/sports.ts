@@ -4138,6 +4138,12 @@ const GOLF_ESPN_PATHS: Record<Exclude<GolfTourKey, "WORLD">, string> = {
   LIV: "golf/liv",
 };
 
+const GOLF_CORE_LEAGUES: Record<Exclude<GolfTourKey, "WORLD">, string> = {
+  PGA: "pga",
+  LPGA: "lpga",
+  LIV: "liv",
+};
+
 function normalizeGolfTour(value: unknown): Exclude<GolfTourKey, "WORLD"> {
   const tour = typeof value === "string" ? value.toUpperCase() : "PGA";
   return tour === "LPGA" || tour === "LIV" ? tour : "PGA";
@@ -4177,11 +4183,104 @@ function staleGolfSnapshot(event: GolfTournamentSnapshot): GolfTournamentSnapsho
   };
 }
 
+type EspnGolfCoreEvent = {
+  displayPurse?: string;
+  competitions?: Array<{
+    competitors?: Array<{ id?: string; movement?: number; amateur?: boolean }>;
+  }>;
+  courses?: Array<{
+    id?: string;
+    name?: string;
+    address?: { city?: string; state?: string; country?: string };
+    totalYards?: number;
+    shotsToPar?: number;
+    parIn?: number;
+    parOut?: number;
+    holes?: Array<{ number?: number; shotsToPar?: number; totalYards?: number }>;
+    weather?: {
+      temperature?: number;
+      conditionId?: string;
+      windSpeed?: number;
+      windDirection?: string;
+      precipitation?: number;
+      lastUpdated?: string;
+    };
+  }>;
+};
+
+async function enrichGolfEvent(
+  event: GolfTournamentSnapshot,
+  tour: Exclude<GolfTourKey, "WORLD">,
+): Promise<GolfTournamentSnapshot> {
+  try {
+    const core = await cachedFetch(
+      `golf-core-event-${tour}-${event.id}`,
+      golfCacheTtl(event.status.state),
+      () => espnFetch(`https://sports.core.api.espn.com/v2/sports/golf/leagues/${GOLF_CORE_LEAGUES[tour]}/events/${event.id}?lang=en&region=us`) as Promise<EspnGolfCoreEvent>,
+    );
+    const rawCourse = core.courses?.[0];
+    const address = rawCourse?.address;
+    const course = rawCourse ? {
+      id: rawCourse.id ?? event.id,
+      name: rawCourse.name ?? event.venue,
+      city: address?.city ?? "",
+      state: address?.state ?? "",
+      country: address?.country ?? "",
+      par: typeof rawCourse.shotsToPar === "number" ? rawCourse.shotsToPar : null,
+      totalYards: typeof rawCourse.totalYards === "number" ? rawCourse.totalYards : null,
+      parIn: typeof rawCourse.parIn === "number" ? rawCourse.parIn : null,
+      parOut: typeof rawCourse.parOut === "number" ? rawCourse.parOut : null,
+      holes: (rawCourse.holes ?? [])
+        .filter((hole) => typeof hole.number === "number")
+        .map((hole) => ({
+          number: hole.number as number,
+          par: typeof hole.shotsToPar === "number" ? hole.shotsToPar : null,
+          yards: typeof hole.totalYards === "number" ? hole.totalYards : null,
+        })),
+      weather: rawCourse.weather ? {
+        temperature: typeof rawCourse.weather.temperature === "number" ? rawCourse.weather.temperature : null,
+        condition: rawCourse.weather.conditionId ?? "",
+        windSpeed: typeof rawCourse.weather.windSpeed === "number" ? rawCourse.weather.windSpeed : null,
+        windDirection: rawCourse.weather.windDirection ?? "",
+        precipitation: typeof rawCourse.weather.precipitation === "number" ? rawCourse.weather.precipitation : null,
+        updatedAt: rawCourse.weather.lastUpdated ?? null,
+      } : null,
+    } : null;
+    const movementByAthlete = new Map(
+      (core.competitions?.[0]?.competitors ?? [])
+        .filter((competitor) => competitor.id)
+        .map((competitor) => [competitor.id as string, competitor]),
+    );
+    const location = [address?.city, address?.state, address?.country].filter(Boolean).join(", ");
+
+    return {
+      ...event,
+      venue: course?.name || event.venue,
+      location: location || event.location,
+      purse: core.displayPurse ?? event.purse,
+      course,
+      leaderboard: event.leaderboard.map((entry) => {
+        const details = entry.athleteId ? movementByAthlete.get(entry.athleteId) : null;
+        return {
+          ...entry,
+          amateur: details?.amateur ?? entry.amateur,
+          // ESPN movement is the change in numeric rank; invert it so positive means the golfer rose.
+          movement: typeof details?.movement === "number" ? -details.movement : entry.movement,
+        };
+      }),
+    };
+  } catch (error) {
+    console.error(`Golf core metadata error for ${tour} ${event.id}:`, error);
+    return event;
+  }
+}
+
 async function fetchGolfTour(tour: Exclude<GolfTourKey, "WORLD">): Promise<GolfTournamentSnapshot[]> {
   const fetchedAt = new Date().toISOString();
   const url = `https://site.api.espn.com/apis/site/v2/sports/${GOLF_ESPN_PATHS[tour]}/scoreboard`;
   const json = await espnFetch(url) as EspnGolfScoreboard;
-  return normalizeEspnGolfScoreboard(json, tour, fetchedAt);
+  const events = normalizeEspnGolfScoreboard(json, tour, fetchedAt);
+  return Promise.all(events.map((event) => enrichGolfEvent(event, tour)));
 }
 
 router.get("/sports/golf/leaderboard", async (req, res) => {
@@ -4261,6 +4360,122 @@ router.get("/sports/golf/home", async (req, res) => {
   const ttl = golfCacheTtl(featured?.status.state ?? "unknown");
   setCached(cacheKey, response, ttl);
   res.json(response);
+});
+
+async function getGolfTournamentById(
+  id: string,
+  requestedTour: unknown,
+): Promise<GolfTournamentSnapshot | null> {
+  const preferredTour = normalizeGolfTour(requestedTour);
+  const tourOrder: Array<Exclude<GolfTourKey, "WORLD">> = [
+    preferredTour,
+    ...(["PGA", "LPGA", "LIV"] as const).filter((tour) => tour !== preferredTour),
+  ];
+  for (const tour of tourOrder) {
+    try {
+      const events = await fetchGolfTour(tour);
+      const match = events.find((event) => event.id === id);
+      if (match) return match;
+    } catch (error) {
+      console.error(`Golf tournament fetch error for ${tour}:`, error);
+    }
+  }
+  return null;
+}
+
+router.get("/sports/golf/tournaments/:id", async (req, res) => {
+  const id = req.params.id;
+  if (!/^\d{6,16}$/.test(id)) {
+    res.status(400).json({ error: "Invalid golf tournament id" });
+    return;
+  }
+  const tour = normalizeGolfTour(req.query.tour);
+  const cacheKey = `golf-tournament-v1-${tour}-${id}`;
+  const cached = getCached<GolfTournamentSnapshot>(cacheKey);
+  if (cached) { res.json({ tournament: cached }); return; }
+
+  const tournament = await getGolfTournamentById(id, tour);
+  if (!tournament) {
+    res.status(404).json({ error: "Tournament is not available in the current golf feed" });
+    return;
+  }
+  setCached(cacheKey, tournament, golfCacheTtl(tournament.status.state));
+  res.json({ tournament });
+});
+
+router.get("/sports/golf/tournaments/:id/leaderboard", async (req, res) => {
+  const id = req.params.id;
+  if (!/^\d{6,16}$/.test(id)) {
+    res.status(400).json({ error: "Invalid golf tournament id" });
+    return;
+  }
+  const tournament = await getGolfTournamentById(id, req.query.tour);
+  if (!tournament) {
+    res.status(404).json({ error: "Tournament is not available in the current golf feed" });
+    return;
+  }
+  res.json({
+    tournamentId: tournament.id,
+    status: tournament.status,
+    leaderboard: tournament.leaderboard,
+    coverage: tournament.coverage,
+    source: tournament.provenance,
+  });
+});
+
+router.get("/sports/golf/tournaments/:id/scorecards", async (req, res) => {
+  const id = req.params.id;
+  if (!/^\d{6,16}$/.test(id)) {
+    res.status(400).json({ error: "Invalid golf tournament id" });
+    return;
+  }
+  const tournament = await getGolfTournamentById(id, req.query.tour);
+  if (!tournament) {
+    res.status(404).json({ error: "Tournament is not available in the current golf feed" });
+    return;
+  }
+  res.json({
+    tournamentId: tournament.id,
+    scorecards: tournament.leaderboard.map((entry) => ({
+      athleteId: entry.athleteId,
+      name: entry.name,
+      headshotUrl: entry.headshotUrl,
+      rounds: entry.rounds,
+    })),
+    coverage: tournament.coverage,
+    source: tournament.provenance,
+  });
+});
+
+router.get("/sports/golf/tournaments/:id/tee-times", (_req, res) => {
+  res.json({ teeTimes: [], groups: [], available: false, reason: "The active ESPN adapter does not publish normalized tee groups." });
+});
+
+router.get("/sports/golf/tournaments/:id/pulse", async (req, res) => {
+  const id = req.params.id;
+  if (!/^\d{6,16}$/.test(id)) {
+    res.status(400).json({ error: "Invalid golf tournament id" });
+    return;
+  }
+  const tournament = await getGolfTournamentById(id, req.query.tour);
+  if (!tournament) {
+    res.status(404).json({ error: "Tournament is not available in the current golf feed" });
+    return;
+  }
+  const leader = tournament.leaderboard[0] ?? null;
+  res.json({
+    tournamentId: tournament.id,
+    pulse: leader ? [{
+      kind: "current_state",
+      headline: `${leader.name} leads at ${leader.score}`,
+      detail: leader.activeRound == null ? tournament.status.detail : `${leader.holesCompleted} holes complete in Round ${leader.activeRound}`,
+      athleteId: leader.athleteId,
+      round: leader.activeRound,
+      hole: leader.currentHole,
+      verifiedAt: tournament.provenance.sourceTimestamp,
+    }] : [],
+    source: tournament.provenance,
+  });
 });
 
 // ─── Golf Schedule ───────────────────────────────────────────────────────────

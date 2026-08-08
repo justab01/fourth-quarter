@@ -84,6 +84,33 @@ export interface GolfTournamentStatus {
   round: number | null;
 }
 
+export interface GolfCourseHole {
+  number: number;
+  par: number | null;
+  yards: number | null;
+}
+
+export interface GolfCourseSnapshot {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  country: string;
+  par: number | null;
+  totalYards: number | null;
+  parIn: number | null;
+  parOut: number | null;
+  holes: GolfCourseHole[];
+  weather: {
+    temperature: number | null;
+    condition: string;
+    windSpeed: number | null;
+    windDirection: string;
+    precipitation: number | null;
+    updatedAt: string | null;
+  } | null;
+}
+
 export interface GolfTournamentSnapshot {
   id: string;
   tour: GolfTourKey;
@@ -93,6 +120,8 @@ export interface GolfTournamentSnapshot {
   endDate: string | null;
   venue: string;
   location: string;
+  purse: string | null;
+  course: GolfCourseSnapshot | null;
   status: GolfTournamentStatus;
   isMajor: boolean;
   leaderboard: GolfLeaderboardEntry[];
@@ -300,7 +329,8 @@ function toLeaderboardEntry(raw: RawCompetitor): GolfLeaderboardEntry {
     rounds,
     country,
     countryCode: countryCode(country),
-    headshotUrl: athlete.headshot?.href ?? null,
+    headshotUrl: athlete.headshot?.href
+      ?? (athlete.id ?? raw.id ? `https://a.espncdn.com/i/headshots/golf/players/full/${athlete.id ?? raw.id}.png` : null),
     movement: null,
   };
 }
@@ -375,6 +405,8 @@ export function normalizeEspnGolfEvent(
     endDate: competition?.endDate ?? rawEvent.endDate ?? null,
     venue: competition?.venue?.fullName ?? "",
     location: eventLocation(rawEvent),
+    purse: null,
+    course: null,
     status,
     isMajor: isGolfMajor(rawEvent.name ?? ""),
     leaderboard,

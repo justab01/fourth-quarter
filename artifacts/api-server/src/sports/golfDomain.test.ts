@@ -38,7 +38,7 @@ describe("ESPN golf normalization", () => {
     assert.equal(event.leaderboard[0]?.positionLabel, "T1");
     assert.equal(event.leaderboard[1]?.positionLabel, "T1");
     assert.equal(event.leaderboard[1]?.amateur, true);
-    assert.equal(event.leaderboard[1]?.headshotUrl, null);
+    assert.equal(event.leaderboard[1]?.headshotUrl, "https://a.espncdn.com/i/headshots/golf/players/full/2.png");
     assert.equal(event.leaderboard[2]?.state, "cut");
     assert.equal(event.leaderboard[2]?.positionLabel, "CUT");
     assert.equal(event.coverage.scorecards, true);
