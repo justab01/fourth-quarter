@@ -1,6 +1,4 @@
 import { Router, type IRouter } from "express";
-import https from "https";
-import zlib from "zlib";
 import { createHash } from "crypto";
 import { db, sportGameEvents, sportGameStates } from "@workspace/db";
 import {
@@ -71,35 +69,19 @@ setInterval(() => {
 
 // ─── ESPN fetch helper ────────────────────────────────────────────────────────
 async function espnFetch(url: string): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Encoding": "gzip, deflate",
-        "Accept": "application/json",
-      },
-    }, (res) => {
-      let stream: NodeJS.ReadableStream = res;
-      const encoding = res.headers["content-encoding"];
-      if (encoding === "gzip") {
-        stream = res.pipe(zlib.createGunzip());
-      } else if (encoding === "deflate") {
-        stream = res.pipe(zlib.createInflate());
-      }
-
-      const chunks: Buffer[] = [];
-      stream.on("data", (chunk: Buffer) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
-      stream.on("end", () => {
-        try {
-          const raw = Buffer.concat(chunks).toString("utf-8");
-          resolve(JSON.parse(raw));
-        } catch (e) { reject(e); }
-      });
-      stream.on("error", reject);
-    });
-    req.on("error", reject);
-    req.setTimeout(8000, () => { req.destroy(); reject(new Error("ESPN timeout")); });
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      Accept: "application/json",
+    },
+    signal: AbortSignal.timeout(10_000),
   });
+
+  if (!response.ok) {
+    throw new Error(`ESPN request failed with HTTP ${response.status}`);
+  }
+
+  return response.json();
 }
 
 // ─── Minimal ESPN response shapes ────────────────────────────────────────────
