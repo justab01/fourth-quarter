@@ -103,6 +103,14 @@ export const api = {
   getGolfLeaderboard: (league?: string) =>
     apiFetch<GolfLeaderboardResponse>(`/sports/golf/leaderboard${league ? `?league=${encodeURIComponent(league)}` : ""}`),
 
+  getGolfHome: (tour: "all" | "PGA" | "LPGA" | "LIV" = "all") =>
+    apiFetch<GolfHomeResponse>(`/sports/golf/home?tour=${encodeURIComponent(tour)}`),
+
+  getGolfTournament: (tournamentId: string, tour?: "PGA" | "LPGA" | "LIV") => {
+    const suffix = tour ? `?tour=${encodeURIComponent(tour)}` : "";
+    return apiFetch<{ tournament: GolfTournamentSnapshot }>(`/sports/golf/tournaments/${encodeURIComponent(tournamentId)}${suffix}`);
+  },
+
   getGolfSchedule: (league?: string, season?: number) => {
     const params = new URLSearchParams();
     if (league) params.set("league", league);
@@ -398,26 +406,156 @@ export interface SportNewsArticle {
 }
 
 export interface GolfLeaderboardEntry {
+  athleteId: string | null;
   position: number | null;
+  positionLabel: string;
+  state: "active" | "cut" | "withdrawn" | "disqualified" | "did_not_start";
+  amateur: boolean;
   name: string;
+  shortName: string | null;
   score: string;
-  toPar: number;           // numeric score relative to par (e.g., -5, 0, 3)
+  toPar: number | null;    // numeric score relative to par (e.g., -5, 0, 3)
   today: string;
-  todayToPar: number;      // today's score relative to par
+  todayToPar: number | null;
   thru: string;
+  activeRound: number | null;
+  startingHole: number | null;
+  currentHole: number | null;
+  holesCompleted: number;
+  rounds: GolfRoundScorecard[];
   country: string;
-  countryCode: string;     // ISO country code for flag emoji
+  countryCode: string;
   headshotUrl: string | null;
-  movement: number;        // positions moved (+ up, - down, 0 = no change)
+  movement: number | null;
+}
+
+export interface GolfHoleScore {
+  hole: number;
+  playingOrder: number;
+  strokes: number | null;
+  displayStrokes: string | null;
+  scoreToPar: number | null;
+  scoreLabel: string | null;
+  completed: boolean;
+}
+
+export interface GolfRoundScorecard {
+  round: number;
+  totalStrokes: number | null;
+  score: string | null;
+  scoreToPar: number | null;
+  holes: GolfHoleScore[];
+  holesCompleted: number;
+  startingHole: number | null;
+  currentHole: number | null;
+  complete: boolean;
+}
+
+export type GolfTournamentState = "scheduled" | "live" | "delayed" | "suspended" | "round_complete" | "playoff" | "final" | "unknown";
+
+export interface GolfCourseHole {
+  number: number;
+  par: number | null;
+  yards: number | null;
+}
+
+export interface GolfCourseSnapshot {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  country: string;
+  par: number | null;
+  totalYards: number | null;
+  parIn: number | null;
+  parOut: number | null;
+  holes: GolfCourseHole[];
+  weather: {
+    temperature: number | null;
+    condition: string;
+    windSpeed: number | null;
+    windDirection: string;
+    precipitation: number | null;
+    updatedAt: string | null;
+  } | null;
+}
+
+export interface GolfTournamentSnapshot {
+  id: string;
+  tour: "PGA" | "LPGA" | "LIV" | "WORLD";
+  name: string;
+  shortName: string;
+  date: string | null;
+  endDate: string | null;
+  venue: string;
+  location: string;
+  purse: string | null;
+  course: GolfCourseSnapshot | null;
+  status: {
+    state: GolfTournamentState;
+    label: string;
+    detail: string;
+    round: number | null;
+  };
+  isMajor: boolean;
+  leaderboard: GolfLeaderboardEntry[];
+  coverage: GolfCoverageCapabilities;
+  provenance: GolfProvenance;
+}
+
+export interface GolfCoverageCapabilities {
+  leaderboard: boolean;
+  scorecards: boolean;
+  teeTimes: boolean;
+  groups: boolean;
+  holeStatistics: boolean;
+  shots: boolean;
+  courseMap: boolean;
+}
+
+export interface GolfProvenance {
+  provider: "ESPN";
+  providerEventId: string;
+  sourceTimestamp: string;
+  ingestionTimestamp: string;
+  state: "live" | "provisional" | "verified" | "final";
+  stale: boolean;
+}
+
+export interface GolfHomeResponse {
+  tour: string;
+  featured: GolfTournamentSnapshot | null;
+  leaderboard: GolfLeaderboardEntry[];
+  pulse: {
+    kind: "current_state";
+    headline: string;
+    detail: string;
+    athleteId: string | null;
+    round: number | null;
+    hole: number | null;
+    verifiedAt: string;
+  } | null;
+  acrossTours: GolfTournamentSnapshot[];
+  coverage: GolfCoverageCapabilities | null;
+  updatedAt: string;
+  stale: boolean;
+  unavailableTours: string[];
 }
 
 export interface GolfLeaderboardResponse {
+  tournamentId: string | null;
   tournament: string;
+  tour: "PGA" | "LPGA" | "LIV" | null;
   venue: string;
+  location: string;
   status: string;
+  eventStatus: GolfTournamentSnapshot["status"] | null;
   round: string;
+  roundNumber: number | null;
   cutLine: number | null;    // projected cut line (par + strokes)
   isMajor: boolean;          // is this a major championship
+  coverage: GolfCoverageCapabilities | null;
+  source: GolfProvenance | null;
   leaderboard: GolfLeaderboardEntry[];
 }
 

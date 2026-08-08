@@ -23,6 +23,7 @@ import { api } from "@/utils/api";
 import type { Game, SportNewsArticle, UpcomingEvent, RankingEntry, RankingsGroup, TennisDrawData, TennisTournament, TennisDrawMatch, GolfLeaderboardEntry, StandingEntry, RacingScheduleResponse, RaceEvent, NextRace, SeasonalSportData, SeasonalEvent, SeasonalAthlete } from "@/utils/api";
 import { GameCard, TeamLogo } from "@/components/GameCard";
 import { BaseballSportHome } from "@/components/BaseballSportHome";
+import GolfSportHome from "@/components/GolfSportHome";
 import { BasketballHub } from "@/components/BasketballHub";
 import { SearchButton } from "@/components/SearchButton";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
@@ -1659,6 +1660,17 @@ export default function SportBoardScreen() {
     enabled: archetype === "golf" && !!golfLeaderboardLeague,
   });
 
+  const golfHomeTour = archetype === "golf"
+    ? (activeLeague === "PGA" || activeLeague === "LPGA" || activeLeague === "LIV" ? activeLeague : "all")
+    : null;
+  const { data: golfHomeData, isLoading: golfHomeLoading, refetch: refetchGolfHome } = useQuery({
+    queryKey: ["golf-home", golfHomeTour],
+    queryFn: () => api.getGolfHome(golfHomeTour!),
+    staleTime: 25_000,
+    refetchInterval: (query) => query.state.data?.featured?.status.state === "live" ? 25_000 : 120_000,
+    enabled: archetype === "golf" && !!golfHomeTour,
+  });
+
   const golfScheduleLeague = archetype === "golf" ? (activeLeague !== "all" ? activeLeague : "PGA") : null;
   const { data: golfScheduleData, refetch: refetchGolfSchedule } = useQuery({
     queryKey: ["golf-schedule", golfScheduleLeague],
@@ -1859,6 +1871,9 @@ export default function SportBoardScreen() {
       refetchRankings(),
       refetchDraw(),
       refetchLeaderboard(),
+      refetchGolfHome(),
+      refetchGolfSchedule(),
+      refetchGolfRankings(),
       refetchStandings(),
       refetchRacingSchedule(),
       refetchConstructors(),
@@ -1866,7 +1881,7 @@ export default function SportBoardScreen() {
       refetchWhyWatch?.() ?? Promise.resolve(),
     ]);
     setRefreshing(false);
-  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchGolfSchedule, refetchGolfRankings, refetchStandings, refetchRacingSchedule, refetchConstructors, refetchSeasonal, refetchWhyWatch]);
+  }, [refetchGames, refetchNews, refetchUpcoming, refetchRankings, refetchDraw, refetchLeaderboard, refetchGolfHome, refetchGolfSchedule, refetchGolfRankings, refetchStandings, refetchRacingSchedule, refetchConstructors, refetchSeasonal, refetchWhyWatch]);
 
   const standingsGroups = useMemo(() => {
     const entries: StandingEntry[] = standingsData?.standings ?? [];
@@ -2019,7 +2034,7 @@ export default function SportBoardScreen() {
 
   // ── GOLF HUB REDESIGN ─────────────────────────────────────────────────────────────
   const aheadBy = lbEntries.length >= 2 && leader
-    ? Math.abs(lbEntries[1].toPar - leader.toPar)
+    ? Math.abs((lbEntries[1]?.toPar ?? 0) - (leader.toPar ?? 0))
     : 0;
 
   const ApiLeaderboardSection = archetype === "golf" && lbEntries.length > 0 ? (
@@ -2066,7 +2081,7 @@ export default function SportBoardScreen() {
                 <Text style={styles.golfHeroPlayerCountry}>{getCountryFlag(leader.countryCode)} {leader.country} · Thru {leader.thru}</Text>
               </View>
               <View style={styles.golfHeroScoreBig}>
-                <Text style={[styles.golfHeroScoreNum, { color: getGolfScoreColor(leader.toPar) }]}>
+                <Text style={[styles.golfHeroScoreNum, { color: getGolfScoreColor(leader.toPar ?? 0) }]}>
                   {leader.score}
                 </Text>
                 <Text style={styles.golfHeroScoreLabel}>TOURNAMENT</Text>
@@ -2075,7 +2090,7 @@ export default function SportBoardScreen() {
 
             <View style={styles.golfHeroStats}>
               <View style={styles.golfHeroStat}>
-                <Text style={[styles.golfHeroStatNum, { color: getGolfScoreColor(leader.todayToPar) }]}>
+                <Text style={[styles.golfHeroStatNum, { color: getGolfScoreColor(leader.todayToPar ?? 0) }]}>
                   {leader.today}
                 </Text>
                 <Text style={styles.golfHeroStatLabel}>TODAY</Text>
@@ -2163,7 +2178,7 @@ export default function SportBoardScreen() {
                       <Text style={styles.golfLiveCountry}>{getCountryFlag(entry.countryCode)} Thru {entry.thru}</Text>
                     </View>
                   </View>
-                  <Text style={[styles.golfLiveScore, { color: getGolfScoreColor(entry.toPar) }]}>
+                  <Text style={[styles.golfLiveScore, { color: getGolfScoreColor(entry.toPar ?? 0) }]}>
                     {entry.score}
                   </Text>
                 </View>
@@ -2198,14 +2213,14 @@ export default function SportBoardScreen() {
 
         {lbEntries.slice(0, 20).map((entry: GolfLeaderboardEntry, idx: number) => {
           const isTop3 = idx < 3;
-          const scoreColor = getGolfScoreColor(entry.toPar);
-          const todayColor = getGolfScoreColor(entry.todayToPar);
-          const movementArrow = getMovementIndicator(entry.movement);
-          const movementColor = getMovementColor(entry.movement);
+          const scoreColor = getGolfScoreColor(entry.toPar ?? 0);
+          const todayColor = getGolfScoreColor(entry.todayToPar ?? 0);
+          const movementArrow = getMovementIndicator(entry.movement ?? 0);
+          const movementColor = getMovementColor(entry.movement ?? 0);
           const flagEmoji = getCountryFlag(entry.countryCode);
           const isAtCutLine = leaderboardData?.cutLine != null && entry.toPar === leaderboardData.cutLine;
-          const isMover = !isTop3 && entry.movement > 0;
-          const isFaller = !isTop3 && entry.movement < 0;
+          const isMover = !isTop3 && (entry.movement ?? 0) > 0;
+          const isFaller = !isTop3 && (entry.movement ?? 0) < 0;
 
           return (
             <View key={entry.name + idx} style={[
@@ -3364,6 +3379,24 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
         activeLeague={activeLeague}
         onSelectLeague={setActiveLeague}
         gamesLoading={gamesLoading}
+      />
+    );
+  }
+
+  if (sport?.id === "golf") {
+    return (
+      <GolfSportHome
+        topInset={Platform.OS === "web" ? 48 : insets.top}
+        activeLeague={activeLeague}
+        onSelectLeague={setActiveLeague}
+        home={golfHomeData}
+        schedule={golfScheduleData?.tournaments ?? []}
+        rankings={golfRankingsData?.rankings ?? []}
+        athletes={topAthletes}
+        news={filteredNews}
+        loading={golfHomeLoading}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
     );
   }
