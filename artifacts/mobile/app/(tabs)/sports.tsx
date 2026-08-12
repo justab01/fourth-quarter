@@ -12,13 +12,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { FONTS } from "@/constants/typography";
 import { SPORT_CATEGORIES, type SportCategory } from "@/constants/sportCategories";
 import { useSearch } from "@/context/SearchContext";
-import { ProfileButton } from "@/components/ProfileButton";
+import { AppHeader } from "@/components/AppHeader";
 import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
 import { getCreatorPreviews } from "@/constants/communityPreview";
@@ -461,7 +460,6 @@ function CreatorShelf() {
 }
 
 export default function SportsScreen() {
-  const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const { openSearch } = useSearch();
 
@@ -492,27 +490,18 @@ export default function SportsScreen() {
     .sort((a, b) => b.liveCount - a.liveCount);
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={styles.root}>
       <StatusBar barStyle="light-content" />
-
-      <View style={styles.header}>
-        <View style={styles.headerCopy}>
-          <Text style={styles.headerEyebrow}>FOURTH QUARTER</Text>
-          <Text style={styles.headerTitle}>Sports</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Search sports, teams, players, and news"
-            onPress={() => openSearch()}
-            style={({ pressed }) => [styles.searchBtn, pressed && styles.pressed]}
-            hitSlop={8}
-          >
-            <Ionicons name="search" size={21} color={C.text} />
-          </Pressable>
-          <ProfileButton />
-        </View>
-      </View>
+      <AppHeader
+        mode="root"
+        eyebrow="The Fourth Quarter"
+        title="Sports"
+        subtitle={`${activeSports} sport worlds active · ${liveGames.length} live games`}
+        actions={[
+          { icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() },
+          { icon: "person-outline", label: "Profile", onPress: () => router.push("/(tabs)/profile" as any), accentColor: C.accent },
+        ]}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.heroPanel}>

@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { SportFloatingNav, SPORT_NAV_CLEARANCE } from "@/components/SportFloatingNav";
 import { FONTS } from "@/constants/typography";
 import { api, type GolfLeaderboardEntry, type GolfRoundScorecard } from "@/utils/api";
+import { AppHeader } from "@/components/AppHeader";
 
 const P = { ink: "#2C3E50", inkDeep: "#1E2D38", paper: "#F4F1EC", pearl: "#E8DED6", sage: "#C8CDC7", green: "#315847", sand: "#C9B48B", live: "#A3424F", white: "#FFFFFF", muted: "#6C777B", line: "rgba(44,62,80,.14)" };
 type Tab = "Board" | "Scorecards" | "Course";
@@ -55,7 +55,6 @@ function RoundCard({ round }: { round: GolfRoundScorecard }) {
 
 export default function GolfTournamentRoom() {
   const { id, tour } = useLocalSearchParams<{ id: string; tour?: string }>();
-  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("Board");
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["golf-tournament", id, tour],
@@ -68,26 +67,33 @@ export default function GolfTournamentRoom() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = useMemo(() => event?.leaderboard.find((entry) => entry.athleteId === selectedId) ?? event?.leaderboard[0] ?? null, [event?.leaderboard, selectedId]);
 
-  if (isLoading) return <View style={styles.center}><ActivityIndicator color={P.green} /><Text style={styles.centerText}>Opening the Tournament Room…</Text></View>;
+  if (isLoading) return <View style={styles.root}><AppHeader mode="destination" theme="light" eyebrow={tour ?? "Golf"} title="Tournament Room" onBack={() => router.back()} /><View style={styles.center}><ActivityIndicator color={P.green} /><Text style={styles.centerText}>Opening the Tournament Room…</Text></View></View>;
   if (!event || error) return (
-    <View style={styles.center}>
-      <Ionicons name="cloud-offline-outline" size={34} color={P.green} />
-      <Text style={styles.errorTitle}>Tournament data is unavailable</Text>
-      <Pressable onPress={() => refetch()} style={styles.retry}><Text style={styles.retryText}>Try again</Text></Pressable>
+    <View style={styles.root}>
+      <AppHeader mode="destination" theme="light" eyebrow={tour ?? "Golf"} title="Tournament Room" onBack={() => router.back()} actions={[{ icon: "refresh", label: "Retry", onPress: () => refetch() }]} />
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={34} color={P.green} />
+        <Text style={styles.errorTitle}>Tournament data is unavailable</Text>
+        <Pressable onPress={() => refetch()} style={styles.retry}><Text style={styles.retryText}>Try again</Text></Pressable>
+      </View>
     </View>
   );
 
   const live = ["live", "playoff", "delayed", "suspended"].includes(event.status.state);
   return (
-    <View style={[styles.root, { paddingTop: Platform.OS === "web" ? 48 : insets.top }]}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.root}>
+      <StatusBar barStyle="dark-content" />
+      <AppHeader
+        mode="destination"
+        theme="light"
+        eyebrow={`${event.tour} · ${event.status.label}`}
+        title="Tournament Room"
+        subtitle={event.name}
+        onBack={() => router.back()}
+        actions={[{ icon: "refresh", label: "Refresh tournament", onPress: () => refetch() }]}
+      />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPORT_NAV_CLEARANCE + 38 }}>
         <LinearGradient colors={[P.green, P.inkDeep]} style={styles.hero}>
-          <View style={styles.heroNav}>
-            <Pressable onPress={() => router.back()} style={styles.iconButton}><Ionicons name="chevron-back" size={23} color={P.white} /></Pressable>
-            <Text style={styles.roomLabel}>TOURNAMENT ROOM</Text>
-            <Pressable onPress={() => refetch()} style={styles.iconButton}><Ionicons name="refresh" size={19} color={P.white} /></Pressable>
-          </View>
           <View style={styles.heroStatusRow}>
             <View style={[styles.statusPill, live && styles.statusPillLive]}>{live ? <View style={styles.liveDot} /> : null}<Text style={styles.statusText}>{event.status.label.toUpperCase()}</Text></View>
             <Text style={styles.heroTour}>{event.tour} · ROUND {event.status.round ?? "—"}</Text>

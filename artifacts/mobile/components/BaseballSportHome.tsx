@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { TeamLogo } from "@/components/GameCard";
-import { SearchButton } from "@/components/SearchButton";
 import { SportFloatingNav, SPORT_NAV_CLEARANCE } from "@/components/SportFloatingNav";
 import { resolveBallparkImage } from "@/constants/ballparks";
 import {
@@ -42,7 +41,6 @@ const P = {
   white: "#FFFFFF",
 };
 
-const BASEBALL = require("../assets/images/baseball-header.png");
 const AWARD_SPRITE = require("../assets/baseball-awards/baseball-awards-collection.png");
 
 type Athlete = {
@@ -58,7 +56,6 @@ type Athlete = {
 interface Props {
   sportName: string;
   accentColor: string;
-  topInset: number;
   games: Game[];
   athletes: Athlete[];
   standings: StandingEntry[];
@@ -306,7 +303,7 @@ function PlayerCard({ player, width, selected, onSelect, onQuickView, onAward }:
   );
 }
 
-export function BaseballSportHome({ sportName, topInset, games, standings, news, leagues, activeLeague, onSelectLeague, gamesLoading }: Props) {
+export function BaseballSportHome({ sportName, games, standings, news, leagues, activeLeague, onSelectLeague, gamesLoading }: Props) {
   const { width } = useWindowDimensions();
   const wide = width >= 720;
   const gutter = wide ? 28 : 16;
@@ -332,17 +329,8 @@ export function BaseballSportHome({ sportName, topInset, games, standings, news,
 
   return (
     <View style={styles.root}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: topInset + 6, paddingBottom: SPORT_NAV_CLEARANCE + 20 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 12, paddingBottom: SPORT_NAV_CLEARANCE + 20 }}>
         <View style={[styles.page, { width: maxWidth }]}>
-          <View style={[styles.header, { paddingHorizontal: gutter }]}>
-            <Pressable onPress={() => router.back()} style={styles.iconButton} hitSlop={10}><Ionicons name="chevron-back" size={22} color={P.ink} /></Pressable>
-            <View pointerEvents="none" style={styles.centerBrand}>
-              <Image source={BASEBALL} style={styles.headerBall} resizeMode="contain" />
-              <Text style={styles.headerTitle}>THE FOURTH QUARTER</Text>
-            </View>
-            <SearchButton />
-          </View>
-
           <View style={[styles.intro, { paddingHorizontal: gutter }]}>
             <Text style={styles.pageTitle}>{sportName}</Text>
             <View style={styles.dateRow}>

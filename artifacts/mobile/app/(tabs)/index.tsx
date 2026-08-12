@@ -18,7 +18,7 @@ import { GameCard, TeamLogo } from "@/components/GameCard";
 import { MomentGraphic } from "@/components/MomentGraphic";
 import { RecapCard } from "@/components/RecapCard";
 import { GameCardSkeleton } from "@/components/LoadingSkeleton";
-import { ProfileButton } from "@/components/ProfileButton";
+import { AppHeader } from "@/components/AppHeader";
 import { goToTeam } from "@/utils/navHelpers";
 import { ALL_TEAMS } from "@/constants/allPlayers";
 import { isTennisLeague, isCombatLeague, isGolfLeague, isRacingLeague, shortAthleteName } from "@/utils/sportArchetype";
@@ -3263,7 +3263,6 @@ export default function HubScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const isWideScreen = screenWidth >= 760;
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
   const todayDate = (() => {
@@ -3343,41 +3342,21 @@ export default function HubScreen() {
 
   return (
     <View style={styles.container}>
+      <AppHeader
+        mode="root"
+        eyebrow="The Fourth Quarter"
+        title={`${getGreeting()}, ${preferences.name ?? "Champ"}.`}
+        subtitle={new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        actions={[
+          { icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() },
+          { text: (preferences.name ?? "U").charAt(0), label: "Profile", onPress: () => router.push("/(tabs)/profile" as any), accentColor: C.accent },
+        ]}
+      />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: botPad }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
       >
-        {/* ── HEADER ── */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{getGreeting()},</Text>
-            <View style={styles.nameRow}>
-              <Text style={styles.name} numberOfLines={1}>{preferences.name ?? "Champ"}</Text>
-              {isHouston && (
-                <View style={styles.teamBadge}><Text style={styles.teamBadgeText}>HOU</Text></View>
-              )}
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            {preferences.appMode === "nerd" && (
-              <View style={styles.nerdBadge}>
-                <Ionicons name="analytics-outline" size={13} color={C.accent} />
-                <Text style={styles.nerdBadgeText}>NERD</Text>
-              </View>
-            )}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Search sports, teams, players, and news"
-              style={({ pressed }) => [styles.searchButton, pressed && styles.headerButtonPressed]}
-              onPress={() => openSearch()}
-            >
-              <Ionicons name="search" size={22} color={C.text} />
-            </Pressable>
-            <ProfileButton />
-          </View>
-        </View>
-
         {/* ── MY TEAMS COMMAND BAR ── */}
         <View style={styles.section}>
           <MyTeamsStrip myTeams={myTeams} allGames={allGames} />

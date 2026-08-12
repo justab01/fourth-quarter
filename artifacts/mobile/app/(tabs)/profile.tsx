@@ -12,7 +12,8 @@ import Colors from "@/constants/colors";
 import { FONTS } from "@/constants/typography";
 import { usePreferences } from "@/context/PreferencesContext";
 import { TEAMS_BY_LEAGUE, SPORTS } from "@/constants/sports";
-import { SearchButton } from "@/components/SearchButton";
+import { AppHeader } from "@/components/AppHeader";
+import { useSearch } from "@/context/SearchContext";
 
 const C = Colors.dark;
 
@@ -126,10 +127,10 @@ const fanS = StyleSheet.create({
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { preferences, setPreferences, savePreferences } = usePreferences();
+  const { openSearch } = useSearch();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(preferences.name);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
   const handleSaveName = async () => {
@@ -172,15 +173,17 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <AppHeader
+        mode="root"
+        eyebrow="The Fourth Quarter"
+        title="Profile"
+        subtitle={`${preferences.name ?? "Sports Fan"} · ${preferences.favoriteTeams.length} teams followed`}
+        actions={[{ icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() }]}
+      />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: botPad }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-          <SearchButton />
-        </View>
-
         {/* AVATAR + NAME CARD */}
         <View style={styles.profileCard}>
           <LinearGradient

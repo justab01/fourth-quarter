@@ -1,19 +1,18 @@
 import React from "react";
-import { ActivityIndicator, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { SportFloatingNav, SPORT_NAV_CLEARANCE } from "@/components/SportFloatingNav";
 import { FONTS } from "@/constants/typography";
 import { api } from "@/utils/api";
+import { AppHeader } from "@/components/AppHeader";
 
 const P = { ink: "#2C3E50", inkDeep: "#1E2D38", paper: "#F4F1EC", pearl: "#E8DED6", sage: "#C8CDC7", green: "#315847", blueGray: "#758789", sand: "#C9B48B", white: "#FFFFFF", muted: "#6C777B", line: "rgba(44,62,80,.14)" };
 
 export default function CourseAtlasRoute() {
   const { id, tour, name, tournament } = useLocalSearchParams<{ id: string; tour?: string; name?: string; tournament?: string }>();
-  const insets = useSafeAreaInsets();
   const { data, isLoading } = useQuery({
     queryKey: ["golf-course-tournament", id, tour],
     queryFn: () => api.getGolfTournament(id!, tour === "LPGA" || tour === "LIV" ? tour : "PGA"),
@@ -26,15 +25,10 @@ export default function CourseAtlasRoute() {
   const eventName = event?.name || tournament || "Current tournament";
 
   return (
-    <View style={[styles.root, { paddingTop: Platform.OS === "web" ? 48 : insets.top }]}>
+    <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
+      <AppHeader mode="destination" theme="light" eyebrow="Golf" title="Course Atlas" subtitle={courseName} onBack={() => router.back()} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPORT_NAV_CLEARANCE + 38 }}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.iconButton}><Ionicons name="chevron-back" size={23} color={P.ink} /></Pressable>
-          <View style={styles.headerCenter}><Text style={styles.headerBrand}>THE FOURTH QUARTER</Text><Text style={styles.headerTitle}>COURSE ATLAS</Text></View>
-          <View style={styles.iconButton}><Ionicons name="compass-outline" size={21} color={P.green} /></View>
-        </View>
-
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>KNOW THE GROUND</Text>
           <Text style={styles.courseName}>{courseName}</Text>

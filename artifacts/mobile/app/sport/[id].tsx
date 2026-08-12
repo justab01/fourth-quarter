@@ -25,7 +25,7 @@ import { GameCard, TeamLogo } from "@/components/GameCard";
 import { BaseballSportHome } from "@/components/BaseballSportHome";
 import GolfSportHome from "@/components/GolfSportHome";
 import { BasketballHub } from "@/components/BasketballHub";
-import { SearchButton } from "@/components/SearchButton";
+import { AppHeader } from "@/components/AppHeader";
 import { GameCardSkeleton, NewsCardSkeleton } from "@/components/LoadingSkeleton";
 import { ALL_PLAYERS } from "@/constants/allPlayers";
 import { getEspnHeadshotUrl } from "@/constants/espnAthleteIds";
@@ -1989,10 +1989,8 @@ export default function SportBoardScreen() {
 
   if (!sport) {
     return (
-      <View style={[styles.root, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color={C.text} />
-        </Pressable>
+      <View style={styles.root}>
+        <AppHeader mode="utility" title="Sport not found" onBack={() => router.back()} />
         <View style={styles.emptyCenter}>
           <Text style={styles.emptyText}>Sport not found</Text>
         </View>
@@ -3367,42 +3365,72 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
   // team-sport layout). Other sports keep the generic render below.
   if (sport?.id === "baseball") {
     return (
-      <BaseballSportHome
-        sportName={sport.name}
-        accentColor={accentColor}
-        topInset={Platform.OS === "web" ? 48 : insets.top}
-        games={nonGolfGames}
-        athletes={topAthletes}
-        standings={standingsData?.standings ?? []}
-        news={filteredNews}
-        leagues={sport.leagues}
-        activeLeague={activeLeague}
-        onSelectLeague={setActiveLeague}
-        gamesLoading={gamesLoading}
-      />
+      <View style={[styles.root, { backgroundColor: Colors.light.background }]}>
+        <StatusBar barStyle="dark-content" />
+        <AppHeader
+          mode="destination"
+          theme="light"
+          eyebrow="Sports"
+          title={sport.name}
+          subtitle={`${nonGolfGames.length} games today · ${liveCount} live`}
+          onBack={() => router.back()}
+          actions={[{ icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() }]}
+        />
+        <BaseballSportHome
+          sportName={sport.name}
+          accentColor={accentColor}
+          games={nonGolfGames}
+          athletes={topAthletes}
+          standings={standingsData?.standings ?? []}
+          news={filteredNews}
+          leagues={sport.leagues}
+          activeLeague={activeLeague}
+          onSelectLeague={setActiveLeague}
+          gamesLoading={gamesLoading}
+        />
+      </View>
     );
   }
 
   if (sport?.id === "golf") {
     return (
-      <GolfSportHome
-        topInset={Platform.OS === "web" ? 48 : insets.top}
-        activeLeague={activeLeague}
-        onSelectLeague={setActiveLeague}
-        home={golfHomeData}
-        schedule={golfScheduleData?.tournaments ?? []}
-        rankings={golfRankingsData?.rankings ?? []}
-        news={filteredNews}
-        loading={golfHomeLoading}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-      />
+      <View style={[styles.root, { backgroundColor: "#F4F1EC" }]}>
+        <StatusBar barStyle="dark-content" />
+        <AppHeader
+          mode="destination"
+          theme="light"
+          eyebrow="Sports"
+          title={sport.name}
+          subtitle={`${liveCount} live ${liveCount === 1 ? "tournament" : "tournaments"}`}
+          onBack={() => router.back()}
+          actions={[{ icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() }]}
+        />
+        <GolfSportHome
+          activeLeague={activeLeague}
+          onSelectLeague={setActiveLeague}
+          home={golfHomeData}
+          schedule={golfScheduleData?.tournaments ?? []}
+          rankings={golfRankingsData?.rankings ?? []}
+          news={filteredNews}
+          loading={golfHomeLoading}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      </View>
     );
   }
 
   return (
-    <View style={[styles.root, { paddingTop: Platform.OS === "web" ? 48 : insets.top }]}>
+    <View style={styles.root}>
       <StatusBar barStyle="light-content" />
+      <AppHeader
+        mode="destination"
+        eyebrow="Sports"
+        title={sport.name}
+        subtitle={`${liveCount} live · ${filteredGames.length} on the board`}
+        onBack={() => router.back()}
+        actions={[{ icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() }]}
+      />
 
       <LinearGradient
         colors={archetypeStyle.heroGradient}
@@ -3412,23 +3440,6 @@ const LEAGUE_CHIP_TO_SEASONAL_LEAGUE: Record<string, string[]> = {
       >
         {/* Sport-specific visual overlay */}
         <SportHeroOverlay sportId={sportId} accentColor={accentColor} />
-
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-            <Ionicons name="chevron-back" size={22} color={C.text} />
-          </Pressable>
-          <View style={styles.headerCenter}>
-            <Text style={styles.heroEmoji}>{sport.emoji}</Text>
-            <Text style={styles.heroTitle}>{sport.name}</Text>
-            {liveCount > 0 && (
-              <View style={styles.liveTag}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveTagText}>{liveCount} Live</Text>
-              </View>
-            )}
-          </View>
-          <SearchButton />
-        </View>
 
         {hasGroups && (
           <ScrollView

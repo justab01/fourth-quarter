@@ -15,8 +15,8 @@ import type { Game } from "@/utils/api";
 import { GameCard, TeamLogo } from "@/components/GameCard";
 import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { usePreferences } from "@/context/PreferencesContext";
-import { SearchButton } from "@/components/SearchButton";
-import { ProfileButton } from "@/components/ProfileButton";
+import { AppHeader } from "@/components/AppHeader";
+import { useSearch } from "@/context/SearchContext";
 import { QuickGamePanel, type QuickGameTab } from "@/components/QuickGamePanel";
 
 const C = Colors.dark;
@@ -1021,6 +1021,7 @@ const SMART_FILTERS: { key: SmartFilterKey; label: string; icon: string; color: 
 export default function LiveScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
+  const { openSearch } = useSearch();
   const params = useLocalSearchParams<{ filter?: string }>();
   const [activeLeague, setActiveLeague] = useState<string>("All");
   const [activeCategory, setActiveCategory] = useState<SportCategoryKey>("all");
@@ -1045,7 +1046,6 @@ export default function LiveScreen() {
     setExpandedGameId(null);
   }, [activeCategory, activeLeague, compactMode, dateOffset, smartFilter]);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
   const dateParam = offsetToYYYYMMDD(dateOffset);
@@ -1170,27 +1170,21 @@ export default function LiveScreen() {
 
   return (
     <View style={styles.container}>
+      <AppHeader
+        mode="root"
+        eyebrow="The Fourth Quarter"
+        title="Scores"
+        subtitle={`${dateOffset === 0 ? `${totalLive} live` : isPastDay ? "Final scores" : "Scheduled matchups"} · ${offsetToDate(dateOffset).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
+        actions={[
+          { icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() },
+          { text: (preferences.name ?? "U").charAt(0), label: "Profile", onPress: () => router.push("/(tabs)/profile" as any), accentColor: C.accent },
+        ]}
+      />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: botPad }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.live} />}
       >
-        {/* ── HEADER (compact: title + inline summary + toggle + search + profile) ── */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Scores</Text>
-            {dateOffset !== 0 && (
-              <Text style={styles.dateHeading}>
-                {isPastDay ? "Final scores" : "Scheduled matchups"} · {offsetToDate(dateOffset).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-              </Text>
-            )}
-          </View>
-          <View style={styles.headerRight}>
-            <SearchButton />
-            <ProfileButton />
-          </View>
-        </View>
-
         <ScoreboardDeck
           topGame={topGame}
           counts={counts}

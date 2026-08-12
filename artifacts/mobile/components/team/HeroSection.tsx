@@ -2,10 +2,9 @@
 
 import React, { useEffect, useRef } from "react";
 import {
-  View, Text, StyleSheet, Pressable, Animated,
+  View, Text, StyleSheet, Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { TeamLogo } from "@/components/GameCard";
@@ -16,10 +15,6 @@ const C = Colors.dark;
 
 interface HeroSectionProps {
   team: TeamData;
-  isFav: boolean;
-  onBack: () => void;
-  onToggleFav: () => void;
-  topPad?: number;
 }
 
 function PersonalityBadgeComponent({ badge, teamColor }: { badge: PersonalityBadge; teamColor: string }) {
@@ -68,7 +63,7 @@ function getRankStyle(rank: string, teamColor: string): { bg: string; gradient?:
   return { bg: "rgba(255,255,255,0.1)", color: C.textSecondary };
 }
 
-export function HeroSection({ team, isFav, onBack, onToggleFav, topPad = 0 }: HeroSectionProps) {
+export function HeroSection({ team }: HeroSectionProps) {
   // Generate personality badge from stats
   const statsMap: Record<string, { value: number; rank: number; total: number }> = {};
   team.stats.forEach(s => {
@@ -85,25 +80,10 @@ export function HeroSection({ team, isFav, onBack, onToggleFav, topPad = 0 }: He
     <LinearGradient
       colors={[team.color, team.color + "99", team.color + "40", C.background]}
       locations={[0, 0.3, 0.6, 1]}
-      style={[styles.container, { paddingTop: topPad }]}
+      style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      {/* Top bar */}
-      <View style={styles.topBar}>
-        <Pressable onPress={onBack} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </Pressable>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Pressable onPress={onToggleFav} style={styles.iconBtn}>
-            <Ionicons name={isFav ? "star" : "star-outline"} size={20} color={isFav ? "#FFD700" : C.text} />
-          </Pressable>
-          <Pressable style={styles.iconBtn}>
-            <Ionicons name="notifications-outline" size={20} color={C.text} />
-          </Pressable>
-        </View>
-      </View>
-
       {/* Team identity */}
       <View style={styles.teamIdentity}>
         <TeamLogo
@@ -172,9 +152,7 @@ export function HeroSection({ team, isFav, onBack, onToggleFav, topPad = 0 }: He
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 16, paddingBottom: 12 },
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  iconBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 9, backgroundColor: "rgba(0,0,0,0.25)" },
+  container: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
   teamIdentity: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   teamName: { color: C.text, fontSize: 22, fontWeight: "900", fontFamily: FONTS.bodyBold },

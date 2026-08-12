@@ -14,13 +14,12 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  Platform,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Colors from "@/constants/colors";
 import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, DraftPick, DraftTeam, DraftProspect, DraftData } from "@/utils/api";
 import { goToTeam } from "@/utils/navHelpers";
+import { AppHeader } from "@/components/AppHeader";
 
 const C = Colors.dark;
 
@@ -47,8 +46,6 @@ type DraftTab = "picks" | "prospects" | "teams";
 export default function DraftScreen() {
   const { league: rawLeague } = useLocalSearchParams<{ league: string }>();
   const league = (rawLeague ?? "NFL").toUpperCase();
-  const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === "web" ? 16 : insets.top;
   const leagueColor = LEAGUE_COLORS[league] ?? C.accent;
 
   const [activeTab, setActiveTab] = useState<DraftTab>("picks");
@@ -74,20 +71,26 @@ export default function DraftScreen() {
 
   if (isLoading) {
     return (
-      <View style={[s.container, { paddingTop: topPad + 60 }]}>
-        <ActivityIndicator size="large" color={leagueColor} />
-        <Text style={s.loadingText}>Loading {league} Draft...</Text>
+      <View style={s.container}>
+        <AppHeader mode="destination" theme="dark" eyebrow={league} title="Draft" onBack={() => router.canGoBack() ? router.back() : router.push("/" as any)} />
+        <View style={s.centerState}>
+          <ActivityIndicator size="large" color={leagueColor} />
+          <Text style={s.loadingText}>Loading {league} Draft...</Text>
+        </View>
       </View>
     );
   }
 
   if (error || !data) {
     return (
-      <View style={[s.container, { paddingTop: topPad + 60 }]}>
-        <Text style={s.errorText}>Failed to load draft data</Text>
-        <Pressable style={s.retryBtn} onPress={() => refetch()}>
-          <Text style={s.retryBtnText}>Retry</Text>
-        </Pressable>
+      <View style={s.container}>
+        <AppHeader mode="destination" theme="dark" eyebrow={league} title="Draft" onBack={() => router.canGoBack() ? router.back() : router.push("/" as any)} />
+        <View style={s.centerState}>
+          <Text style={s.errorText}>Failed to load draft data</Text>
+          <Pressable style={s.retryBtn} onPress={() => refetch()}>
+            <Text style={s.retryBtnText}>Retry</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -101,54 +104,18 @@ export default function DraftScreen() {
 
   return (
     <View style={s.container}>
+      <AppHeader
+        mode="destination"
+        theme="dark"
+        eyebrow={league}
+        title={data.displayName}
+        subtitle={`${statusLabel} · ${data.picks.length} picks · ${data.totalRounds} rounds`}
+        onBack={() => router.canGoBack() ? router.back() : router.push("/" as any)}
+      />
       <LinearGradient
         colors={[`${leagueColor}30`, C.background, C.background]}
-        style={[s.headerGradient, { paddingTop: topPad }]}
+        style={s.headerGradient}
       >
-        <View style={s.headerRow}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.push("/" as any)} style={s.backBtn} hitSlop={12}>
-            <Ionicons name="chevron-back" size={24} color="#FFF" />
-          </Pressable>
-          <View style={s.headerCenter}>
-            <Text style={s.headerEmoji}>{LEAGUE_EMOJI[league] ?? ""}</Text>
-            <View>
-              <Text style={s.headerTitle}>{data.displayName}</Text>
-              <View style={s.statusRow}>
-                <View
-                  style={[
-                    s.statusBadge,
-                    {
-                      backgroundColor:
-                        data.status === "in"
-                          ? C.live
-                          : data.status === "post"
-                            ? C.accentGreen
-                            : `${leagueColor}40`,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      s.statusText,
-                      {
-                        color:
-                          data.status === "in" || data.status === "post"
-                            ? "#FFF"
-                            : leagueColor,
-                      },
-                    ]}
-                  >
-                    {statusLabel}
-                  </Text>
-                </View>
-                <Text style={s.picksCount}>
-                  {data.picks.length} picks {"\u00B7"} {data.totalRounds} rounds
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
         <View style={s.tabBar}>
           {(["picks", "prospects", "teams"] as DraftTab[]).map((tab) => (
             <Pressable
@@ -621,6 +588,7 @@ function getGradeColor(grade: string): string {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
+  centerState: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
   headerGradient: { paddingBottom: 0 },
   headerRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
   backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.glassMedium, alignItems: "center", justifyContent: "center" },

@@ -4,7 +4,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -13,7 +12,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { SearchButton } from "@/components/SearchButton";
 import { SportFloatingNav, SPORT_NAV_CLEARANCE } from "@/components/SportFloatingNav";
 import { FONTS } from "@/constants/typography";
 import { GOLF_CULTURE_CARDS, GOLF_FEATURED_FACES, GOLF_LESSONS, GOLF_STORY_LABELS } from "@/constants/golfHome";
@@ -44,7 +42,6 @@ const P = {
 };
 
 interface Props {
-  topInset: number;
   activeLeague: string;
   onSelectLeague: (key: string) => void;
   home: GolfHomeResponse | undefined;
@@ -538,7 +535,6 @@ function GolfStories({ news }: { news: SportNewsArticle[] }) {
 }
 
 export default function GolfSportHome({
-  topInset,
   activeLeague,
   onSelectLeague,
   home,
@@ -561,24 +557,12 @@ export default function GolfSportHome({
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 
   return (
-    <View style={[styles.root, { paddingTop: topInset }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={styles.root}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, wide && styles.scrollContentWide]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={P.green} />}
       >
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerButton} hitSlop={8} accessibilityLabel="Back">
-            <Ionicons name="chevron-back" size={23} color={P.ink} />
-          </Pressable>
-          <View style={styles.headerIdentity} pointerEvents="none">
-            <Text style={styles.headerBrand}>THE FOURTH QUARTER</Text>
-            <Text style={styles.headerSport}>GOLF</Text>
-          </View>
-          <View style={styles.headerButton}><SearchButton /></View>
-        </View>
-
         <View style={styles.dayRow}>
           <View>
             <Text style={styles.dayText}>{today}</Text>
@@ -653,7 +637,7 @@ export default function GolfSportHome({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: P.paper },
+  root: { flex: 1, width: "100%", alignSelf: "stretch", overflow: "hidden", backgroundColor: P.paper },
   scrollContent: { paddingBottom: SPORT_NAV_CLEARANCE + 38 },
   scrollContentWide: { width: "100%", maxWidth: 1120, alignSelf: "center" },
   header: { height: 68, marginHorizontal: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", position: "relative" },

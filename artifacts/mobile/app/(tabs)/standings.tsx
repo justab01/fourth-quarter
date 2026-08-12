@@ -7,15 +7,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import Colors from "@/constants/colors";
 import { FONTS } from "@/constants/typography";
 import { api, StandingEntry, TournamentRound, TournamentMatchup } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
 import { TeamLogo } from "@/components/GameCard";
-import { SearchButton } from "@/components/SearchButton";
-import { ProfileButton } from "@/components/ProfileButton";
+import { AppHeader } from "@/components/AppHeader";
+import { useSearch } from "@/context/SearchContext";
 
 const C = Colors.dark;
 
@@ -841,6 +841,7 @@ const myTeamS = StyleSheet.create({
 export default function StandingsScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
+  const { openSearch } = useSearch();
   const params = useLocalSearchParams<{ league?: string }>();
 
   const supportedLeagues = STANDING_SPORT_TABS.map((tab) => tab.league);
@@ -855,7 +856,6 @@ export default function StandingsScreen() {
   const [collapsedConfs, setCollapsedConfs] = useState<Set<string>>(new Set());
   const [showTournament, setShowTournament] = useState(true);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
   const { data, isLoading } = useQuery({
@@ -929,20 +929,20 @@ export default function StandingsScreen() {
 
   return (
     <View style={styles.container}>
+      <AppHeader
+        mode="root"
+        eyebrow="The Fourth Quarter"
+        title="Standings"
+        subtitle={`${sportTab.label} · ${selectedStructure} · ${new Date().getFullYear()}`}
+        actions={[
+          { icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() },
+          { text: (preferences.name ?? "U").charAt(0), label: "Profile", onPress: () => router.push("/(tabs)/profile" as any), accentColor: leagueMeta.color },
+        ]}
+      />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: botPad }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Standings</Text>
-            <Text style={styles.subtitle}>{sportTab.label} · {selectedStructure} · {new Date().getFullYear()}</Text>
-          </View>
-          <SearchButton />
-          <ProfileButton />
-        </View>
-
         {/* League tabs */}
         <ScrollView
           horizontal showsHorizontalScrollIndicator={false}

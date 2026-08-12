@@ -23,6 +23,7 @@ import { useGameSocket } from "@/hooks/useGameSocket";
 import { LiveTrackerPanel, computeTrackerState, type TrackerState } from "@/components/LiveTrackerPanel";
 import { BaseballGamecast } from "@/components/BaseballGamecast";
 import type { BaseballHubSection } from "@/components/gamecast/BaseballGameHub";
+import { AppHeader, APP_HEADER_BAR_HEIGHT } from "@/components/AppHeader";
 
 const C = Colors.dark;
 
@@ -235,17 +236,9 @@ export default function GameDetailScreen() {
   const [activeTab, setActiveTab] = useState<GameTab>(normalizeGameTab(tabParam));
   const [isGameHubExpanded, setIsGameHubExpanded] = useState(expandedParam === "1");
   const baseballSection = normalizeBaseballSection(sectionParam);
-  const topPad = Platform.OS === "web"
-    ? (viewportWidth >= 620 ? 52 : 14)
-    : insets.top;
-  const framedWeb = Platform.OS === "web" && viewportWidth >= 620;
-  const appViewportHeight = framedWeb
-    ? Math.min(900, viewportHeight - 28) - 25
-    : viewportHeight;
-  const gameContentWidth = framedWeb
-    ? Math.min(430, viewportWidth - 48) - 14
-    : viewportWidth;
-  const gamecastHeight = Math.max(540, appViewportHeight - topPad - 60);
+  const appViewportHeight = viewportHeight;
+  const gameContentWidth = viewportWidth;
+  const gamecastHeight = Math.max(540, appViewportHeight - insets.top - APP_HEADER_BAR_HEIGHT);
 
   const { data, isLoading } = useQuery({
     queryKey: ["game", id],
@@ -359,33 +352,25 @@ export default function GameDetailScreen() {
     router.setParams({ event: playId ?? undefined });
   }, []);
 
+  const gameStateLabel = isLive ? "LIVE" : isFinished ? "FINAL" : "UPCOMING";
+  const gameHeaderSubtitle = game
+    ? isLive
+      ? [game.quarter, game.timeRemaining].filter(Boolean).join(" · ") || game.statusDetail || "Live now"
+      : isFinished
+        ? game.statusDetail || "Final"
+        : game.statusDetail || (game.startTime ? new Date(game.startTime).toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit" }) : "Scheduled")
+    : "Loading game";
+
   return (
-    <View style={[s.root, { paddingTop: topPad }]}>
-      {/* ── Fixed top nav ──────────────────────────────────────────────────── */}
-      <View style={s.nav}>
-        <Pressable
-          onPress={handleBack}
-          style={s.navBack}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={C.text} />
-        </Pressable>
-        <Text style={s.navTitle} numberOfLines={1}>
-          {game ? `${game.awayTeam} @ ${game.homeTeam}` : "Game Detail"}
-        </Text>
-        <Pressable
-          onPress={handleShare}
-          style={s.navRight}
-          hitSlop={8}
-          disabled={!game}
-          accessibilityRole="button"
-          accessibilityLabel={game ? `Share ${game.awayTeam} at ${game.homeTeam}` : "Share game"}
-        >
-          <Ionicons name="share-outline" size={20} color={C.textSecondary} />
-        </Pressable>
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        mode="destination"
+        eyebrow={game ? `${game.league} · ${gameStateLabel}` : "Game"}
+        title={game ? `${game.awayTeam} at ${game.homeTeam}` : "Game"}
+        subtitle={gameHeaderSubtitle}
+        onBack={handleBack}
+        actions={[{ icon: "share-outline", label: game ? `Share ${game.awayTeam} at ${game.homeTeam}` : "Share game", onPress: handleShare, disabled: !game }]}
+      />
 
       {isLoading || !game ? (
         <View style={s.loading}>

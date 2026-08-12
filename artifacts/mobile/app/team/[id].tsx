@@ -17,6 +17,7 @@ import { StatsTab } from "@/components/team/StatsTab";
 import { RosterTab } from "@/components/team/RosterTab";
 import { StandingsTab } from "@/components/team/StandingsTab";
 import { NewsTab } from "@/components/team/NewsTab";
+import { AppHeader } from "@/components/AppHeader";
 
 const C = Colors.dark;
 
@@ -198,7 +199,6 @@ export default function TeamScreen() {
   const { preferences, savePreferences } = usePreferences();
   const [activeTab, setActiveTab] = useState<Tab>("Scores");
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   // Try static registry first
@@ -297,7 +297,8 @@ export default function TeamScreen() {
   // Loading state
   if (!staticTeam && espnLoading) {
     return (
-      <View style={[styles.container, { paddingTop: topPad }]}>
+      <View style={styles.container}>
+        <AppHeader mode="destination" eyebrow={parsedLeague || "Team"} title="Team" subtitle="Loading team" onBack={() => router.back()} />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
           <ActivityIndicator color={C.accent} size="large" />
         </View>
@@ -308,7 +309,8 @@ export default function TeamScreen() {
   // Not found
   if (!team) {
     return (
-      <View style={[styles.container, { paddingTop: topPad }]}>
+      <View style={styles.container}>
+        <AppHeader mode="destination" eyebrow={parsedLeague || "Team"} title="Team" subtitle="Team unavailable" onBack={() => router.back()} />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator color={C.accent} size="large" />
         </View>
@@ -324,7 +326,6 @@ export default function TeamScreen() {
       setActiveTab={setActiveTab}
       isFav={isFav}
       toggleFav={toggleFav}
-      topPad={topPad}
       botPad={botPad}
     />
   );
@@ -337,11 +338,10 @@ interface TeamPageInnerProps {
   setActiveTab: (t: Tab) => void;
   isFav: boolean;
   toggleFav: () => void;
-  topPad: number;
   botPad: number;
 }
 
-function TeamPageInner({ team, teamForNonScores, activeTab, setActiveTab, isFav, toggleFav, topPad, botPad }: TeamPageInnerProps) {
+function TeamPageInner({ team, teamForNonScores, activeTab, setActiveTab, isFav, toggleFav, botPad }: TeamPageInnerProps) {
   const [heroHeight, setHeroHeight] = useState(280);
   const [tabBarHeight, setTabBarHeight] = useState(48);
   const totalHeaderHeight = heroHeight + tabBarHeight;
@@ -380,42 +380,44 @@ function TeamPageInner({ team, teamForNonScores, activeTab, setActiveTab, isFav,
 
   return (
     <View style={[styles.container, { paddingBottom: botPad }]}>
-      {/* Scrollable tab content sits at the bottom of the stack */}
-      <View style={{ flex: 1 }}>
-        {renderTab()}
+      <AppHeader
+        mode="destination"
+        eyebrow={team.league}
+        title={team.name}
+        subtitle={[team.standing, team.record].filter((value) => value && value !== "—").join(" · ")}
+        onBack={() => router.back()}
+        actions={[{ icon: isFav ? "star" : "star-outline", label: isFav ? `Unfollow ${team.name}` : `Follow ${team.name}`, onPress: toggleFav, selected: isFav, accentColor: team.color }]}
+      />
+      <View style={styles.pageBody}>
+        <View style={{ flex: 1 }}>
+          {renderTab()}
+        </View>
+        <Animated.View
+          pointerEvents="box-none"
+          style={[
+            styles.headerOverlay,
+            { transform: [{ translateY: headerTranslate }] },
+          ]}
+        >
+          <View onLayout={onHeroLayout}>
+            <HeroSection team={teamForNonScores} />
+          </View>
+          <View onLayout={onTabBarLayout}>
+            <TabBar
+              activeTab={activeTab}
+              setActiveTab={handleSetTab}
+              teamColor={teamForNonScores.color}
+            />
+          </View>
+        </Animated.View>
       </View>
-
-      {/* Collapsing header overlays the top — translates up on scroll-down */}
-      <Animated.View
-        pointerEvents="box-none"
-        style={[
-          styles.headerOverlay,
-          { transform: [{ translateY: headerTranslate }] },
-        ]}
-      >
-        <View onLayout={onHeroLayout}>
-          <HeroSection
-            team={teamForNonScores}
-            isFav={isFav}
-            onBack={() => router.back()}
-            onToggleFav={toggleFav}
-            topPad={topPad}
-          />
-        </View>
-        <View onLayout={onTabBarLayout}>
-          <TabBar
-            activeTab={activeTab}
-            setActiveTab={handleSetTab}
-            teamColor={teamForNonScores.color}
-          />
-        </View>
-      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
+  pageBody: { flex: 1, position: "relative" },
   headerOverlay: {
     position: "absolute",
     top: 0,

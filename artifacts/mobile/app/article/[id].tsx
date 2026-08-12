@@ -11,6 +11,7 @@ import Colors from "@/constants/colors";
 import { FONTS, FONT_SIZES } from "@/constants/typography";
 import { api, type NewsArticle } from "@/utils/api";
 import { LEAGUE_COLORS } from "@/constants/sports";
+import { AppHeader } from "@/components/AppHeader";
 
 const C = Colors.dark;
 
@@ -145,7 +146,6 @@ function SportPickerModal({ visible, onClose, onSelect, leagueColor }: {
 export default function ArticleScreen() {
   const { article: articleStr } = useLocalSearchParams<{ article: string }>();
   const insets = useSafeAreaInsets();
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const [activeMode, setActiveMode] = useState<ReadingMode>("original");
@@ -161,12 +161,8 @@ export default function ArticleScreen() {
 
   if (!article) {
     return (
-      <View style={[s.container, { paddingTop: topPad }]}>
-        <View style={s.navBar}>
-          <Pressable onPress={() => router.back()} style={s.backBtn}>
-            <Ionicons name="chevron-back" size={22} color={C.text} />
-          </Pressable>
-        </View>
+      <View style={s.container}>
+        <AppHeader mode="destination" theme="dark" eyebrow="News" title="Story" onBack={() => router.back()} />
         <View style={s.empty}><Text style={s.emptyText}>Article not found</Text></View>
       </View>
     );
@@ -235,14 +231,16 @@ export default function ArticleScreen() {
   const hasImage = !!article.imageUrl && !imageError;
 
   return (
-    <View style={[s.container, { paddingTop: topPad }]}>
-      <View style={s.navBar}>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="chevron-back" size={22} color={C.text} />
-        </Pressable>
-        <Text style={s.navSource}>{article.source}</Text>
-        <View style={{ width: 44 }} />
-      </View>
+    <View style={s.container}>
+      <AppHeader
+        mode="destination"
+        theme="dark"
+        eyebrow={primaryLeague ?? "News"}
+        title="Story"
+        subtitle={`${article.source} · ${readingTime}`}
+        onBack={() => router.back()}
+        actions={[{ icon: "open-outline", label: "Open original article", onPress: () => Linking.openURL(article!.sourceUrl).catch(() => {}) }]}
+      />
 
       <ScrollView
         contentContainerStyle={[s.scroll, { paddingBottom: botPad + 24 }]}

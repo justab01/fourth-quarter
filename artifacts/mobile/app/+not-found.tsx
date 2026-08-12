@@ -1,22 +1,32 @@
-import { Link, Stack } from "expo-router";
+import { Link, router, Stack } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { AppHeader } from "@/components/AppHeader";
+import Colors from "@/constants/colors";
+import { FONTS } from "@/constants/typography";
 
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: "Oops!" }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>This screen doesn&apos;t exist.</Text>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.screen}>
+        <AppHeader mode="utility" theme="dark" eyebrow="Fourth Quarter" title="Page unavailable" onBack={() => router.canGoBack() ? router.back() : router.replace("/" as any)} />
+        <View style={styles.container}>
+          <Text style={styles.title}>This screen doesn&apos;t exist.</Text>
 
-        <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Go to home screen!</Text>
-        </Link>
+          <Link href="/" style={styles.link}>
+            <Text style={styles.linkText}>Go to home</Text>
+          </Link>
+        </View>
       </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.dark.background,
+  },
   container: {
     flex: 1,
     alignItems: "center",
@@ -25,7 +35,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "bold",
+    color: Colors.dark.text,
+    fontFamily: FONTS.bodyBold,
   },
   link: {
     marginTop: 15,
@@ -33,6 +44,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: "#2e78b7",
+    color: Colors.dark.accent,
+    fontFamily: FONTS.bodyBold,
   },
 });

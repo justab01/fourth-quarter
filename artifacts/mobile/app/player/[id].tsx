@@ -25,6 +25,7 @@ import {
 import { api, type AthleteProfile as LiveProfile, type AthleteGameLog, type GameLogEntry, type GameLogSection, type GameLogCategory, type GameLogSectionType } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { goToTeam } from "@/utils/navHelpers";
+import { AppHeader } from "@/components/AppHeader";
 
 // ─── Parse new-format player IDs: "{LEAGUE}-{espnId}" e.g. "NBA-1966" ─────────
 const LIVE_ID_RE = /^(NBA|NFL|MLB|NHL|MLS|WNBA|NCAAB|NCAAF|NCAAW|NCAABB|NCAAHM|NCAAHW|NCAASM|NCAASW|NCAALM|NCAALW|NCAAVW|NCAAWP|NCAAFH|EPL|UCL|LIGA|BUN|SERA|LIG1|NWSL|UEL|UECL|FWCM|EURO|COPA|ATP|WTA|UFC|BELLATOR|PFL|BOXING|PGA|LPGA|LIV|F1|NASCAR|IRL|OLYMPICS|XGAMES)-(\d+)$/i;
@@ -1892,7 +1893,6 @@ export default function PlayerScreen() {
   const [headshotError, setHeadshotError] = useState(false);
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   // ── New-format URL: "{LEAGUE}-{espnId}" → fetch live profile from our API ──
@@ -2026,19 +2026,20 @@ export default function PlayerScreen() {
   // Show loading state only when fetching a live-format ID and nothing loaded yet
   if (liveIdParsed && liveLoading && !player) {
     return (
-      <View style={[styles.container, { paddingTop: topPad, alignItems: "center", justifyContent: "center" }]}>
-        <ActivityIndicator color={C.accent} size="large" />
-        <Text style={{ color: C.textSecondary, fontSize: 14, marginTop: 12 }}>Loading athlete…</Text>
+      <View style={styles.container}>
+        <AppHeader mode="destination" theme="dark" eyebrow={liveLeague ?? "Athlete"} title="Player profile" onBack={() => router.back()} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={C.accent} size="large" />
+          <Text style={{ color: C.textSecondary, fontSize: 14, marginTop: 12 }}>Loading athlete…</Text>
+        </View>
       </View>
     );
   }
 
   if (!player || !team) {
     return (
-      <View style={[styles.container, { paddingTop: topPad }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </Pressable>
+      <View style={styles.container}>
+        <AppHeader mode="destination" theme="dark" eyebrow="Athlete" title="Player profile" onBack={() => router.back()} />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: C.textSecondary, fontSize: 16 }}>Athlete not found</Text>
           <Text style={{ color: C.textTertiary, fontSize: 12, marginTop: 6, textAlign: "center", paddingHorizontal: 32 }}>
@@ -2159,37 +2160,46 @@ export default function PlayerScreen() {
   };
 
   const isCompactHeader = activeTab === "Game Log";
-  const HERO_H = isCompactHeader ? topPad + 72 : topPad + 252;
+  const HERO_H = 252;
 
   return (
     <View style={[styles.container, { paddingBottom: botPad }]}>
-      {/* ── Hero Header — full or compact based on active tab ── */}
-      <View style={[styles.heroContainer, { height: HERO_H }]}>
+      <AppHeader
+        mode="destination"
+        theme="dark"
+        eyebrow={team.league}
+        title={player.name}
+        subtitle={`${team.name} · ${player.position}`}
+        onBack={() => router.back()}
+        actions={[{
+          icon: followed ? "checkmark" : "add",
+          label: followed ? "Following" : "Follow player",
+          onPress: toggleFollow,
+          selected: followed,
+          accentColor: team.color,
+        }]}
+      />
+
+      {/* The Game Log prioritizes the data table; other tabs keep the portrait-led profile hero. */}
+      {!isCompactHeader ? <View style={[styles.heroContainer, { height: HERO_H }]}>
         <LinearGradient
-          colors={isCompactHeader
-            ? [`${team.color}44`, `${team.color}22`, C.background]
-            : [team.color, `${team.color}DD`, `${team.color}88`, C.background]
-          }
+          colors={[team.color, `${team.color}DD`, `${team.color}88`, C.background]}
           style={StyleSheet.absoluteFill}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
-        {!isCompactHeader && (
-          <LinearGradient
-            colors={["transparent", "rgba(12,12,12,0.92)"]}
-            style={[StyleSheet.absoluteFill, { top: "40%" }]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          />
-        )}
+        <LinearGradient
+          colors={["transparent", "rgba(12,12,12,0.92)"]}
+          style={[StyleSheet.absoluteFill, { top: "40%" }]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        />
 
-        {!isCompactHeader && (
-          <Text style={styles.jerseyWatermark} numberOfLines={1}>
-            {player.number ? `#${player.number}` : ""}
-          </Text>
-        )}
+        <Text style={styles.jerseyWatermark} numberOfLines={1}>
+          {player.number ? `#${player.number}` : ""}
+        </Text>
 
-        {!isCompactHeader && (headshotUrl && !headshotError ? (
+        {headshotUrl && !headshotError ? (
           <Image
             source={{ uri: headshotUrl }}
             style={styles.heroHeadshot}
@@ -2200,56 +2210,14 @@ export default function PlayerScreen() {
           <View style={styles.heroAvatarFallback}>
             <Text style={styles.heroAvatarInitial}>{player.name.charAt(0).toUpperCase()}</Text>
           </View>
-        ))}
+        )}
 
-        {isCompactHeader ? (
-          <View style={[compactS.wrap, { top: topPad + 8 }]}>
-            <View style={compactS.left}>
-              <Pressable onPress={() => router.back()} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={22} color="#fff" />
-              </Pressable>
-              {headshotUrl && !headshotError ? (
-                <Image source={{ uri: headshotUrl }} style={compactS.headshot} />
-              ) : (
-                <View style={compactS.avatarFallback}>
-                  <Text style={compactS.avatarInitial}>{player.name.charAt(0)}</Text>
-                </View>
-              )}
-              <View style={compactS.textWrap}>
-                <Text style={compactS.name} numberOfLines={1}>{player.name}</Text>
-                <Text style={compactS.sub}>{team.name} · {team.league}</Text>
-              </View>
-              <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
-            </View>
-            <Pressable
-              onPress={toggleFollow}
-              style={[styles.followBtn, followed && { backgroundColor: team.color }]}
-            >
-              <Ionicons name={followed ? "checkmark" : "add"} size={16} color="#fff" />
-              <Text style={styles.followText}>{followed ? "Following" : "Follow"}</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <View style={[styles.topBar, { top: topPad + 8 }]}>
-              <Pressable onPress={() => router.back()} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={22} color="#fff" />
-              </Pressable>
-              <Pressable
-                onPress={toggleFollow}
-                style={[styles.followBtn, followed && { backgroundColor: team.color }]}
-              >
-                <Ionicons name={followed ? "checkmark" : "add"} size={16} color="#fff" />
-                <Text style={styles.followText}>{followed ? "Following" : "Follow"}</Text>
-              </Pressable>
-            </View>
-            <View style={styles.heroInfo}>
+        <View style={styles.heroInfo}>
               {player.number ? (
                 <View style={[styles.jerseyNumBadge, { backgroundColor: `${team.color}55` }]}>
                   <Text style={styles.jerseyNumText}>#{player.number}</Text>
                 </View>
               ) : null}
-              <Text style={styles.heroName} numberOfLines={2}>{player.name}</Text>
               <Pressable onPress={() => goToTeam(team.name, team.league)}>
                 <Text style={styles.heroTeamLink}>{team.name} · {team.league}</Text>
               </Pressable>
@@ -2261,10 +2229,8 @@ export default function PlayerScreen() {
               <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
                 <RoleBadge position={player.position} league={team.league} group={player.group} color={team.color} />
               </View>
-            </View>
-          </>
-        )}
-      </View>
+        </View>
+      </View> : null}
 
       {/* ── Tab Bar ── */}
       <View style={styles.tabBar}>

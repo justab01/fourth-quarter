@@ -13,8 +13,8 @@ import { api, type NewsArticle } from "@/utils/api";
 import { usePreferences } from "@/context/PreferencesContext";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsCardSkeleton } from "@/components/LoadingSkeleton";
-import { SearchButton } from "@/components/SearchButton";
-import { ProfileButton } from "@/components/ProfileButton";
+import { AppHeader } from "@/components/AppHeader";
+import { useSearch } from "@/context/SearchContext";
 
 const C = Colors.dark;
 
@@ -81,10 +81,10 @@ const nh = StyleSheet.create({
 export default function NewsScreen() {
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
+  const { openSearch } = useSearch();
   const [filter, setFilter] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
   const { data, isLoading, refetch } = useQuery({
@@ -123,31 +123,21 @@ export default function NewsScreen() {
 
   return (
     <View style={styles.container}>
+      <AppHeader
+        mode="root"
+        eyebrow="The Fourth Quarter"
+        title="News"
+        subtitle={`${filtered.length} ${filtered.length === 1 ? "story" : "stories"} · ${filter === "All" ? "All sports" : filter}`}
+        actions={[
+          { icon: "search-outline", label: "Search sports, teams, players, and news", onPress: () => openSearch() },
+          { text: (preferences.name ?? "U").charAt(0), label: "Profile", onPress: () => router.push("/(tabs)/profile" as any), accentColor: C.accent },
+        ]}
+      />
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: botPad }]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>News</Text>
-            <Text style={styles.subtitle}>
-              {filtered.length} {filtered.length === 1 ? "story" : "stories"} · {filter === "All" ? "All sports" : filter}
-            </Text>
-            {filter === "My Teams" && preferences.favoriteTeams.length > 0 && (
-              <View style={styles.personalTag}>
-                <Ionicons name="star" size={11} color={C.accent} />
-                <Text style={styles.personalTagText}>Personalized</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.headerActions}>
-            <SearchButton />
-            <ProfileButton />
-          </View>
-        </View>
-
         {/* Filter chips */}
         <ScrollView
           horizontal

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View, Text, StyleSheet, Modal, TextInput, Pressable,
-  ScrollView, Platform, Animated, Keyboard, ActivityIndicator
+  ScrollView, Animated, Keyboard, ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { FONTS, FONT_SIZES } from "@/constants/typography";
@@ -16,6 +15,7 @@ import { ALL_TEAMS, ALL_PLAYERS, type SearchTeam, type SearchPlayer } from "@/co
 import { TeamLogo } from "@/components/GameCard";
 import { resolveOpponentLogoUrl } from "@/utils/teamLogos";
 import { prettyLeagueLabel } from "@/constants/sportCategories";
+import { AppHeader } from "@/components/AppHeader";
 
 const C = Colors.dark;
 
@@ -126,7 +126,6 @@ const secHead = StyleSheet.create({
 export function SearchModal() {
   const { isOpen, closeSearch, prefill } = useSearch();
   const { preferences } = usePreferences();
-  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const inputRef = useRef<TextInput>(null);
@@ -221,8 +220,6 @@ export function SearchModal() {
   };
   const sortedTeams = [...matchedTeams].sort((a, b) => rankTeam(b) - rankTeam(a));
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
-
   const handleClose = useCallback(() => {
     Keyboard.dismiss();
     closeSearch();
@@ -271,7 +268,8 @@ export function SearchModal() {
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
       </Animated.View>
 
-      <Animated.View style={[styles.sheet, { paddingTop: topPad, transform: [{ translateY: slideAnim }], opacity: opacityAnim }]}>
+      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }], opacity: opacityAnim }]}>
+        <AppHeader mode="utility" theme="dark" eyebrow="Fourth Quarter" title="Search" onBack={handleClose} />
         <View style={styles.searchBar}>
           <View style={styles.searchInput}>
             <Ionicons name="search" size={18} color={C.accent} />
@@ -293,9 +291,6 @@ export function SearchModal() {
               </Pressable>
             )}
           </View>
-          <Pressable onPress={handleClose} style={styles.cancelBtn}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
         </View>
 
         <ScrollView
