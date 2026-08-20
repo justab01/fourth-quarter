@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
-  Pressable, Platform, Animated, type ScrollView as ScrollViewType
+  Pressable, Platform, Animated, useWindowDimensions, type ScrollView as ScrollViewType
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -12,7 +12,7 @@ import { FONTS } from "@/constants/typography";
 import { SPORT_CATEGORIES as MASTER_SPORT_CATEGORIES, type SportCategory as MasterSportCategory, prettyLeagueLabel } from "@/constants/sportCategories";
 import { api } from "@/utils/api";
 import type { Game } from "@/utils/api";
-import { GameCard, TeamLogo } from "@/components/GameCard";
+import { TeamLogo } from "@/components/GameCard";
 import { GameCardSkeleton } from "@/components/LoadingSkeleton";
 import { usePreferences } from "@/context/PreferencesContext";
 import { AppHeader } from "@/components/AppHeader";
@@ -180,6 +180,58 @@ function leagueMatchesCategory(league: string, category: SportCategoryKey): bool
   if (category === "all") return true;
   const normalizedLeague = SUMMER_LEAGUE_CIRCUIT_SET.has(league) ? SUMMER_LEAGUE_FAMILY : league;
   return SCORE_SPORT_CATEGORIES.find(c => c.key === category)?.leagues.includes(normalizedLeague) ?? true;
+}
+
+const SCORE_FAMILY_KEYS = [
+  "baseball",
+  "basketball",
+  "football",
+  "hockey",
+  "soccer",
+  "golf",
+  "tennis",
+  "combat",
+  "motorsports",
+] as const;
+
+type ScoreFamilyKey = "all" | (typeof SCORE_FAMILY_KEYS)[number];
+
+type ScoreFamilyMeta = {
+  key: Exclude<ScoreFamilyKey, "all">;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  accent: string;
+  surface: string;
+  elevated: string;
+  border: string;
+  text: string;
+  muted: string;
+};
+
+const SCORE_FAMILIES: ScoreFamilyMeta[] = [
+  { key: "baseball", label: "Baseball", icon: "baseball-outline", accent: "#C95B4B", surface: "#E7D9C5", elevated: "#F2E8DA", border: "rgba(150,69,55,0.28)", text: "#182B3E", muted: "#695F56" },
+  { key: "basketball", label: "Basketball", icon: "basketball-outline", accent: "#E88A54", surface: "#372B43", elevated: "#4A3244", border: "rgba(232,138,84,0.34)", text: "#FFF3E8", muted: "#CCB6BB" },
+  { key: "football", label: "Football", icon: "american-football-outline", accent: "#B89A6C", surface: "#1B3A31", elevated: "#254238", border: "rgba(184,154,108,0.32)", text: "#F4EEE5", muted: "#B8C5BA" },
+  { key: "hockey", label: "Hockey", icon: "disc-outline", accent: "#6AA7CA", surface: "#DCEBF0", elevated: "#EDF5F6", border: "rgba(74,144,183,0.28)", text: "#142C3D", muted: "#5A7380" },
+  { key: "soccer", label: "Soccer", icon: "football-outline", accent: "#72C685", surface: "#183B32", elevated: "#21463B", border: "rgba(114,198,133,0.30)", text: "#F2F5EC", muted: "#AAC2B2" },
+  { key: "golf", label: "Golf", icon: "flag-outline", accent: "#557563", surface: "#CDD3C9", elevated: "#E7E4DC", border: "rgba(67,100,79,0.25)", text: "#173A31", muted: "#5E7166" },
+  { key: "tennis", label: "Tennis", icon: "tennisball-outline", accent: "#C2D968", surface: "#303820", elevated: "#3A4327", border: "rgba(194,217,104,0.30)", text: "#F5F2E8", muted: "#BEC5A0" },
+  { key: "combat", label: "Combat", icon: "flame-outline", accent: "#D96356", surface: "#271F24", elevated: "#48272D", border: "rgba(217,99,86,0.32)", text: "#FFF1EA", muted: "#C6A6A5" },
+  { key: "motorsports", label: "Motorsports", icon: "car-sport-outline", accent: "#E1B24E", surface: "#1A1D20", elevated: "#332E27", border: "rgba(225,178,78,0.30)", text: "#F7F0E5", muted: "#C0B69D" },
+];
+
+const SCORE_FAMILY_BY_KEY = Object.fromEntries(SCORE_FAMILIES.map((family) => [family.key, family])) as Record<Exclude<ScoreFamilyKey, "all">, ScoreFamilyMeta>;
+
+function scoreFamilyForLeague(league: string): Exclude<ScoreFamilyKey, "all"> | null {
+  const normalized = SUMMER_LEAGUE_CIRCUIT_SET.has(league) ? SUMMER_LEAGUE_FAMILY : league;
+  const sport = MASTER_SPORT_CATEGORIES.find((category) => category.leagues.some((item) => item.key === normalized));
+  return sport && SCORE_FAMILY_KEYS.includes(sport.id as Exclude<ScoreFamilyKey, "all">)
+    ? sport.id as Exclude<ScoreFamilyKey, "all">
+    : null;
+}
+
+function gameMatchesFamily(game: Game, family: ScoreFamilyKey): boolean {
+  return family === "all" || scoreFamilyForLeague(scoreboardLeagueKey(game)) === family;
 }
 
 const STATUS_ORDER: Record<Game["status"], number> = { live: 0, upcoming: 1, finished: 2 };
@@ -754,18 +806,177 @@ const deck = StyleSheet.create({
   topClock: { fontSize: 11, fontFamily: FONTS.bodyHeavy },
 });
 
+function PersonalizedScoreRail({
+  games,
+  favoriteTeams,
+  onGamePress,
+  onManageTeams,
+}: {
+  games: Game[];
+  favoriteTeams: string[];
+  onGamePress: (game: Game) => void;
+  onManageTeams: () => void;
+}) {
+  return (
+    <View style={personalized.section}>
+      <View style={personalized.headingRow}>
+        <View>
+          <Text style={personalized.kicker}>YOUR TEAMS TODAY</Text>
+          <Text style={personalized.sub}>{games.length > 0 ? `${games.length} relevant ${games.length === 1 ? "event" : "events"}` : "Your personal score rail"}</Text>
+        </View>
+        <Pressable onPress={onManageTeams} hitSlop={8} accessibilityRole="button" accessibilityLabel="Manage followed teams">
+          <Text style={personalized.manage}>{favoriteTeams.length > 0 ? "MANAGE" : "FOLLOW TEAMS"}</Text>
+        </Pressable>
+      </View>
+      {games.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={personalized.rail}>
+          {games.slice(0, 5).map((game) => {
+            const isLive = game.status === "live";
+            const favoriteName = favoriteTeams.find((team) => team === game.homeTeam || team === game.awayTeam);
+            const favoriteIsHome = favoriteName === game.homeTeam;
+            const teamLogo = favoriteIsHome ? game.homeTeamLogo : game.awayTeamLogo;
+            const meta = getLeagueMeta(game.league);
+            return (
+              <Pressable
+                key={game.id}
+                onPress={() => onGamePress(game)}
+                style={({ pressed }) => [personalized.tile, { borderColor: `${meta.color}42` }, pressed && personalized.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${favoriteName ?? game.awayTeam} score`}
+              >
+                <View style={[personalized.glow, { backgroundColor: `${meta.color}24` }]} />
+                <TeamLogo uri={teamLogo} name={favoriteName ?? game.awayTeam} size={28} borderColor={`${meta.color}55`} fontSize={8} />
+                <Text style={personalized.team} numberOfLines={1}>{compactTeamName(favoriteName ?? game.awayTeam)}</Text>
+                <Text style={[personalized.state, isLive && { color: C.live }]} numberOfLines={1}>
+                  {isLive ? `● ${game.awayScore ?? "—"}–${game.homeScore ?? "—"}` : formatGameClock(game)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : (
+        <Pressable style={personalized.empty} onPress={onManageTeams} accessibilityRole="button" accessibilityLabel="Follow teams to personalize Scores">
+          <View style={personalized.emptyIcon}><Ionicons name="star-outline" size={18} color={C.accent} /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={personalized.emptyTitle}>Build your personal rail</Text>
+            <Text style={personalized.emptyText}>Follow teams to bring their verified games here.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={15} color={C.textTertiary} />
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const personalized = StyleSheet.create({
+  section: { gap: 8, marginBottom: 10 },
+  headingRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", paddingHorizontal: 2 },
+  kicker: { color: C.accent, fontSize: 9, letterSpacing: 1.2, fontFamily: FONTS.bodyHeavy },
+  sub: { color: C.textTertiary, fontSize: 10, fontFamily: FONTS.bodyMedium, marginTop: 2 },
+  manage: { color: C.textSecondary, fontSize: 9, letterSpacing: 0.8, fontFamily: FONTS.bodyHeavy },
+  rail: { gap: 7, paddingRight: 14 },
+  tile: { width: 91, minHeight: 76, borderRadius: 17, borderWidth: 1, backgroundColor: C.card, padding: 9, overflow: "hidden" },
+  glow: { position: "absolute", width: 58, height: 58, borderRadius: 29, right: -26, top: -25 },
+  team: { color: C.text, fontSize: 11, fontFamily: FONTS.bodyHeavy, marginTop: 5 },
+  state: { color: C.textTertiary, fontSize: 9, fontFamily: FONTS.bodyBold, marginTop: 2 },
+  pressed: { opacity: 0.76, transform: [{ scale: 0.98 }] },
+  empty: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, borderRadius: 17, borderWidth: 1, borderColor: C.cardBorder, backgroundColor: C.card },
+  emptyIcon: { width: 36, height: 36, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: `${C.accent}14` },
+  emptyTitle: { color: C.text, fontSize: 12, fontFamily: FONTS.bodyHeavy },
+  emptyText: { color: C.textTertiary, fontSize: 10, fontFamily: FONTS.bodyMedium, marginTop: 2 },
+});
+
+function GolfTournamentRail({ games, onPress }: { games: Game[]; onPress: (game: Game) => void }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const { width } = useWindowDimensions();
+  const cardWidth = Math.min(318, Math.max(252, width - 60));
+  return (
+    <View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={cardWidth + 9}
+        decelerationRate="fast"
+        contentContainerStyle={golfScores.rail}
+        onMomentumScrollEnd={(event) => setActiveIndex(Math.round(event.nativeEvent.contentOffset.x / (cardWidth + 9)))}
+      >
+        {games.map((game) => {
+          const leaderboard = game.leaderboard ?? [];
+          return (
+            <Pressable key={game.id} onPress={() => onPress(game)} style={({ pressed }) => [golfScores.card, { width: cardWidth }, pressed && { opacity: 0.82 }]} accessibilityRole="button" accessibilityLabel={`Open ${game.eventTitle ?? game.homeTeam}`}>
+              <View style={golfScores.courseTop}>
+                <View style={golfScores.fairwayOne} />
+                <View style={golfScores.fairwayTwo} />
+                <View style={golfScores.flag}><Ionicons name="flag" size={18} color="#F4EEE5" /></View>
+                <View style={golfScores.tourPill}><Text style={golfScores.tourText}>{prettyLeagueLabel(game.league)}</Text></View>
+                <Text style={[golfScores.status, game.status === "live" && { color: C.live }]}>{formatGameClock(game)}</Text>
+              </View>
+              <View style={golfScores.body}>
+                <Text style={golfScores.title} numberOfLines={1}>{game.eventTitle ?? game.homeTeam}</Text>
+                <Text style={golfScores.venue} numberOfLines={1}>{game.venue ?? game.awayTeam}</Text>
+                {leaderboard.length > 0 ? leaderboard.slice(0, 3).map((entry, index) => (
+                  <View key={`${game.id}-${entry.position}-${entry.name}`} style={[golfScores.leader, index > 0 && golfScores.leaderBorder]}>
+                    <Text style={golfScores.position}>{entry.position}</Text>
+                    <TeamLogo uri={entry.headshot ?? null} name={entry.name} size={29} borderColor="rgba(23,58,49,0.16)" fontSize={8} />
+                    <Text style={golfScores.name} numberOfLines={1}>{entry.name}</Text>
+                    <Text style={golfScores.score}>{entry.score}</Text>
+                  </View>
+                )) : (
+                  <View style={golfScores.quiet}><Text style={golfScores.quietText}>Leaderboard data has not been published yet.</Text></View>
+                )}
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      {games.length > 1 && (
+        <View style={golfScores.dots}>{games.map((game, index) => <View key={game.id} style={[golfScores.dot, activeIndex === index && golfScores.dotActive]} />)}</View>
+      )}
+    </View>
+  );
+}
+
+const golfScores = StyleSheet.create({
+  rail: { gap: 9, paddingRight: 28 },
+  card: { borderRadius: 20, overflow: "hidden", backgroundColor: "#E7E4DC", borderWidth: 1, borderColor: "rgba(67,100,79,0.24)" },
+  courseTop: { height: 84, overflow: "hidden", backgroundColor: "#224B3E" },
+  fairwayOne: { position: "absolute", width: 230, height: 96, borderRadius: 90, right: -22, top: 20, backgroundColor: "#58866B", transform: [{ rotate: "-11deg" }] },
+  fairwayTwo: { position: "absolute", width: 102, height: 45, borderRadius: 50, right: 27, top: 31, borderWidth: 2, borderStyle: "dashed", borderColor: "rgba(238,239,220,0.54)" },
+  flag: { position: "absolute", right: 57, top: 22 },
+  tourPill: { position: "absolute", left: 10, top: 10, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: "rgba(16,33,28,0.72)" },
+  tourText: { color: "#DDE8DE", fontSize: 8, letterSpacing: 0.8, fontFamily: FONTS.bodyHeavy },
+  status: { position: "absolute", left: 11, bottom: 10, color: "#DFE9E0", fontSize: 10, fontFamily: FONTS.bodyHeavy },
+  body: { padding: 12 },
+  title: { color: "#173A31", fontSize: 17, fontFamily: FONTS.bodyHeavy },
+  venue: { color: "#687970", fontSize: 10, fontFamily: FONTS.bodyMedium, marginTop: 2, marginBottom: 8 },
+  leader: { minHeight: 42, flexDirection: "row", alignItems: "center", gap: 8 },
+  leaderBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(23,58,49,0.12)" },
+  position: { width: 24, color: "#617169", fontSize: 10, fontFamily: FONTS.bodyHeavy, textAlign: "center" },
+  name: { flex: 1, color: "#173A31", fontSize: 11, fontFamily: FONTS.bodyHeavy },
+  score: { color: "#315D48", fontSize: 15, fontFamily: FONTS.display },
+  quiet: { minHeight: 56, alignItems: "center", justifyContent: "center" },
+  quietText: { color: "#687970", fontSize: 10, fontFamily: FONTS.bodyMedium },
+  dots: { flexDirection: "row", justifyContent: "center", gap: 5, marginTop: 8 },
+  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.20)" },
+  dotActive: { width: 16, backgroundColor: "#7EA18D" },
+});
+
 function CompactScoreRow({
   game,
   isFavorite,
   expanded,
   onToggle,
+  skin,
 }: {
   game: Game;
   isFavorite: boolean;
   expanded: boolean;
   onToggle: () => void;
+  skin?: ScoreFamilyMeta;
 }) {
   const meta = getLeagueMeta(game.league);
+  const rowText = skin?.text ?? C.text;
+  const rowMuted = skin?.muted ?? C.textTertiary;
   const chevronProgress = useRef(new Animated.Value(expanded ? 1 : 0)).current;
   const isLive = game.status === "live";
   const isFinished = game.status === "finished";
@@ -802,14 +1013,14 @@ function CompactScoreRow({
         }],
       }}
     >
-      <Ionicons name="chevron-forward" size={13} color={expanded ? meta.color : C.textTertiary} />
+      <Ionicons name="chevron-forward" size={13} color={expanded ? meta.color : rowMuted} />
     </Animated.View>
   );
 
   if (eventMode) {
     return (
       <Pressable
-        style={({ pressed }) => [compact.row, expanded && compact.rowExpanded, pressed && compact.rowPressed]}
+        style={({ pressed }) => [compact.row, skin && { backgroundColor: skin.elevated }, expanded && compact.rowExpanded, pressed && compact.rowPressed]}
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
@@ -817,17 +1028,17 @@ function CompactScoreRow({
       >
         <View style={[compact.statusRail, { backgroundColor: meta.color }]} />
         <View style={compact.statusCol}>
-          <Text style={[compact.statusText, isLive && { color: C.live }]}>
+          <Text style={[compact.statusText, { color: rowMuted }, isLive && { color: C.live }]}>
             {game.statusDetail ?? (isLive ? "LIVE" : isFinished ? "FINAL" : formatTime(game.startTime))}
           </Text>
-          <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? prettyLeagueLabel(game.league)}</Text>
+          <Text style={[compact.leagueText, { color: rowMuted }]}>{game.competition?.circuitLabel ?? prettyLeagueLabel(game.league)}</Text>
         </View>
         <View style={[compact.icon, { backgroundColor: `${meta.color}18` }]}>
           <Ionicons name={meta.icon} size={14} color={meta.color} />
         </View>
         <View style={compact.eventBody}>
-          <Text style={compact.eventTitle} numberOfLines={1}>{game.eventTitle ?? game.homeTeam}</Text>
-          <Text style={compact.eventMeta} numberOfLines={1}>{game.circuitName ?? game.venue ?? game.awayTeam}</Text>
+          <Text style={[compact.eventTitle, { color: rowText }]} numberOfLines={1}>{game.eventTitle ?? game.homeTeam}</Text>
+          <Text style={[compact.eventMeta, { color: rowMuted }]} numberOfLines={1}>{game.circuitName ?? game.venue ?? game.awayTeam}</Text>
         </View>
         {isFavorite && <Ionicons name="star" size={12} color={C.accentGold} />}
         {chevron}
@@ -837,7 +1048,7 @@ function CompactScoreRow({
 
   return (
     <Pressable
-      style={({ pressed }) => [compact.row, expanded && compact.rowExpanded, pressed && compact.rowPressed]}
+      style={({ pressed }) => [compact.row, skin && { backgroundColor: skin.elevated }, expanded && compact.rowExpanded, pressed && compact.rowPressed]}
       onPress={onToggle}
       accessibilityRole="button"
       accessibilityState={{ expanded }}
@@ -845,28 +1056,28 @@ function CompactScoreRow({
     >
       <View style={[compact.statusRail, { backgroundColor: isLive ? C.live : meta.color }]} />
       <View style={compact.statusCol}>
-        <Text style={[compact.statusText, isLive && { color: C.live }]}>{formatGameClock(game)}</Text>
-        <Text style={compact.leagueText}>{game.competition?.circuitLabel ?? prettyLeagueLabel(game.league)}</Text>
+        <Text style={[compact.statusText, { color: rowMuted }, isLive && { color: C.live }]}>{formatGameClock(game)}</Text>
+        <Text style={[compact.leagueText, { color: rowMuted }]}>{game.competition?.circuitLabel ?? prettyLeagueLabel(game.league)}</Text>
       </View>
       <View style={compact.teams}>
         <View style={compact.teamLine}>
           <TeamLogo uri={game.awayTeamLogo} name={game.awayTeam} size={18} borderColor="rgba(255,255,255,0.10)" fontSize={7} />
-          <Text style={[compact.teamName, awayLost && compact.dimmed]} numberOfLines={1}>
+          <Text style={[compact.teamName, { color: rowText }, awayLost && { color: rowMuted }]} numberOfLines={1}>
             {compactTeamName(game.awayTeam)}
           </Text>
           {shouldShowScore && (
-            <Text style={[compact.score, awayLost && compact.dimmed]}>
+            <Text style={[compact.score, { color: rowText }, awayLost && { color: rowMuted }]}>
               {game.awayScore ?? "—"}
             </Text>
           )}
         </View>
         <View style={compact.teamLine}>
           <TeamLogo uri={game.homeTeamLogo} name={game.homeTeam} size={18} borderColor="rgba(255,255,255,0.10)" fontSize={7} />
-          <Text style={[compact.teamName, homeLost && compact.dimmed]} numberOfLines={1}>
+          <Text style={[compact.teamName, { color: rowText }, homeLost && { color: rowMuted }]} numberOfLines={1}>
             {compactTeamName(game.homeTeam)}
           </Text>
           {shouldShowScore && (
-            <Text style={[compact.score, homeLost && compact.dimmed]}>
+            <Text style={[compact.score, { color: rowText }, homeLost && { color: rowMuted }]}>
               {game.homeScore ?? "—"}
             </Text>
           )}
@@ -972,7 +1183,7 @@ function getScoreboardCounts(games: Game[]) {
   };
 }
 
-function LeagueSectionHeader({ league, games }: { league: string; games: Game[] }) {
+function LeagueSectionHeader({ league, games, family }: { league: string; games: Game[]; family?: ScoreFamilyMeta }) {
   const meta  = getLeagueMeta(league);
   const liveN = games.filter(g => g.status === "live").length;
   const word  = leagueEventWord(league, games.length);
@@ -981,7 +1192,7 @@ function LeagueSectionHeader({ league, games }: { league: string; games: Game[] 
     <View style={secH.row}>
       <View style={[secH.colorBar, { backgroundColor: meta.color }]} />
       <Ionicons name={meta.icon} size={16} color={meta.color} />
-      <Text style={secH.label}>{meta.fullName}</Text>
+      <Text style={[secH.label, family && { color: family.text }]}>{meta.fullName}</Text>
       {liveN > 0 && (
         <View style={secH.livePill}>
           <View style={secH.liveDot} />
@@ -989,7 +1200,7 @@ function LeagueSectionHeader({ league, games }: { league: string; games: Game[] 
         </View>
       )}
       <View style={{ flex: 1 }} />
-      <Text style={secH.gameCount}>{games.length} {word}</Text>
+      <Text style={[secH.gameCount, family && { color: family.muted }]}>{games.length} {word}</Text>
     </View>
   );
 }
@@ -1024,10 +1235,10 @@ export default function LiveScreen() {
   const { openSearch } = useSearch();
   const params = useLocalSearchParams<{ filter?: string }>();
   const [activeLeague, setActiveLeague] = useState<string>("All");
-  const [activeCategory, setActiveCategory] = useState<SportCategoryKey>("all");
+  const [activeFamily, setActiveFamily] = useState<ScoreFamilyKey>("all");
+  const [openFamily, setOpenFamily] = useState<Exclude<ScoreFamilyKey, "all"> | null>("baseball");
   const [smartFilter, setSmartFilter] = useState<SmartFilterKey>("none");
   const [dateOffset, setDateOffset] = useState(0);
-  const [showSportGroups, setShowSportGroups] = useState(false);
 
   // Apply filter from navigation params (e.g., tapping "nail-biters" on Home)
   useEffect(() => {
@@ -1039,12 +1250,11 @@ export default function LiveScreen() {
     }
   }, [params.filter]);
   const [refreshing, setRefreshing] = useState(false);
-  const [compactMode, setCompactMode] = useState(true);
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
   useEffect(() => {
     setExpandedGameId(null);
-  }, [activeCategory, activeLeague, compactMode, dateOffset, smartFilter]);
+  }, [activeFamily, activeLeague, dateOffset, smartFilter]);
 
   const botPad = Platform.OS === "web" ? 34 + 84 : insets.bottom + 72;
 
@@ -1080,7 +1290,6 @@ export default function LiveScreen() {
   }, [data, expandedGameId]);
 
   const myTeams = preferences.favoriteTeams;
-  const nerdMode = preferences.appMode === "nerd";
   const isFav = (g: Game) => myTeams.includes(g.homeTeam) || myTeams.includes(g.awayTeam);
   const totalLive = all.filter(g => g.status === "live").length;
   const activeSmartMeta = SMART_FILTERS.find(f => f.key === smartFilter)!;
@@ -1094,8 +1303,11 @@ export default function LiveScreen() {
     });
     return Array.from(seen);
   }, [all]);
-  const categoryLeagues = allLeagueKeys
-    .filter(league => leagueMatchesCategory(league, activeCategory))
+  const familyLeagues = allLeagueKeys
+    .filter(league => {
+      if (activeFamily === "all") return false;
+      return scoreFamilyForLeague(league) === activeFamily;
+    })
     .sort((a, b) => {
       // Circuits are collapsed into SUMMER_LEAGUE_FAMILY before this runs, so
       // they never appear here — order the family right after NBA.
@@ -1105,8 +1317,7 @@ export default function LiveScreen() {
       if (aIndex >= 0 || bIndex >= 0) return (aIndex >= 0 ? aIndex : 100) - (bIndex >= 0 ? bIndex : 100);
       return 0;
     });
-  const leagueFilters = ["All", ...categoryLeagues];
-  const activeCategoryMeta = SCORE_SPORT_CATEGORIES.find(category => category.key === activeCategory) ?? SCORE_SPORT_CATEGORIES[0];
+  const leagueFilters = ["All", ...familyLeagues];
 
   const myTeamGames = all
     .filter(g => isFav(g))
@@ -1115,16 +1326,8 @@ export default function LiveScreen() {
       if (statusDiff !== 0) return statusDiff;
       return getUrgencyScore(b, myTeams) - getUrgencyScore(a, myTeams);
     });
-  const showPinnedMyTeams = myTeamGames.length > 0
-    && smartFilter === "none"
-    && activeLeague === "All"
-    && activeCategory === "all";
-  const pinnedMyTeamIds = showPinnedMyTeams
-    ? new Set(myTeamGames.map(game => game.id))
-    : null;
-
   let filteredBase: Game[] = activeLeague === "All" ? all : all.filter(g => matchesLeagueFilter(g, activeLeague));
-  filteredBase = filteredBase.filter(g => leagueMatchesCategory(g.league, activeCategory));
+  filteredBase = filteredBase.filter(g => gameMatchesFamily(g, activeFamily));
 
   if (smartFilter === "my-teams") {
     filteredBase = filteredBase.filter(g => isFav(g));
@@ -1144,8 +1347,6 @@ export default function LiveScreen() {
   } else if (smartFilter === "finished") {
     filteredBase = filteredBase.filter(g => g.status === "finished");
   }
-  const counts = getScoreboardCounts(filteredBase);
-
   const leagueList = activeLeague === "All"
     ? Array.from(new Set(filteredBase.map(scoreboardLeagueKey)))
     : [activeLeague as string];
@@ -1154,7 +1355,7 @@ export default function LiveScreen() {
     .map(league => ({
       league,
       games: filteredBase
-        .filter(g => matchesLeagueFilter(g, league) && !pinnedMyTeamIds?.has(g.id))
+        .filter(g => matchesLeagueFilter(g, league))
         .sort((a, b) => {
           const statusDiff = getStatusOrder(a) - getStatusOrder(b);
           if (statusDiff !== 0) return statusDiff;
@@ -1163,10 +1364,43 @@ export default function LiveScreen() {
     }))
     .filter(s => s.games.length > 0);
 
+  const familySections = SCORE_FAMILIES
+    .map((family) => ({
+      family,
+      games: filteredBase
+        .filter((game) => gameMatchesFamily(game, family.key))
+        .sort((a, b) => {
+          const statusDiff = getStatusOrder(a) - getStatusOrder(b);
+          if (statusDiff !== 0) return statusDiff;
+          return getUrgencyScore(b, myTeams) - getUrgencyScore(a, myTeams);
+        }),
+    }))
+    .filter((section) => section.games.length > 0);
+
   const isPastDay  = dateOffset < 0;
   const isFutureDay = dateOffset > 0;
 
-  const topGame = [...filteredBase].sort((a, b) => getUrgencyScore(b, myTeams) - getUrgencyScore(a, myTeams))[0] ?? null;
+  const renderCompactRows = (games: Game[], skin?: ScoreFamilyMeta) => (
+    <View style={[styles.listCard, styles.compactListCard, skin && { backgroundColor: skin.elevated, borderColor: skin.border }]}>
+      {games.map((game, index) => (
+        <View key={game.id}>
+          {index > 0 && <View style={styles.rowDivider} />}
+          <View style={isRivalry(game.homeTeam, game.awayTeam) ? styles.rivalryRow : undefined}>
+            <CompactScoreRow
+              game={game}
+              isFavorite={isFav(game)}
+              expanded={expandedGameId === game.id}
+              onToggle={() => toggleQuickView(game.id)}
+              skin={skin}
+            />
+            {expandedGameId === game.id && (
+              <QuickGamePanel game={game} accentColor={getLeagueMeta(game.league).color} onOpenTab={(tab) => openGameTab(game.id, tab)} />
+            )}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -1185,13 +1419,11 @@ export default function LiveScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.live} />}
       >
-        <ScoreboardDeck
-          topGame={topGame}
-          counts={counts}
-          dateOffset={dateOffset}
-          compactMode={compactMode}
-          setCompactMode={setCompactMode}
+        <PersonalizedScoreRail
+          games={myTeamGames}
+          favoriteTeams={myTeams}
           onGamePress={(game) => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
+          onManageTeams={() => router.push("/(tabs)/profile" as any)}
         />
 
         {/* ── CALENDAR DATE STRIP ── */}
@@ -1218,344 +1450,150 @@ export default function LiveScreen() {
                 </Pressable>
               );
             })}
-            <Pressable
-              onPress={() => setShowSportGroups(value => !value)}
-              hitSlop={COMPACT_CONTROL_HIT_SLOP}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: showSportGroups, selected: activeCategory !== "all" }}
-              accessibilityLabel="Choose sports group"
-            >
-              <View style={[styles.smartChip, (showSportGroups || activeCategory !== "all") && { borderColor: C.accent, backgroundColor: `${C.accent}16` }]}>
-                <Ionicons name={showSportGroups ? "chevron-up" : "options-outline"} size={13} color={(showSportGroups || activeCategory !== "all") ? C.accent : C.textTertiary} />
-                <Text style={[styles.smartChipText, (showSportGroups || activeCategory !== "all") && { color: C.accent }]}>
-                  {activeCategory === "all" ? "Sports" : activeCategoryMeta.label}
-                </Text>
-              </View>
-            </Pressable>
           </ScrollView>
 
-          {showSportGroups && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRail}>
-              {SCORE_SPORT_CATEGORIES.map(category => {
-                const active = activeCategory === category.key;
-                const count = category.key === "all"
-                  ? all.length
-                  : all.filter(game => leagueMatchesCategory(game.league, category.key)).length;
-                if (category.key !== "all" && count === 0) return null;
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRail}>
+            <Pressable
+              onPress={() => { setActiveFamily("all"); setActiveLeague("All"); }}
+              hitSlop={COMPACT_CONTROL_HIT_SLOP}
+              accessibilityRole="button"
+              accessibilityState={{ selected: activeFamily === "all" }}
+              accessibilityLabel="Show all sports scores"
+            >
+              <View style={[styles.categoryChip, activeFamily === "all" && styles.categoryChipActive]}>
+                <Ionicons name="grid-outline" size={13} color={activeFamily === "all" ? C.accent : C.textTertiary} />
+                <Text style={[styles.categoryText, activeFamily === "all" && { color: C.accent }]}>All Sports</Text>
+              </View>
+            </Pressable>
+            {SCORE_FAMILIES.map((family) => {
+              const active = activeFamily === family.key;
+              const count = all.filter((game) => gameMatchesFamily(game, family.key)).length;
+              if (count === 0) return null;
+              return (
+                <Pressable
+                  key={family.key}
+                  onPress={() => { setActiveFamily(family.key); setActiveLeague("All"); setOpenFamily(family.key); }}
+                  hitSlop={COMPACT_CONTROL_HIT_SLOP}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`Show ${family.label} scores`}
+                >
+                  <View style={[styles.categoryChip, active && { backgroundColor: `${family.accent}20`, borderColor: `${family.accent}66` }]}>
+                    <Ionicons name={family.icon} size={13} color={active ? family.accent : C.textTertiary} />
+                    <Text style={[styles.categoryText, active && { color: family.accent }]}>{family.label}</Text>
+                    <Text style={[styles.categoryCount, active && { color: family.accent }]}>{count}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {activeFamily !== "all" && leagueFilters.length > 2 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow} style={styles.filterChipScroll}>
+              {leagueFilters.map(league => {
+                const active = activeLeague === league;
+                const meta = league === "All" ? null : getLeagueMeta(league);
+                const familyMeta = SCORE_FAMILY_BY_KEY[activeFamily];
+                const color = league === "All" ? familyMeta.accent : (meta?.color ?? familyMeta.accent);
+                const familyGames = all.filter((game) => gameMatchesFamily(game, activeFamily));
+                const leagueGames = league === "All" ? familyGames : familyGames.filter((game) => matchesLeagueFilter(game, league));
+                const count = leagueGames.length;
+                const liveCount = leagueGames.filter(game => game.status === "live").length;
+                const chipLabel = league === SUMMER_LEAGUE_FAMILY ? "Summer League" : league === "All" ? `All ${familyMeta.label}` : prettyLeagueLabel(league);
+                if (league !== "All" && count === 0) return null;
                 return (
-                  <Pressable
-                    key={category.key}
-                    onPress={() => { setActiveCategory(category.key); setActiveLeague("All"); setShowSportGroups(false); }}
-                    hitSlop={COMPACT_CONTROL_HIT_SLOP}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                    accessibilityLabel={`Show ${category.label} scores`}
-                  >
-                    <View style={[styles.categoryChip, active && styles.categoryChipActive]}>
-                      <Ionicons name={category.icon} size={13} color={active ? C.accent : C.textTertiary} />
-                      <Text style={[styles.categoryText, active && { color: C.accent }]}>{category.label}</Text>
-                      <Text style={[styles.categoryCount, active && { color: C.accent }]}>{count}</Text>
+                  <Pressable key={league} onPress={() => setActiveLeague(league)} hitSlop={COMPACT_CONTROL_HIT_SLOP} accessibilityRole="button" accessibilityLabel={`Show ${chipLabel} scores`} accessibilityState={{ selected: active }}>
+                    <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}1A` }]}>
+                      <Ionicons name={meta?.icon ?? "layers-outline"} size={12} color={active ? color : C.textTertiary} />
+                      <Text style={[styles.chipText, active && { color }]}>{chipLabel}</Text>
+                      {liveCount > 0 ? (
+                        <View style={[styles.chipLive, active && { backgroundColor: `${color}40` }]}><View style={[styles.chipLiveDot, { backgroundColor: active ? color : C.live }]} /><Text style={[styles.chipLiveText, active && { color }]}>{liveCount}</Text></View>
+                      ) : league !== "All" ? (
+                        <View style={[styles.chipCount, active && { backgroundColor: `${color}30` }]}><Text style={[styles.chipCountText, active && { color }]}>{count}</Text></View>
+                      ) : null}
                     </View>
                   </Pressable>
                 );
               })}
             </ScrollView>
           )}
-
-          <ScrollView
-            horizontal showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-            style={styles.filterChipScroll}
-          >
-            {leagueFilters.map(league => {
-              const active = activeLeague === league;
-              const meta = league === "All" ? null : getLeagueMeta(league);
-              const color = league === "All" ? C.accent : (meta?.color ?? C.accent);
-              const categoryGames = all.filter(g => leagueMatchesCategory(g.league, activeCategory));
-              const leagueGames = league === "All" ? categoryGames : all.filter(g => matchesLeagueFilter(g, league));
-              const count = leagueGames.length;
-              const liveCount = leagueGames.filter(g => g.status === "live").length;
-              // Circuits are collapsed into the family above, so the family chip
-              // covers all of Vegas / California / Salt Lake under one label.
-              const chipLabel = league === SUMMER_LEAGUE_FAMILY
-                ? "Summer League"
-                : prettyLeagueLabel(league);
-
-              if (league !== "All" && count === 0) return null;
-
-              return (
-                <Pressable
-                  key={league}
-                  onPress={() => setActiveLeague(league)}
-                  hitSlop={COMPACT_CONTROL_HIT_SLOP}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Show ${meta?.fullName ?? league} scores`}
-                  accessibilityState={{ selected: active }}
-                >
-                  <View style={[styles.chip, active && { borderColor: color, backgroundColor: `${color}1A` }]}>
-                    {meta?.icon ? (
-                      <Ionicons name={meta.icon} size={12} color={active ? color : C.textTertiary} />
-                    ) : league === "All" ? (
-                      <Ionicons name="grid" size={11} color={active ? color : C.textTertiary} />
-                    ) : null}
-                    <Text style={[styles.chipText, active && { color }]}>{chipLabel}</Text>
-                    {liveCount > 0 ? (
-                      <View style={[styles.chipLive, active && { backgroundColor: `${color}40` }]}>
-                        <View style={[styles.chipLiveDot, { backgroundColor: active ? color : C.live }]} />
-                        <Text style={[styles.chipLiveText, active && { color }]}>{liveCount}</Text>
-                      </View>
-                    ) : count > 0 && league !== "All" ? (
-                      <View style={[styles.chipCount, active && { backgroundColor: `${color}30` }]}>
-                        <Text style={[styles.chipCountText, active && { color }]}>{count}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
         </View>
 
-        {/* ── GAME SECTIONS ── */}
+        {/* ── SPORT-NATIVE SCORE BOARD ── */}
         {isLoading ? (
-          <View style={styles.list}>
-            {[1, 2, 3].map(i => <GameCardSkeleton key={i} />)}
-          </View>
+          <View style={styles.list}>{[1, 2, 3].map(i => <GameCardSkeleton key={i} />)}</View>
         ) : isError ? (
           <View style={styles.empty}>
             <Ionicons name="cloud-offline-outline" size={52} color={C.textTertiary} />
             <Text style={styles.emptyTitle}>Scores unavailable</Text>
-            <Text style={styles.emptyText}>
-              Live sports data could not be reached. Check your connection and try again.
-            </Text>
-            <Pressable
-              style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]}
-              onPress={() => void refetch()}
-              accessibilityRole="button"
-              accessibilityLabel="Try loading scores again"
-            >
-              <Ionicons name="refresh" size={15} color="#fff" />
-              <Text style={styles.retryText}>Try again</Text>
+            <Text style={styles.emptyText}>Live sports data could not be reached. Check your connection and try again.</Text>
+            <Pressable style={({ pressed }) => [styles.retryBtn, pressed && styles.retryBtnPressed]} onPress={() => void refetch()} accessibilityRole="button" accessibilityLabel="Try loading scores again">
+              <Ionicons name="refresh" size={15} color="#fff" /><Text style={styles.retryText}>Try again</Text>
             </Pressable>
           </View>
-        ) : showPinnedMyTeams ? (
-          <View style={styles.sections}>
-            {/* ── MY TEAMS pinned section ── */}
-            <View style={styles.section}>
-              <View style={styles.myTeamsHeader}>
-                <Ionicons name="star" size={12} color={C.accentGold} />
-                <Text style={styles.myTeamsTitle}>MY TEAMS</Text>
-                <View style={styles.myTeamsLiveBadge}>
-                  {myTeamGames.some(g => g.status === "live") && (
-                    <>
-                      <PulsingLiveDot />
-                      <Text style={styles.myTeamsLiveText}>{myTeamGames.filter(g => g.status === "live").length} LIVE</Text>
-                    </>
-                  )}
-                </View>
-              </View>
-              <View style={[styles.listCard, compactMode && styles.compactListCard]}>
-                {myTeamGames.map((game, idx) => {
-                  const tags = getImportanceTags(game, myTeams);
-                  const hasRivalry = isRivalry(game.homeTeam, game.awayTeam);
-                  return (
-                    <View key={game.id}>
-                      {idx > 0 && <View style={styles.rowDivider} />}
-                      <View style={[hasRivalry && styles.rivalryRow]}>
-                        {compactMode ? (
-                          <>
-                            <CompactScoreRow
-                              game={game}
-                              isFavorite={true}
-                              expanded={expandedGameId === game.id}
-                              onToggle={() => toggleQuickView(game.id)}
-                            />
-                            {expandedGameId === game.id && (
-                              <QuickGamePanel
-                                game={game}
-                                accentColor={getLeagueMeta(game.league).color}
-                                onOpenTab={(tab) => openGameTab(game.id, tab)}
-                              />
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <ImportanceTags tags={tags} />
-                            <GameCard
-                              game={game}
-                              isFavorite={true}
-                              grouped
-                              nerdMode={nerdMode}
-                              variant="default"
-                              onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
-                            />
-                          </>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* ── Rest of league sections ── */}
-            {leagueSections.map(({ league, games }) => (
-              <View key={league} style={styles.section}>
-                <LeagueSectionHeader league={league} games={games} />
-                <View style={[styles.listCard, compactMode && styles.compactListCard]}>
-                  {games.map((game, idx) => {
-                    const tags = getImportanceTags(game, myTeams);
-                    const hasRivalry = isRivalry(game.homeTeam, game.awayTeam);
-                    return (
-                      <View key={game.id}>
-                        {idx > 0 && <View style={styles.rowDivider} />}
-                        <View style={[hasRivalry && styles.rivalryRow]}>
-                          {compactMode ? (
-                            <>
-                              <CompactScoreRow
-                                game={game}
-                                isFavorite={isFav(game)}
-                                expanded={expandedGameId === game.id}
-                                onToggle={() => toggleQuickView(game.id)}
-                              />
-                              {expandedGameId === game.id && (
-                                <QuickGamePanel
-                                  game={game}
-                                  accentColor={getLeagueMeta(game.league).color}
-                                  onOpenTab={(tab) => openGameTab(game.id, tab)}
-                                />
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <ImportanceTags tags={tags} />
-                              <GameCard
-                                game={game}
-                                isFavorite={isFav(game)}
-                                grouped
-                                nerdMode={nerdMode}
-                                variant="default"
-                                onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
-                              />
-                            </>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            ))}
-            {dateOffset !== 0 && (
-              <Pressable
-                style={styles.backTodayBtn}
-                onPress={() => setDateOffset(0)}
-                accessibilityRole="button"
-                accessibilityLabel="Back to today"
-              >
-                <Ionicons name="today-outline" size={14} color="#fff" />
-                <Text style={styles.backTodayText}>Back to Today</Text>
-              </Pressable>
-            )}
-          </View>
-        ) : leagueSections.length === 0 ? (
+        ) : filteredBase.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name={isFutureDay ? "calendar-outline" : "tv-outline"} size={52} color={C.textTertiary} />
-            <Text style={styles.emptyTitle}>
-              {isFutureDay ? "Nothing Scheduled" : isPastDay ? "No Games Played" : smartFilter !== "none" ? "No Matches" : "No Games Today"}
-            </Text>
-            <Text style={styles.emptyText}>
-              {smartFilter !== "none"
-                ? `No games match the "${activeSmartMeta.label}" filter`
-                : isFutureDay
-                  ? "No events are scheduled for this day yet"
-                  : isPastDay
-                    ? "No games were played on this day"
-                    : "Check back for live matchups"}
-            </Text>
-            {dateOffset !== 0 && (
-              <Pressable
-                style={styles.backTodayBtn}
-                onPress={() => setDateOffset(0)}
-                accessibilityRole="button"
-                accessibilityLabel="Back to today"
-              >
-                <Ionicons name="today-outline" size={14} color="#fff" />
-                <Text style={styles.backTodayText}>Back to Today</Text>
-              </Pressable>
-            )}
+            <Text style={styles.emptyTitle}>{isFutureDay ? "Nothing Scheduled" : isPastDay ? "No Games Played" : smartFilter !== "none" ? "No Matches" : "No Games Today"}</Text>
+            <Text style={styles.emptyText}>{smartFilter !== "none" ? `No games match the "${activeSmartMeta.label}" filter` : isFutureDay ? "No events are scheduled for this day yet" : isPastDay ? "No games were played on this day" : "Check back for verified matchups"}</Text>
+          </View>
+        ) : activeFamily === "all" ? (
+          <View style={styles.familySections}>
+            <View style={styles.boardHeading}>
+              <View><Text style={styles.boardKicker}>ALL SPORTS</Text><Text style={styles.boardTitle}>Choose a sport. Stay in the flow.</Text></View>
+              <Text style={styles.boardCount}>{familySections.length} sports</Text>
+            </View>
+            {familySections.map(({ family, games }) => {
+              const open = openFamily === family.key;
+              const liveCount = games.filter((game) => game.status === "live").length;
+              const previewGames = games.slice(0, 5);
+              return (
+                <View key={family.key} style={[styles.familyAccordion, { backgroundColor: family.surface, borderColor: family.border }]}>
+                  <Pressable onPress={() => setOpenFamily(open ? null : family.key)} style={styles.familyAccordionHead} accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`${open ? "Collapse" : "Expand"} ${family.label} scores`}>
+                    <View style={[styles.familyIcon, { backgroundColor: family.elevated }]}><Ionicons name={family.icon} size={16} color={family.accent} /></View>
+                    <View style={{ flex: 1 }}><Text style={[styles.familyName, { color: family.text }]}>{family.label}</Text><Text style={[styles.familySub, { color: family.muted }]}>{games.length} {family.key === "golf" ? "tournaments" : family.key === "tennis" ? "matches" : family.key === "combat" ? "bouts" : "games"} today</Text></View>
+                    {liveCount > 0 && <Text style={[styles.familyLive, { color: family.key === "baseball" || family.key === "hockey" || family.key === "golf" ? "#198456" : C.live }]}>{liveCount} LIVE</Text>}
+                    <Ionicons name={open ? "chevron-down" : "chevron-forward"} size={16} color={family.muted} />
+                  </Pressable>
+                  {open && (
+                    <View style={styles.familyAccordionBody}>
+                      {family.key === "golf" ? <GolfTournamentRail games={games} onPress={(game) => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)} /> : renderCompactRows(previewGames, family)}
+                      <Pressable style={styles.openFamilyButton} onPress={() => { setActiveFamily(family.key); setActiveLeague("All"); }} accessibilityRole="button" accessibilityLabel={`Open full ${family.label} scores board`}>
+                        <Text style={[styles.openFamilyText, { color: family.accent }]}>{games.length > 5 ? `SEE ALL ${games.length} ${family.label.toUpperCase()} EVENTS` : `OPEN FULL ${family.label.toUpperCase()} BOARD`}</Text>
+                        <Ionicons name="arrow-forward" size={14} color={family.accent} />
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </View>
         ) : (
-          <View style={styles.sections}>
-            {leagueSections.map(({ league, games }) => (
-              <View key={league} style={styles.section}>
-                <LeagueSectionHeader league={league} games={games} />
-                <View style={[styles.listCard, compactMode && styles.compactListCard]}>
-                  {games.map((game, idx) => {
-                    const tags = getImportanceTags(game, myTeams);
-                    const hasRivalry = isRivalry(game.homeTeam, game.awayTeam);
-                    return (
-                      <View key={game.id}>
-                        {idx > 0 && <View style={styles.rowDivider} />}
-                        <View style={[hasRivalry && styles.rivalryRow]}>
-                        {compactMode ? (
-                          <>
-                            <CompactScoreRow
-                              game={game}
-                              isFavorite={isFav(game)}
-                              expanded={expandedGameId === game.id}
-                              onToggle={() => toggleQuickView(game.id)}
-                            />
-                            {expandedGameId === game.id && (
-                              <QuickGamePanel
-                                game={game}
-                                accentColor={getLeagueMeta(game.league).color}
-                                onOpenTab={(tab) => openGameTab(game.id, tab)}
-                              />
-                            )}
-                          </>
-                          ) : (
-                            <>
-                              <ImportanceTags tags={tags} />
-                              <GameCard
-                                game={game}
-                                isFavorite={isFav(game)}
-                                grouped
-                                nerdMode={nerdMode}
-                                variant="default"
-                                onPress={() => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)}
-                              />
-                            </>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
+          <View style={[styles.selectedBoard, { backgroundColor: SCORE_FAMILY_BY_KEY[activeFamily].surface, borderColor: SCORE_FAMILY_BY_KEY[activeFamily].border }]}>
+            <View style={styles.selectedBoardHead}>
+              <View><Text style={[styles.selectedKicker, { color: SCORE_FAMILY_BY_KEY[activeFamily].accent }]}>{activeLeague === "All" ? `${SCORE_FAMILY_BY_KEY[activeFamily].label.toUpperCase()} SCORES` : prettyLeagueLabel(activeLeague).toUpperCase()}</Text><Text style={[styles.selectedTitle, { color: SCORE_FAMILY_BY_KEY[activeFamily].text }]}>{SCORE_FAMILY_BY_KEY[activeFamily].label}, built like {SCORE_FAMILY_BY_KEY[activeFamily].label.toLowerCase()}.</Text></View>
+              <Text style={[styles.selectedCount, { color: SCORE_FAMILY_BY_KEY[activeFamily].muted }]}>{filteredBase.length} events</Text>
+            </View>
+            {activeFamily === "golf" ? (
+              <GolfTournamentRail games={filteredBase} onPress={(game) => router.push({ pathname: "/game/[id]", params: { id: game.id } } as any)} />
+            ) : (
+              <View style={styles.selectedLeagueSections}>
+                {leagueSections.map(({ league, games }) => (
+                  <View key={league} style={styles.section}>
+                    <LeagueSectionHeader league={league} games={games} family={SCORE_FAMILY_BY_KEY[activeFamily]} />
+                    {renderCompactRows(games, SCORE_FAMILY_BY_KEY[activeFamily])}
+                  </View>
+                ))}
               </View>
-            ))}
-            {dateOffset !== 0 && (
-              <Pressable
-                style={styles.backTodayBtn}
-                onPress={() => setDateOffset(0)}
-                accessibilityRole="button"
-                accessibilityLabel="Back to today"
-              >
-                <Ionicons name="today-outline" size={14} color="#fff" />
-                <Text style={styles.backTodayText}>Back to Today</Text>
-              </Pressable>
             )}
           </View>
         )}
 
-        <ScoreEventRail
-          activeCategory={activeCategory}
-          onSelectCategory={(category) => {
-            setActiveCategory(category);
-            setActiveLeague("All");
-            setShowSportGroups(false);
-          }}
-        />
+        {dateOffset !== 0 && (
+          <Pressable style={styles.backTodayBtn} onPress={() => setDateOffset(0)} accessibilityRole="button" accessibilityLabel="Back to today">
+            <Ionicons name="today-outline" size={14} color="#fff" /><Text style={styles.backTodayText}>Back to Today</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </View>
   );
@@ -1654,6 +1692,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5, paddingVertical: 1, minWidth: 18, alignItems: "center",
   },
   chipCountText: { fontSize: 10, fontWeight: "800", color: C.textTertiary, fontFamily: FONTS.bodyBold },
+
+  boardHeading: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", paddingHorizontal: 2, marginBottom: 2 },
+  boardKicker: { color: C.textTertiary, fontSize: 9, letterSpacing: 1.05, fontFamily: FONTS.bodyHeavy },
+  boardTitle: { color: C.text, fontSize: 18, lineHeight: 22, fontFamily: FONTS.bodyHeavy, marginTop: 2 },
+  boardCount: { color: C.textTertiary, fontSize: 10, fontFamily: FONTS.bodyBold },
+  familySections: { gap: 8, paddingVertical: 4 },
+  familyAccordion: { borderRadius: 19, borderWidth: 1, overflow: "hidden" },
+  familyAccordionHead: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 10, paddingVertical: 8 },
+  familyIcon: { width: 34, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  familyName: { fontSize: 13, fontFamily: FONTS.bodyHeavy },
+  familySub: { fontSize: 9, fontFamily: FONTS.bodyMedium, marginTop: 2 },
+  familyLive: { fontSize: 9, letterSpacing: 0.5, fontFamily: FONTS.bodyHeavy },
+  familyAccordionBody: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(38,48,55,0.14)", padding: 6, gap: 6 },
+  openFamilyButton: { minHeight: 42, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(38,48,55,0.14)" },
+  openFamilyText: { fontSize: 9, letterSpacing: 0.6, fontFamily: FONTS.bodyHeavy },
+  selectedBoard: { borderRadius: 22, borderWidth: 1, padding: 9, marginTop: 3, overflow: "hidden" },
+  selectedBoardHead: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 10, paddingHorizontal: 3, paddingVertical: 5, marginBottom: 5 },
+  selectedKicker: { fontSize: 9, letterSpacing: 1.05, fontFamily: FONTS.bodyHeavy },
+  selectedTitle: { fontSize: 18, lineHeight: 22, fontFamily: FONTS.bodyHeavy, marginTop: 2 },
+  selectedCount: { fontSize: 10, fontFamily: FONTS.bodyBold, paddingBottom: 2 },
+  selectedLeagueSections: { gap: 11 },
 
   sections: { gap: 11, paddingVertical: 5 },
   section: { gap: 7 },
