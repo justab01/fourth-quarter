@@ -1499,7 +1499,7 @@ export default function LiveScreen() {
                 const leagueGames = league === "All" ? familyGames : familyGames.filter((game) => matchesLeagueFilter(game, league));
                 const count = leagueGames.length;
                 const liveCount = leagueGames.filter(game => game.status === "live").length;
-                const chipLabel = league === SUMMER_LEAGUE_FAMILY ? "Summer League" : league === "All" ? `All ${familyMeta.label}` : prettyLeagueLabel(league);
+                const chipLabel = league === SUMMER_LEAGUE_FAMILY ? "Summer League" : league === "All" ? `All ${familyMeta.label}` : getLeagueMeta(league).fullName;
                 if (league !== "All" && count === 0) return null;
                 return (
                   <Pressable key={league} onPress={() => setActiveLeague(league)} hitSlop={COMPACT_CONTROL_HIT_SLOP} accessibilityRole="button" accessibilityLabel={`Show ${chipLabel} scores`} accessibilityState={{ selected: active }}>
@@ -1571,7 +1571,7 @@ export default function LiveScreen() {
         ) : (
           <View style={[styles.selectedBoard, { backgroundColor: SCORE_FAMILY_BY_KEY[activeFamily].surface, borderColor: SCORE_FAMILY_BY_KEY[activeFamily].border }]}>
             <View style={styles.selectedBoardHead}>
-              <View><Text style={[styles.selectedKicker, { color: SCORE_FAMILY_BY_KEY[activeFamily].accent }]}>{activeLeague === "All" ? `${SCORE_FAMILY_BY_KEY[activeFamily].label.toUpperCase()} SCORES` : prettyLeagueLabel(activeLeague).toUpperCase()}</Text><Text style={[styles.selectedTitle, { color: SCORE_FAMILY_BY_KEY[activeFamily].text }]}>{SCORE_FAMILY_BY_KEY[activeFamily].label}, built like {SCORE_FAMILY_BY_KEY[activeFamily].label.toLowerCase()}.</Text></View>
+              <View><Text style={[styles.selectedKicker, { color: SCORE_FAMILY_BY_KEY[activeFamily].accent }]}>{activeLeague === "All" ? `${SCORE_FAMILY_BY_KEY[activeFamily].label.toUpperCase()} SCORES` : getLeagueMeta(activeLeague).fullName.toUpperCase()}</Text><Text style={[styles.selectedTitle, { color: SCORE_FAMILY_BY_KEY[activeFamily].text }]}>{SCORE_FAMILY_BY_KEY[activeFamily].label}, built like {SCORE_FAMILY_BY_KEY[activeFamily].label.toLowerCase()}.</Text></View>
               <Text style={[styles.selectedCount, { color: SCORE_FAMILY_BY_KEY[activeFamily].muted }]}>{filteredBase.length} events</Text>
             </View>
             {activeFamily === "golf" ? (
